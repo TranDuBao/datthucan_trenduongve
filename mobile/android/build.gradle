@@ -1,0 +1,36 @@
+
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+// Safely match namespace for third-party pub plugins (such as otp_pin_field)
+subprojects { subproject ->
+    def configureNamespace = {
+        if (subproject.extensions.findByName("android") != null) {
+            try {
+                if (subproject.name.contains("otp_pin_field")) {
+                    subproject.android.namespace = "com.shivam.otp_pin_field"
+                } else if (subproject.android.namespace == null) {
+                    subproject.android.namespace = "com.plugin.${subproject.name.replaceAll('[^a-zA-Z0-9_]', '_')}"
+                }
+            } catch (Exception e) {
+                // Ignore if namespace property is read-only
+            }
+        }
+    }
+
+    if (subproject.state.executed) {
+        configureNamespace()
+    } else {
+        subproject.afterEvaluate configureNamespace
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
