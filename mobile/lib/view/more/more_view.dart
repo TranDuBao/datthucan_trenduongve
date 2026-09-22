@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/view/more/about_us_view.dart';
-import 'package:food_delivery/view/more/inbox_view.dart';
-import 'package:food_delivery/view/more/payment_details_view.dart';
+import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
 import '../../common/service_call.dart';
+import '../../common_widget/custom_selection_sheet.dart';
+import '../../providers/language_provider.dart';
+import '../../providers/theme_provider.dart';
+import 'about_us_view.dart';
+import 'inbox_view.dart';
 import 'my_order_view.dart';
 import 'notification_view.dart';
+import 'payment_details_view.dart';
 
 class MoreView extends StatefulWidget {
   const MoreView({super.key});
@@ -16,215 +20,417 @@ class MoreView extends StatefulWidget {
 }
 
 class _MoreViewState extends State<MoreView> {
-  List moreArr = [
-    {
-      "index": "1",
-      "name": "Payment Details",
-      "image": "assets/img/more_payment.png",
-      "base": 0
-    },
-    {
-      "index": "2",
-      "name": "My Orders",
-      "image": "assets/img/more_my_order.png",
-      "base": 0
-    },
-    {
-      "index": "3",
-      "name": "Notifications",
-      "image": "assets/img/more_notification.png",
-      "base": 15
-    },
-    {
-      "index": "4",
-      "name": "Inbox",
-      "image": "assets/img/more_inbox.png",
-      "base": 0
-    },
-    {
-      "index": "5",
-      "name": "About Us",
-      "image": "assets/img/more_info.png",
-      "base": 0
-    },
-    {
-      "index": "6",
-      "name": "Logout",
-      "image": "assets/img/more_info.png",
-      "base": 0
-    },
-  ];
+  void _showLanguageBottomSheet(BuildContext context) {
+    final langProvider = context.read<LanguageProvider>();
+
+    CustomSelectionSheet.show<String>(
+      context: context,
+      title: langProvider.tr('select_language'),
+      subtitle: langProvider.languageCode == 'vi'
+          ? "Lựa chọn ngôn ngữ hiển thị chính"
+          : "Select your primary display language",
+      confirmText: langProvider.tr('confirm'),
+      initialValue: langProvider.languageCode,
+      onConfirm: (val) {
+        langProvider.setLanguage(val);
+      },
+      options: [
+        SelectionOptionItem<String>(
+          value: 'vi',
+          title: langProvider.tr('vietnamese'),
+          subtitle: langProvider.languageCode == 'vi' ? "Mặc định hệ thống" : "System default",
+          iconWidget: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFDA251D),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star_rounded, color: Color(0xFFFFCD00), size: 22),
+          ),
+        ),
+        SelectionOptionItem<String>(
+          value: 'en',
+          title: langProvider.tr('english'),
+          subtitle: langProvider.languageCode == 'vi' ? "Ngôn ngữ quốc tế" : "Global language",
+          iconWidget: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1B365D),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              "EN",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showThemeBottomSheet(BuildContext context) {
+    final themeProvider = context.read<ThemeProvider>();
+    final langProvider = context.read<LanguageProvider>();
+
+    CustomSelectionSheet.show<ThemeMode>(
+      context: context,
+      title: langProvider.tr('select_theme'),
+      subtitle: langProvider.languageCode == 'vi'
+          ? "Lựa chọn chế độ giao diện cho ứng dụng"
+          : "Choose app appearance theme mode",
+      confirmText: langProvider.tr('confirm'),
+      initialValue: themeProvider.themeMode,
+      onConfirm: (val) {
+        themeProvider.setThemeMode(val);
+      },
+      options: [
+        SelectionOptionItem<ThemeMode>(
+          value: ThemeMode.light,
+          title: langProvider.tr('light_mode'),
+          subtitle: langProvider.languageCode == 'vi' ? "Giao diện sáng rực rỡ" : "Bright & vibrant interface",
+          iconWidget: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFB300),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 20),
+          ),
+        ),
+        SelectionOptionItem<ThemeMode>(
+          value: ThemeMode.dark,
+          title: langProvider.tr('dark_mode'),
+          subtitle: langProvider.languageCode == 'vi' ? "Tối màu diệu mắt, tiết kiệm pin" : "Easy on eyes, saves battery",
+          iconWidget: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFF3F51B5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.nightlight_round, color: Colors.white, size: 20),
+          ),
+        ),
+        SelectionOptionItem<ThemeMode>(
+          value: ThemeMode.system,
+          title: langProvider.tr('system_mode'),
+          subtitle: langProvider.languageCode == 'vi' ? "Tự động đồng bộ cài đặt máy" : "Sync with OS system settings",
+          iconWidget: Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFF607D8B),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.settings_suggest_rounded, color: Colors.white, size: 20),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final theme = context.watch<ThemeProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    String currentThemeLabel = lang.tr('system_mode');
+    if (theme.themeMode == ThemeMode.light) currentThemeLabel = lang.tr('light_mode');
+    if (theme.themeMode == ThemeMode.dark) currentThemeLabel = "${lang.tr('dark_mode')} •";
+
+    List moreArr = [
+      {
+        "index": "lang",
+        "name": lang.tr('language'),
+        "subtitle": lang.tr(lang.languageCode == 'vi' ? 'vietnamese' : 'english'),
+        "icon": Icons.language_rounded,
+        "iconBg": const Color(0xFF3D271D),
+        "iconColor": TColor.primary,
+      },
+      {
+        "index": "theme",
+        "name": lang.tr('theme_mode'),
+        "subtitle": currentThemeLabel,
+        "icon": Icons.palette_outlined,
+        "iconBg": const Color(0xFF3D2D1B),
+        "iconColor": const Color(0xFFFFB300),
+      },
+      {
+        "index": "1",
+        "name": lang.tr('payment_details'),
+        "subtitle": lang.languageCode == 'vi' ? "Thẻ & ví điện tử" : "Cards & e-wallets",
+        "icon": Icons.credit_card_rounded,
+        "iconBg": const Color(0xFF1B2A3D),
+        "iconColor": const Color(0xFF42A5F5),
+      },
+      {
+        "index": "2",
+        "name": lang.tr('my_order'),
+        "subtitle": lang.languageCode == 'vi' ? "Lịch sử và theo dõi đơn" : "History & tracking",
+        "icon": Icons.local_mall_outlined,
+        "iconBg": const Color(0xFF1B332B),
+        "iconColor": const Color(0xFF4CAF50),
+      },
+      {
+        "index": "3",
+        "name": lang.tr('notifications'),
+        "subtitle": lang.languageCode == 'vi' ? "Ưu đãi & tin tức quan trọng" : "Deals & important news",
+        "icon": Icons.notifications_none_rounded,
+        "iconBg": const Color(0xFF3B1E2B),
+        "iconColor": const Color(0xFFFF5252),
+        "base": 15
+      },
+      {
+        "index": "4",
+        "name": lang.tr('inbox'),
+        "subtitle": lang.languageCode == 'vi' ? "Trò chuyện hỗ trợ" : "Support chat",
+        "icon": Icons.mail_outline_rounded,
+        "iconBg": const Color(0xFF2B1F3D),
+        "iconColor": const Color(0xFFAB47BC),
+      },
+      {
+        "index": "5",
+        "name": lang.tr('about_us'),
+        "subtitle": lang.languageCode == 'vi' ? "Phiên bản v2.4.0 • Điều khoản" : "Version v2.4.0 • Terms",
+        "icon": Icons.info_outline_rounded,
+        "iconBg": const Color(0xFF222638),
+        "iconColor": const Color(0xFF7E57C2),
+      },
+      {
+        "index": "6",
+        "name": lang.tr('logout'),
+        "subtitle": lang.languageCode == 'vi' ? "Thoát tài khoản hiện tại" : "Sign out current account",
+        "icon": Icons.logout_rounded,
+        "iconBg": const Color(0xFF3D1B1B),
+        "iconColor": const Color(0xFFFF3D00),
+        "isDestructive": true,
+      },
+    ];
+
     return Scaffold(
+      backgroundColor: TColor.bgOf(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(
-                height: 46,
-              ),
+              const SizedBox(height: 46),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "More",
+                      lang.tr('more'),
                       style: TextStyle(
-                          color: TColor.primaryText,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const MyOrderView()));
-                      },
-                      icon: Image.asset(
-                        "assets/img/shopping_cart.png",
-                        width: 25,
-                        height: 25,
+                        color: TColor.primaryTextOf(context),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
                       ),
+                    ),
+                    Stack(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: TColor.cardOf(context),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: TColor.borderOf(context), width: 1),
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MyOrderView()),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.shopping_cart_outlined,
+                              color: TColor.primaryTextOf(context),
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: TColor.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              "3",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
               ListView.builder(
-                  padding: EdgeInsets.zero,
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: moreArr.length,
-                  itemBuilder: (context, index) {
-                    var mObj = moreArr[index] as Map? ?? {};
-                    var countBase = mObj["base"] as int? ?? 0;
-                    return InkWell(
-                      onTap: () {
-                        switch (mObj["index"].toString()) {
-                          case "1":
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const PaymentDetailsView()));
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: moreArr.length,
+                itemBuilder: (context, index) {
+                  var mObj = moreArr[index] as Map? ?? {};
+                  var countBase = mObj["base"] as int? ?? 0;
+                  bool isDestructive = mObj["isDestructive"] == true;
 
-                            break;
-
-                          case "2":
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MyOrderView()));
-                          case "3":
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const NotificationsView()));
-                          case "4":
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const InboxView()));
-                          case "5":
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const AboutUsView()));
-                          case "6":
-                            ServiceCall.showLogoutDialog(context);
-                            break;
-
-                          default:
-                        }
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 20),
-                        child: Stack(
-                          alignment: Alignment.centerRight,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 12),
-                              decoration: BoxDecoration(
-                                  color: TColor.textfield,
-                                  borderRadius: BorderRadius.circular(5)),
-                              margin: const EdgeInsets.only(right: 15),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                        color: TColor.placeholder,
-                                        borderRadius:
-                                            BorderRadius.circular(25)),
-                                    alignment: Alignment.center,
-                                    child: Image.asset(mObj["image"].toString(),
-                                        width: 25,
-                                        height: 25,
-                                        fit: BoxFit.contain),
-                                  ),
-                                  const SizedBox(
-                                    width: 15,
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      mObj["name"].toString(),
-                                      style: TextStyle(
-                                          color: TColor.primaryText,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: 15,
-                                  ),
-                                  if (countBase > 0)
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius:
-                                              BorderRadius.circular(12.5)),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        countBase.toString(),
-                                        style: TextStyle(
-                                            color: TColor.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                  color: TColor.textfield,
-                                  borderRadius: BorderRadius.circular(15)),
-                              child: Image.asset("assets/img/btn_next.png",
-                                  width: 10,
-                                  height: 10,
-                                  color: TColor.primaryText),
-                            ),
-                          ],
+                  return GestureDetector(
+                    onTap: () {
+                      switch (mObj["index"].toString()) {
+                        case "lang":
+                          _showLanguageBottomSheet(context);
+                          break;
+                        case "theme":
+                          _showThemeBottomSheet(context);
+                          break;
+                        case "1":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const PaymentDetailsView()),
+                          );
+                          break;
+                        case "2":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const MyOrderView()),
+                          );
+                          break;
+                        case "3":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const NotificationsView()),
+                          );
+                          break;
+                        case "4":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const InboxView()),
+                          );
+                          break;
+                        case "5":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AboutUsView()),
+                          );
+                          break;
+                        case "6":
+                          ServiceCall.showLogoutDialog(context);
+                          break;
+                        default:
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: TColor.cardOf(context),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isDestructive
+                              ? const Color(0xFF421E1E)
+                              : TColor.borderOf(context),
+                          width: 1,
                         ),
                       ),
-                    );
-                  })
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: isDark ? (mObj["iconBg"] as Color? ?? const Color(0xFF232733)) : const Color(0xFFF5F5F7),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              mObj["icon"] as IconData,
+                              color: mObj["iconColor"] as Color? ?? TColor.primary,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  mObj["name"].toString(),
+                                  style: TextStyle(
+                                    color: isDestructive
+                                        ? const Color(0xFFFF5252)
+                                        : TColor.primaryTextOf(context),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (mObj["subtitle"] != null) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    mObj["subtitle"].toString(),
+                                    style: TextStyle(
+                                      color: (mObj["index"] == "lang" || mObj["index"] == "theme")
+                                          ? TColor.primary
+                                          : TColor.secondaryTextOf(context),
+                                      fontSize: 12,
+                                      fontWeight: (mObj["index"] == "lang" || mObj["index"] == "theme")
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (countBase > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF3B30),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                countBase.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark ? const Color(0xFF525866) : const Color(0xFFCCCCCC),
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),

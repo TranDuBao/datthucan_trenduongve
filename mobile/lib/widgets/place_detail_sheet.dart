@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/place_model.dart';
 import '../providers/map_provider.dart';
 import '../config/api_config.dart';
+import '../common_widget/custom_modal_alert.dart';
 
 class PlaceDetailSheet extends StatefulWidget {
   final PlaceModel place;
@@ -274,13 +275,12 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
                   '${widget.place.latLng.latitude.toStringAsFixed(6)}, '
                   '${widget.place.latLng.longitude.toStringAsFixed(6)}';
               Clipboard.setData(ClipboardData(text: coord));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã sao chép tọa độ',
-                      style: GoogleFonts.outfit()),
-                  backgroundColor: const Color(0xFF1E1E3A),
-                  duration: const Duration(seconds: 2),
-                ),
+              CustomModalAlert.show(
+                context: context,
+                title: 'Đã sao chép!',
+                message: 'Đã sao chép tọa độ địa điểm vào bộ nhớ tạm: $coord',
+                infoTag: 'Tọa độ GPS',
+                buttonTitle: 'Hoàn tất',
               );
             },
             child: _infoRow(

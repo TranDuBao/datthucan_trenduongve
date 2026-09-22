@@ -90,4 +90,29 @@ export class UserService {
     const taiKhoanRepo = await this.getTaiKhoanRepo();
     await taiKhoanRepo.update(maTaiKhoan, { matKhau: passwordHash });
   }
+
+  async updateProfile(maTaiKhoan: number, data: { hoTen?: string; email?: string; phone?: string; diaChi?: string; avatar?: string }): Promise<KhachHangModel | null> {
+    const khachHangRepo = await this.getKhachHangRepo();
+    let khachHang = await khachHangRepo.findOne({ where: { maTaiKhoan } });
+
+    if (!khachHang) {
+      khachHang = khachHangRepo.create({
+        maTaiKhoan,
+        hoTen: data.hoTen || '',
+        email: data.email,
+        sdt: data.phone,
+        diaChi: data.diaChi,
+        avatar: data.avatar,
+      });
+    } else {
+      if (data.hoTen !== undefined) khachHang.hoTen = data.hoTen;
+      if (data.email !== undefined) khachHang.email = data.email;
+      if (data.phone !== undefined) khachHang.sdt = data.phone;
+      if (data.diaChi !== undefined) khachHang.diaChi = data.diaChi;
+      if (data.avatar !== undefined) khachHang.avatar = data.avatar;
+    }
+
+    return await khachHangRepo.save(khachHang);
+  }
 }
+

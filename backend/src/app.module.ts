@@ -32,4 +32,4 @@ import { KhachHang } from './modules/user/entities/khach-hang.entity';
     AuthModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

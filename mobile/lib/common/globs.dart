@@ -101,6 +101,8 @@ class SVKey {
   static String get svForgotPasswordRequest => '${baseUrl}forgot_password_request';
   static String get svForgotPasswordVerify => '${baseUrl}forgot_password_verify';
   static String get svForgotPasswordSetNew => '${baseUrl}forgot_password_set_new';
+  static String get svUpdateProfile => '${baseUrl}update_profile';
+  static String get svChangePassword => '${baseUrl}change_password';
 }
 
 class KKey {

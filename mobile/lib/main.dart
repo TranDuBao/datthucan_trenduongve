@@ -11,7 +11,9 @@ import 'common/globs.dart';
 import 'common/locator.dart';
 import 'common/my_http_overrides.dart';
 import 'common/service_call.dart';
+import 'providers/language_provider.dart';
 import 'providers/map_provider.dart';
+import 'providers/theme_provider.dart';
 import 'view/login/welcome_view.dart';
 import 'view/main_tabview/main_tabview.dart';
 import 'view/on_boarding/startup_view.dart';
@@ -22,13 +24,13 @@ void main() async {
   setUpLocator();
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint("dotenv load warning: $e");
   }
-  
+
   prefs = await SharedPreferences.getInstance();
 
   if (Globs.udValueBool(Globs.userLogin)) {
@@ -39,6 +41,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MapProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(defaultHome: StartupView()),
     ),
@@ -70,13 +74,16 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final languageProvider = context.watch<LanguageProvider>();
+
     return MaterialApp(
       title: 'Food Delivery',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: "Metropolis",
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      locale: languageProvider.locale,
+      theme: ThemeProvider.lightTheme,
+      darkTheme: ThemeProvider.darkTheme,
+      themeMode: themeProvider.themeMode,
       home: widget.defaultHome,
       navigatorKey: locator<NavigationService>().navigatorKey,
       onGenerateRoute: (routeSettings) {

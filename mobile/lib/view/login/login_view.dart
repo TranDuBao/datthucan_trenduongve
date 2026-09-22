@@ -7,10 +7,12 @@ import 'package:food_delivery/view/login/rest_password_view.dart';
 import 'package:food_delivery/view/login/sing_up_view.dart';
 import 'package:food_delivery/view/on_boarding/on_boarding_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 
 import '../../common/service_call.dart';
 import '../../common_widget/google_login_button.dart';
 import '../../common_widget/round_textfield.dart';
+import '../../providers/language_provider.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -30,7 +32,10 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+
     return Scaffold(
+      backgroundColor: TColor.bgOf(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 25),
@@ -39,37 +44,40 @@ class _LoginViewState extends State<LoginView> {
             children: [
               const SizedBox(height: 64),
               Text(
-                "Login",
+                lang.tr('login_title'),
                 style: TextStyle(
-                    color: TColor.primaryText,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800),
+                  color: TColor.primaryTextOf(context),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               Text(
-                "Add your details to login",
+                lang.tr('login_subtitle'),
                 style: TextStyle(
-                    color: TColor.secondaryText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
+                  color: TColor.secondaryTextOf(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 25),
               RoundTextfield(
-                hintText: "Your Email",
+                hintText: lang.tr('your_email'),
                 controller: txtEmail,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 25),
               RoundTextfield(
-                hintText: "Password",
+                hintText: lang.tr('password'),
                 controller: txtPassword,
                 obscureText: true,
               ),
               const SizedBox(height: 25),
               RoundButton(
-                  title: "Login",
-                  onPressed: () {
-                    btnLogin();
-                  }),
+                title: lang.tr('login'),
+                onPressed: () {
+                  btnLogin();
+                },
+              ),
               const SizedBox(height: 4),
               TextButton(
                 onPressed: () {
@@ -81,24 +89,26 @@ class _LoginViewState extends State<LoginView> {
                   );
                 },
                 child: Text(
-                  "Forgot your password?",
+                  lang.tr('forgot_password'),
                   style: TextStyle(
-                      color: TColor.secondaryText,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500),
+                    color: TColor.secondaryTextOf(context),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
               Text(
-                "or Login With",
+                lang.tr('or_login_with'),
                 style: TextStyle(
-                    color: TColor.secondaryText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
+                  color: TColor.secondaryTextOf(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 12),
               GoogleLoginButton(
-                title: "Login with Google",
+                title: lang.tr('login_google'),
                 onPressed: () {
                   btnGoogleLogin();
                 },
@@ -117,18 +127,20 @@ class _LoginViewState extends State<LoginView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Don't have an Account? ",
+                      "${lang.tr('dont_have_account')} ",
                       style: TextStyle(
-                          color: TColor.secondaryText,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
+                        color: TColor.secondaryTextOf(context),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     Text(
-                      "Sign Up",
+                      lang.tr('sign_up'),
                       style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700),
+                        color: TColor.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -139,8 +151,6 @@ class _LoginViewState extends State<LoginView> {
       ),
     );
   }
-
-  //TODO: Actions
 
   void btnLogin() {
     if (!txtEmail.text.isEmail) {
@@ -165,13 +175,10 @@ class _LoginViewState extends State<LoginView> {
     endEditing();
     Globs.showHUD();
     try {
-      // Đăng xuất silent session cũ để luôn hiện hộp chọn tài khoản
       await _googleSignIn.signOut();
-
       final GoogleSignInAccount? googleAccount = await _googleSignIn.signIn();
 
       if (googleAccount == null) {
-        // Người dùng hủy chọn tài khoản
         Globs.hideHUD();
         return;
       }
@@ -179,8 +186,7 @@ class _LoginViewState extends State<LoginView> {
       serviceCallGoogleAuth({
         "googleId": googleAccount.id,
         "email": googleAccount.email,
-        "fullName": googleAccount.displayName ??
-            googleAccount.email.split('@')[0],
+        "fullName": googleAccount.displayName ?? googleAccount.email.split('@')[0],
         "avatarUrl": googleAccount.photoUrl ?? "",
       });
     } catch (e) {
@@ -195,11 +201,8 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  //TODO: ServiceCall
-
   void serviceCallLogin(Map<String, dynamic> parameter) {
     Globs.showHUD();
-
     ServiceCall.post(parameter, SVKey.svLogin,
         withSuccess: (responseObj) async {
       Globs.hideHUD();
@@ -210,14 +213,14 @@ class _LoginViewState extends State<LoginView> {
         Globs.udBoolSet(true, Globs.userLogin);
 
         Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const OnBoardingView(),
-            ),
-            (route) => false);
+          context,
+          MaterialPageRoute(
+            builder: (context) => const OnBoardingView(),
+          ),
+          (route) => false,
+        );
       } else {
-        mdShowAlert(Globs.appName,
-            responseObj[KKey.message] as String? ?? MSG.fail, () {});
+        mdShowAlert(Globs.appName, responseObj[KKey.message] as String? ?? MSG.fail, () {});
       }
     }, failure: (err) async {
       Globs.hideHUD();
@@ -236,14 +239,14 @@ class _LoginViewState extends State<LoginView> {
         Globs.udBoolSet(true, Globs.userLogin);
 
         Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const OnBoardingView(),
-            ),
-            (route) => false);
+          context,
+          MaterialPageRoute(
+            builder: (context) => const OnBoardingView(),
+          ),
+          (route) => false,
+        );
       } else {
-        mdShowAlert(Globs.appName,
-            responseObj[KKey.message] as String? ?? MSG.fail, () {});
+        mdShowAlert(Globs.appName, responseObj[KKey.message] as String? ?? MSG.fail, () {});
       }
     }, failure: (err) async {
       Globs.hideHUD();

@@ -14,7 +14,7 @@ export class UserService {
     private readonly taiKhoanRepository: Repository<TaiKhoan>,
     @InjectRepository(KhachHang)
     private readonly khachHangRepository: Repository<KhachHang>,
-  ) {}
+  ) { }
 
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
@@ -114,3 +114,11 @@ export class UserService {
     return this.userRepository.save(user);
   }
 }
+email: updateData.email || user?.email || khachHang?.email,
+  phone: updateData.phone || user?.phone || khachHang?.sdt,
+    address: updateData.address || khachHang?.diaChi,
+      avatarUrl: updateData.avatarUrl || user?.avatarUrl || khachHang?.avatar,
+    };
+  }
+}
+
