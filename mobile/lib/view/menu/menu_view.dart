@@ -11,6 +11,8 @@ import '../more/my_order_view.dart';
 import 'menu_items_view.dart';
 import 'item_details_view.dart';
 import '../../widgets/route_pickup_food_card.dart';
+import '../../screens/home_screen.dart';
+import '../main_tabview/main_tabview.dart';
 
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
@@ -148,6 +150,16 @@ class _MenuViewState extends State<MenuView> {
     }
   }
 
+  void _openMapTab(BuildContext context) {
+    context.read<MapProvider>().goToMyLocation();
+    final mainTabState = context.findAncestorStateOfType<MainTabViewState>();
+    if (mainTabState != null) {
+      mainTabState.changeTab(2);
+    } else {
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const MainTabView(initialTab: 2)), (route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>();
@@ -170,58 +182,64 @@ class _MenuViewState extends State<MenuView> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1B1E28) : const Color(0xFFFFF4EE),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF2C3240) : const Color(0xFFFFE5D6),
+                      child: InkWell(
+                        onTap: () => _openMapTab(context),
+                        borderRadius: BorderRadius.circular(24),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1B1E28) : const Color(0xFFFFF4EE),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2C3240) : const Color(0xFFFFE5D6),
+                            ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFC6011),
-                                shape: BoxShape.circle,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFC6011),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
                               ),
-                              child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "TIỆN ĐƯỜNG GHÉ LẤY",
-                                        style: TextStyle(
-                                          color: TColor.primary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.5,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "TIỆN ĐƯỜNG GHÉ LẤY",
+                                          style: TextStyle(
+                                            color: TColor.primary,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.5,
+                                          ),
                                         ),
-                                      ),
-                                      const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFFC6011), size: 16),
-                                    ],
-                                  ),
-                                  Text(
-                                    "Số 3, Đường 104, Thạnh Mỹ Lợi, Q.2",
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: TColor.primaryTextOf(context),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                                        const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFFC6011), size: 16),
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      mapProv.isLoadingLocation
+                                          ? "Đang xác định vị trí..."
+                                          : mapProv.currentLocationText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: TColor.primaryTextOf(context),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -473,15 +491,10 @@ class _MenuViewState extends State<MenuView> {
                             decoration: BoxDecoration(
                               color: isDark ? const Color(0xFF1F2430) : bgColor,
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isDark ? const Color(0xFF2E3545) : Colors.transparent,
-                              ),
+                              border: Border.all(color: isDark ? const Color(0xFF2E3545) : Colors.transparent),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              cat["icon"]!,
-                              style: const TextStyle(fontSize: 22),
-                            ),
+                            child: Text(cat["icon"]!, style: const TextStyle(fontSize: 22)),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -489,11 +502,7 @@ class _MenuViewState extends State<MenuView> {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : const Color(0xFF333333),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF333333), fontSize: 10, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),
@@ -509,15 +518,7 @@ class _MenuViewState extends State<MenuView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    const Text(
-                      "⚡ FLASH SALE",
-                      style: TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    const Text("⚡ FLASH SALE", style: TextStyle(color: Color(0xFFD32F2F), fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     const SizedBox(width: 8),
                     _buildTimerBox(_flashSaleHours),
                     const Text(" : ", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -525,14 +526,7 @@ class _MenuViewState extends State<MenuView> {
                     const Text(" : ", style: TextStyle(fontWeight: FontWeight.bold)),
                     _buildTimerBox(_flashSaleSecs),
                     const Spacer(),
-                    Text(
-                      "Xem tất cả >",
-                      style: TextStyle(
-                        color: TColor.secondaryTextOf(context),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text("Xem tất cả >", style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -952,18 +946,22 @@ class _MenuViewState extends State<MenuView> {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: TColor.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          Text("Bản đồ", style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.map_outlined, color: Color(0xFFFC6011), size: 14),
-                        ],
+                    InkWell(
+                      onTap: () => _openMapTab(context),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: TColor.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            Text("Bản đồ", style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.map_outlined, color: Color(0xFFFC6011), size: 14),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -973,25 +971,22 @@ class _MenuViewState extends State<MenuView> {
               const SizedBox(height: 12),
 
               // Route Pickup Foods Horizontal Scroll List
-              routePickupFoods.isEmpty
-                  ? const SizedBox.shrink()
-                  : SizedBox(
-                      height: 225,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: routePickupFoods.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          return RoutePickupFoodCard(
-                            item: routePickupFoods[index],
-                            width: 160,
-                            userLat: userLat,
-                            userLng: userLng,
-                          );
-                        },
-                      ),
+              if (routePickupFoods.isNotEmpty)
+                SizedBox(
+                  height: 225,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: routePickupFoods.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) => RoutePickupFoodCard(
+                      item: routePickupFoods[index],
+                      width: 160,
+                      userLat: userLat,
+                      userLng: userLng,
                     ),
+                  ),
+                ),
             ],
           ),
         ),

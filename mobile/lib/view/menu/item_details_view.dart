@@ -5,6 +5,7 @@ import '../../common/color_extension.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/custom_toast.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../more/my_order_view.dart';
 
 class ItemDetailsView extends StatefulWidget {
@@ -73,17 +74,11 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                 // Header Image Banner with Action Icons
                 Stack(
                   children: [
-                    Image.network(
-                      imgUrl,
+                    SmartNetworkImage(
+                      imageUrl: imgUrl,
                       width: media.width,
                       height: 300,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: media.width,
-                        height: 300,
-                        color: TColor.primary.withOpacity(0.2),
-                        child: Icon(Icons.restaurant, color: TColor.primary, size: 50),
-                      ),
                     ),
                     Container(
                       width: media.width,

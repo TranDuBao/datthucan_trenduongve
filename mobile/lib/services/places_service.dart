@@ -154,40 +154,84 @@ class PlacesService {
     return [];
   }
 
-  /// Reverse geocoding: tọa độ → địa chỉ (TomTom Reverse Geocoding API)
+  /// Reverse geocoding: tọa độ → địa chỉ (TomTom + Nominatim OpenStreetMap Fallback)
   Future<PlaceModel?> reverseGeocode(LatLng latLng) async {
     final apiKey = ApiConfig.tomTomApiKey;
-    if (apiKey.isEmpty || apiKey == 'YOUR_TOMTOM_API_KEY_HERE') {
-      debugPrint('❌ TomTom API key chưa được cấu hình trong .env');
-      return null;
+    if (apiKey.isNotEmpty && apiKey != 'YOUR_TOMTOM_API_KEY_HERE') {
+      final uri = Uri.https(
+        'api.tomtom.com',
+        '/search/2/reverseGeocode/${latLng.latitude},${latLng.longitude}.json',
+        {
+          'key': apiKey,
+          'language': 'vi-VN',
+        },
+      );
+
+      try {
+        debugPrint('📍 TomTom Reverse: ${latLng.latitude}, ${latLng.longitude}');
+        final response = await http.get(uri);
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data =
+              json.decode(utf8.decode(response.bodyBytes));
+          final List<dynamic> addresses = data['addresses'] as List? ?? [];
+          if (addresses.isNotEmpty) {
+            return PlaceModel.fromTomTomReverseJson(
+                addresses[0] as Map<String, dynamic>);
+          }
+        } else {
+          debugPrint('❌ TomTom Reverse status: ${response.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('❌ PlacesService TomTom reverse error: $e');
+      }
     }
 
-    final uri = Uri.https(
-      'api.tomtom.com',
-      '/search/2/reverseGeocode/${latLng.latitude},${latLng.longitude}.json',
-      {
-        'key': apiKey,
-        'language': 'vi-VN',
-      },
+    return await _reverseGeocodeNominatim(latLng);
+  }
+
+  Future<PlaceModel?> _reverseGeocodeNominatim(LatLng latLng) async {
+    final uri = Uri.parse(
+      'https://nominatim.openstreetmap.org/reverse?lat=${latLng.latitude}&lon=${latLng.longitude}&format=json&addressdetails=1',
     );
 
     try {
-      debugPrint('📍 TomTom Reverse: ${latLng.latitude}, ${latLng.longitude}');
-      final response = await http.get(uri);
+      debugPrint('🗺️ Nominatim Reverse Geocoding: ${latLng.latitude}, ${latLng.longitude}');
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent': 'FoodDeliveryApp/1.0 (contact@fooddelivery.app)',
+          'Accept-Language': 'vi-VN,vi;q=0.9',
+        },
+      );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data =
-            json.decode(utf8.decode(response.bodyBytes));
-        final List<dynamic> addresses = data['addresses'] as List? ?? [];
-        if (addresses.isNotEmpty) {
-          return PlaceModel.fromTomTomReverseJson(
-              addresses[0] as Map<String, dynamic>);
-        }
-      } else {
-        debugPrint('❌ TomTom Reverse status: ${response.statusCode}');
+        final Map<String, dynamic> map = json.decode(utf8.decode(response.bodyBytes));
+        final displayName = map['display_name']?.toString() ?? '';
+        final addressObj = map['address'] as Map<String, dynamic>? ?? {};
+
+        final road = addressObj['road'] ?? addressObj['pedestrian'] ?? addressObj['suburb'] ?? '';
+        final suburb = addressObj['suburb'] ?? addressObj['quarter'] ?? addressObj['district'] ?? '';
+        final city = addressObj['city'] ?? addressObj['town'] ?? addressObj['state'] ?? '';
+
+        final List<String> parts = [
+          if (road.toString().isNotEmpty) road.toString(),
+          if (suburb.toString().isNotEmpty) suburb.toString(),
+          if (city.toString().isNotEmpty) city.toString(),
+        ];
+
+        String shortName = parts.join(', ');
+        if (shortName.isEmpty) shortName = displayName.split(',').take(3).join(', ');
+
+        return PlaceModel(
+          id: map['place_id']?.toString() ?? '${latLng.latitude},${latLng.longitude}',
+          name: shortName.isNotEmpty ? shortName : 'Vị trí hiện tại',
+          address: displayName.isNotEmpty ? displayName : shortName,
+          latLng: latLng,
+        );
       }
     } catch (e) {
-      debugPrint('❌ PlacesService TomTom reverse error: $e');
+      debugPrint('❌ Nominatim reverse error: $e');
     }
     return null;
   }

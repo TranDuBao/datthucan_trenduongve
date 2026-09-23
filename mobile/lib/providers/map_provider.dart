@@ -195,6 +195,14 @@ class MapProvider extends ChangeNotifier {
     return null;
   }
 
+  String get currentLocationText {
+    if (_originPlace != null) {
+      if (_originPlace!.name.isNotEmpty) return _originPlace!.name;
+      if (_originPlace!.address.isNotEmpty) return _originPlace!.address;
+    }
+    return 'Trần Quý Cáp, Bình Thạnh';
+  }
+
   Future<void> _getCurrentLocation() async {
     LatLng? detectedPosition;
     bool isMockLocation = false;
@@ -205,9 +213,9 @@ class MapProvider extends ChangeNotifier {
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 5),
       );
-      
+
       final gpsLatLng = LatLng(position.latitude, position.longitude);
-      
+
       final double latDiff = (gpsLatLng.latitude - 37.422).abs();
       final double lonDiff = (gpsLatLng.longitude - (-122.084)).abs();
       if (latDiff < 0.01 && lonDiff < 0.01) {
@@ -222,24 +230,27 @@ class MapProvider extends ChangeNotifier {
     }
 
     if (detectedPosition == null || isMockLocation) {
-      debugPrint('📍 Đang dùng máy ảo hoặc chưa bật GPS. Mặc định chọn Trần Quý Cáp, Bình Thạnh (10.8038, 106.6975).');
-      detectedPosition = const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
+      final ipPos = await _getLocationByIP();
+      if (ipPos != null) {
+        detectedPosition = ipPos;
+      } else {
+        debugPrint('📍 Đang dùng máy ảo hoặc chưa bật GPS. Mặc định chọn Trần Quý Cáp, Bình Thạnh (10.8038, 106.6975).');
+        detectedPosition = const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
+      }
     }
 
     _currentPosition = detectedPosition;
     _moveCamera(_currentPosition, zoom: 16);
 
-    if (_originPlace == null) {
-      final place = await _placesService.reverseGeocode(_currentPosition);
-      _originPlace = place ?? PlaceModel(
-        id: 'current_loc',
-        name: 'Trần Quý Cáp, Bình Thạnh',
-        address: 'Trần Quý Cáp, Phường 11, Bình Thạnh, TP. Hồ Chí Minh',
-        latLng: _currentPosition,
-      );
-      originController.text = _originPlace!.name;
-      notifyListeners();
-    }
+    final place = await _placesService.reverseGeocode(_currentPosition);
+    _originPlace = place ?? PlaceModel(
+      id: 'current_loc',
+      name: 'Trần Quý Cáp, Bình Thạnh',
+      address: 'Trần Quý Cáp, Phường 11, Bình Thạnh, TP. Hồ Chí Minh',
+      latLng: _currentPosition,
+    );
+    originController.text = _originPlace!.name;
+    notifyListeners();
   }
 
   // ─────────────────────────────────────────────────────────────────────────

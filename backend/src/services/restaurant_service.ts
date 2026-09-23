@@ -40,7 +40,7 @@ export class RestaurantService {
       where: { maQuan },
     });
 
-    const categories = await this.danhMucRepo.find({
+    let categories = await this.danhMucRepo.find({
       where: { maQuan },
     });
 
@@ -48,8 +48,19 @@ export class RestaurantService {
       where: { maQuan },
     });
 
+    if (categories.length === 0) {
+      categories = [{ maDanhMuc: 0, maQuan, tenDanhMuc: 'Thực đơn' } as any];
+    }
+
+    const firstCatId = categories[0].maDanhMuc;
+
     return categories.map((cat) => {
-      const catItems = items.filter((item) => item.maDanhMuc === cat.maDanhMuc);
+      const catItems = items.filter((item) => {
+        if (item.maDanhMuc === cat.maDanhMuc) return true;
+        if (!item.maDanhMuc && cat.maDanhMuc === firstCatId) return true;
+        return false;
+      });
+
       return {
         id: cat.maDanhMuc,
         name: cat.tenDanhMuc,

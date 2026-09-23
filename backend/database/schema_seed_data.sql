@@ -1,15 +1,22 @@
 -- SQL Seed Data for Smart City Food Route App
 -- Nạp dữ liệu mẫu Tiếng Việt cho Cửa Hàng, Danh Mục, Món Ăn và Voucher (An toàn, chống trùng lặp dữ liệu)
 
--- 1. Nạp Tài Khoản Cửa Hàng Mẫu
+-- 1. Nạp Tài Khoản Quản Trị Viên & Cửa Hàng Mẫu
 INSERT INTO TaiKhoan (tenDangNhap, matKhau, loaiTaiKhoan, trangThai) VALUES
-('cuahang_phobo', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'CUAN_HANG', 'HOAT_DONG'),
-('cuahang_comtam', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'CUAN_HANG', 'HOAT_DONG'),
-('cuahang_bunbo', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'CUAN_HANG', 'HOAT_DONG'),
-('cuahang_caphe', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'CUAN_HANG', 'HOAT_DONG'),
-('cuahang_tiemkem', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'CUAN_HANG', 'HOAT_DONG'),
-('khachhang_demo', '$2b$10$e8gV9pQ10928371092837u.102938102938102938102938102938', 'KHACH_HANG', 'HOAT_DONG')
+('admin@gmail.com', 'admin123', 'ADMIN', 'HOAT_DONG'),
+('admin', 'admin123', 'ADMIN', 'HOAT_DONG'),
+('cuahang_phobo', '123456', 'CUAN_HANG', 'HOAT_DONG'),
+('cuahang_comtam', '123456', 'CUAN_HANG', 'HOAT_DONG'),
+('cuahang_bunbo', '123456', 'CUAN_HANG', 'HOAT_DONG'),
+('cuahang_caphe', '123456', 'CUAN_HANG', 'HOAT_DONG'),
+('cuahang_tiemkem', '123456', 'CUAN_HANG', 'HOAT_DONG'),
+('khachhang_demo', '123456', 'KHACH_HANG', 'HOAT_DONG')
 ON CONFLICT (tenDangNhap) DO NOTHING;
+
+INSERT INTO KhachHang (maTaiKhoan, hoTen, SDT, email, diaChi)
+SELECT maTaiKhoan, 'Quản Trị Viên Hệ Thống', '0900000000', 'admin@gmail.com', 'Trụ sở Hệ Thống'
+FROM TaiKhoan WHERE tenDangNhap IN ('admin@gmail.com', 'admin')
+ON CONFLICT (maTaiKhoan) DO NOTHING;
 
 INSERT INTO KhachHang (maTaiKhoan, hoTen, SDT, email, diaChi)
 SELECT maTaiKhoan, 'Nguyễn Văn Khách', '0901112233', 'khachhang@gmail.com', '123 Nguyễn Trãi, Q1, TP.HCM'

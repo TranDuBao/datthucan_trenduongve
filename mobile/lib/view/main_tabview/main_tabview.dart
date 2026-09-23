@@ -11,16 +11,50 @@ import '../offer/offer_view.dart';
 import '../profile/profile_view.dart';
 
 class MainTabView extends StatefulWidget {
-  const MainTabView({super.key});
+  final int initialTab;
+  const MainTabView({super.key, this.initialTab = 2});
 
   @override
-  State<MainTabView> createState() => _MainTabViewState();
+  State<MainTabView> createState() => MainTabViewState();
 }
 
-class _MainTabViewState extends State<MainTabView> {
-  int selctTab = 2;
+class MainTabViewState extends State<MainTabView> {
+  late int selctTab;
   PageStorageBucket storageBucket = PageStorageBucket();
-  Widget selectPageView = const HomeView();
+  late Widget selectPageView;
+
+  @override
+  void initState() {
+    super.initState();
+    selctTab = widget.initialTab;
+    selectPageView = _getPageView(selctTab);
+  }
+
+  Widget _getPageView(int tab) {
+    switch (tab) {
+      case 0:
+        return const MenuView();
+      case 1:
+        return const OfferView();
+      case 2:
+        return const HomeView();
+      case 3:
+        return const ProfileView();
+      case 4:
+        return const MoreView();
+      default:
+        return const HomeView();
+    }
+  }
+
+  void changeTab(int tab) {
+    if (mounted) {
+      setState(() {
+        selctTab = tab;
+        selectPageView = _getPageView(tab);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -26,6 +26,6 @@ export class CuaHangModel {
   @Column({ name: 'sdt', nullable: true, length: 15 })
   sdt?: string;
 
-  @Column({ name: 'img', nullable: true, length: 255 })
+  @Column({ name: 'img', type: 'text', nullable: true })
   img?: string;
 }

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS CuaHang (
     lat DOUBLE PRECISION,
     lng DOUBLE PRECISION,
     SDT VARCHAR(15),
-    img VARCHAR(255)
+    img TEXT
 );
 
 -- 4. Bảng Nhân Viên
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS MonAn (
     tenMonAn VARCHAR(150) NOT NULL,
     giaMonAn DECIMAL(12, 2) NOT NULL,
     soLuongMon INT DEFAULT 0,
-    img VARCHAR(255),
+    img TEXT,
     diemDanhGiaTB NUMERIC(3, 2) DEFAULT 0.0,
     soLuotDanhGia INT DEFAULT 0
 );

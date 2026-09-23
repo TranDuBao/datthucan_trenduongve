@@ -6,6 +6,7 @@ import '../../services/category_service.dart';
 import '../../services/order_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../more/my_order_view.dart';
+import '../../common_widget/smart_network_image.dart';
 import 'item_details_view.dart';
 
 class RestaurantDetailView extends StatefulWidget {
@@ -40,9 +41,33 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     });
 
     final data = await CategoryService.fetchRestaurantMenuFromDB(resId);
+
+    // Combine all food items into a "Tất cả" category tab
+    List<dynamic> allItems = [];
+    for (var cat in data) {
+      final items = cat['items'] ?? [];
+      for (var item in items) {
+        if (!allItems.any((e) => (e['id'] ?? e['maMonAn']) == (item['id'] ?? item['maMonAn']))) {
+          allItems.add(item);
+        }
+      }
+    }
+
+    List<dynamic> fullCategories = [];
+    if (allItems.isNotEmpty || data.isNotEmpty) {
+      fullCategories.add({
+        'id': 0,
+        'name': 'Tất cả',
+        'itemsCount': allItems.length,
+        'items': allItems,
+      });
+      fullCategories.addAll(data);
+    }
+
     if (mounted) {
       setState(() {
-        categoriesWithItems = data;
+        categoriesWithItems = fullCategories;
+        selectedCategoryIndex = 0;
         isLoading = false;
       });
     }
@@ -59,7 +84,10 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
-      body: Stack(
+      body: RefreshIndicator(
+        onRefresh: _loadMenuData,
+        color: TColor.primary,
+        child: Stack(
         children: [
           CustomScrollView(
             slivers: [
@@ -109,10 +137,11 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        resImg,
+                      SmartNetworkImage(
+                        imageUrl: resImg,
+                        width: double.infinity,
+                        height: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(color: TColor.primary.withOpacity(0.2)),
                       ),
                       Container(
                         decoration: BoxDecoration(
@@ -350,20 +379,11 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                             child: Row(
                                               children: [
                                                 // Food Image Thumbnail
-                                                ClipRRect(
+                                                SmartNetworkImage(
+                                                  imageUrl: img,
+                                                  width: 85,
+                                                  height: 85,
                                                   borderRadius: BorderRadius.circular(12),
-                                                  child: Image.network(
-                                                    img,
-                                                    width: 85,
-                                                    height: 85,
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stackTrace) => Container(
-                                                      width: 85,
-                                                      height: 85,
-                                                      color: TColor.primary.withOpacity(0.15),
-                                                      child: Icon(Icons.restaurant, color: TColor.primary),
-                                                    ),
-                                                  ),
                                                 ),
                                                 const SizedBox(width: 12),
                                                 // Info Column
@@ -519,6 +539,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
             ),
         ],
       ),
+    ),
     );
   }
 }

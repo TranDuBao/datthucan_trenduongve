@@ -20,7 +20,7 @@ export class MonAnModel {
   @Column({ name: 'soluongmon', default: 0 })
   soLuongMon: number;
 
-  @Column({ name: 'img', nullable: true, length: 255 })
+  @Column({ name: 'img', type: 'text', nullable: true })
   img?: string;
 
   @Column({ name: 'diemdanhgiatb', type: 'numeric', precision: 3, scale: 2, default: 0.0 })
