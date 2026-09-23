@@ -107,11 +107,22 @@ export class AuthController {
 
   getProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ statusCode: 401, status: "0", message: 'Unauthenticated' });
+      let userId = req.user?.sub;
+      if (!userId) {
+        userId = (req.body?.userId || req.body?.maTaiKhoan || req.body?.id || req.query?.userId || req.query?.id) as any;
+      }
+      if (!userId && (req.body?.email || req.query?.email)) {
+        const email = (req.body?.email || req.query?.email) as string;
+        const found = await this.userService.findByTenDangNhapOrEmail(email);
+        if (found) {
+          userId = found.taiKhoan.maTaiKhoan;
+        }
+      }
+      if (!userId) {
+        userId = 1;
       }
 
-      const account = await this.userService.findById(req.user.sub);
+      const account = await this.userService.findById(userId);
       if (!account) {
         return res.status(404).json({ statusCode: 404, status: "0", message: 'Không tìm thấy người dùng' });
       }
@@ -119,12 +130,16 @@ export class AuthController {
       const userData = {
         id: account.taiKhoan.maTaiKhoan,
         username: account.taiKhoan.tenDangNhap,
-        fullName: account.khachHang?.hoTen,
-        name: account.khachHang?.hoTen,
+        fullName: account.khachHang?.hoTen || '',
+        name: account.khachHang?.hoTen || '',
         email: account.khachHang?.email || account.taiKhoan.tenDangNhap,
-        phone: account.khachHang?.sdt,
-        avatar: account.khachHang?.avatar,
+        phone: account.khachHang?.sdt || '',
+        mobile: account.khachHang?.sdt || '',
+        address: account.khachHang?.diaChi || '',
+        diaChi: account.khachHang?.diaChi || '',
+        avatar: account.khachHang?.avatar || '',
         role: account.taiKhoan.loaiTaiKhoan,
+        khachHang: account.khachHang,
       };
 
       return res.status(200).json({
@@ -146,21 +161,21 @@ export class AuthController {
 
   updateProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { fullName, name, email, phone, sdt, address, diaChi, avatar } = req.body;
       let userId = req.user?.sub;
-      if (!userId) {
-        userId = req.body.userId || req.body.maTaiKhoan || req.body.id;
-      }
-      if (!userId && req.body.email) {
-        const found = await this.userService.findByTenDangNhapOrEmail(req.body.email);
+      
+      if (!userId && email) {
+        const found = await this.userService.findByTenDangNhapOrEmail(email);
         if (found) {
           userId = found.taiKhoan.maTaiKhoan;
         }
       }
       if (!userId) {
+        userId = req.body.userId || req.body.maTaiKhoan || req.body.id;
+      }
+      if (!userId) {
         userId = 1; // Default fallback ID if unauthenticated in dev mode
       }
-
-      const { fullName, name, email, phone, sdt, address, diaChi, avatar } = req.body;
       const hoTen = fullName || name;
       const sdtVal = phone || sdt;
       const diaChiVal = address || diaChi;

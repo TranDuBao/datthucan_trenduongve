@@ -42,12 +42,11 @@ class _RouteCard extends StatelessWidget {
       curve: Curves.easeInOut,
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E3A),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -57,50 +56,50 @@ class _RouteCard extends StatelessWidget {
           ? _buildCompactCard(context)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildHeader(context),
-                _buildTrafficBar(),
-                _buildAddressRow(),
-                if (route.steps.isNotEmpty) _buildFirstStep(),
-                _buildActionRow(context),
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 10, bottom: 6),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E5EA),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                _buildRouteAndPriceRow(context),
+                _buildFreeshipBanner(),
+                _buildConfirmButton(context),
               ],
             ),
     );
   }
 
   Widget _buildCompactCard(BuildContext context) {
-    final status = route.trafficStatus;
-    final trafficColor = switch (status) {
-      TrafficStatus.smooth => const Color(0xFF00E676),
-      TrafficStatus.slow => const Color(0xFFFFD54F),
-      TrafficStatus.moderate => const Color(0xFFFF9800),
-      TrafficStatus.heavy => const Color(0xFFFF5252),
-    };
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Container(
-            width: 9,
-            height: 9,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: trafficColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: trafficColor.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                  spreadRadius: 1,
-                ),
-              ],
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.alt_route_rounded,
+              color: Color(0xFFFC6011),
+              size: 18,
             ),
           ),
           const SizedBox(width: 10),
           Text(
             route.totalDuration,
             style: GoogleFonts.outfit(
-              color: Colors.white,
+              color: const Color(0xFF1C1C1E),
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -108,11 +107,11 @@ class _RouteCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '(${route.totalDistance}) • Đến lúc ${route.etaText}',
+              '(${route.totalDistance}) • ${provider.pickupReadyTimeText}',
               style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: const Color(0xFF8E8E93),
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -123,24 +122,21 @@ class _RouteCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
+                color: const Color(0xFFFC6011).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
-                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.unfold_more_rounded,
-                      color: Color(0xFF00E5FF), size: 14),
+                      color: Color(0xFFFC6011), size: 14),
                   const SizedBox(width: 4),
                   Text(
                     'Chi tiết',
                     style: GoogleFonts.outfit(
-                      color: const Color(0xFF00E5FF),
+                      color: const Color(0xFFFC6011),
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -152,39 +148,73 @@ class _RouteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildRouteAndPriceRow(BuildContext context) {
+    final trafficNote = route.trafficStatus == TrafficStatus.smooth
+        ? 'Tuyến đường thông thoáng'
+        : 'Giao thông: ${route.trafficLabel}';
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFE0B2)),
+            ),
+            child: const Icon(
+              Icons.alt_route_rounded,
+              color: Color(0xFFFC6011),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  route.totalDuration,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.straighten_rounded,
-                        color: Colors.white.withValues(alpha: 0.5), size: 13),
-                    const SizedBox(width: 4),
                     Text(
                       route.totalDistance,
                       style: GoogleFonts.outfit(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 13,
+                        color: const Color(0xFF1C1C1E),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      ' • ',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF8E8E93),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      route.totalDuration,
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF00C853),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  trafficNote,
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF8E8E93),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -192,49 +222,22 @@ class _RouteCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              GestureDetector(
-                onTap: provider.clearAll,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.close_rounded,
-                      color: Colors.white54, size: 15),
+              Text(
+                'GHÉ LẤY',
+                style: GoogleFonts.outfit(
+                  color: const Color(0xFF8E8E93),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00E5FF), Color(0xFF0091FF)],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Đến lúc',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      route.etaText,
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 2),
+              Text(
+                '~${provider.prepMinutes} phút',
+                style: GoogleFonts.outfit(
+                  color: const Color(0xFFFC6011),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -244,180 +247,49 @@ class _RouteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTrafficBar() {
-    final status = route.trafficStatus;
-    final (color, icon, bg) = switch (status) {
-      TrafficStatus.smooth => (
-          const Color(0xFF00E676),
-          Icons.check_circle_outline_rounded,
-          const Color(0xFF00E676),
-        ),
-      TrafficStatus.slow => (
-          const Color(0xFFFFD54F),
-          Icons.speed_rounded,
-          const Color(0xFFFFD54F),
-        ),
-      TrafficStatus.moderate => (
-          const Color(0xFFFF9800),
-          Icons.traffic_rounded,
-          const Color(0xFFFF9800),
-        ),
-      TrafficStatus.heavy => (
-          const Color(0xFFFF5252),
-          Icons.warning_amber_rounded,
-          const Color(0xFFFF5252),
-        ),
-    };
-
+  Widget _buildFreeshipBanner() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: bg.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: bg.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 15),
-          const SizedBox(width: 8),
-          Text(
-            'Giao thông: ${route.trafficLabel}',
-            style: GoogleFonts.outfit(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (route.trafficDelayText.isNotEmpty) ...[
-            const Spacer(),
-            Text(
-              'Trễ ${route.trafficDelayText}',
-              style: GoogleFonts.outfit(
-                color: color.withValues(alpha: 0.8),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddressRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: const BoxDecoration(
-                    color: Color(0xFF00E676), shape: BoxShape.circle),
-              ),
-              Container(
-                  width: 2, height: 18, color: Colors.white.withValues(alpha: 0.2)),
-              Container(
-                width: 9,
-                height: 9,
-                decoration: const BoxDecoration(
-                    color: Color(0xFFFF5252), shape: BoxShape.circle),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  provider.originPlace?.name ?? 'Điểm bắt đầu',
-                  style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  provider.destinationPlace?.name ?? 'Điểm đến',
-                  style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFirstStep() {
-    final first = route.steps.first;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2D5E),
+        color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.2)),
+        border: Border.all(color: const Color(0xFFFFE0B2)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(first.maneuverIcon,
-                  style: const TextStyle(fontSize: 16)),
-            ),
+          const Icon(
+            Icons.storefront_rounded,
+            color: Color(0xFFFC6011),
+            size: 16,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bước tiếp theo',
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF00E5FF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  first.instruction.isEmpty
-                      ? 'Đi thẳng'
-                      : first.instruction,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: Text(
+              'Tiện đường đi làm về • Đặt trước ghé lấy không chờ đợi',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFFE65100),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            first.distance,
-            style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 11,
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'TIỆN ĐƯỜNG',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFFFC6011),
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
@@ -425,33 +297,57 @@ class _RouteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionRow(BuildContext context) {
+  Widget _buildConfirmButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: GestureDetector(
-        onTap: () => _showStepsSheet(context),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã xác nhận lộ trình ghé lấy tại: ${provider.destinationPlace?.name ?? "Điểm đến"}',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFFFC6011),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          height: 50,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF00E5FF), Color(0xFF0091FF)],
+              colors: [Color(0xFFFC6011), Color(0xFFFF7A00)],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFC6011).withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.turn_right_rounded,
-                  color: Colors.white, size: 16),
-              const SizedBox(width: 6),
               Text(
-                'Xem toàn bộ ${route.steps.length} bước hướng dẫn',
+                'Xác nhận lộ trình ghé lấy',
                 style: GoogleFonts.outfit(
                   color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 18,
               ),
             ],
           ),

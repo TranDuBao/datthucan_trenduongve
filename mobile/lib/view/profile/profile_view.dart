@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/globs.dart';
@@ -20,56 +24,138 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   final ImagePicker picker = ImagePicker();
-  XFile? image;
+  XFile? _pickedImage;
+  Uint8List? _croppedBytes;
+  String _avatarUrl = '';
 
   TextEditingController txtName = TextEditingController();
   TextEditingController txtEmail = TextEditingController();
   TextEditingController txtMobile = TextEditingController();
   TextEditingController txtAddress = TextEditingController();
 
-  String userName = "Alex Johnson";
+  String userName = '';
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _fetchUserProfileFromApi();
+  }
+
+  @override
+  void dispose() {
+    txtName.dispose();
+    txtEmail.dispose();
+    txtMobile.dispose();
+    txtAddress.dispose();
+    super.dispose();
   }
 
   void _loadUserProfile() {
-    var payload = ServiceCall.userPayload;
-    if (payload.isEmpty) {
-      payload = Globs.udValue(Globs.userPayload);
-    }
+    var rawPayload = ServiceCall.userPayload.isEmpty
+        ? Globs.udValue(Globs.userPayload)
+        : ServiceCall.userPayload;
+    var payload = rawPayload is Map ? rawPayload : {};
+
     if (payload.isNotEmpty) {
       ServiceCall.userPayload = payload;
       Globs.udBoolSet(true, Globs.userLogin);
     }
 
-    var userObj = payload["user"] as Map? ?? payload;
-    var khachHangObj = payload["khachHang"] as Map? ?? payload;
+    var userObj = payload["user"] is Map ? payload["user"] : payload;
+    var khachHangObj = payload["khachHang"] is Map ? payload["khachHang"] : payload;
 
-    String name = khachHangObj["hoTen"]?.toString() ??
-        payload["fullName"]?.toString() ??
+    String name = payload["fullName"]?.toString() ??
         payload["name"]?.toString() ??
+        khachHangObj["hoTen"]?.toString() ??
+        userObj["fullName"]?.toString() ??
         userObj["tenDangNhap"]?.toString() ??
-        "Alex Johnson";
-    String email = khachHangObj["email"]?.toString() ??
-        payload["email"]?.toString() ??
+        "";
+
+    String email = payload["email"]?.toString() ??
+        khachHangObj["email"]?.toString() ??
+        userObj["email"]?.toString() ??
         userObj["tenDangNhap"]?.toString() ??
-        "alex.johnson@example.com";
-    String phone = khachHangObj["sdt"]?.toString() ??
-        payload["phone"]?.toString() ??
+        "";
+
+    String phone = payload["phone"]?.toString() ??
         payload["mobile"]?.toString() ??
-        "+1 (555) 382-9910";
-    String address = khachHangObj["diaChi"]?.toString() ??
-        payload["address"]?.toString() ??
-        "742 Evergreen Terrace, Suite 4";
+        khachHangObj["sdt"]?.toString() ??
+        userObj["phone"]?.toString() ??
+        "";
+
+    String address = payload["address"]?.toString() ??
+        payload["diaChi"]?.toString() ??
+        khachHangObj["diaChi"]?.toString() ??
+        userObj["address"]?.toString() ??
+        "";
+
+    String avatarVal = payload["avatar"]?.toString() ??
+        khachHangObj["avatar"]?.toString() ??
+        '';
 
     txtName.text = name;
     txtEmail.text = email;
     txtMobile.text = phone;
     txtAddress.text = address;
     userName = name;
+    _avatarUrl = avatarVal;
+  }
+
+  void _fetchUserProfileFromApi() {
+    var rawPayload = ServiceCall.userPayload.isEmpty
+        ? Globs.udValue(Globs.userPayload)
+        : ServiceCall.userPayload;
+    var payload = rawPayload is Map ? rawPayload : {};
+    int userId = (payload["id"] ?? payload["maTaiKhoan"] ?? 0) as int;
+
+    ServiceCall.post({
+      "userId": userId,
+      "email": payload["email"] ?? txtEmail.text.trim(),
+    }, SVKey.svGetProfile, withSuccess: (responseObj) async {
+      if (responseObj[KKey.status] == "1") {
+        var serverPayload = responseObj[KKey.payload];
+        if (serverPayload is Map && serverPayload.isNotEmpty) {
+          var updatedPayload = Map<String, dynamic>.from(payload);
+          updatedPayload.addAll(Map<String, dynamic>.from(serverPayload));
+
+          ServiceCall.userPayload = updatedPayload;
+          Globs.udSet(updatedPayload, Globs.userPayload);
+          Globs.udBoolSet(true, Globs.userLogin);
+
+          if (mounted) {
+            setState(() {
+              _loadUserProfile();
+            });
+          }
+        }
+      }
+    }, failure: (err) async {
+      debugPrint("Fetch profile from API error: $err");
+    });
+  }
+
+  // ── Avatar Picker with crop ──
+  Future<void> _onPickAvatar() async {
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    final Uint8List? cropped = await showDialog<Uint8List>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _AvatarCropDialog(imageBytes: bytes),
+    );
+    if (cropped != null && mounted) {
+      setState(() {
+        _pickedImage = picked;
+        _croppedBytes = cropped;
+      });
+    }
   }
 
   void _saveProfile(LanguageProvider lang) {
@@ -81,9 +167,9 @@ class _ProfileViewState extends State<ProfileView> {
     if (name.isEmpty) {
       CustomModalAlert.show(
         context: context,
-        title: lang.languageCode == 'vi' ? "Thông báo" : "Notice",
-        message: lang.languageCode == 'vi' ? "Vui lòng nhập họ và tên!" : "Please enter full name!",
-        buttonTitle: "OK",
+        title: lang.languageCode == 'vi' ? 'Thông báo' : 'Notice',
+        message: lang.languageCode == 'vi' ? 'Vui lòng nhập họ và tên!' : 'Please enter full name!',
+        buttonTitle: 'OK',
       );
       return;
     }
@@ -91,59 +177,86 @@ class _ProfileViewState extends State<ProfileView> {
     var rawPayload = ServiceCall.userPayload.isEmpty
         ? Globs.udValue(Globs.userPayload)
         : ServiceCall.userPayload;
-    var payload = Map<String, dynamic>.from(rawPayload is Map ? rawPayload : {});
+    var payload = Map<String, dynamic>.from(rawPayload is Map ? rawPayload as Map : {});
 
-    payload["fullName"] = name;
-    payload["name"] = name;
-    payload["email"] = email;
-    payload["phone"] = phone;
-    payload["mobile"] = phone;
-    payload["address"] = address;
-
-    if (payload["user"] is Map) {
-      var userMap = Map<String, dynamic>.from(payload["user"]);
-      userMap["fullName"] = name;
-      userMap["email"] = email;
-      userMap["phone"] = phone;
-      userMap["address"] = address;
-      payload["user"] = userMap;
+    // Prepare avatar
+    String? avatarBase64;
+    if (_croppedBytes != null) {
+      avatarBase64 = 'data:image/jpeg;base64,${base64Encode(_croppedBytes!)}';
+    } else if (_avatarUrl.isNotEmpty) {
+      avatarBase64 = _avatarUrl;
     }
 
-    if (payload["khachHang"] is Map) {
-      var khMap = Map<String, dynamic>.from(payload["khachHang"]);
-      khMap["hoTen"] = name;
-      khMap["email"] = email;
-      khMap["sdt"] = phone;
-      khMap["diaChi"] = address;
-      payload["khachHang"] = khMap;
+    payload['fullName'] = name;
+    payload['name'] = name;
+    payload['email'] = email;
+    payload['phone'] = phone;
+    payload['mobile'] = phone;
+    payload['address'] = address;
+    payload['diaChi'] = address;
+    if (avatarBase64 != null) payload['avatar'] = avatarBase64;
+
+    if (payload['user'] is Map) {
+      var userMap = Map<String, dynamic>.from(payload['user'] as Map);
+      userMap['fullName'] = name;
+      userMap['name'] = name;
+      userMap['email'] = email;
+      userMap['phone'] = phone;
+      userMap['address'] = address;
+      payload['user'] = userMap;
     }
 
-    // 1. Save local state & flag user login active so reload persists
+    if (payload['khachHang'] is Map) {
+      var khMap = Map<String, dynamic>.from(payload['khachHang'] as Map);
+      khMap['hoTen'] = name;
+      khMap['email'] = email;
+      khMap['sdt'] = phone;
+      khMap['diaChi'] = address;
+      if (avatarBase64 != null) khMap['avatar'] = avatarBase64;
+      payload['khachHang'] = khMap;
+    } else {
+      payload['khachHang'] = {
+        'hoTen': name,
+        'email': email,
+        'sdt': phone,
+        'diaChi': address,
+        if (avatarBase64 != null) 'avatar': avatarBase64,
+      };
+    }
+
     ServiceCall.userPayload = payload;
     Globs.udSet(payload, Globs.userPayload);
     Globs.udBoolSet(true, Globs.userLogin);
 
     setState(() {
       userName = name;
+      _isEditing = false;
     });
 
-    // 2. Persist directly to backend database
+    // Persist to backend
     Globs.showHUD();
-    ServiceCall.post({
-      "userId": payload["id"] ?? payload["maTaiKhoan"] ?? 1,
-      "fullName": name,
-      "name": name,
-      "email": email,
-      "phone": phone,
-      "sdt": phone,
-      "address": address,
-      "diaChi": address,
-    }, SVKey.svUpdateProfile, withSuccess: (responseObj) async {
+    final apiBody = <String, dynamic>{
+      'userId': payload['id'] ?? payload['maTaiKhoan'] ?? 0,
+      'fullName': name,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'sdt': phone,
+      'address': address,
+      'diaChi': address,
+    };
+    if (avatarBase64 != null) apiBody['avatar'] = avatarBase64;
+
+    ServiceCall.post(apiBody, SVKey.svUpdateProfile,
+        withSuccess: (responseObj) async {
       Globs.hideHUD();
-      if (responseObj[KKey.status] == "1") {
+      if (responseObj[KKey.status] == '1') {
         var serverPayload = responseObj[KKey.payload];
         if (serverPayload is Map && serverPayload.isNotEmpty) {
-          payload.addAll(Map<String, dynamic>.from(serverPayload));
+          payload.addAll(Map<String, dynamic>.from(serverPayload as Map));
+          if (payload['avatar'] != null) {
+            setState(() => _avatarUrl = payload['avatar'].toString());
+          }
           ServiceCall.userPayload = payload;
           Globs.udSet(payload, Globs.userPayload);
           Globs.udBoolSet(true, Globs.userLogin);
@@ -152,30 +265,36 @@ class _ProfileViewState extends State<ProfileView> {
       if (!mounted) return;
       CustomModalAlert.show(
         context: context,
-        title: lang.languageCode == 'vi' ? "Thành công!" : "Success!",
+        title: lang.languageCode == 'vi' ? 'Thành công!' : 'Success!',
         message: lang.languageCode == 'vi'
-            ? "Đã lưu thông tin tài khoản vào cơ sở dữ liệu!\nThông tin của bạn đã được cập nhật an toàn."
-            : "Profile details saved to database successfully!\nYour details have been updated on system.",
-        infoTag: lang.languageCode == 'vi' ? "Đã lưu vào Cơ sở dữ liệu" : "Saved to Database",
-        buttonTitle: lang.languageCode == 'vi' ? "Hoàn tất" : "Complete",
+            ? 'Đã lưu thông tin tài khoản thành công!'
+            : 'Profile saved successfully!',
+        buttonTitle: lang.languageCode == 'vi' ? 'Hoàn tất' : 'Done',
       );
     }, failure: (err) async {
       Globs.hideHUD();
+      debugPrint('UpdateProfile error: $err');
       if (!mounted) return;
       CustomModalAlert.show(
         context: context,
-        title: lang.languageCode == 'vi' ? "Thành công!" : "Success!",
+        title: lang.languageCode == 'vi' ? 'Đã lưu!' : 'Saved!',
         message: lang.languageCode == 'vi'
-            ? "Đã lưu thông tin bộ nhớ thiết bị thành công!"
-            : "Saved profile info to local storage!",
-        infoTag: lang.languageCode == 'vi' ? "Đã lưu bộ nhớ thiết bị" : "Saved Locally",
-        buttonTitle: lang.languageCode == 'vi' ? "Hoàn tất" : "Complete",
+            ? 'Đã lưu vào bộ nhớ thiết bị!'
+            : 'Saved to local storage!',
+        buttonTitle: lang.languageCode == 'vi' ? 'Hoàn tất' : 'Done',
       );
     });
   }
 
   void _showSettingsBottomSheet(BuildContext context, LanguageProvider lang) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    var rawPayload = ServiceCall.userPayload.isEmpty
+        ? Globs.udValue(Globs.userPayload)
+        : ServiceCall.userPayload;
+    var payload = rawPayload is Map ? rawPayload : {};
+    bool isGoogleUser = payload["isGoogle"] == true ||
+        payload["loginType"] == "google" ||
+        payload["googleId"] != null;
 
     showModalBottomSheet(
       context: context,
@@ -246,15 +365,31 @@ class _ProfileViewState extends State<ProfileView> {
               _buildSettingsOptionItem(
                 context: context,
                 icon: Icons.lock_reset_rounded,
-                iconBg: const Color(0xFFFFF3E0),
-                iconColor: const Color(0xFFFF6D00),
+                iconBg: isGoogleUser ? Colors.grey.withOpacity(0.12) : const Color(0xFFFFF3E0),
+                iconColor: isGoogleUser ? Colors.grey : const Color(0xFFFF6D00),
                 title: lang.languageCode == 'vi' ? "Thay đổi mật khẩu" : "Change Password",
-                subtitle: lang.languageCode == 'vi'
-                    ? "Cập nhật mật khẩu bảo mật tài khoản"
-                    : "Update your account security password",
+                subtitle: isGoogleUser
+                    ? (lang.languageCode == 'vi'
+                        ? "Đăng nhập Google (Không sử dụng mật khẩu app)"
+                        : "Signed in via Google (Password managed by Google)")
+                    : (lang.languageCode == 'vi'
+                        ? "Cập nhật mật khẩu bảo mật tài khoản"
+                        : "Update your account security password"),
                 onTap: () {
                   Navigator.pop(bottomSheetContext);
-                  _showChangePasswordModal(context, lang);
+                  if (isGoogleUser) {
+                    CustomModalAlert.show(
+                      context: context,
+                      title: lang.languageCode == 'vi' ? "Tài khoản Google" : "Google Account",
+                      message: lang.languageCode == 'vi'
+                          ? "Tài khoản của bạn được liên kết và xác thực bảo mật bởi Google.\nBạn không cần quản lý hoặc thay đổi mật khẩu trên ứng dụng."
+                          : "Your account is authenticated securely via Google OAuth.\nYou do not need to manage or change passwords on this app.",
+                      infoTag: "Google OAuth 2.0",
+                      buttonTitle: lang.languageCode == 'vi' ? "Đã hiểu" : "Got it",
+                    );
+                  } else {
+                    _showChangePasswordModal(context, lang);
+                  }
                 },
               ),
               const SizedBox(height: 10),
@@ -446,6 +581,7 @@ class _ProfileViewState extends State<ProfileView> {
                     icon: Icons.lock_outline_rounded,
                     hintText: "••••••••••••",
                     obscureText: true,
+                    enabled: true,
                   ),
                   const SizedBox(height: 12),
 
@@ -456,6 +592,7 @@ class _ProfileViewState extends State<ProfileView> {
                     icon: Icons.lock_outline_rounded,
                     hintText: "••••••••••••",
                     obscureText: !isShowNewPass,
+                    enabled: true,
                     suffixIcon: GestureDetector(
                       onTap: () {
                         setModalState(() {
@@ -478,6 +615,7 @@ class _ProfileViewState extends State<ProfileView> {
                     icon: Icons.lock_outline_rounded,
                     hintText: "••••••••••••",
                     obscureText: !isShowConfirmPass,
+                    enabled: true,
                     suffixIcon: GestureDetector(
                       onTap: () {
                         setModalState(() {
@@ -591,9 +729,12 @@ class _ProfileViewState extends State<ProfileView> {
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
+    bool enabled = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final labelColor = isDark ? const Color(0xFF9096A5) : const Color(0xFF8C93A3);
+    final disabledBg = isDark ? const Color(0xFF13161F) : const Color(0xFFF7F8FA);
+    final enabledBg = isDark ? const Color(0xFF1A1F30) : const Color(0xFFFFFFFF);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,14 +751,17 @@ class _ProfileViewState extends State<ProfileView> {
             ),
           ),
         ),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           height: 52,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF13161F) : const Color(0xFFF7F8FA),
+            color: enabled ? enabledBg : disabledBg,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF232836) : const Color(0xFFEBECEF),
-              width: 1,
+              color: enabled
+                  ? TColor.primary.withOpacity(0.5)
+                  : (isDark ? const Color(0xFF232836) : const Color(0xFFEBECEF)),
+              width: enabled ? 1.5 : 1,
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -625,7 +769,9 @@ class _ProfileViewState extends State<ProfileView> {
             children: [
               Icon(
                 icon,
-                color: isDark ? const Color(0xFF6C727F) : const Color(0xFFA0A5B1),
+                color: enabled
+                    ? TColor.primary
+                    : (isDark ? const Color(0xFF6C727F) : const Color(0xFFA0A5B1)),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -634,6 +780,7 @@ class _ProfileViewState extends State<ProfileView> {
                   controller: controller,
                   obscureText: obscureText,
                   keyboardType: keyboardType,
+                  enabled: enabled,
                   style: TextStyle(
                     color: TColor.primaryTextOf(context),
                     fontSize: 14,
@@ -655,6 +802,88 @@ class _ProfileViewState extends State<ProfileView> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAvatar(bool isDark) {
+    Widget avatarChild;
+    if (_croppedBytes != null) {
+      avatarChild = Image.memory(_croppedBytes!, width: 98, height: 98, fit: BoxFit.cover);
+    } else if (_pickedImage != null) {
+      avatarChild = Image.file(File(_pickedImage!.path), width: 98, height: 98, fit: BoxFit.cover);
+    } else if (_avatarUrl.isNotEmpty) {
+      if (_avatarUrl.startsWith('data:image')) {
+        try {
+          final bytes = base64Decode(_avatarUrl.split(',').last);
+          avatarChild = Image.memory(bytes, width: 98, height: 98, fit: BoxFit.cover);
+        } catch (_) {
+          avatarChild = _defaultAvatarIcon(isDark);
+        }
+      } else {
+        avatarChild = Image.network(
+          _avatarUrl,
+          width: 98, height: 98, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _defaultAvatarIcon(isDark),
+        );
+      }
+    } else {
+      avatarChild = _defaultAvatarIcon(isDark);
+    }
+    return Stack(
+      alignment: Alignment.bottomRight,
+      children: [
+        Container(
+          width: 104, height: 104,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: TColor.primary.withOpacity(0.25),
+                blurRadius: 16, offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(3),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: avatarChild,
+          ),
+        ),
+        Positioned(
+          right: 2, bottom: 2,
+          child: GestureDetector(
+            onTap: _onPickAvatar,
+            child: Container(
+              width: 30, height: 30,
+              decoration: BoxDecoration(
+                color: TColor.primary,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? const Color(0xFF171B26) : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _defaultAvatarIcon(bool isDark) {
+    return Container(
+      color: isDark ? const Color(0xFF232836) : const Color(0xFFEAEBED),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person_rounded, size: 62,
+        color: isDark ? const Color(0xFF6C727F) : const Color(0xFFA0A5B1),
+      ),
     );
   }
 
@@ -709,81 +938,14 @@ class _ProfileViewState extends State<ProfileView> {
 
               const SizedBox(height: 24),
 
-              // Avatar Header with Golden Ring & Camera Edit Badge
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  Container(
-                    width: 104,
-                    height: 104,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: TColor.primary.withOpacity(0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(3),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: image != null
-                          ? Image.file(
-                              File(image!.path),
-                              width: 98,
-                              height: 98,
-                              fit: BoxFit.cover,
-                            )
-                          : Container(
-                              color: isDark ? const Color(0xFF232836) : const Color(0xFFEAEBED),
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.person_rounded,
-                                size: 62,
-                                color: isDark ? const Color(0xFF6C727F) : const Color(0xFFA0A5B1),
-                              ),
-                            ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 2,
-                    bottom: 2,
-                    child: GestureDetector(
-                      onTap: () async {
-                        image = await picker.pickImage(source: ImageSource.gallery);
-                        setState(() {});
-                      },
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: TColor.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: isDark ? const Color(0xFF171B26) : Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.white,
-                          size: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Avatar with camera badge
+              _buildAvatar(isDark),
 
               const SizedBox(height: 14),
 
               // User Name Title
               Text(
-                userName,
+                userName.isNotEmpty ? userName : (lang.languageCode == 'vi' ? "Người dùng" : "Customer"),
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
                   fontSize: 22,
@@ -866,12 +1028,60 @@ class _ProfileViewState extends State<ProfileView> {
                 ),
                 child: Column(
                   children: [
+                    // Pencil edit toggle header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          lang.languageCode == 'vi' ? 'Thông tin cá nhân' : 'Personal Information',
+                          style: TextStyle(
+                            color: TColor.primaryTextOf(context),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _isEditing = !_isEditing),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _isEditing ? TColor.primary : TColor.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                                  color: _isEditing ? Colors.white : TColor.primary,
+                                  size: 15,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  _isEditing
+                                      ? (lang.languageCode == 'vi' ? 'Xong' : 'Done')
+                                      : (lang.languageCode == 'vi' ? 'Chỉnh sửa' : 'Edit'),
+                                  style: TextStyle(
+                                    color: _isEditing ? Colors.white : TColor.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     _buildFieldItem(
                       context: context,
                       label: lang.languageCode == 'vi' ? "Họ và tên" : "Full Name",
                       controller: txtName,
                       icon: Icons.person_outline_rounded,
-                      hintText: "Enter full name",
+                      hintText: lang.languageCode == 'vi' ? "Nhập họ và tên" : "Enter full name",
+                      enabled: _isEditing,
                     ),
                     const SizedBox(height: 14),
 
@@ -880,8 +1090,9 @@ class _ProfileViewState extends State<ProfileView> {
                       label: lang.languageCode == 'vi' ? "Địa chỉ Email" : "Email Address",
                       controller: txtEmail,
                       icon: Icons.mail_outline_rounded,
-                      hintText: "Enter email address",
+                      hintText: lang.languageCode == 'vi' ? "Nhập địa chỉ email" : "Enter email address",
                       keyboardType: TextInputType.emailAddress,
+                      enabled: _isEditing,
                     ),
                     const SizedBox(height: 14),
 
@@ -890,8 +1101,9 @@ class _ProfileViewState extends State<ProfileView> {
                       label: lang.languageCode == 'vi' ? "Số điện thoại" : "Phone Number",
                       controller: txtMobile,
                       icon: Icons.phone_outlined,
-                      hintText: "Enter phone number",
+                      hintText: lang.languageCode == 'vi' ? "Nhập số điện thoại" : "Enter phone number",
                       keyboardType: TextInputType.phone,
+                      enabled: _isEditing,
                     ),
                     const SizedBox(height: 14),
 
@@ -900,7 +1112,8 @@ class _ProfileViewState extends State<ProfileView> {
                       label: lang.languageCode == 'vi' ? "Địa chỉ giao hàng" : "Delivery Address",
                       controller: txtAddress,
                       icon: Icons.location_on_outlined,
-                      hintText: "Enter delivery address",
+                      hintText: lang.languageCode == 'vi' ? "Nhập địa chỉ giao hàng" : "Enter delivery address",
+                      enabled: _isEditing,
                     ),
                   ],
                 ),
@@ -939,4 +1152,216 @@ class _ProfileViewState extends State<ProfileView> {
       ),
     );
   }
+}
+
+// ════ Avatar Crop Dialog ─ Pure Flutter ════
+class _AvatarCropDialog extends StatefulWidget {
+  final Uint8List imageBytes;
+  const _AvatarCropDialog({required this.imageBytes});
+
+  @override
+  State<_AvatarCropDialog> createState() => _AvatarCropDialogState();
+}
+
+class _AvatarCropDialogState extends State<_AvatarCropDialog> {
+  final TransformationController _transformController = TransformationController();
+  bool _isCropping = false;
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  Future<Uint8List?> _cropImage() async {
+    setState(() => _isCropping = true);
+    try {
+      final codec = await ui.instantiateImageCodec(widget.imageBytes);
+      final frame = await codec.getNextFrame();
+      final srcImg = frame.image;
+      final iw = srcImg.width.toDouble();
+      final ih = srcImg.height.toDouble();
+      const cropDiameter = 280.0;
+
+      final matrix = _transformController.value;
+      final tx = -matrix.entry(0, 3);
+      final ty = -matrix.entry(1, 3);
+      final scale = matrix.entry(0, 0).clamp(0.01, 100.0);
+      final displayScale = iw / cropDiameter;
+      final srcSize = (cropDiameter / scale) * displayScale;
+      final srcLeft = (tx / scale) * displayScale;
+      final srcTop = (ty / scale) * displayScale;
+
+      final safeLeft = srcLeft.clamp(0.0, (iw - srcSize).clamp(0.0, iw)).toDouble();
+      final safeTop = srcTop.clamp(0.0, (ih - srcSize).clamp(0.0, ih)).toDouble();
+      final safeSize = srcSize.clamp(1.0, min(iw - safeLeft, ih - safeTop)).toDouble();
+
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const outSize = 400.0;
+      canvas.clipPath(Path()..addOval(const Rect.fromLTWH(0, 0, outSize, outSize)));
+      canvas.drawImageRect(
+        srcImg,
+        Rect.fromLTWH(safeLeft, safeTop, safeSize, safeSize),
+        const Rect.fromLTWH(0, 0, outSize, outSize),
+        Paint(),
+      );
+      final picture = recorder.endRecording();
+      final img = await picture.toImage(outSize.toInt(), outSize.toInt());
+      final bd = await img.toByteData(format: ui.ImageByteFormat.png);
+      return bd?.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('Crop error: $e');
+      return null;
+    } finally {
+      if (mounted) setState(() => _isCropping = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF161920) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Chỉnh sửa ảnh đại diện',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                      fontSize: 16, fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close_rounded,
+                      color: isDark ? const Color(0xFF9096A5) : const Color(0xFF8C93A3)),
+                  onPressed: () => Navigator.of(context).pop(null),
+                ),
+              ],
+            ),
+            Text(
+              'Kéo & pinch để chỉnh vị trí ảnh',
+              style: TextStyle(
+                color: isDark ? const Color(0xFF9096A5) : const Color(0xFF8C93A3),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 280, height: 280,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  ClipRect(
+                    child: InteractiveViewer(
+                      transformationController: _transformController,
+                      minScale: 0.5, maxScale: 4.0,
+                      child: Image.memory(
+                        widget.imageBytes,
+                        fit: BoxFit.cover, width: 280, height: 280,
+                      ),
+                    ),
+                  ),
+                  IgnorePointer(
+                    child: CustomPaint(
+                      size: const Size(280, 280),
+                      painter: _CircleMaskPainter(isDark: isDark),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF333846) : const Color(0xFFDDDDDD),
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: Text(
+                      'Hủy',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: TColor.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: _isCropping
+                        ? null
+                        : () async {
+                            final result = await _cropImage();
+                            if (context.mounted) Navigator.of(context).pop(result);
+                          },
+                    child: _isCropping
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Xác nhận',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleMaskPainter extends CustomPainter {
+  final bool isDark;
+  _CircleMaskPainter({required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2;
+    final outerPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addOval(Rect.fromCircle(center: center, radius: radius))
+      ..fillType = PathFillType.evenOdd;
+    canvas.drawPath(outerPath, Paint()..color = Colors.black.withOpacity(0.5));
+    canvas.drawCircle(
+      center, radius,
+      Paint()
+        ..color = TColor.primary
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

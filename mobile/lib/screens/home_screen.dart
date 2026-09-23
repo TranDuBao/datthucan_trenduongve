@@ -372,33 +372,34 @@ class _OptimizedMapWidget extends StatelessWidget {
   ) {
     final markers = <Marker>[];
 
+    // Current position marker
     markers.add(
       Marker(
         point: currentPosition,
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         child: Center(
           child: Stack(
             alignment: Alignment.center,
             children: [
               Container(
-                width: 22,
-                height: 22,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
+                  color: const Color(0xFFFC6011).withValues(alpha: 0.25),
                   shape: BoxShape.circle,
                 ),
               ),
               Container(
-                width: 12,
-                height: 12,
+                width: 14,
+                height: 14,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF00E5FF),
+                  color: Color(0xFFFC6011),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF00E5FF),
-                      blurRadius: 6,
+                      color: Color(0xFFFC6011),
+                      blurRadius: 8,
                     ),
                   ],
                 ),
@@ -409,60 +410,93 @@ class _OptimizedMapWidget extends StatelessWidget {
       ),
     );
 
+    // Pickup marker (Green dot)
     if (originPlace != null) {
       markers.add(
         Marker(
           point: originPlace.latLng,
-          width: 120,
-          height: 65,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E3A),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.3)),
+          width: 30,
+          height: 30,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF00C853),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
-                child: Text(
-                  originPlace.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const Icon(Icons.location_on_rounded, color: Color(0xFF00E676), size: 30),
-            ],
+              ],
+            ),
           ),
         ),
       );
     }
 
+    // Destination marker (Orange Callout Badge + Pin)
     if (destinationPlace != null) {
       markers.add(
         Marker(
           point: destinationPlace.latLng,
-          width: 120,
-          height: 65,
+          width: 180,
+          height: 75,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E3A),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFFF5252).withValues(alpha: 0.3)),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFC6011), Color(0xFFFF7A00)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFC6011).withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  destinationPlace.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.restaurant_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        destinationPlace.name,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Icon(Icons.location_on_rounded, color: Color(0xFFFF5252), size: 30),
+              const SizedBox(height: 2),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFC6011),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
+              ),
             ],
           ),
         ),
@@ -493,7 +527,7 @@ class _OptimizedMapWidget extends StatelessWidget {
           mapController: provider.mapController,
           options: MapOptions(
             initialCenter: const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng),
-            initialZoom: 13,
+            initialZoom: 14,
             onMapReady: provider.onMapReady,
             onTap: (tapPosition, point) async {
               final hasRoute = provider.currentRoute != null;
@@ -519,10 +553,10 @@ class _OptimizedMapWidget extends StatelessWidget {
                 polylines: [
                   Polyline(
                     points: data.route!.polylinePoints,
-                    strokeWidth: 5.0,
-                    color: const Color(0xFF00E5FF),
-                    borderColor: const Color(0xFF0091FF).withValues(alpha: 0.5),
-                    borderStrokeWidth: 1.0,
+                    strokeWidth: 5.5,
+                    color: const Color(0xFFFC6011),
+                    borderColor: const Color(0xFFFF9E80),
+                    borderStrokeWidth: 1.2,
                   ),
                 ],
               ),

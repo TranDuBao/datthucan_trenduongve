@@ -104,7 +104,7 @@ class _MainTabViewState extends State<MainTabView> {
             ),
             TabButton(
               title: lang.tr('offer'),
-              icon: "assets/img/tab_offer.png",
+              iconData: Icons.storefront_rounded,
               onTap: () {
                 if (selctTab != 1) {
                   selctTab = 1;

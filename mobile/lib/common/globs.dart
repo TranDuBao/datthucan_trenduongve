@@ -103,6 +103,11 @@ class SVKey {
   static String get svForgotPasswordSetNew => '${baseUrl}forgot_password_set_new';
   static String get svUpdateProfile => '${baseUrl}update_profile';
   static String get svChangePassword => '${baseUrl}change_password';
+
+  static String get svRestaurants => '${mainUrl}/api/v1/restaurants';
+  static String svRestaurantMenu(int id) => '${mainUrl}/api/v1/restaurants/$id/menu';
+  static String get svOrders => '${mainUrl}/api/v1/orders';
+  static String get svVerifyPayment => '${mainUrl}/api/v1/payments/verify';
 }
 
 class KKey {

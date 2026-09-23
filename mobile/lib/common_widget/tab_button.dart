@@ -6,12 +6,14 @@ class TabButton extends StatelessWidget {
   final VoidCallback onTap;
   final String title;
   final String icon;
+  final IconData? iconData;
   final bool isSelected;
 
   const TabButton({
     super.key,
     required this.title,
-    required this.icon,
+    this.icon = "",
+    this.iconData,
     required this.onTap,
     required this.isSelected,
   });
@@ -29,12 +31,18 @@ class TabButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(
-            icon,
-            width: 18,
-            height: 18,
-            color: isSelected ? TColor.primary : unselectedColor,
-          ),
+          iconData != null
+              ? Icon(
+                  iconData,
+                  size: 20,
+                  color: isSelected ? TColor.primary : unselectedColor,
+                )
+              : Image.asset(
+                  icon,
+                  width: 18,
+                  height: 18,
+                  color: isSelected ? TColor.primary : unselectedColor,
+                ),
           const SizedBox(height: 2),
           Text(
             title,

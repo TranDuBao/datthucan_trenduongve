@@ -75,32 +75,39 @@ DO NOT make that change.
 
   ## 3. Architecture & Separation of Concerns
 
-- Mobile App must follow MVC (Model-View-Controller).
+- Mobile App must follow MVVM / Provider Layered Architecture:
+  - Views/Screens handle UI presentation only (`lib/screens`, `lib/view`).
+  - Providers (`ChangeNotifier`) handle state management and UI interaction logic (`lib/providers`).
+  - Services handle API network requests and external integrations (`lib/services`).
+  - Models represent data structures (`lib/models`).
+  - Locator (`get_it`) manages dependency injection (`lib/common/locator.dart`).
 
-- Backend must follow a clean modular architecture.
+- Backend must follow NestJS Modular & Layered Architecture:
+  - Modules encapsulate related features (`src/modules/*`).
+  - Controllers handle HTTP requests and response formatting (`*.controller.ts`).
+  - Services contain core business logic (`*.service.ts`).
+  - Entities (TypeORM) handle database schema mapping and persistence (`*.entity.ts`).
+  - DTOs define and validate request/response data payloads (`dto/*`).
 
 - Controllers handle HTTP/request-response concerns only.
 
 - Services contain business logic.
 
-- Repositories handle database access.
+- Repositories/Entities handle database access.
 
 - DTOs define and validate input/output data structures.
 
 - Models/Entities represent persistent data.
 
-- Routes should only define routing and connect requests
-  to the appropriate controllers.
-
-- Do not place business logic directly inside routes.
+- Do not place business logic directly inside controllers or views.
 
 - Do not place database queries directly inside controllers.
 
-- Do not duplicate business logic across multiple controllers.
+- Do not duplicate business logic across multiple controllers or providers.
 
-- Reuse existing services, utilities and components whenever possible.
+- Reuse existing services, providers, utilities and components whenever possible.
 
-- Before creating a new module, check whether an existing module
+- Before creating a new module or provider, check whether an existing one
   already provides the required functionality.
 
 - Avoid unnecessary abstraction and over-engineering.
@@ -403,19 +410,21 @@ DATA FLOW
 
 For dynamic data, follow this flow:
 
-Database
+Database (PostgreSQL)
     ↓
-Repository / ORM
+Entity / Repository / TypeORM
     ↓
-Service
+NestJS Service
     ↓
-Controller / API
+NestJS Controller / API Endpoint
     ↓
-Mobile API Client
+Mobile Service Layer (`lib/services`)
     ↓
-Model
+Mobile Provider / State (`lib/providers`)
     ↓
-View / UI
+Mobile Model (`lib/models`)
+    ↓
+Mobile View / Screen (`lib/screens`, `lib/view`)
 
 - Reuse the existing data flow whenever it already exists.
 

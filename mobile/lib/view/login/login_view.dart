@@ -233,7 +233,10 @@ class _LoginViewState extends State<LoginView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-        var payload = responseObj[KKey.payload] as Map? ?? {};
+        var rawPayload = responseObj[KKey.payload] as Map? ?? {};
+        var payload = Map<String, dynamic>.from(rawPayload);
+        payload["isGoogle"] = true;
+        payload["loginType"] = "google";
         ServiceCall.userPayload = payload;
         Globs.udSet(payload, Globs.userPayload);
         Globs.udBoolSet(true, Globs.userLogin);

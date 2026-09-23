@@ -109,9 +109,11 @@ CREATE TABLE IF NOT EXISTS DonHang (
     maKhachHang INT REFERENCES KhachHang(maKhachHang) ON DELETE SET NULL,
     maQuan INT REFERENCES CuaHang(maQuan) ON DELETE SET NULL,
     maVoucher INT REFERENCES Voucher(maVoucher) ON DELETE SET NULL,
-    trangThai VARCHAR(50) DEFAULT 'chờ xử lý', -- 'chờ xử lý', 'đã hoàn thành', 'đã nhận', 'đã hủy', 'chưa đánh giá', 'đã đánh giá'
+    trangThai VARCHAR(50) DEFAULT 'chờ xử lý', -- 'chờ xử lý', 'đã xác nhận', 'đang chuẩn bị', 'sẵn sàng lấy hàng', 'đã lấy hàng', 'đã hoàn thành', 'đã hủy'
     tongTien DECIMAL(12, 2) NOT NULL,
     thoiGianDat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    thoiGianHenNhan TIMESTAMP, -- Ngày và giờ hẹn tự đến lấy (Pre-order Pickup Time)
+    loaiDonHang VARCHAR(30) DEFAULT 'PRE_ORDER', -- 'PRE_ORDER' (Tự đến lấy), 'EAT_IN'
     phuongThucThanhToan VARCHAR(50) DEFAULT 'COD'
 );
 
@@ -161,3 +163,9 @@ CREATE TABLE IF NOT EXISTS ThongKe (
     soLuongDanhGia INT DEFAULT 0,
     diemDanhGiaTB NUMERIC(3, 2) DEFAULT 0.0
 );
+
+-- 16. Bổ sung cột cho bảng Đơn Hàng nếu bảng đã tồn tại từ trước (Safe Alter Table)
+ALTER TABLE DonHang ADD COLUMN IF NOT EXISTS thoiGianHenNhan TIMESTAMP;
+ALTER TABLE DonHang ADD COLUMN IF NOT EXISTS loaiDonHang VARCHAR(30) DEFAULT 'PRE_ORDER';
+ALTER TABLE DonHang ADD COLUMN IF NOT EXISTS phuongThucThanhToan VARCHAR(50) DEFAULT 'COD';
+

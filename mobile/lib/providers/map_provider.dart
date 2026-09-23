@@ -12,10 +12,41 @@ import '../services/directions_service.dart';
 import '../config/api_config.dart';
 
 enum MapState { idle, searchingOrigin, searchingDestination, loadingRoute, showingRoute }
+enum FoodRouteOption { takeaway, preOrder, dineIn }
 
 class MapProvider extends ChangeNotifier {
   final PlacesService _placesService = PlacesService();
   final DirectionsService _directionsService = DirectionsService();
+
+  // ── Food Route Option (Đặt thức ăn trên đường về) ─────────────────────────
+  FoodRouteOption _foodRouteOption = FoodRouteOption.takeaway;
+  FoodRouteOption get foodRouteOption => _foodRouteOption;
+
+  void changeFoodRouteOption(FoodRouteOption option) {
+    _foodRouteOption = option;
+    notifyListeners();
+  }
+
+  int get travelMinutes {
+    if (_currentRoute != null && _currentRoute!.totalDurationSeconds > 0) {
+      final mins = (_currentRoute!.totalDurationSeconds / 60).round();
+      return mins > 0 ? mins : 12;
+    }
+    return 12;
+  }
+
+  int get prepMinutes {
+    switch (_foodRouteOption) {
+      case FoodRouteOption.takeaway:
+        return 10;
+      case FoodRouteOption.preOrder:
+        return 15;
+      case FoodRouteOption.dineIn:
+        return 20;
+    }
+  }
+
+  String get pickupReadyTimeText => 'Chuẩn bị ~$prepMinutes phút';
 
   // ── Controllers ──────────────────────────────────────────────────────────
   final MapController mapController = MapController();

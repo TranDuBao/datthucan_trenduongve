@@ -50,7 +50,7 @@ class LanguageProvider extends ChangeNotifier {
     'vi': {
       // Navigation & Tabs
       'menu': 'Thực đơn',
-      'offer': 'Ưu đãi',
+      'offer': 'Cửa hàng',
       'profile': 'Hồ sơ',
       'more': 'Khác',
       'home': 'Trang chủ',

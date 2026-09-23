@@ -11,6 +11,7 @@ import 'common/globs.dart';
 import 'common/locator.dart';
 import 'common/my_http_overrides.dart';
 import 'common/service_call.dart';
+import 'providers/cart_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/map_provider.dart';
 import 'providers/theme_provider.dart';
@@ -43,6 +44,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: const MyApp(defaultHome: StartupView()),
     ),

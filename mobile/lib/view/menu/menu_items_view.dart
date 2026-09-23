@@ -3,6 +3,7 @@ import 'package:food_delivery/common/color_extension.dart';
 import 'package:food_delivery/common_widget/round_textfield.dart';
 
 import '../../common_widget/menu_item_row.dart';
+import '../../services/category_service.dart';
 import '../more/my_order_view.dart';
 import 'item_details_view.dart';
 
@@ -17,72 +18,49 @@ class MenuItemsView extends StatefulWidget {
 class _MenuItemsViewState extends State<MenuItemsView> {
   TextEditingController txtSearch = TextEditingController();
 
-  List menuItemsArr = [
-    {
-      "image": "assets/img/dess_1.png",
-      "name": "French Apple Pie",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Minute by tuk tuk",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_2.png",
-      "name": "Dark Chocolate Cake",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Cakes by Tella",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_3.png",
-      "name": "Street Shake",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Café Racer",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_4.png",
-      "name": "Fudgy Chewy Brownies",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Minute by tuk tuk",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_1.png",
-      "name": "French Apple Pie",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Minute by tuk tuk",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_2.png",
-      "name": "Dark Chocolate Cake",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Cakes by Tella",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_3.png",
-      "name": "Street Shake",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Café Racer",
-      "food_type": "Desserts"
-    },
-    {
-      "image": "assets/img/dess_4.png",
-      "name": "Fudgy Chewy Brownies",
-      "rate": "4.9",
-      "rating": "124",
-      "type": "Minute by tuk tuk",
-      "food_type": "Desserts"
-    },
-  ];
+  List menuItemsArr = [];
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mObj["items"] != null && (widget.mObj["items"] as List).isNotEmpty) {
+      menuItemsArr = widget.mObj["items"];
+    } else {
+      _loadRealMenuFromDB();
+    }
+  }
+
+  Future<void> _loadRealMenuFromDB() async {
+    setState(() => isLoading = true);
+    var resId = widget.mObj["maQuan"] ?? 0;
+    if (resId == 0) {
+      final restaurants = await CategoryService.fetchRestaurantsFromDB();
+      if (restaurants.isNotEmpty) {
+        resId = restaurants.first["maQuan"] ?? restaurants.first["id"] ?? 2;
+      }
+    }
+    if (resId == 0) resId = 2;
+
+    final categories = await CategoryService.fetchRestaurantMenuFromDB(resId);
+    if (mounted) {
+      if (categories.isNotEmpty) {
+        final cat = categories.firstWhere(
+          (c) => c["name"] == widget.mObj["name"] || c["id"] == widget.mObj["id"],
+          orElse: () => categories.first,
+        );
+        setState(() {
+          menuItemsArr = cat["items"] ?? [];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          menuItemsArr = [];
+          isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +147,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const ItemDetailsView()),
+                            builder: (context) => ItemDetailsView(itemObj: mObj)),
                       );
                     },
                   );
