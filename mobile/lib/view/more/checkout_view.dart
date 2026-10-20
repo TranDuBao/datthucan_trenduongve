@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/custom_toast.dart';
+import '../../widgets/vietqr_payment_modal.dart';
 import 'checkout_message_view.dart';
 
 class CheckoutView extends StatefulWidget {
@@ -218,6 +219,25 @@ class _CheckoutViewState extends State<CheckoutView> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (cart.discountAmount > 0) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.confirmation_number_rounded, color: Color(0xFF10B981), size: 14),
+                              const SizedBox(width: 4),
+                              Text("Giảm giá Voucher (${cart.appliedVoucherCode})", style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          Text(
+                            "-${cart.discountAmount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                            style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -258,6 +278,8 @@ class _CheckoutViewState extends State<CheckoutView> {
                             items: cart.items,
                             totalAmount: cart.total,
                             paymentMethod: methodCode,
+                            voucherCode: cart.appliedVoucherCode,
+                            voucherId: cart.appliedVoucherId,
                           );
 
                           if (mounted) {
@@ -266,14 +288,37 @@ class _CheckoutViewState extends State<CheckoutView> {
                               final orderData = res['data'];
                               cart.clearCart();
 
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                isScrollControlled: true,
-                                builder: (context) {
-                                  return CheckoutMessageView(orderData: orderData);
-                                },
-                              );
+                              final payment = orderData['payment'];
+                              final hasQr = payment != null &&
+                                  payment['qrUrl'] != null &&
+                                  payment['qrUrl'].toString().isNotEmpty;
+
+                              void showSuccessSheet() {
+                                showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: Colors.transparent,
+                                  isScrollControlled: true,
+                                  builder: (context) {
+                                    return CheckoutMessageView(orderData: orderData);
+                                  },
+                                );
+                              }
+
+                              if (hasQr) {
+                                showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: Colors.transparent,
+                                  isScrollControlled: true,
+                                  builder: (context) {
+                                    return VietQRPaymentModal(
+                                      orderData: orderData,
+                                      onPaymentSuccess: showSuccessSheet,
+                                    );
+                                  },
+                                );
+                              } else {
+                                showSuccessSheet();
+                              }
                             } else {
                               CustomToast.showError(
                                 context,

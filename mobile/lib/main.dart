@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -14,6 +15,7 @@ import 'common/service_call.dart';
 import 'providers/cart_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/map_provider.dart';
+import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
 import 'view/login/welcome_view.dart';
 import 'view/main_tabview/main_tabview.dart';
@@ -22,9 +24,13 @@ import 'view/on_boarding/startup_view.dart';
 SharedPreferences? prefs;
 
 void main() async {
-  setUpLocator();
-  HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
+  setUpLocator();
+
+  // Only bypass self-signed / local certificates in debug mode
+  if (kDebugMode) {
+    HttpOverrides.global = MyHttpOverrides();
+  }
 
   try {
     await dotenv.load(fileName: ".env");
@@ -45,6 +51,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()..initialize()),
       ],
       child: const MyApp(defaultHome: StartupView()),
     ),

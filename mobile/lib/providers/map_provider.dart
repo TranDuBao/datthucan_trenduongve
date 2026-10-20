@@ -9,6 +9,7 @@ import '../models/place_model.dart';
 import '../models/route_model.dart';
 import '../services/places_service.dart';
 import '../services/directions_service.dart';
+import '../services/category_service.dart';
 import '../config/api_config.dart';
 
 enum MapState { idle, searchingOrigin, searchingDestination, loadingRoute, showingRoute }
@@ -100,6 +101,9 @@ class MapProvider extends ChangeNotifier {
   // ── Route ─────────────────────────────────────────────────────────────────
   RouteModel? _currentRoute;
   RouteModel? get currentRoute => _currentRoute;
+
+  List<dynamic> _routeRestaurants = [];
+  List<dynamic> get routeRestaurants => _routeRestaurants;
 
   TravelMode _travelMode = TravelMode.car;
   TravelMode get travelMode => _travelMode;
@@ -340,9 +344,16 @@ class MapProvider extends ChangeNotifier {
       _state = MapState.showingRoute;
       _showRouteDetails = true;
       _fitBoundsToRoute(route.polylinePoints);
+      notifyListeners();
+
+      try {
+        _routeRestaurants = await CategoryService.fetchRestaurantsAlongRoute(route.polylinePoints);
+        notifyListeners();
+      } catch (_) {}
     } else {
       _errorMessage = 'Không tìm thấy đường đi. Vui lòng thử lại.';
       _state = MapState.idle;
+      _routeRestaurants = [];
     }
 
     notifyListeners();
@@ -417,6 +428,7 @@ class MapProvider extends ChangeNotifier {
     _originPlace = null;
     _destinationPlace = null;
     _currentRoute = null;
+    _routeRestaurants = [];
     _showRouteDetails = false;
     _isFocusMode = false;
     _state = MapState.idle;

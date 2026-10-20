@@ -52,7 +52,7 @@ export const Login: React.FC = () => {
                 type="text"
                 className="form-control"
                 style={{ paddingLeft: '38px' }}
-                placeholder="admin@smartcity.com"
+                placeholder="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -68,7 +68,7 @@ export const Login: React.FC = () => {
                 type="password"
                 className="form-control"
                 style={{ paddingLeft: '38px' }}
-                placeholder="••••••••"
+                placeholder="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

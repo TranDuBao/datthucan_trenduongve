@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth_service';
 import { UserService } from '../services/user_service';
+import { AdminService } from '../services/admin_service';
 import { AuthenticatedRequest } from '../middlewares/auth_middleware';
 
 export class AuthController {
@@ -71,22 +72,16 @@ export class AuthController {
 
   googleAuth = async (req: Request, res: Response) => {
     try {
-      const { googleId, email, fullName, avatarUrl } = req.body;
-      const name = fullName || req.body.name;
-      if (!email || !name) {
+      const idToken = req.body.idToken || req.body.id_token || req.body.token;
+      if (!idToken || typeof idToken !== 'string' || !idToken.trim()) {
         return res.status(400).json({
           statusCode: 400,
           status: "0",
-          message: 'Thông tin Google OAuth không hợp lệ!',
+          message: 'Vui lòng cung cấp Google ID Token hợp lệ!',
         });
       }
 
-      const result = await this.authService.loginWithGoogle({
-        googleId: googleId || `google_${Date.now()}`,
-        email,
-        fullName: name,
-        avatarUrl,
-      });
+      const result = await this.authService.loginWithGoogle(idToken.trim());
 
       return res.status(200).json({
         statusCode: 200,
@@ -107,22 +102,16 @@ export class AuthController {
 
   getProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      let userId = req.user?.sub;
-      if (!userId) {
-        userId = (req.body?.userId || req.body?.maTaiKhoan || req.body?.id || req.query?.userId || req.query?.id) as any;
-      }
-      if (!userId && (req.body?.email || req.query?.email)) {
-        const email = (req.body?.email || req.query?.email) as string;
-        const found = await this.userService.findByTenDangNhapOrEmail(email);
-        if (found) {
-          userId = found.taiKhoan.maTaiKhoan;
-        }
-      }
-      if (!userId) {
-        userId = 1;
+      const userId = req.user?.sub;
+      if (!userId || isNaN(Number(userId))) {
+        return res.status(401).json({
+          statusCode: 401,
+          status: "0",
+          message: 'Bạn cần đăng nhập để thực hiện chức năng này',
+        });
       }
 
-      const account = await this.userService.findById(userId);
+      const account = await this.userService.findById(Number(userId));
       if (!account) {
         return res.status(404).json({ statusCode: 404, status: "0", message: 'Không tìm thấy người dùng' });
       }
@@ -161,26 +150,22 @@ export class AuthController {
 
   updateProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const userId = req.user?.sub;
+      if (!userId || isNaN(Number(userId))) {
+        return res.status(401).json({
+          statusCode: 401,
+          status: '0',
+          message: 'Bạn cần đăng nhập để thực hiện chức năng này',
+        });
+      }
+
+      const targetUserId = Number(userId);
       const { fullName, name, email, phone, sdt, address, diaChi, avatar } = req.body;
-      let userId = req.user?.sub;
-      
-      if (!userId && email) {
-        const found = await this.userService.findByTenDangNhapOrEmail(email);
-        if (found) {
-          userId = found.taiKhoan.maTaiKhoan;
-        }
-      }
-      if (!userId) {
-        userId = req.body.userId || req.body.maTaiKhoan || req.body.id;
-      }
-      if (!userId) {
-        userId = 1; // Default fallback ID if unauthenticated in dev mode
-      }
       const hoTen = fullName || name;
       const sdtVal = phone || sdt;
       const diaChiVal = address || diaChi;
 
-      const updatedKhachHang = await this.userService.updateProfile(userId, {
+      const updatedKhachHang = await this.userService.updateProfile(targetUserId, {
         hoTen,
         email,
         phone: sdtVal,
@@ -188,7 +173,7 @@ export class AuthController {
         avatar,
       });
 
-      const account = await this.userService.findById(userId);
+      const account = await this.userService.findById(targetUserId);
       const userData = {
         id: account?.taiKhoan.maTaiKhoan,
         username: account?.taiKhoan.tenDangNhap,
@@ -204,7 +189,7 @@ export class AuthController {
 
       return res.status(200).json({
         statusCode: 200,
-        status: "1",
+        status: '1',
         message: 'Cập nhật thông tin thành công',
         payload: userData,
         data: userData,
@@ -213,7 +198,7 @@ export class AuthController {
       console.error('❌ UpdateProfile Error:', error);
       return res.status(500).json({
         statusCode: 500,
-        status: "0",
+        status: '0',
         message: error.message || 'Lỗi server!',
       });
     }
@@ -221,50 +206,117 @@ export class AuthController {
 
   changePassword = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      let userId = req.user?.sub;
-      if (!userId) {
-        userId = req.body.userId || req.body.maTaiKhoan || req.body.id;
-      }
-      if (!userId && req.body.email) {
-        const found = await this.userService.findByTenDangNhapOrEmail(req.body.email);
-        if (found) {
-          userId = found.taiKhoan.maTaiKhoan;
-        }
-      }
-      if (!userId) {
-        userId = 1;
+      const userId = req.user?.sub;
+      if (!userId || isNaN(Number(userId))) {
+        return res.status(401).json({
+          statusCode: 401,
+          status: '0',
+          message: 'Bạn cần đăng nhập để thực hiện chức năng này',
+        });
       }
 
-      const { newPassword } = req.body;
+      const { oldPassword, newPassword } = req.body;
+      if (!oldPassword) {
+        return res.status(400).json({ statusCode: 400, status: '0', message: 'Vui lòng nhập mật khẩu hiện tại!' });
+      }
       if (!newPassword || newPassword.length < 6) {
-        return res.status(400).json({ statusCode: 400, status: "0", message: 'Mật khẩu phải từ 6 ký tự trở lên!' });
+        return res.status(400).json({ statusCode: 400, status: '0', message: 'Mật khẩu mới phải từ 6 ký tự trở lên!' });
+      }
+
+      const account = await this.userService.findById(Number(userId));
+      if (!account || !account.taiKhoan) {
+        return res.status(404).json({ statusCode: 404, status: '0', message: 'Không tìm thấy tài khoản!' });
       }
 
       const bcrypt = await import('bcrypt');
+      const isMatch = await bcrypt.compare(oldPassword, account.taiKhoan.matKhau);
+      if (!isMatch) {
+        return res.status(400).json({ statusCode: 400, status: '0', message: 'Mật khẩu hiện tại không chính xác!' });
+      }
+
       const hash = await bcrypt.hash(newPassword, 10);
-      await this.userService.updatePassword(userId, hash);
+      await this.userService.updatePassword(Number(userId), hash);
+      const { TokenBlacklistService } = await import('../services/token_blacklist_service');
+      TokenBlacklistService.getInstance().revokeAllUserTokens(Number(userId));
 
       return res.status(200).json({
         statusCode: 200,
-        status: "1",
+        status: '1',
         message: 'Đổi mật khẩu thành công',
       });
     } catch (error: any) {
       console.error('❌ ChangePassword Error:', error);
       return res.status(500).json({
         statusCode: 500,
-        status: "0",
+        status: '0',
         message: error.message || 'Lỗi server!',
       });
     }
   };
 
   logout = async (req: Request, res: Response) => {
-    return res.status(200).json({
-      statusCode: 200,
-      status: "1",
-      message: 'Đăng xuất thành công',
-    });
+    try {
+      const authHeader = req.headers.authorization;
+      const accessToken =
+        authHeader && authHeader.startsWith('Bearer ')
+          ? authHeader.split(' ')[1]
+          : undefined;
+      const refreshToken = req.body?.refreshToken || req.body?.refresh_token;
+
+      await this.authService.logout(accessToken, refreshToken);
+
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Đăng xuất thành công, phiên đăng nhập đã được thu hồi',
+      });
+    } catch (error: any) {
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Đăng xuất thành công',
+      });
+    }
+  };
+
+  refreshToken = async (req: Request, res: Response) => {
+    try {
+      const refreshTokenStr =
+        req.body?.refreshToken || req.body?.refresh_token;
+      if (!refreshTokenStr) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Vui lòng cung cấp refresh token',
+        });
+      }
+
+      const result = await this.authService.refreshTokens(refreshTokenStr);
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Làm mới token thành công',
+        payload: result,
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(401).json({
+        statusCode: 401,
+        status: '0',
+        message: error.message || 'Làm mới token thất bại',
+      });
+    }
+  };
+
+  scanCCCD = async (req: Request, res: Response) => {
+    try {
+      const { image, frontImage, backImage, side } = req.body;
+      const adminService = new AdminService();
+      const result = await adminService.scanCCCD({ image, frontImage, backImage, side }, side);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
   };
 }
 

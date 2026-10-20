@@ -25,7 +25,7 @@ export const requireRole = (allowedRoles: string[]) => {
     const isAllowed = allowedRoles.some((r) => {
       const normalizedR = r.toUpperCase() === 'CUA_HANG' ? 'CUAN_HANG' : r.toUpperCase();
       return normalizedR === normalizedUserRole;
-    }) || userRole === 'ADMIN';
+    });
 
     if (!isAllowed) {
       return res.status(403).json({
@@ -53,25 +53,27 @@ export const requireStoreOwner = async (
     });
   }
 
-  // Nếu là ADMIN, cho phép truyền maQuan qua query/body nếu có, hoặc lấy quán đầu tiên
-  if (req.user.role === 'ADMIN') {
-    const requestedStoreId = req.query.maQuan || req.body.maQuan;
-    if (requestedStoreId) {
-      req.maQuan = Number(requestedStoreId);
-    }
-    return next();
-  }
-
   try {
     const storeRepo = AppDataSource.getRepository(CuaHangModel);
+    const explicitStoreId = req.query.maQuan || req.body.maQuan;
+
+    // Find store linked to this user's account ID (req.user.sub)
     const store = await storeRepo.findOne({
       where: { maTaiKhoan: req.user.sub },
     });
 
     if (!store) {
-      return res.status(403).json({
-        statusCode: 403,
-        message: 'Tài khoản của bạn chưa được liên kết với nhà hàng nào trong hệ thống',
+      return res.status(404).json({
+        statusCode: 404,
+        message: 'Tài khoản của bạn chưa được liên kết với nhà hàng nào.',
+      });
+    }
+
+    // If explicit maQuan is passed, verify it belongs to them; return 404 to prevent probing other stores
+    if (explicitStoreId && Number(explicitStoreId) !== store.maQuan) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: 'Không tìm thấy nhà hàng',
       });
     }
 

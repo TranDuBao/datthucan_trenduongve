@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
 import 'package:food_delivery/common/extension.dart';
-import 'package:food_delivery/common_widget/round_button.dart';
+import 'package:food_delivery/common_widget/auth_header_widget.dart';
 import 'package:food_delivery/view/login/new_password_view.dart';
 import 'package:otp_pin_field/otp_pin_field.dart';
 
@@ -22,156 +22,170 @@ class _OTPViewState extends State<OTPView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: TColor.bgOf(context),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 25),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 64,
-              ),
-              Text(
-                "We have sent an OTP to your email",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: TColor.primaryText,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Text(
-                "Please check your email ${widget.email}\ncontinue to reset your password",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: TColor.secondaryText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(
-                height: 60,
-              ),
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top curved orange header
+            AuthHeaderWidget(
+              showBackButton: true,
+              onBack: () => Navigator.pop(context),
+            ),
 
-              SizedBox(height: 60, child: OtpPinField(
-                    key: _otpPinFieldController,
-                    autoFillEnable: true,
+            // Form Body
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Xác thực mã OTP",
+                    style: TextStyle(
+                      color: TColor.primaryTextOf(context),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Mã xác thực đã được gửi tới email ${widget.email}.\nVui lòng nhập mã gồm 6 chữ số bên dưới:",
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-                    ///for Ios it is not needed as the SMS autofill is provided by default, but not for Android, that's where this key is useful.
-                    textInputAction: TextInputAction.done,
-
-                    ///in case you want to change the action of keyboard
-                    /// to clear the Otp pin Controller
-                    onSubmit: (newCode) {
-                      code = newCode;
-                      btnSubmit();
-                      /// return the entered pin
-                    },
-                    onChange: (newCode) {
-                      code = newCode;
-
-                      /// return the entered pin
-                    },
-                    onCodeChanged: (newCode) {
-                      code = newCode;
-                    },
-
-                    fieldWidth: 40,
-
-                    /// to decorate your Otp_Pin_Field
-                    otpPinFieldStyle: OtpPinFieldStyle(
-
-                        /// border color for inactive/unfocused Otp_Pin_Field
-                        defaultFieldBorderColor: Colors.transparent,
-
-                        /// border color for active/focused Otp_Pin_Field
-                        activeFieldBorderColor: Colors.transparent,
-
-                        /// Background Color for inactive/unfocused Otp_Pin_Field
-                        defaultFieldBackgroundColor: TColor.textfield,
-                        activeFieldBackgroundColor: TColor.textfield
-
-                        /// Background Color for active/focused Otp_Pin_Field
+                  // OTP Pin Field
+                  Center(
+                    child: SizedBox(
+                      height: 60,
+                      child: OtpPinField(
+                        key: _otpPinFieldController,
+                        autoFillEnable: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmit: (newCode) {
+                          code = newCode;
+                          btnSubmit();
+                        },
+                        onChange: (newCode) {
+                          code = newCode;
+                        },
+                        onCodeChanged: (newCode) {
+                          code = newCode;
+                        },
+                        fieldWidth: 44,
+                        otpPinFieldStyle: OtpPinFieldStyle(
+                          defaultFieldBorderColor: isDark ? const Color(0xFF2C3244) : const Color(0xFFE5E7EB),
+                          activeFieldBorderColor: const Color(0xFFFF5216),
+                          defaultFieldBackgroundColor: isDark ? const Color(0xFF1E2230) : const Color(0xFFF9FAFB),
+                          activeFieldBackgroundColor: isDark ? const Color(0xFF1E2230) : const Color(0xFFF9FAFB),
                         ),
-                    maxLength: 6,
+                        maxLength: 6,
+                        showCursor: true,
+                        cursorColor: const Color(0xFFFF5216),
+                        showCustomKeyboard: false,
+                        cursorWidth: 2,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        otpPinFieldDecoration: OtpPinFieldDecoration.defaultPinBoxDecoration,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 36),
 
-                    /// no of pin field
-                    showCursor: true,
-
-                    /// bool to show cursor in pin field or not
-                    cursorColor: TColor.placeholder,
-
-                    /// to choose cursor color
-                    upperChild: const Column(
-                      children: [
-                        SizedBox(height: 30),
-                        Icon(Icons.flutter_dash_outlined, size: 150),
-                        SizedBox(height: 20),
+                  // Submit Button
+                  Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF4800), Color(0xFFFF5F15)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
                       ],
                     ),
-                    showCustomKeyboard: false,
-
-                    ///bool which manage to show custom keyboard
-                    // customKeyboard: Container(),  /// Widget which help you to show your own custom keyboard in place if default custom keyboard
-                    // showDefaultKeyboard: true,  ///bool which manage to show default OS keyboard
-                    cursorWidth: 3,
-
-                    /// to select cursor width
-                    mainAxisAlignment: MainAxisAlignment.center,
-
-                    /// place otp pin field according to yourselft
-
-                    /// predefine decorate of pinField use  OtpPinFieldDecoration.defaultPinBoxDecoration||OtpPinFieldDecoration.underlinedPinBoxDecoration||OtpPinFieldDecoration.roundedPinBoxDecoration
-                    ///use OtpPinFieldDecoration.custom  (by using this you can make Otp_Pin_Field according to yourself like you can give fieldBorderRadius,fieldBorderWidth and etc things)
-                    otpPinFieldDecoration:
-                        OtpPinFieldDecoration.defaultPinBoxDecoration),),
-
-              
-              const SizedBox(
-                height: 30,
-              ),
-              RoundButton(
-                  title: "Next",
-                  onPressed: () {
-                    btnSubmit();
-                  }),
-                TextButton(
-                onPressed: () {
-                   serviceCallForgotRequest({"email": widget.email});
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Didn't Received? ",
-                      style: TextStyle(
-                          color: TColor.secondaryText,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
+                    child: ElevatedButton(
+                      onPressed: btnSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        "Xác nhận mã",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ),
-                    Text(
-                      "Click Here",
-                      style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Resend Code Link
+                  Center(
+                    child: InkWell(
+                      onTap: () {
+                        serviceCallForgotRequest({"email": widget.email});
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: "Chưa nhận được mã? ",
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: "Gửi lại",
+                                style: TextStyle(
+                                  color: Color(0xFFFF5216),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-   //TODO: Action
   void btnSubmit() {
     if (code.length != 6) {
-      mdShowAlert(Globs.appName, MSG.enterCode, () {});
+      mdShowAlert("Thông báo", "Vui lòng nhập đủ 6 chữ số mã OTP", () {}, isError: true);
       return;
     }
 
@@ -179,8 +193,6 @@ class _OTPViewState extends State<OTPView> {
 
     serviceCallForgotVerify({"email": widget.email, "reset_code": code});
   }
-
-  //TODO: ServiceCall
 
   void serviceCallForgotVerify(Map<String, dynamic> parameter) {
     Globs.showHUD();
@@ -191,16 +203,17 @@ class _OTPViewState extends State<OTPView> {
       if (responseObj[KKey.status] == "1") {
         var payloadObj = responseObj[KKey.payload] as Map? ?? {};
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => NewPasswordView(nObj: payloadObj,)));
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewPasswordView(nObj: payloadObj),
+          ),
+        );
       } else {
-        mdShowAlert(Globs.appName,
-            responseObj[KKey.message] as String? ?? MSG.fail, () {});
+        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Mã xác thực không hợp lệ", () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert(Globs.appName, err.toString(), () {});
+      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
     });
   }
 
@@ -211,16 +224,13 @@ class _OTPViewState extends State<OTPView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-         mdShowAlert(Globs.appName,
-            "reset code successfully", () {});
-       
+        mdShowAlert("Thông báo", "Đã gửi lại mã xác thực tới email của bạn", () {}, isError: false);
       } else {
-        mdShowAlert(Globs.appName,
-            responseObj[KKey.message] as String? ?? MSG.fail, () {});
+        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Gửi lại thất bại", () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert(Globs.appName, err.toString(), () {});
+      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
     });
   }
 }

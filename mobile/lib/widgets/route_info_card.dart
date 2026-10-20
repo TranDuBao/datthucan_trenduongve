@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/map_provider.dart';
 import '../models/route_model.dart';
+import '../view/menu/restaurant_detail_view.dart';
+import '../view/main_tabview/main_tabview.dart';
 
 class RouteInfoCard extends StatelessWidget {
   const RouteInfoCard({super.key});
@@ -70,7 +72,7 @@ class _RouteCard extends StatelessWidget {
                   ),
                 ),
                 _buildRouteAndPriceRow(context),
-                _buildFreeshipBanner(),
+                _buildRouteBanner(),
                 _buildConfirmButton(context),
               ],
             ),
@@ -247,7 +249,7 @@ class _RouteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFreeshipBanner() {
+  Widget _buildRouteBanner() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -301,21 +303,7 @@ class _RouteCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: GestureDetector(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Đã xác nhận lộ trình ghé lấy tại: ${provider.destinationPlace?.name ?? "Điểm đến"}',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: const Color(0xFFFC6011),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        },
+        onTap: () => _showRouteRestaurantsSheet(context),
         child: Container(
           width: double.infinity,
           height: 50,
@@ -353,6 +341,229 @@ class _RouteCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showRouteRestaurantsSheet(BuildContext context) {
+    final restaurants = provider.routeRestaurants;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E293B),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: Color(0xFFFC6011), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Quán ăn trên lộ trình (${restaurants.length})',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            'Tiện đường ghé lấy • Không cần đi vòng',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF94A3B8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white12, height: 1),
+              Flexible(
+                child: restaurants.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search_off_rounded, color: Color(0xFF94A3B8), size: 48),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Đang tải hoặc chưa có quán ăn trực tiếp trên trục đường này',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFC6011),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                final mainTab = context.findAncestorStateOfType<MainTabViewState>();
+                                if (mainTab != null) mainTab.changeTab(1);
+                              },
+                              child: Text('Khám phá toàn bộ thực đơn', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        itemCount: restaurants.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (ctx, idx) {
+                          final r = restaurants[idx] as Map;
+                          final storeName = (r['tenQuan'] ?? r['name'] ?? 'Nhà hàng').toString();
+                          final address = (r['diaChi'] ?? r['address'] ?? 'Địa chỉ tự đến lấy').toString();
+                          final int dist = (r['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
+                          final int prepTime = (r['thoiGianChuanBi'] as num?)?.toInt() ?? 20;
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.restaurant_rounded, color: Color(0xFFFC6011), size: 24),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        storeName,
+                                        style: GoogleFonts.outfit(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        address,
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF94A3B8),
+                                          fontSize: 11,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              dist > 0 ? 'Lệch tuyến ${dist}m' : 'Ngay trên tuyến',
+                                              style: GoogleFonts.outfit(
+                                                color: const Color(0xFF10B981),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '• Chuẩn bị ~$prepTime phút',
+                                            style: GoogleFonts.outfit(
+                                              color: const Color(0xFF94A3B8),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFC6011),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    elevation: 0,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => RestaurantDetailView(restaurantObj: r),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Xem Menu',
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

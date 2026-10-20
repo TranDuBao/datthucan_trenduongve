@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
+import '../common/globs.dart';
 
 class SmartNetworkImage extends StatelessWidget {
   final String imageUrl;
@@ -11,6 +12,7 @@ class SmartNetworkImage extends StatelessWidget {
   final double height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final IconData? placeholderIcon;
 
   const SmartNetworkImage({
     super.key,
@@ -19,24 +21,25 @@ class SmartNetworkImage extends StatelessWidget {
     required this.height,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.placeholderIcon,
   });
 
   String _formatUrl(String url) {
     if (url.isEmpty) return url;
-    // Replace localhost with 10.0.2.2 for Android Emulator access
-    if (!kIsWeb && Platform.isAndroid && url.contains('localhost')) {
-      return url.replaceAll('localhost', '10.0.2.2');
-    }
-    return url;
+    return SVKey.formatImageUrl(url);
   }
 
   @override
   Widget build(BuildContext context) {
+    final double safeIconSize = (height > 0 && height.isFinite && height < 1000)
+        ? height * 0.4
+        : ((width > 0 && width.isFinite && width < 1000) ? width * 0.4 : 40.0);
+
     Widget fallbackWidget = Container(
       width: width,
       height: height,
       color: TColor.primary.withOpacity(0.12),
-      child: Icon(Icons.restaurant, color: TColor.primary, size: width * 0.4),
+      child: Icon(placeholderIcon ?? Icons.restaurant, color: TColor.primary, size: safeIconSize),
     );
 
     final cleanUrl = imageUrl.trim();

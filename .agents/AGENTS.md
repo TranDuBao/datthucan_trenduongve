@@ -27,6 +27,38 @@ taxi booking, driver management or vehicle dispatch.
 
 The existing project implementation is the source of truth.
 
+## NO SAMPLE DATA WITHOUT APPROVAL — CRITICAL
+
+- NEVER create, insert, seed, generate or hardcode any sample, mock,
+  demo, test, placeholder or dummy data unless the user has explicitly
+  approved it first.
+
+- This applies everywhere, with no exceptions:
+  - database records (any table)
+  - seed scripts, migrations containing data, SQL INSERT statements
+  - API responses, hardcoded arrays, JSON files, fixtures
+  - UI screens, providers, services and tests
+
+- If data is missing, show the appropriate empty state. Do NOT add
+  records to make a screen look populated.
+
+- If you believe sample data is genuinely needed:
+  1. STOP. Do not create it.
+  2. Ask the user for approval, and state exactly what data you want
+     to create, where it will be stored, how many records, and why.
+  3. Wait for explicit confirmation ("yes", "approved", "duyệt").
+  4. Only then create exactly what was approved, nothing more.
+  5. Clearly label it as test data and tell the user how to remove it.
+
+- Approval covers only the specific data described in the request.
+  It does not give permission to create more data later.
+
+- Silence, a vague request, or an unrelated request (for example
+  "connect the data", "fix the bug", "add socket.io") is NOT approval.
+
+- If unsure whether something counts as sample data, treat it as
+  sample data and ask first.
+
 ## ABSOLUTE CHANGE SCOPE RULE — CRITICAL
 
 NEVER make changes outside the explicit scope of the user's request.
@@ -337,6 +369,10 @@ DO NOT make that change.
 
 - Prefer subtle, natural animations over exaggerated effects.
 
+### Mobile Loading UI Rule
+- When coding in the mobile application (Flutter), ALL data loading states (menu, restaurant lists, dish items, order history, category filters, profile, etc.) MUST use Skeleton Loading (`widgets/skeleton/*`).
+- EXCEPTION: The Home Screen (`lib/screens/home_screen.dart` and `lib/widgets/search_bar_widget.dart` for map/GPS route loading) MUST use standard loading indicators (`CircularProgressIndicator`), NOT skeleton loading.
+
 ## 12. Performance
 
 - Avoid unnecessary API requests.
@@ -394,6 +430,159 @@ architecture, database, security or existing functionality,
 ask for clarification before making a risky change.
 
 Never claim that a feature works without actually verifying it.
+
+## 15. Realtime / Socket.io (CRITICAL)
+
+Applies to any task involving socket, realtime, live status, gateway, room, emit, or features that must stay in sync between the customer app, the restaurant side and the backend (order status, table reservation status, payment confirmation, in-app notifications).
+
+### Purpose and boundaries
+- Socket.io is used ONLY to push changes between customer app, restaurant side and backend.
+- The database is the source of truth. Socket events notify about a change; they never replace stored data.
+- Do NOT introduce ride-hailing concepts (driver, trip, dispatch, vehicle tracking). Location data is used only if the project already uses it, for restaurant discovery near the route.
+- Do NOT redesign UI, rename endpoints or refactor unrelated code while adding realtime.
+
+### Before writing code
+- Search for an existing gateway, socket service, provider and event names (e.g. grep "socket", "gateway") and reuse/extend them.
+- Do NOT create a second gateway or socket service if one exists.
+- Check package.json / pubspec.yaml before adding any dependency. Typical packages: @nestjs/websockets, @nestjs/platform-socket.io, socket.io (backend); socket_io_client (Flutter).
+- Read existing entities/enums (e.g. order status, reservation status) and reuse their values. Do not invent new statuses.
+
+### Data flow
+Database write (TypeORM FIRST in NestJS Service)
+    ↓
+Realtime emitter service (thin wrapper)
+    ↓
+Gateway (transport only: auth, join/leave room, emit)
+    ↓
+Socket.io Flutter SocketService (lib/services, registered in lib/common/locator.dart)
+    ↓
+Provider (lib/providers) subscribes and updates state
+    ↓
+Existing Screen rebuilds from provider state (UI unchanged)
+
+- Emit events ONLY AFTER the database write has succeeded.
+- If emit fails, log with the project logger; do not swallow silently and do not roll back the business change.
+- Gateway contains NO business logic and NO database queries.
+- Other modules call the realtime emitter service; they do not touch the socket server directly.
+- Screens must not call the socket directly. Only SocketService and Providers do.
+
+### Backend structure (src/modules/realtime/ unless one already exists)
+- realtime.gateway.ts: connection auth, room join/leave only.
+- realtime.service.ts: emitToUser / emitToRoom wrapper.
+- events/realtime-events.ts: single file of event and room name constants.
+- dto/: DTOs for client-to-server messages, validated with class-validator.
+- realtime.module.ts: exports the emitter service.
+
+### Rooms and event naming
+Rooms (decided by the server, never trusted from client input):
+- user:{userId}: joined automatically after auth; personal notifications and payment results.
+- order:{orderId}: customer who owns the order and the receiving restaurant.
+- restaurant:{restaurantId}: authenticated staff of that restaurant; new orders, new reservations.
+- reservation:{reservationId}: customer and restaurant.
+
+Event names use domain:action in snake_case and are defined once as constants. Examples: order:created, order:status_changed, reservation:status_changed, payment:confirmed, payment:failed, notification:new, and client-to-server room:join, room:leave.
+
+Payload shape must be consistent across events: { id, status, updatedAt, data }. Send IDs and changed fields only. Do not send full entities containing sensitive data. The client refetches via the existing REST API when it needs more.
+
+### Security
+- Authenticate every connection in the gateway by verifying the JWT from handshake.auth.token. Disconnect on failure. Do not read tokens from query strings.
+- Take userId and role from the verified token and store them on client.data. Never take them from client input.
+- On room:join, verify ownership/membership through existing services before joining. Reject with a short safe error code otherwise.
+- Validate every inbound payload with a DTO. Rate-limit chatty events.
+- CORS origins, secrets and URLs come from environment variables. Never hardcode them and never overwrite existing .env files.
+- Never send stack traces or database errors through socket acks or error events.
+- Never log tokens, authorization headers or payment credentials.
+- Payment webhooks (PayOS / MoMo / VietQR): verify the signature first, update payment and order in the database, then emit.
+
+### Flutter rules
+- Exactly ONE socket connection per app session, shared through the locator. Never one connection per screen.
+- Connect after login, disconnect on logout. Base URL and token come from existing config and auth storage.
+- Providers subscribe in a start/listen method and MUST remove listeners in dispose to avoid leaks and duplicate handlers.
+- On socket reconnect, the provider refetches current state ONCE from the existing REST API, because events may have been missed while offline.
+- Keep loading, empty and error states. Never fill missing data with fake or sample data to make a screen look live.
+- Do not modify layout, styling, navigation or animations as part of a realtime task.
+
+### Performance
+- Join rooms only for what is active (for example active orders) and leave when finished.
+- Do not poll where a socket event exists. Use REST only for initial load and reconnect resync.
+- If the backend runs multiple instances, a Socket.io Redis adapter is needed. Ask the user before adding it, since it adds infrastructure.
+
+### Testing (required before saying done)
+- Valid token connects; missing/invalid token is rejected.
+- User A cannot join or receive events of user B's order.
+- Trigger the real business action (not a fake emit) and confirm the correct room receives the event exactly once.
+- Client goes offline then reconnects: state resyncs from REST.
+- Empty, loading and error states still render in the existing UI.
+- Existing REST endpoints and response formats are unchanged.
+- Report honestly what was verified and what could not be run.
+
+### Prohibitions (Do NOT)
+- Put business logic or TypeORM queries inside the gateway.
+- Emit before the database write is committed.
+- Broadcast with server.emit for user-specific data.
+- Hardcode fake events or sample lists to simulate realtime.
+- Create a new provider/service when an existing one can subscribe.
+- Change UI as part of a realtime task.
+
+## 16. Authentication, Role Permission & Ownership — CRITICAL
+
+Any feature that belongs to one person (their orders, reservations,
+payments, notifications, profile) or to one restaurant must be
+reachable ONLY by its owner. This is enforced on the SERVER.
+
+Apply three layers, in this order:
+1. Authentication: a global JWT guard verifies the token and sets the
+   current user.
+2. Role permission: `@Roles(...)` + RolesGuard decides whether a role
+   may call an endpoint. Use Guards (not plain middleware) because
+   guards can read route metadata.
+3. Ownership: the service checks that the specific record belongs to
+   the current user (or to the user's restaurant). Passing the role
+   check is NOT enough.
+
+Rules:
+- Take userId, role and restaurantId ONLY from the verified token.
+  NEVER from the request body, query or URL for "my" data.
+  Prefer `/me/...` routes.
+- Filter queries by owner inside the query itself
+  (e.g. where id AND userId), not after fetching everything.
+- Return 404 (not 403) when a record exists but belongs to someone
+  else, so ids cannot be probed.
+- Deny by default. Anything not explicitly allowed is forbidden.
+- Restaurant A must never read or modify restaurant B's orders,
+  reservations, menu or data.
+- Admin access must be explicit in code. Money-related or destructive
+  admin actions (refund, cancel paid order, lock account) must be
+  written to an audit log.
+- DTOs must whitelist fields. Clients must not be able to send or
+  change `role`, `userId`, `restaurantId`, `status` or `isPaid`.
+- Status changes must validate the allowed transition and who is
+  making it. Only the server may mark an order as paid.
+- Keep one shared `canAccess` check per resource and reuse it for REST
+  and Socket.io. Do not copy the check into every controller.
+- Hiding buttons or pages in the UI is NOT access control. Admin web
+  route protection is UX only; every admin API needs a server-side
+  role guard.
+- Socket.io follows the same rules: verify the JWT in the handshake,
+  and check ownership before every room join.
+- When adding an endpoint, state which roles may call it and how
+  ownership is checked.
+- Inspect and reuse the existing guards, roles and token payload.
+  Do NOT replace working authentication or change the token format.
+- Do not weaken authentication or authorization to make a screen or
+  test work.
+
+Required tests:
+- No, invalid or expired token: rejected (401).
+- User A requesting user B's order, reservation or payment: not
+  returned (404).
+- Customer calling a restaurant-only or admin-only endpoint: 403.
+- Restaurant A staff accessing restaurant B's data: not returned or
+  changed.
+- Extra fields in the body (role, userId, restaurantId): ignored or
+  rejected.
+- Socket: user A cannot join user B's room or receive its events.
+- Existing endpoints and login still work unchanged.
 
 ## DATA SOURCE & UI PRESERVATION — CRITICAL
 

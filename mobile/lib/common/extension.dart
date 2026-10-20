@@ -8,7 +8,7 @@ extension StateExtension on State {
     VoidCallback onPressed, {
     String buttonTitle = "Hoàn tất",
     TextAlign messageTextAlign = TextAlign.center,
-    bool isError = false,
+    bool isError = true,
     String? infoTag,
   }) {
     CustomModalAlert.show(

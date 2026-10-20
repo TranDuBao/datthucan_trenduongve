@@ -9,6 +9,7 @@ import '../models/route_model.dart';
 import '../models/place_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/route_info_card.dart';
+import '../view/menu/restaurant_detail_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -193,29 +194,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E3A),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
-                ),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF00E5FF),
-                  strokeWidth: 2.5,
-                ),
-              ),
+            const CircularProgressIndicator(
+              color: Color(0xFF00E5FF),
             ),
             const SizedBox(height: 16),
             Text(
               'Đang xác định vị trí...',
               style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Colors.white,
                 fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -235,9 +223,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: const Color(0xFF1E1E3A),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
-                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -256,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -366,10 +351,12 @@ class _OptimizedMapWidget extends StatelessWidget {
   const _OptimizedMapWidget();
 
   List<Marker> _buildMarkers(
+    BuildContext context,
     LatLng currentPosition,
     PlaceModel? originPlace,
-    PlaceModel? destinationPlace,
-  ) {
+    PlaceModel? destinationPlace, [
+    List<dynamic> routeRestaurants = const [],
+  ]) {
     final markers = <Marker>[];
 
     // Current position marker
@@ -503,6 +490,95 @@ class _OptimizedMapWidget extends StatelessWidget {
       );
     }
 
+    // Along-route restaurant markers (Orange foodie badges)
+    for (final res in routeRestaurants) {
+      final double? lat = (res['lat'] as num?)?.toDouble();
+      final double? lng = (res['lng'] as num?)?.toDouble();
+      final String storeName = (res['tenQuan'] ?? res['name'] ?? 'Quán tiện đường').toString();
+      final int dist = (res['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
+
+      if (lat != null && lng != null) {
+        markers.add(
+          Marker(
+            point: LatLng(lat, lng),
+            width: 140,
+            height: 54,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RestaurantDetailView(restaurantObj: res as Map),
+                  ),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFC6011), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.storefront_rounded, color: Color(0xFFFC6011), size: 12),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            storeName,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (dist > 0) ...[
+                          const SizedBox(width: 3),
+                          Text(
+                            '• ${dist}m',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF94A3B8),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFC6011),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(Icons.fastfood_rounded, color: Colors.white, size: 10),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     return markers;
   }
 
@@ -515,12 +591,14 @@ class _OptimizedMapWidget extends StatelessWidget {
       LatLng position,
       PlaceModel? origin,
       PlaceModel? destination,
+      List<dynamic> routeRestaurants,
     })>(
       selector: (_, p) => (
         route: p.currentRoute,
         position: p.currentPosition,
         origin: p.originPlace,
         destination: p.destinationPlace,
+        routeRestaurants: p.routeRestaurants,
       ),
       builder: (context, data, _) {
         return FlutterMap(
@@ -546,7 +624,12 @@ class _OptimizedMapWidget extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate: ApiConfig.lightTileUrl,
-              userAgentPackageName: 'com.personal.google_maps_app',
+              fallbackUrl: ApiConfig.fallbackTileUrl,
+              subdomains: const ['0', '1', '2', '3'],
+              userAgentPackageName: 'com.codeforany.food_delivery',
+              errorTileCallback: (tile, error, stackTrace) {
+                debugPrint('⚠️ TileLayer load error: $error');
+              },
             ),
             if (data.route != null)
               PolylineLayer(
@@ -561,7 +644,13 @@ class _OptimizedMapWidget extends StatelessWidget {
                 ],
               ),
             MarkerLayer(
-              markers: _buildMarkers(data.position, data.origin, data.destination),
+              markers: _buildMarkers(
+                context,
+                data.position,
+                data.origin,
+                data.destination,
+                data.routeRestaurants,
+              ),
             ),
           ],
         );

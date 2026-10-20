@@ -52,4 +52,47 @@ export class RestaurantController {
       });
     }
   };
+
+  getAlongRoute = async (req: Request, res: Response) => {
+    try {
+      const { routePoints, points, maxDistance } = req.body;
+      const pts = routePoints || points;
+      if (!Array.isArray(pts) || pts.length === 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Vui lòng cung cấp danh sách tọa độ tuyến đường (routePoints)',
+        });
+      }
+
+      const maxDistanceMeters = Number(maxDistance) || 1000;
+      const restaurants = await this.restaurantService.getRestaurantsAlongRoute(pts, maxDistanceMeters);
+
+      return res.status(200).json({
+        status: 'success',
+        total: restaurants.length,
+        data: restaurants,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        status: 'error',
+        message: error.message || 'Lỗi khi tìm kiếm nhà hàng trên lộ trình',
+      });
+    }
+  };
+
+  getFoodsOverview = async (req: Request, res: Response) => {
+    try {
+      const foods = await this.restaurantService.getAllFoodsOverview();
+      return res.status(200).json({
+        status: 'success',
+        total: foods.length,
+        data: foods,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        status: 'error',
+        message: error.message || 'Lỗi khi lấy danh sách món ăn tổng hợp',
+      });
+    }
+  };
 }

@@ -1,0 +1,23 @@
+-- Migration 002: Add review columns and danhgia_mon table
+-- UP:
+ALTER TABLE danhgia ADD COLUMN IF NOT EXISTS maquan INT NULL;
+ALTER TABLE danhgia ADD COLUMN IF NOT EXISTS is_edited BOOLEAN DEFAULT FALSE;
+ALTER TABLE danhgia ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE danhgia ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE;
+ALTER TABLE danhgia ADD COLUMN IF NOT EXISTS ly_do_an TEXT NULL;
+
+CREATE TABLE IF NOT EXISTS danhgia_mon (
+  madanhgiamon SERIAL PRIMARY KEY,
+  madanhgia INT REFERENCES danhgia(madanhgia) ON DELETE CASCADE,
+  mamon INT REFERENCES monan(mamonan) ON DELETE CASCADE,
+  soluongsao INT DEFAULT 5,
+  nhanxet TEXT
+);
+
+-- DOWN:
+-- DROP TABLE IF EXISTS danhgia_mon;
+-- ALTER TABLE danhgia DROP COLUMN IF EXISTS ly_do_an;
+-- ALTER TABLE danhgia DROP COLUMN IF EXISTS is_hidden;
+-- ALTER TABLE danhgia DROP COLUMN IF EXISTS updated_at;
+-- ALTER TABLE danhgia DROP COLUMN IF EXISTS is_edited;
+-- ALTER TABLE danhgia DROP COLUMN IF EXISTS maquan;

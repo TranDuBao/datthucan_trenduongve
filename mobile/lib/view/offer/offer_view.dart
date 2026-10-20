@@ -6,7 +6,10 @@ import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
 import 'package:food_delivery/providers/language_provider.dart';
 import '../more/my_order_view.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../menu/restaurant_detail_view.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/skeleton/restaurant_card_skeleton.dart';
 
 class OfferView extends StatefulWidget {
   const OfferView({super.key});
@@ -42,11 +45,11 @@ class _OfferViewState extends State<OfferView> {
 
   Future<void> _loadRealRestaurantsFromDB() async {
     setState(() => isLoading = true);
-    final list = await CategoryService.fetchRestaurantsFromDB();
-    if (mounted) {
+    try {
+      final list = await CategoryService.fetchRestaurantsFromDB();
+      if (!mounted) return;
       if (list.isNotEmpty) {
-        List formattedList = [];
-        for (var res in list) {
+        final formattedList = await Future.wait(list.map((res) async {
           final maQuan = res["maQuan"] ?? res["id"] ?? 0;
           final menu = await CategoryService.fetchRestaurantMenuFromDB(maQuan);
           List featuredItems = [];
@@ -61,15 +64,16 @@ class _OfferViewState extends State<OfferView> {
             }
           }
 
-          formattedList.add({
+          return {
             "id": maQuan,
             "maQuan": maQuan,
             "name": res["tenQuan"] ?? "Quán ăn lộ trình",
             "tenQuan": res["tenQuan"] ?? "Quán ăn lộ trình",
             "address": res["diaChi"] ?? "",
-            "diaChi": res["diaChi"] ?? "",
-            "rate": "4.9",
-            "rating": "128",
+            "rate": (res["diemDanhGiaTB"] != null && (double.tryParse(res["diemDanhGiaTB"].toString()) ?? 0) > 0)
+                ? (double.tryParse(res["diemDanhGiaTB"].toString()) ?? 0).toStringAsFixed(1)
+                : "0.0",
+            "rating": (res["soLuongDanhGia"] ?? res["soLuotDanhGia"] ?? 0).toString(),
             "type": "Món Việt",
             "food_type": "Đặc sản lộ trình",
             "discount": "ƯU ĐÃI LỘ TRÌNH 10K",
@@ -77,18 +81,26 @@ class _OfferViewState extends State<OfferView> {
             "gift": "Đặt trước ghé lấy tiện đường",
             "image": res["img"] ?? "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500",
             "featured_items": featuredItems.take(3).toList(),
+          };
+        }));
+
+        if (mounted) {
+          setState(() {
+            offerArr = formattedList;
+            isLoading = false;
           });
         }
-
-        setState(() {
-          offerArr = formattedList;
-          isLoading = false;
-        });
       } else {
-        setState(() {
-          offerArr = [];
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            offerArr = [];
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
       }
     }
   }
@@ -114,7 +126,11 @@ class _OfferViewState extends State<OfferView> {
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: _loadRealRestaurantsFromDB,
+        color: TColor.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
@@ -164,7 +180,16 @@ class _OfferViewState extends State<OfferView> {
                         ),
                       ],
                     ),
-                    Stack(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        NotificationBell(
+                          backgroundColor: TColor.cardOf(context),
+                          iconColor: TColor.primaryTextOf(context),
+                          border: Border.all(color: TColor.borderOf(context), width: 1),
+                        ),
+                        const SizedBox(width: 8),
+                        Stack(
                       children: [
                         Container(
                           width: 44,
@@ -183,7 +208,7 @@ class _OfferViewState extends State<OfferView> {
                               );
                             },
                             icon: Icon(
-                              Icons.shopping_bag_outlined,
+                              Icons.shopping_cart_outlined,
                               color: TColor.primaryTextOf(context),
                               size: 20,
                             ),
@@ -216,6 +241,8 @@ class _OfferViewState extends State<OfferView> {
                             );
                           },
                         ),
+                      ],
+                    ),
                       ],
                     ),
                   ],
@@ -295,17 +322,42 @@ class _OfferViewState extends State<OfferView> {
 
               // Restaurant Cards List from DB
               isLoading
-                  ? Center(child: CircularProgressIndicator(color: TColor.primary))
+                  ? const RestaurantSkeletonList(itemCount: 3)
                   : displayList.isEmpty
                       ? Container(
                           padding: const EdgeInsets.all(32),
                           child: Center(
-                            child: Text(
-                              "Không tìm thấy cửa hàng nào thuộc danh mục này",
-                              style: TextStyle(
-                                color: TColor.secondaryTextOf(context),
-                                fontSize: 14,
-                              ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.storefront_outlined,
+                                  size: 40,
+                                  color: TColor.secondaryTextOf(context).withOpacity(0.4),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "Không tìm thấy cửa hàng nào thuộc danh mục này",
+                                  style: TextStyle(
+                                    color: TColor.secondaryTextOf(context),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed: _loadRealRestaurantsFromDB,
+                                  icon: const Icon(Icons.refresh, size: 16),
+                                  label: const Text("Tải lại danh sách quán"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: TColor.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         )
@@ -348,31 +400,12 @@ class _OfferViewState extends State<OfferView> {
                                     // Image Stack Banner
                                     Stack(
                                       children: [
-                                        pObj["image"].toString().startsWith("http")
-                                            ? Image.network(
-                                                pObj["image"].toString(),
-                                                width: double.infinity,
-                                                height: 160,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) => Container(
-                                                  width: double.infinity,
-                                                  height: 160,
-                                                  color: Colors.grey.shade800,
-                                                  child: const Icon(Icons.restaurant, color: Colors.white, size: 40),
-                                                ),
-                                              )
-                                            : Image.asset(
-                                                pObj["image"].toString(),
-                                                width: double.infinity,
-                                                height: 160,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) => Container(
-                                                  width: double.infinity,
-                                                  height: 160,
-                                                  color: Colors.grey.shade800,
-                                                  child: const Icon(Icons.restaurant, color: Colors.white, size: 40),
-                                                ),
-                                              ),
+                                        SmartNetworkImage(
+                                          imageUrl: pObj["image"].toString(),
+                                          width: double.infinity,
+                                          height: 160,
+                                          fit: BoxFit.cover,
+                                        ),
                                         // Gradient Overlay for readability
                                         Positioned.fill(
                                           child: Container(
@@ -565,9 +598,13 @@ class _OfferViewState extends State<OfferView> {
                                                       children: [
                                                         ClipRRect(
                                                           borderRadius: BorderRadius.circular(8),
-                                                          child: imgUrl.startsWith("http")
-                                                              ? Image.network(imgUrl, width: 42, height: 42, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.fastfood, color: TColor.primary, size: 20))
-                                                              : Image.asset(imgUrl, width: 42, height: 42, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.fastfood, color: TColor.primary, size: 20)),
+                                                          child: SmartNetworkImage(
+                                                            imageUrl: imgUrl,
+                                                            width: 42,
+                                                            height: 42,
+                                                            fit: BoxFit.cover,
+                                                            placeholderIcon: Icons.fastfood,
+                                                          ),
                                                         ),
                                                         const SizedBox(width: 8),
                                                         Column(
@@ -651,6 +688,7 @@ class _OfferViewState extends State<OfferView> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

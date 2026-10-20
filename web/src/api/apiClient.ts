@@ -1,12 +1,24 @@
-const BASE_URL = 'http://localhost:3000/api/v1';
+const envApiUrl = (import.meta as any).env?.VITE_API_URL;
+export const API_HOST = envApiUrl ? envApiUrl.replace(/\/+$/, '').replace(/\/api\/v1$/, '') : 'http://localhost:3000';
+export const API_BASE_URL = `${API_HOST}/api/v1`;
+const BASE_URL = API_BASE_URL;
 
-export async function apiFetch<T>(
+export interface ApiResponse<T = any> {
+  statusCode: number;
+  status?: string;
+  message?: string;
+  data?: T;
+  payload?: T;
+  [key: string]: any;
+}
+
+export async function apiFetch<T = any>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<{ statusCode: number; status?: string; message?: string; data?: T; payload?: T }> {
+): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('auth_token');
 
-  const headers: Record<String, string> = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
@@ -31,6 +43,13 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
     throw new Error(json.message || `Lỗi yêu cầu API (${response.status})`);
   }
 

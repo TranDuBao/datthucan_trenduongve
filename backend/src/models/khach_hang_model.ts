@@ -27,6 +27,9 @@ export class KhachHangModel {
   @Column({ name: 'diachi', nullable: true, type: 'text' })
   diaChi?: string;
 
+  @Column({ name: 'ngaysinh', nullable: true, type: 'date' })
+  ngaySinh?: Date | string | null;
+
   @Column({ name: 'avatar', nullable: true, length: 255 })
   avatar?: string;
 

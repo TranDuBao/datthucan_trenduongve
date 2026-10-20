@@ -81,8 +81,13 @@ class Globs {
 }
 
 class SVKey {
-  // 10.0.2.2 is the special IP for Android Emulator to connect to localhost of host PC
+  // Support custom API_URL passed at build time via --dart-define=API_URL=...
+  // Fallback to 10.0.2.2 for Android Emulator, or localhost for Web/Desktop/iOS Sim
   static String get mainUrl {
+    const customUrl = String.fromEnvironment('API_URL');
+    if (customUrl.isNotEmpty) {
+      return customUrl;
+    }
     if (!kIsWeb && Platform.isAndroid) {
       return "http://10.0.2.2:3000";
     }
@@ -108,6 +113,24 @@ class SVKey {
   static String svRestaurantMenu(int id) => '${mainUrl}/api/v1/restaurants/$id/menu';
   static String get svOrders => '${mainUrl}/api/v1/orders';
   static String get svVerifyPayment => '${mainUrl}/api/v1/payments/verify';
+
+  static String formatImageUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return '';
+    final trimmed = rawUrl.trim();
+    if (trimmed.startsWith('data:image')) {
+      return trimmed;
+    }
+    // Handle uploaded images containing /uploads/
+    if (trimmed.contains('/uploads/')) {
+      final fileName = trimmed.split('/uploads/').last;
+      return '${mainUrl}/uploads/$fileName';
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+    return '${mainUrl}$cleanPath';
+  }
 }
 
 class KKey {

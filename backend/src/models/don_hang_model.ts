@@ -31,4 +31,7 @@ export class DonHangModel {
 
   @Column({ name: 'phuongthucthanhtoan', length: 50, default: 'COD' })
   phuongThucThanhToan: string;
+
+  @Column({ name: 'lydohuy', type: 'text', nullable: true })
+  lyDoHuy?: string;
 }

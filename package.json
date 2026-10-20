@@ -1,0 +1,12 @@
+{
+  "name": "smart-food-route-workspace",
+  "version": "1.0.0",
+  "description": "Smart Food Route Monorepo Workspace",
+  "scripts": {
+    "test": "docker exec datthucan_backend node /app/dist/phase4_regression.test.js",
+    "test:backend": "docker exec datthucan_backend node /app/dist/phase4_regression.test.js",
+    "build:web": "npm --prefix web run build",
+    "dev:web": "npm --prefix web run dev",
+    "dev:backend": "npm --prefix backend run dev"
+  }
+}

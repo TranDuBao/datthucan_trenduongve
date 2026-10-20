@@ -44,6 +44,10 @@ class CustomToast {
   static void showError(BuildContext context, String message) {
     show(context, message: message, isError: true);
   }
+
+  static void showInfo(BuildContext context, String message) {
+    show(context, message: message, isError: false, icon: Icons.info_outline_rounded);
+  }
 }
 
 class _ToastWidget extends StatefulWidget {

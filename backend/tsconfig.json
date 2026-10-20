@@ -23,9 +23,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "src/modules",
-    "src/app.module.ts",
-    "src/main.ts"
+    "dist"
   ]
 }

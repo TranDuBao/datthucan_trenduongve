@@ -3,9 +3,12 @@ import 'package:food_delivery/common/color_extension.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../services/notification_service.dart';
 import '../menu/menu_view.dart';
+import '../main_tabview/main_tabview.dart';
 import 'my_order_view.dart';
+import 'order_history_view.dart';
 
 class NotificationsView extends StatefulWidget {
   const NotificationsView({super.key});
@@ -33,10 +36,12 @@ class _NotificationsViewState extends State<NotificationsView> {
         notifications = list;
         isLoading = false;
       });
+      context.read<NotificationProvider>().refreshAll();
     }
   }
 
   void _markAllAsRead() {
+    context.read<NotificationProvider>().markAllAsRead();
     setState(() {
       for (var n in notifications) {
         n.isUnread = false;
@@ -48,11 +53,11 @@ class _NotificationsViewState extends State<NotificationsView> {
 
   List<NotificationModel> get _filteredNotifications {
     if (selectTab == 1) {
-      return notifications.where((n) => n.type == 'ORDER').toList();
+      return notifications.where((n) => n.type.toLowerCase().contains('order')).toList();
     } else if (selectTab == 2) {
-      return notifications.where((n) => n.type == 'PROMO').toList();
+      return notifications.where((n) => n.type.toLowerCase().contains('voucher') || n.type.toLowerCase().contains('promo')).toList();
     } else if (selectTab == 3) {
-      return notifications.where((n) => n.type == 'SYSTEM').toList();
+      return notifications.where((n) => !n.type.toLowerCase().contains('order') && !n.type.toLowerCase().contains('voucher')).toList();
     }
     return notifications;
   }
@@ -232,10 +237,16 @@ class _NotificationsViewState extends State<NotificationsView> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const MenuView()),
-                        );
+                        final mainTab = context.findAncestorStateOfType<MainTabViewState>();
+                        if (mainTab != null) {
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                          mainTab.changeTab(0, popToRoot: true);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const MenuView()),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: TColor.primary,
@@ -443,9 +454,17 @@ class _NotificationsViewState extends State<NotificationsView> {
 
     return InkWell(
       onTap: () {
+        context.read<NotificationProvider>().markAsRead(item);
         setState(() {
           item.isUnread = false;
         });
+
+        if (item.orderId != null && item.orderId! > 0) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OrderHistoryView()),
+          );
+        }
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(

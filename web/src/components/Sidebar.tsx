@@ -11,6 +11,10 @@ import {
   Ticket,
   LogOut,
   Sliders,
+  DollarSign,
+  ShieldAlert,
+  CalendarDays,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,18 +26,21 @@ export const Sidebar: React.FC = () => {
     { title: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { title: 'Người Dùng', path: '/admin/users', icon: Users },
     { title: 'Nhà Hàng', path: '/admin/restaurants', icon: Store },
-    { title: 'Danh Mục Món', path: '/admin/categories', icon: FolderTree },
-    { title: 'Món Ăn', path: '/admin/foods', icon: UtensilsCrossed },
     { title: 'Đơn Hàng', path: '/admin/orders', icon: ShoppingBag },
-    { title: 'Thanh Toán', path: '/admin/payments', icon: CreditCard },
+    { title: 'Đánh Giá & Kiểm Duyệt', path: '/admin/reviews', icon: Star },
+    { title: 'Nhật Ký', path: '/admin/logs', icon: ShieldAlert },
   ];
 
   const restaurantNav = [
     { title: 'Dashboard', path: '/restaurant/dashboard', icon: LayoutDashboard },
     { title: 'Quản Lý Đơn Hàng', path: '/restaurant/orders', icon: ShoppingBag },
     { title: 'Thực Đơn Quán', path: '/restaurant/menu', icon: UtensilsCrossed },
+    { title: 'Đặt Bàn', path: '/restaurant/reservations', icon: CalendarDays },
+    { title: 'Voucher Khuyến Mãi', path: '/restaurant/vouchers', icon: Ticket },
+    { title: 'Doanh Thu & Báo Cáo', path: '/restaurant/revenue', icon: DollarSign },
     { title: 'Thông Tin Nhà Hàng', path: '/restaurant/profile', icon: Store },
   ];
+
 
   const navItems = isAdmin ? adminNav : restaurantNav;
 

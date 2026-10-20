@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiFetch } from '../api/apiClient';
+import { isTokenExpired, getUserRoleFromToken } from '../utils/jwtUtils';
 
 export interface User {
   id: number;
@@ -20,12 +21,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('auth_user');
-    return saved ? JSON.parse(saved) : null;
+  const [token, setToken] = useState<string | null>(() => {
+    const savedToken = localStorage.getItem('auth_token');
+    if (!savedToken || isTokenExpired(savedToken)) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      return null;
+    }
+    return savedToken;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('auth_token'));
+
+  const [user, setUser] = useState<User | null>(() => {
+    const savedToken = localStorage.getItem('auth_token');
+    const savedUser = localStorage.getItem('auth_user');
+    if (!savedToken || isTokenExpired(savedToken) || !savedUser) {
+      return null;
+    }
+    try {
+      const parsedUser = JSON.parse(savedUser);
+      const verifiedRole = getUserRoleFromToken(savedToken);
+      if (verifiedRole) {
+        parsedUser.role = verifiedRole;
+      }
+      return parsedUser;
+    } catch {
+      return null;
+    }
+  });
+
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (token && isTokenExpired(token)) {
+      logout();
+    }
+  }, [token]);
 
   const login = async (email: string, pass: string) => {
     setIsLoading(true);
@@ -37,7 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const payload = res.payload || res.data;
       const accessToken = payload.accessToken;
-      const userInfo = payload.user;
+      const userInfo = payload.user || {};
+
+      const verifiedRole = getUserRoleFromToken(accessToken);
+      if (verifiedRole) {
+        userInfo.role = verifiedRole;
+      }
 
       localStorage.setItem('auth_token', accessToken);
       localStorage.setItem('auth_user', JSON.stringify(userInfo));

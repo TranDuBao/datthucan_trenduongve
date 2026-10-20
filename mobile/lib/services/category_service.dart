@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../common/globs.dart';
+import 'package:latlong2/latlong.dart';
 
 class CategoryModel {
   final int id;
@@ -48,14 +49,15 @@ class CategoryService {
           'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> body = json.decode(response.body);
         return body.map((item) => CategoryModel.fromJson(item)).toList();
       }
     } catch (e) {
-      // Return empty list if network/DB has no categories
+      // ignore: avoid_print
+      print('❌ Error fetchCategoriesFromDB: $e');
     }
 
     return [];
@@ -71,13 +73,16 @@ class CategoryService {
           'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final resJson = json.decode(response.body);
         return resJson['data'] ?? [];
       }
-    } catch (_) {}
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ Error fetchRestaurantMenuFromDB: $e');
+    }
 
     return [];
   }
@@ -92,13 +97,73 @@ class CategoryService {
           'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final resJson = json.decode(response.body);
         return resJson['data'] ?? [];
       }
-    } catch (_) {}
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ Error fetchRestaurantsFromDB: $e');
+    }
+
+    return [];
+  }
+
+  static Future<List<dynamic>> fetchRestaurantsAlongRoute(
+    List<LatLng> points, {
+    int maxDistanceMeters = 1000,
+  }) async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.nodeUrl}/api/v1/restaurants/along-route');
+      final body = json.encode({
+        'routePoints': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
+        'maxDistance': maxDistanceMeters,
+      });
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final resJson = json.decode(response.body);
+        return resJson['data'] ?? [];
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ Error fetchRestaurantsAlongRoute: $e');
+    }
+
+    return [];
+  }
+
+  static Future<List<dynamic>> fetchFoodsOverviewFromDB() async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.nodeUrl}/api/v1/restaurants/foods-overview');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final resJson = json.decode(response.body);
+        return resJson['data'] ?? [];
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ Error fetchFoodsOverviewFromDB: $e');
+    }
 
     return [];
   }

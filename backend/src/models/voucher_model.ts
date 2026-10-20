@@ -11,11 +11,14 @@ export class VoucherModel {
   @Column({ name: 'tenvoucher', length: 100 })
   tenVoucher: string;
 
+  @Column({ name: 'mota', type: 'text', nullable: true })
+  moTa?: string;
+
   @Column({ name: 'giamgia', type: 'decimal', precision: 12, scale: 2 })
   giamGia: number;
 
   @Column({ name: 'loaigiam', length: 20, default: 'VND' })
-  loaiGiam: string;
+  loaiGiam: string; // 'VND' or 'PERCENT'
 
   @Column({ name: 'giatrigiamtoida', type: 'decimal', precision: 12, scale: 2, nullable: true })
   giaTriGiamToiDa?: number;
@@ -26,6 +29,9 @@ export class VoucherModel {
   @CreateDateColumn({ name: 'ngaytao' })
   ngayTao: Date;
 
+  @Column({ name: 'ngaybatdau', type: 'timestamp', nullable: true })
+  ngayBatDau?: Date;
+
   @Column({ name: 'ngayhethan', type: 'timestamp', nullable: true })
   ngayHetHan?: Date;
 
@@ -35,8 +41,11 @@ export class VoucherModel {
   @Column({ name: 'soluongdaluu', default: 0 })
   soLuongDaLuu: number;
 
+  @Column({ name: 'soluongdasudung', default: 0 })
+  soLuongDaSuDung: number;
+
   @Column({ name: 'trangthai', length: 30, default: 'HOAT_DONG' })
-  trangThai: string;
+  trangThai: string; // 'HOAT_DONG', 'TAM_TAT'
 
   @Column({ name: 'maquan', nullable: true })
   maQuan?: number;

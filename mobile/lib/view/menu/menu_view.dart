@@ -7,12 +7,15 @@ import 'package:food_delivery/providers/language_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../services/category_service.dart';
+import '../../common/string_utils.dart';
 import '../more/my_order_view.dart';
-import 'menu_items_view.dart';
-import 'item_details_view.dart';
 import '../../widgets/route_pickup_food_card.dart';
-import '../../screens/home_screen.dart';
+import '../../widgets/notification_bell.dart';
 import '../main_tabview/main_tabview.dart';
+import '../../widgets/menu/quick_categories_widget.dart';
+import '../../widgets/menu/flash_sale_section_widget.dart';
+import '../../widgets/menu/menu_filtered_foods_widget.dart';
+import '../../widgets/menu/menu_categories_section_widget.dart';
 
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
@@ -22,11 +25,15 @@ class MenuView extends StatefulWidget {
 }
 
 class _MenuViewState extends State<MenuView> {
-  TextEditingController txtSearch = TextEditingController();
+  final TextEditingController txtSearch = TextEditingController();
   bool isLoading = true;
   List<CategoryModel> categoryList = [];
   List<dynamic> flashSaleItems = [];
   List<dynamic> routePickupFoods = [];
+  List<dynamic> allFoodsList = [];
+
+  String _searchQuery = '';
+  String? _selectedCategory;
 
   Timer? _flashSaleTimer;
   int _flashSaleSeconds = 0;
@@ -49,20 +56,23 @@ class _MenuViewState extends State<MenuView> {
       }
     });
   }
-  final List<Map<String, String>> quickCategories = [
-    {"name": "Món Giảm 50%", "icon": "🔥", "bg": "0xFFFFF3E0", "color": "0xFFE65100"},
-    {"name": "Trà Sữa / Cà Phê", "icon": "☕", "bg": "0xFFFFF8E1", "color": "0xFFF57F17"},
-    {"name": "Phở & Bún Nóng", "icon": "🍜", "bg": "0xFFFFEBEE", "color": "0xFFC62828"},
-    {"name": "Cơm Trưa Nóng", "icon": "🍽️", "bg": "0xFFE8F5E9", "color": "0xFF2E7D32"},
-    {"name": "Bánh Mì & Nhanh", "icon": "🥪", "bg": "0xFFE3F2FD", "color": "0xFF1565C0"},
-    {"name": "Ăn Kèm & Vặt", "icon": "🍪", "bg": "0xFFFCE4EC", "color": "0xFFAD1457"},
-    {"name": "Eat Clean Healthy", "icon": "🥗", "bg": "0xFFE0F2F1", "color": "0xFF00695C"},
-    {"name": "Ghé Lấy 0Đ", "icon": "🎫", "bg": "0xFFFFFDE7", "color": "0xFFFBC02D"},
-  ];
 
   @override
   void initState() {
     super.initState();
+    txtSearch.addListener(() {
+      if (mounted) {
+        final currentText = txtSearch.text.trim();
+        if (_searchQuery != currentText) {
+          setState(() {
+            _searchQuery = currentText;
+            if (_searchQuery.isNotEmpty && _selectedCategory != null) {
+              _selectedCategory = null;
+            }
+          });
+        }
+      }
+    });
     _startFlashSaleTimer();
     _loadCategoriesFromDB();
   }
@@ -78,75 +88,235 @@ class _MenuViewState extends State<MenuView> {
   String get _flashSaleMinutes => ((_flashSaleSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
   String get _flashSaleSecs => (_flashSaleSeconds % 60).toString().padLeft(2, '0');
 
-  Widget _buildTimerBox(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-    );
+  bool _isSoldOutItem(dynamic item) {
+    if (item is! Map) return true;
+    final int qty = int.tryParse((item['soLuongMon'] ?? item['quantity'] ?? item['soLuong'] ?? 0).toString()) ?? 0;
+    final String status = (item['trangThaiMon'] ?? item['status'] ?? '').toString().toUpperCase();
+    return qty <= 0 || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG';
+  }
+
+  bool _isDrink(String text) {
+    return text.contains("tra sua") ||
+        text.contains("ca phe") ||
+        text.contains("coffee") ||
+        text.contains("matcha") ||
+        text.contains("nuoc sam") ||
+        text.contains("tra tac") ||
+        text.contains("tra da") ||
+        text.contains("tra cung dinh") ||
+        text.contains("giai khat") ||
+        text.contains("sinh to") ||
+        text.contains("nuoc ep") ||
+        text.contains("nuoc giai khat") ||
+        (text.contains("tra ") && !text.contains("trang mieng") && !text.contains("trang tri"));
+  }
+
+  bool _isRice(String text) {
+    return text.contains("com") ||
+        text.contains("com tam") ||
+        text.contains("com suon") ||
+        text.contains("com ga") ||
+        text.contains("com chien") ||
+        text.contains("canh kho qua");
+  }
+
+  bool _isNoodle(String text) {
+    return text.contains("pho") ||
+        text.contains("bun bo") ||
+        text.contains("bun") ||
+        text.contains("hu tieu") ||
+        text.contains("mien") ||
+        text.contains("noodle");
+  }
+
+  bool _isSnackDessert(String text) {
+    return text.contains("banh sinh nhat") ||
+        text.contains("kem") ||
+        text.contains("che") ||
+        text.contains("quay") ||
+        text.contains("trung chen") ||
+        text.contains("cha cua") ||
+        text.contains("banh loc") ||
+        text.contains("an kem");
+  }
+
+  bool _isBakeryFast(String text) {
+    return text.contains("croissant") ||
+        text.contains("banh mi") ||
+        text.contains("burger") ||
+        text.contains("sandwich") ||
+        text.contains("xoi") ||
+        text.contains("pizza");
+  }
+
+  bool _matchesCategory(Map item, String category) {
+    final name = (item["name"] ?? item["tenMonAn"] ?? "").toString();
+    final catName = (item["categoryName"] ?? item["tenDanhMuc"] ?? "").toString();
+    final combined = "$name $catName";
+    final norm = StringUtils.removeDiacritics(combined);
+
+    switch (category) {
+      case "Món Giảm 50%":
+        final price = (item["price"] ?? item["gia"] ?? item["giaMonAn"] ?? 0) as num;
+        final originalPrice = (item["originalPrice"] ?? item["giaGoc"] ?? 0) as num;
+        if (originalPrice > price) return true;
+        return price <= 35000;
+
+      case "Trà Sữa / Cà Phê":
+        return _isDrink(norm) && !_isRice(norm) && !_isNoodle(norm);
+
+      case "Phở & Bún Nóng":
+        return _isNoodle(norm) && !_isRice(norm) && !_isDrink(norm);
+
+      case "Cơm Trưa Nóng":
+        return _isRice(norm) && !_isSnackDessert(norm) && !_isDrink(norm) && !_isNoodle(norm);
+
+      case "Bánh Mì & Nhanh":
+        return _isBakeryFast(norm) && !_isRice(norm) && !_isNoodle(norm);
+
+      case "Ăn Kèm & Vặt":
+        return _isSnackDessert(norm) && !_isRice(norm) && !_isNoodle(norm);
+
+      case "Eat Clean Healthy":
+        return norm.contains("clean") ||
+            norm.contains("healthy") ||
+            norm.contains("salad") ||
+            norm.contains("chay") ||
+            norm.contains("nuoc sam") ||
+            norm.contains("hat chia") ||
+            norm.contains("rau");
+
+      case "Ghé Lấy 0Đ":
+      default:
+        return true;
+    }
+  }
+
+  bool _matchesSearch(Map item, String query) {
+    if (query.trim().isEmpty) return true;
+    final name = (item["name"] ?? item["tenMonAn"] ?? "").toString();
+    final catName = (item["categoryName"] ?? item["tenDanhMuc"] ?? "").toString();
+
+    // Prioritize food name and category matching
+    if (StringUtils.fuzzyMatch(name, query)) return true;
+    if (StringUtils.fuzzyMatch(catName, query)) return true;
+
+    // Only match restaurant name if query is long enough
+    final storeName = (item["tenQuan"] ?? item["storeName"] ?? "").toString();
+    if (query.trim().length >= 4 && StringUtils.fuzzyMatch(storeName, query)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  List<dynamic> get filteredFoods {
+    return allFoodsList.where((item) {
+      if (item is! Map) return false;
+
+      // Exclude sold out / 0 quantity items
+      if (_isSoldOutItem(item)) {
+        return false;
+      }
+
+      if (_selectedCategory != null && !_matchesCategory(item, _selectedCategory!)) {
+        return false;
+      }
+      if (_searchQuery.isNotEmpty && !_matchesSearch(item, _searchQuery)) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  List<String> get _currentSuggestions {
+    if (_searchQuery.isEmpty) {
+      return ["Cơm", "Phở", "Trà sữa", "Cà phê", "Bánh mì", "Bún bò"];
+    }
+
+    final queryNorm = StringUtils.removeDiacritics(_searchQuery);
+    final suggestions = <String>{};
+
+    if (queryNorm.contains("com") || "com".contains(queryNorm)) {
+      suggestions.add("Cơm tấm");
+      suggestions.add("Cơm sườn");
+      suggestions.add("Cơm tấm bì chả");
+    } else if (queryNorm.contains("pho") || "pho".contains(queryNorm)) {
+      suggestions.add("Phở bò tái");
+      suggestions.add("Phở bò nạm");
+      suggestions.add("Phở đặc biệt");
+    } else if (queryNorm.contains("bun") || "bun".contains(queryNorm)) {
+      suggestions.add("Bún bò Huế");
+      suggestions.add("Bún bò giò heo");
+      suggestions.add("Bún bò tái");
+    } else if (queryNorm.contains("tra") || "tra".contains(queryNorm)) {
+      suggestions.add("Trà sữa Phúc Long");
+      suggestions.add("Trà tắc xí muội");
+      suggestions.add("Trà đá thốt nốt");
+    } else if (queryNorm.contains("ca phe") || "ca phe".contains(queryNorm)) {
+      suggestions.add("Cà phê sữa đá");
+      suggestions.add("Cà phê phin sữa");
+    }
+
+    for (var item in allFoodsList) {
+      if (item is Map) {
+        final name = (item["name"] ?? item["tenMonAn"] ?? "").toString();
+        if (StringUtils.fuzzyMatch(name, _searchQuery) && name.isNotEmpty) {
+          suggestions.add(name);
+          if (suggestions.length >= 6) break;
+        }
+      }
+    }
+
+    return suggestions.toList();
+  }
+
+  void _sortMenuItems(List<dynamic> items) {
+    items.sort((a, b) {
+      final aMap = a is Map ? a : {};
+      final bMap = b is Map ? b : {};
+      final aSoldOut = _isSoldOutItem(aMap);
+      final bSoldOut = _isSoldOutItem(bMap);
+
+      if (aSoldOut != bSoldOut) {
+        return aSoldOut ? 1 : -1;
+      }
+      final aSales = int.tryParse((aMap['soLuongDaBan'] ?? aMap['soLuotBan'] ?? aMap['luotBan'] ?? aMap['soldCount'] ?? 0).toString()) ?? 0;
+      final bSales = int.tryParse((bMap['soLuongDaBan'] ?? bMap['soLuotBan'] ?? bMap['luotBan'] ?? bMap['soldCount'] ?? 0).toString()) ?? 0;
+      if (bSales != aSales) {
+        return bSales.compareTo(aSales);
+      }
+      final aRating = double.tryParse((aMap['diemDanhGiaTB'] ?? aMap['rating'] ?? 0.0).toString()) ?? 0.0;
+      final bRating = double.tryParse((bMap['diemDanhGiaTB'] ?? bMap['rating'] ?? 0.0).toString()) ?? 0.0;
+      return bRating.compareTo(aRating);
+    });
   }
 
   Future<void> _loadCategoriesFromDB() async {
     setState(() => isLoading = true);
-    final restaurants = await CategoryService.fetchRestaurantsFromDB();
-    if (mounted && restaurants.isNotEmpty) {
-      List<dynamic> allFoods = [];
-      List<CategoryModel> categoryListResult = [];
+    try {
+      final results = await Future.wait([
+        CategoryService.fetchCategoriesFromDB(),
+        CategoryService.fetchFoodsOverviewFromDB(),
+      ]);
+      final cats = results[0] as List<CategoryModel>;
+      final foods = results[1] as List<dynamic>;
 
-      for (var res in restaurants) {
-        final resId = res["maQuan"] ?? res["id"];
-        final storeName = res["tenQuan"] ?? res["name"] ?? "Cửa hàng";
-        final storeLat = (res["lat"] as num?)?.toDouble() ?? 10.762622;
-        final storeLng = (res["lng"] as num?)?.toDouble() ?? 106.682029;
-
-        if (resId != null) {
-          final rawMenu = await CategoryService.fetchRestaurantMenuFromDB(resId);
-          for (var cat in rawMenu) {
-            final itemsList = cat["items"] as List? ?? [];
-            for (var item in itemsList) {
-              final Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
-              itemMap["tenQuan"] = itemMap["tenQuan"] ?? storeName;
-              itemMap["lat"] = itemMap["lat"] ?? storeLat;
-              itemMap["lng"] = itemMap["lng"] ?? storeLng;
-              allFoods.add(itemMap);
-            }
-
-            if (categoryListResult.length < 8) {
-              final catImage = itemsList.isNotEmpty && itemsList.first["image"] != null && itemsList.first["image"].toString().startsWith("http")
-                  ? itemsList.first["image"].toString()
-                  : (res["img"] ?? 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500');
-
-              categoryListResult.add(CategoryModel(
-                id: cat["id"] ?? 0,
-                maQuan: resId,
-                key: cat["name"]?.toString().toLowerCase() ?? 'cat',
-                name: cat["name"] ?? 'Danh mục',
-                image: catImage,
-                itemsCount: cat["itemsCount"] ?? itemsList.length,
-                items: itemsList,
-              ));
-            }
-          }
-        }
-      }
+      _sortMenuItems(foods);
 
       if (mounted) {
         setState(() {
-          categoryList = categoryListResult;
-          flashSaleItems = allFoods.take(6).toList();
-          routePickupFoods = allFoods.toList();
+          allFoodsList = foods.toList();
+          categoryList = cats;
+          flashSaleItems = foods.take(6).toList();
+          routePickupFoods = foods.toList();
           isLoading = false;
         });
-        return;
       }
-    }
-
-    final list = await CategoryService.fetchCategoriesFromDB();
-    if (mounted) {
-      setState(() {
-        categoryList = list;
-        isLoading = false;
-      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -162,17 +332,23 @@ class _MenuViewState extends State<MenuView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
+    context.watch<LanguageProvider>();
     final mapProv = context.watch<MapProvider>();
     final userLat = mapProv.currentPosition.latitude;
     final userLng = mapProv.currentPosition.longitude;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final isFiltering = _searchQuery.isNotEmpty || _selectedCategory != null;
+
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: RefreshIndicator(
+          onRefresh: _loadCategoriesFromDB,
+          color: TColor.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -243,7 +419,13 @@ class _MenuViewState extends State<MenuView> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                    NotificationBell(
+                      backgroundColor: TColor.cardOf(context),
+                      iconColor: TColor.primaryTextOf(context),
+                      border: Border.all(color: TColor.borderOf(context), width: 1),
+                    ),
+                    const SizedBox(width: 8),
                     Stack(
                       children: [
                         Container(
@@ -263,7 +445,7 @@ class _MenuViewState extends State<MenuView> {
                               );
                             },
                             icon: Icon(
-                              Icons.shopping_bag_outlined,
+                              Icons.shopping_cart_outlined,
                               color: TColor.primaryTextOf(context),
                               size: 20,
                             ),
@@ -322,33 +504,39 @@ class _MenuViewState extends State<MenuView> {
                       Expanded(
                         child: TextField(
                           controller: txtSearch,
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val.trim();
+                              if (_searchQuery.isNotEmpty && _selectedCategory != null) {
+                                _selectedCategory = null;
+                              }
+                            });
+                          },
                           style: TextStyle(
                             color: TColor.primaryTextOf(context),
                             fontSize: 13,
                           ),
                           decoration: InputDecoration(
-                            hintText: "Tìm kiếm phở bò, trà sữa, quán gần...",
+                            hintText: "Tìm kiếm phở bò, cơm tấm, trà sữa...",
                             hintStyle: TextStyle(
                               color: TColor.secondaryTextOf(context).withOpacity(0.7),
                               fontSize: 13,
                             ),
                             border: InputBorder.none,
                             isDense: true,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF262A36) : const Color(0xFFFFF0E6),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          "Gần đây",
-                          style: TextStyle(
-                            color: TColor.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear_rounded, size: 18),
+                                    color: TColor.secondaryTextOf(context),
+                                    onPressed: () {
+                                      txtSearch.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                  )
+                                : null,
                           ),
                         ),
                       ),
@@ -357,9 +545,61 @@ class _MenuViewState extends State<MenuView> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
-              // 3. Hero Promo Banner Carousel (Gradient Orange to Green)
+              // Search Suggestions Row (Gợi ý tìm kiếm thông minh)
+              SizedBox(
+                height: 32,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _currentSuggestions.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final suggestion = _currentSuggestions[index];
+                    return GestureDetector(
+                      onTap: () {
+                        txtSearch.text = suggestion;
+                        setState(() {
+                          _searchQuery = suggestion;
+                          _selectedCategory = null;
+                        });
+                        FocusScope.of(context).unfocus();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF262A36) : const Color(0xFFFFF0E6),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFFC6011).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search, size: 12, color: Color(0xFFFC6011)),
+                            const SizedBox(width: 4),
+                            Text(
+                              suggestion,
+                              style: const TextStyle(
+                                color: Color(0xFFFC6011),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // 3. Hero Promo Banner
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -389,16 +629,23 @@ class _MenuViewState extends State<MenuView> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                "⚡ ƯU ĐÃI GHÉ LẤY",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.bolt_rounded, color: Colors.yellowAccent, size: 14),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "ƯU ĐÃI GHÉ LẤY",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -463,534 +710,131 @@ class _MenuViewState extends State<MenuView> {
               const SizedBox(height: 20),
 
               // 4. Quick Categories 8 Icons Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: quickCategories.length,
-                  itemBuilder: (context, index) {
-                    final cat = quickCategories[index];
-                    final bgColor = Color(int.parse(cat["bg"]!));
-                    final textColor = Color(int.parse(cat["color"]!));
+              QuickCategoriesWidget(
+                selectedCategory: _selectedCategory,
+                onCategorySelected: (catName) {
+                  setState(() {
+                    if (_selectedCategory == catName) {
+                      _selectedCategory = null;
+                    } else {
+                      _selectedCategory = catName;
+                      txtSearch.clear();
+                      _searchQuery = '';
+                    }
+                  });
+                },
+              ),
 
-                    return GestureDetector(
-                      onTap: () {},
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1F2430) : bgColor,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: isDark ? const Color(0xFF2E3545) : Colors.transparent),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(cat["icon"]!, style: const TextStyle(fontSize: 22)),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            cat["name"]!,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF333333), fontSize: 10, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    );
+              // 5. Conditional Rendering: Filtered List or Standard Sections
+              if (isFiltering)
+                MenuFilteredFoodsWidget(
+                  filteredFoods: filteredFoods,
+                  searchQuery: _searchQuery,
+                  selectedCategory: _selectedCategory,
+                  onClearFilter: () {
+                    setState(() {
+                      _selectedCategory = null;
+                      txtSearch.clear();
+                      _searchQuery = '';
+                    });
                   },
+                )
+              else ...[
+                const SizedBox(height: 24),
+
+                // Flash Sale Section
+                FlashSaleSectionWidget(
+                  flashSaleItems: flashSaleItems,
+                  hours: _flashSaleHours,
+                  minutes: _flashSaleMinutes,
+                  seconds: _flashSaleSecs,
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // 5. Flash Sale Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const Text("⚡ FLASH SALE", style: TextStyle(color: Color(0xFFD32F2F), fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    const SizedBox(width: 8),
-                    _buildTimerBox(_flashSaleHours),
-                    const Text(" : ", style: TextStyle(fontWeight: FontWeight.bold)),
-                    _buildTimerBox(_flashSaleMinutes),
-                    const Text(" : ", style: TextStyle(fontWeight: FontWeight.bold)),
-                    _buildTimerBox(_flashSaleSecs),
-                    const Spacer(),
-                    Text("Xem tất cả >", style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 12, fontWeight: FontWeight.w600)),
-                  ],
+                // Category Groups Section
+                MenuCategoriesSectionWidget(
+                  categoryList: categoryList,
+                  isLoading: isLoading,
+                  onRetry: _loadCategoriesFromDB,
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 24),
 
-              // Flash Sale Horizontal List
-              SizedBox(
-                height: 195,
-                child: flashSaleItems.isEmpty
-                    ? Center(child: CircularProgressIndicator(color: TColor.primary))
-                    : ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: flashSaleItems.length,
-                        itemBuilder: (context, index) {
-                          final item = flashSaleItems[index];
-                          final name = item["name"] ?? "Món ngon";
-                          final price = (item["price"] as num? ?? 50000).toInt();
-                          final oldPrice = (price * 1.4).toInt();
-                          final img = item["image"] ?? "";
-
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ItemDetailsView(itemObj: item),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: 135,
-                              margin: const EdgeInsets.only(right: 12),
-                              decoration: BoxDecoration(
-                                color: TColor.cardOf(context),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: TColor.borderOf(context), width: 1),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Stack(
-                                    children: [
-                                      img.toString().startsWith("http")
-                                          ? Image.network(
-                                              img.toString(),
-                                              width: 135,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey),
-                                            )
-                                          : Image.asset(
-                                              img.toString(),
-                                              width: 135,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey),
-                                            ),
-                                      Positioned(
-                                        top: 6,
-                                        right: 6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFD32F2F),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Text(
-                                            "-35%",
-                                            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 6,
-                                        left: 6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.7),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Row(
-                                            children: [
-                                              Icon(Icons.access_time, color: Colors.white70, size: 10),
-                                              SizedBox(width: 2),
-                                              Text("7p", style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: TColor.primaryTextOf(context),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                                              style: TextStyle(
-                                                color: TColor.primary,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              "${oldPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                                              style: TextStyle(
-                                                color: TColor.secondaryTextOf(context),
-                                                fontSize: 10,
-                                                decoration: TextDecoration.lineThrough,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 6),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: 0.85,
-                                            minHeight: 4,
-                                            backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                                            color: const Color(0xFFD32F2F),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                // Tiện Đường Ghé Lấy (Route Pickup Foods Section)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Tiện Đường Ghé Lấy",
+                              style: TextStyle(
+                                color: TColor.primaryTextOf(context),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                          );
-                        },
-                      ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 6. Thực Đơn Quán Tuyển Chọn (Featured Menu Groups Section)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Thực Đơn Quán Tuyển Chọn",
-                                style: TextStyle(
-                                  color: TColor.primaryTextOf(context),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFEBEE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  "${categoryList.length} Nhóm món",
-                                  style: const TextStyle(
-                                    color: Color(0xFFD32F2F),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            "Đóng gói sẵn sàng, dừng xe lấy trong 1 phút",
-                            style: TextStyle(
-                              color: TColor.secondaryTextOf(context),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // Real DB Category Cards List
-              isLoading
-                  ? Center(child: CircularProgressIndicator(color: TColor.primary))
-                  : categoryList.isEmpty
-                      ? Container(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(
-                            child: Text(
-                              "Chưa có danh mục nào trong cơ sở dữ liệu",
+                            const SizedBox(height: 2),
+                            Text(
+                              "Cách bạn dưới 800m • Làm nóng trong 5 phút",
                               style: TextStyle(
                                 color: TColor.secondaryTextOf(context),
-                                fontSize: 14,
+                                fontSize: 11,
                               ),
                             ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: categoryList.length,
-                          itemBuilder: (context, index) {
-                            var mObj = categoryList[index];
-
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MenuItemsView(mObj: {
-                                      "name": mObj.name,
-                                      "id": mObj.id,
-                                      "maQuan": mObj.maQuan,
-                                      "items": mObj.items,
-                                    }),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 14),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: TColor.cardOf(context),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: TColor.borderOf(context), width: 1),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Food Category Thumbnail Banner with Badge
-                                    Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(14),
-                                          child: mObj.image.startsWith("http")
-                                              ? Image.network(
-                                                  mObj.image,
-                                                  width: 72,
-                                                  height: 72,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) => Container(
-                                                    width: 72,
-                                                    height: 72,
-                                                    color: TColor.primary.withOpacity(0.2),
-                                                    child: Icon(Icons.restaurant_rounded, color: TColor.primary),
-                                                  ),
-                                                )
-                                              : Image.asset(
-                                                  mObj.image,
-                                                  width: 72,
-                                                  height: 72,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) => Container(
-                                                    width: 72,
-                                                    height: 72,
-                                                    color: TColor.primary.withOpacity(0.2),
-                                                    child: Icon(Icons.restaurant_rounded, color: TColor.primary),
-                                                  ),
-                                                ),
-                                        ),
-                                        Positioned(
-                                          top: 4,
-                                          left: 4,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFD32F2F),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: const Text(
-                                              "Hot",
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(width: 12),
-
-                                    // Category Details
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            mObj.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: TColor.primaryTextOf(context),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "Chế biến tươi nóng • Gia vị gia truyền 24h",
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: TColor.secondaryTextOf(context),
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: isDark ? const Color(0xFF262A36) : const Color(0xFFFFF0E6),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  "${mObj.itemsCount} món đang phục vụ",
-                                                  style: TextStyle(
-                                                    color: TColor.primary,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF242936) : const Color(0xFFF2F2F4),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: TColor.primaryTextOf(context),
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-              const SizedBox(height: 24),
-
-              // 7. Tiện Đường Ghé Lấy (Route Pickup Foods Section Grid)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Tiện Đường Ghé Lấy",
-                            style: TextStyle(
-                              color: TColor.primaryTextOf(context),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            "Cách bạn dưới 800m • Làm nóng trong 5 phút",
-                            style: TextStyle(
-                              color: TColor.secondaryTextOf(context),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => _openMapTab(context),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: TColor.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Text("Bản đồ", style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.map_outlined, color: Color(0xFFFC6011), size: 14),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Route Pickup Foods Horizontal Scroll List
-              if (routePickupFoods.isNotEmpty)
-                SizedBox(
-                  height: 225,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: routePickupFoods.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) => RoutePickupFoodCard(
-                      item: routePickupFoods[index],
-                      width: 160,
-                      userLat: userLat,
-                      userLng: userLng,
-                    ),
+                      InkWell(
+                        onTap: () => _openMapTab(context),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: TColor.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Text("Bản đồ", style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.map_outlined, color: Color(0xFFFC6011), size: 14),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                if (routePickupFoods.isNotEmpty)
+                  SizedBox(
+                    height: 225,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: routePickupFoods.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) => RoutePickupFoodCard(
+                        item: routePickupFoods[index],
+                        width: 165,
+                        userLat: userLat,
+                        userLng: userLng,
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

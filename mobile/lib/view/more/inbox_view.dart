@@ -3,6 +3,7 @@ import 'package:food_delivery/common/color_extension.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../services/voucher_service.dart';
 import 'my_order_view.dart';
 
@@ -17,6 +18,7 @@ class _InboxViewState extends State<InboxView> {
   int selectTab = 0;
   bool isLoading = true;
   List<VoucherModel> voucherList = [];
+  List<VoucherModel> savedVoucherList = [];
 
   @override
   void initState() {
@@ -26,28 +28,46 @@ class _InboxViewState extends State<InboxView> {
 
   Future<void> _loadVouchersFromDatabase() async {
     setState(() => isLoading = true);
-    final list = await VoucherService.fetchVouchers();
+    final results = await Future.wait([
+      VoucherService.fetchVouchers(),
+      VoucherService.fetchMyCollectedVouchers(),
+    ]);
     if (mounted) {
       setState(() {
-        voucherList = list;
+        voucherList = results[0];
+        savedVoucherList = results[1];
         isLoading = false;
       });
     }
   }
 
+  List<VoucherModel> get _availableVouchers {
+    return voucherList.where((v) {
+      // Ẩn voucher đã hết hạn
+      if (v.isExpired) return false;
+      // Ẩn voucher đã thu thập hết hoặc khách hàng đã thu thập
+      if (v.isExhausted || v.isCollected) return false;
+      if (savedVoucherList.any((saved) => saved.id == v.id)) return false;
+      return true;
+    }).toList();
+  }
+
   List<VoucherModel> get _filteredVouchers {
-    if (selectTab == 1) {
-      return voucherList.where((v) => v.discountType == 'PERCENT' || v.tag == 'MEALMONKEY VIP').toList();
-    } else if (selectTab == 2) {
-      return voucherList.where((v) => v.tag == 'FREESHIP' || v.tag.contains('TRÀ')).toList();
+    if (selectTab == 2) {
+      return savedVoucherList;
     }
-    return voucherList;
+    final validList = _availableVouchers;
+    if (selectTab == 1) {
+      return validList.where((v) => v.discountType == 'PERCENT' || v.tag == 'MEALMONKEY VIP' || v.tag.contains('GIẢM')).toList();
+    }
+    return validList;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lang = context.watch<LanguageProvider>();
+    final availableCount = _availableVouchers.length;
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
@@ -57,7 +77,7 @@ class _InboxViewState extends State<InboxView> {
             // Fixed Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: _buildHeader(context, lang, isDark),
+              child: _buildHeader(context, lang, isDark, availableCount),
             ),
 
             // Horizontal Filter Chips
@@ -68,17 +88,17 @@ class _InboxViewState extends State<InboxView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _buildFilterChip("Tất cả", count: voucherList.length, idx: 0, isDark: isDark),
+                  _buildFilterChip("Tất cả", count: availableCount, idx: 0, isDark: isDark),
                   const SizedBox(width: 8),
                   _buildFilterChip("Mã giảm giá", idx: 1, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Ưu đãi quán quen", idx: 2, isDark: isDark),
+                  _buildFilterChip("Voucher đã lưu", count: savedVoucherList.length, idx: 2, isDark: isDark),
                 ],
               ),
             ),
             const SizedBox(height: 12),
 
-            // Scrollable List of Offers
+            // Scrollable List of Vouchers
             Expanded(
               child: isLoading
                   ? Center(
@@ -89,14 +109,26 @@ class _InboxViewState extends State<InboxView> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.inbox_outlined, size: 48, color: TColor.secondaryTextOf(context)),
+                              Icon(Icons.confirmation_number_outlined, size: 54, color: TColor.secondaryTextOf(context).withOpacity(0.5)),
                               const SizedBox(height: 12),
                               Text(
-                                "Chưa có ưu đãi nào phù hợp",
+                                selectTab == 2
+                                    ? "Chưa có voucher nào trong ví"
+                                    : "Chưa có voucher khả dụng nào",
                                 style: TextStyle(
                                   color: TColor.primaryTextOf(context),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                selectTab == 2
+                                    ? "Hãy bấm 'Thu thập' để lưu mã giảm giá vào ví"
+                                    : "Tất cả voucher có thể đã được thu thập hoặc hết hạn",
+                                style: TextStyle(
+                                  color: TColor.secondaryTextOf(context),
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -112,7 +144,7 @@ class _InboxViewState extends State<InboxView> {
                             separatorBuilder: (context, index) => const SizedBox(height: 14),
                             itemBuilder: (context, index) {
                               final item = _filteredVouchers[index];
-                              return _buildOfferCard(item, isDark);
+                              return _buildOfferCard(item, isDark, isSavedTab: selectTab == 2);
                             },
                           ),
                         ),
@@ -123,7 +155,9 @@ class _InboxViewState extends State<InboxView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, LanguageProvider lang, bool isDark) {
+  Widget _buildHeader(BuildContext context, LanguageProvider lang, bool isDark, int availableCount) {
+    final cartCount = context.watch<CartProvider>().totalItemCount;
+
     return Row(
       children: [
         InkWell(
@@ -150,11 +184,11 @@ class _InboxViewState extends State<InboxView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Hộp Thư Ưu Đãi",
+                    "Kho Voucher",
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -170,7 +204,7 @@ class _InboxViewState extends State<InboxView> {
               ),
               const SizedBox(height: 2),
               Text(
-                "MealMonkey Rewards & Deals",
+                "MealMonkey Rewards & Deals ($availableCount khả dụng)",
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 11,
@@ -198,24 +232,27 @@ class _InboxViewState extends State<InboxView> {
               alignment: Alignment.center,
               children: [
                 Icon(
-                  Icons.shopping_bag_outlined,
+                  Icons.shopping_cart_outlined,
                   size: 20,
                   color: TColor.primaryTextOf(context),
                 ),
-                if (voucherList.isNotEmpty)
+                if (cartCount > 0)
                   Positioned(
                     top: 6,
                     right: 6,
                     child: Container(
-                      width: 14,
-                      height: 14,
+                      padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: TColor.primary,
                         shape: BoxShape.circle,
                       ),
+                      constraints: const BoxConstraints(
+                        minWidth: 14,
+                        minHeight: 14,
+                      ),
                       child: Center(
                         child: Text(
-                          "${voucherList.length}",
+                          "$cartCount",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -287,7 +324,9 @@ class _InboxViewState extends State<InboxView> {
     );
   }
 
-  Widget _buildOfferCard(VoucherModel item, bool isDark) {
+  Widget _buildOfferCard(VoucherModel item, bool isDark, {bool isSavedTab = false}) {
+    final remainingQty = item.soLuongToiDa > 0 ? (item.soLuongToiDa - item.soLuongDaLuu) : null;
+
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -354,8 +393,10 @@ class _InboxViewState extends State<InboxView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Tag & Time Row
+                      // Header Row: Tag & Large Quantity Badge at Top Right
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -372,16 +413,38 @@ class _InboxViewState extends State<InboxView> {
                               ),
                             ),
                           ),
-                          if (item.expiryDate != null) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              item.expiryDate!,
-                              style: TextStyle(
-                                color: TColor.secondaryTextOf(context),
-                                fontSize: 10,
+                          // Large prominent Quantity Badge on Top Right
+                          if (remainingQty != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1B3E32) : const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF2E7D32) : const Color(0xFFA5D6A7),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 13,
+                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "Còn lại: $remainingQty/${item.soLuongToiDa}",
+                                    style: TextStyle(
+                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -406,6 +469,16 @@ class _InboxViewState extends State<InboxView> {
                           height: 1.35,
                         ),
                       ),
+                      if (item.expiryDate != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          "Hạn dùng: ${item.expiryDate}",
+                          style: TextStyle(
+                            color: TColor.secondaryTextOf(context),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
 
                       // Code Box & Action Button Row
@@ -443,42 +516,86 @@ class _InboxViewState extends State<InboxView> {
                             ),
                           ),
 
-                          // Button
-                          ElevatedButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Đã sao chép mã ${item.code}!"),
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: TColor.primary,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
+                          // Button: "Thu thập" or "Đã lưu ✓"
+                          if (isSavedTab)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF10B981)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF10B981)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "Đã lưu",
+                                    style: TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ElevatedButton(
+                              onPressed: () async {
+                                final res = await VoucherService.collectVoucher(item.id);
+                                if (context.mounted) {
+                                  if (res['success'] == true) {
+                                    // Tự động chuyển voucher sang danh sách Đã Lưu
+                                    setState(() {
+                                      voucherList.removeWhere((v) => v.id == item.id);
+                                      savedVoucherList.add(item);
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(res['message'] ?? "Đã lưu mã ${item.code} vào ví của bạn!"),
+                                        duration: const Duration(seconds: 2),
+                                        backgroundColor: const Color(0xFF10B981),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(res['message'] ?? "Không thể lưu voucher"),
+                                        duration: const Duration(seconds: 2),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: TColor.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Thu thập",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.bookmark_add_rounded, size: 16),
+                                ],
                               ),
                             ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "Áp dụng",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(Icons.chevron_right_rounded, size: 16),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -502,7 +619,7 @@ class _InboxViewState extends State<InboxView> {
                   ),
                 ),
                 child: const Text(
-                  "MỚI NHẬN",
+                  "HOT",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 9,

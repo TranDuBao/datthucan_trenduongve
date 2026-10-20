@@ -18,6 +18,7 @@ class CartProvider extends ChangeNotifier {
   String get restaurantName => _restaurantName;
   String get restaurantAddress => _restaurantAddress;
 
+  int get itemCount => totalItemCount;
   int get totalItemCount => _items.fold(0, (sum, item) => sum + item.quantity);
 
   DateTime get selectedDate => _selectedDate;
@@ -44,6 +45,9 @@ class CartProvider extends ChangeNotifier {
   }
 
   void addToCart(CartItemModel item) {
+    if (_items.isEmpty && item.restaurantId > 0) {
+      _restaurantId = item.restaurantId;
+    }
     final index = _items.indexWhere((i) => i.foodId == item.foodId);
     if (index >= 0) {
       _items[index].quantity += item.quantity;
@@ -79,6 +83,28 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? _appliedVoucherCode;
+  double _discountAmount = 0.0;
+  int? _appliedVoucherId;
+
+  String? get appliedVoucherCode => _appliedVoucherCode;
+  double get discountAmount => _discountAmount;
+  int? get appliedVoucherId => _appliedVoucherId;
+
+  void applyVoucher(String code, double discount, {int? voucherId}) {
+    _appliedVoucherCode = code;
+    _discountAmount = discount;
+    _appliedVoucherId = voucherId;
+    notifyListeners();
+  }
+
+  void removeVoucher() {
+    _appliedVoucherCode = null;
+    _discountAmount = 0.0;
+    _appliedVoucherId = null;
+    notifyListeners();
+  }
+
   bool isPickupTimeValid() {
     final pickup = combinedPickupDateTime;
     final now = DateTime.now();
@@ -94,12 +120,13 @@ class CartProvider extends ChangeNotifier {
     return sum;
   }
 
-  double get discount => 0.0;
+  double get discount => _discountAmount;
 
-  double get total => subTotal - discount;
+  double get total => (subTotal - _discountAmount).clamp(0.0, double.infinity);
 
   void clearCart() {
     _items.clear();
+    removeVoucher();
     notifyListeners();
   }
 }

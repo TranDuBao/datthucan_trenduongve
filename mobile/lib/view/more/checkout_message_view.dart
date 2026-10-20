@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common_widget/round_button.dart';
 import '../../common/color_extension.dart';
+import '../../view/main_tabview/main_tabview.dart';
+import '../../view/more/order_history_view.dart';
 
 class CheckoutMessageView extends StatefulWidget {
   final Map<String, dynamic>? orderData;
@@ -116,8 +118,60 @@ class _CheckoutMessageViewState extends State<CheckoutMessageView> {
           RoundButton(
             title: "Trở về Trang chủ",
             onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              final mainTab = context.findAncestorStateOfType<MainTabViewState>();
+              if (mainTab != null) {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+                mainTab.changeTab(2, popToRoot: true);
+              } else {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const MainTabView()),
+                  (route) => false,
+                );
+              }
             },
+          ),
+          const SizedBox(height: 12),
+          // Nút phụ: đi thẳng đến màn hình đơn hàng để xem tiến trình
+          GestureDetector(
+            onTap: () {
+              final mainTab = context.findAncestorStateOfType<MainTabViewState>();
+              if (mainTab != null) {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+                mainTab.pushToTab(4, const OrderHistoryView());
+              } else {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const MainTabView()),
+                  (route) => false,
+                ).then((_) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OrderHistoryView()),
+                  );
+                });
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    color: TColor.primary,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Xem đơn hàng của tôi",
+                    style: TextStyle(
+                      color: TColor.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 10),
         ],

@@ -95,7 +95,7 @@ class LanguageProvider extends ChangeNotifier {
       // Profile & More Options
       'payment_details': 'Chi tiết thanh toán',
       'notifications': 'Thông báo',
-      'inbox': 'Hộp thư',
+      'inbox': 'Voucher',
       'about_us': 'Về chúng tôi',
       'change_address': 'Đổi địa chỉ',
       'confirm': 'Xác nhận',

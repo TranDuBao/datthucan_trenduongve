@@ -17,7 +17,11 @@ class ServiceCall {
       {bool isToken = false, ResSuccess? withSuccess, ResFailure? failure}) {
     Future(() {
       try {
-        var headers = {'Content-Type': 'application/json'};
+        var headers = <String, String>{'Content-Type': 'application/json'};
+        final token = Globs.udValueString(KKey.authToken);
+        if (token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
 
         http
             .post(Uri.parse(path), body: jsonEncode(parameter), headers: headers)
@@ -45,6 +49,7 @@ class ServiceCall {
   static void logout() {
     Globs.udBoolSet(false, Globs.userLogin);
     Globs.udRemove(Globs.userPayload);
+    Globs.udRemove(KKey.authToken);
     userPayload = {};
     navigationService.navigateTo("welcome");
   }

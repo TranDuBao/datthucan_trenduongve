@@ -5,6 +5,7 @@ import '../providers/map_provider.dart';
 import '../models/place_model.dart';
 import '../services/directions_service.dart';
 import 'place_detail_sheet.dart';
+import 'notification_bell.dart';
 
 class SearchBarWidget extends StatefulWidget {
   const SearchBarWidget({super.key});
@@ -144,35 +145,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
               ],
             ),
           ),
-          Stack(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Color(0xFF1C1C1E),
-                  size: 22,
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF3B30),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const NotificationBell(width: 42, height: 42, size: 22),
           const SizedBox(width: 8),
           Container(
             width: 42,
@@ -509,23 +482,23 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
 
   Widget _buildSearchLoadingIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(
-            width: 16,
-            height: 16,
+            width: 18,
+            height: 18,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
               color: Color(0xFF00E5FF),
+              strokeWidth: 2,
             ),
           ),
           const SizedBox(width: 12),
           Text(
             'Đang tìm kiếm...',
             style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 13,
             ),
           ),

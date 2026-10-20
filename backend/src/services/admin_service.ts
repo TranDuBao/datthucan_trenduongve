@@ -1,239 +1,127 @@
-import { AppDataSource } from '../config/database';
-import { TaiKhoanModel } from '../models/tai_khoan_model';
-import { KhachHangModel } from '../models/khach_hang_model';
+import { AdminDashboardService } from './admin/admin_dashboard_service';
+import { AdminUserService } from './admin/admin_user_service';
+import { AdminRestaurantService } from './admin/admin_restaurant_service';
+import { AdminCatalogService } from './admin/admin_catalog_service';
 import { CuaHangModel } from '../models/cua_hang_model';
-import { DanhMucModel } from '../models/danh_muc_model';
 import { MonAnModel } from '../models/mon_an_model';
-import { DonHangModel } from '../models/don_hang_model';
-import { ThanhToanModel } from '../models/thanh_toan_model';
 
 export class AdminService {
-  private userRepo = AppDataSource.getRepository(TaiKhoanModel);
-  private khachHangRepo = AppDataSource.getRepository(KhachHangModel);
-  private storeRepo = AppDataSource.getRepository(CuaHangModel);
-  private categoryRepo = AppDataSource.getRepository(DanhMucModel);
-  private foodRepo = AppDataSource.getRepository(MonAnModel);
-  private orderRepo = AppDataSource.getRepository(DonHangModel);
-  private paymentRepo = AppDataSource.getRepository(ThanhToanModel);
+  private dashboardService = new AdminDashboardService();
+  private userService = new AdminUserService();
+  private restaurantService = new AdminRestaurantService();
+  private catalogService = new AdminCatalogService();
 
-  // ── 1. Thống kê Dashboard Admin toàn hệ thống ─────────────────────────────────
-  async getDashboardStats() {
-    const totalUsers = await this.userRepo.count();
-    const totalRestaurants = await this.storeRepo.count();
-    const totalOrders = await this.orderRepo.count();
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const todayOrders = await this.orderRepo
-      .createQueryBuilder('donhang')
-      .where('donhang.thoigiandat >= :todayStart', { todayStart })
-      .getCount();
-
-    const revenueResult = await this.orderRepo
-      .createQueryBuilder('donhang')
-      .select('SUM(donhang.tongtien)', 'sum')
-      .where('donhang.trangthai IN (:...completedStatuses)', {
-        completedStatuses: ['HOAN_THANH', 'COMPLETED', 'PICKED_UP', 'thành công', 'Đã lấy món'],
-      })
-      .getRawOne();
-    const totalRevenue = Number(revenueResult?.sum || 0);
-
-    const processingOrders = await this.orderRepo
-      .createQueryBuilder('donhang')
-      .where('donhang.trangthai IN (:...processingStatuses)', {
-        processingStatuses: ['PENDING', 'chờ xử lý', 'CONFIRMED', 'đã xác nhận', 'PREPARING', 'đang chuẩn bị'],
-      })
-      .getCount();
-
-    const pickupWaitingOrders = await this.orderRepo
-      .createQueryBuilder('donhang')
-      .where('donhang.trangthai IN (:...waitingStatuses)', {
-        waitingStatuses: ['READY_FOR_PICKUP', 'sẵn sàng ghé lấy', 'Sẵn sàng'],
-      })
-      .getCount();
-
-    const activeRestaurants = await this.storeRepo
-      .createQueryBuilder('cuahang')
-      .where('LOWER(cuahang.trangthai) IN (:...activeStatuses)', {
-        activeStatuses: ['mở cửa', 'hoat_dong', 'open', 'hoạt động'],
-      })
-      .getCount();
-
-    const recentOrdersRaw = await this.orderRepo
-      .createQueryBuilder('donhang')
-      .orderBy('donhang.thoigiandat', 'DESC')
-      .take(8)
-      .getMany();
-
-    const recentOrders = [];
-    for (const ord of recentOrdersRaw) {
-      let storeName = 'Chưa xác định';
-      let customerName = 'Khách hàng';
-      if (ord.maQuan) {
-        const s = await this.storeRepo.findOne({ where: { maQuan: ord.maQuan } });
-        if (s) storeName = s.tenQuan;
-      }
-      if (ord.maKhachHang) {
-        const c = await this.khachHangRepo.findOne({ where: { maKhachHang: ord.maKhachHang } });
-        if (c) customerName = c.hoTen;
-      }
-      recentOrders.push({
-        ...ord,
-        tenQuan: storeName,
-        tenKhachHang: customerName,
-      });
-    }
-
-    return {
-      totalUsers,
-      totalRestaurants,
-      totalOrders,
-      todayOrders,
-      totalRevenue,
-      processingOrders,
-      pickupWaitingOrders,
-      activeRestaurants,
-      recentOrders,
-    };
+  // Activity Logs
+  async logActivity(data: {
+    maTaiKhoan?: number;
+    tenNguoiThucHien?: string;
+    loaiHanhDong: string;
+    moTa: string;
+    doiTuong?: string;
+    maDoiTuong?: string | number;
+    ipAddress?: string;
+  }) {
+    return this.dashboardService.logActivity(data);
   }
 
-  // ── 2. Quản lý Người dùng ──────────────────────────────────────────────────
-  async getUsers(page: number = 1, limit: number = 10, search: string = '', roleFilter: string = '') {
-    const skip = (page - 1) * limit;
-    const qb = this.userRepo.createQueryBuilder('tk')
-      .leftJoinAndSelect('tk.khachHang', 'kh')
-      .orderBy('tk.maTaiKhoan', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    if (search.trim()) {
-      qb.andWhere('(tk.tenDangNhap ILIKE :s OR kh.hoTen ILIKE :s OR kh.email ILIKE :s OR kh.sdt ILIKE :s)', {
-        s: `%${search.trim()}%`,
-      });
-    }
-
-    if (roleFilter.trim()) {
-      qb.andWhere('tk.loaiTaiKhoan = :role', { role: roleFilter.trim() });
-    }
-
-    const [items, total] = await qb.getManyAndCount();
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  async getActivityLogs(page?: number, limit?: number, search?: string, actionType?: string) {
+    return this.dashboardService.getActivityLogs(page, limit, search, actionType);
   }
 
-  async updateUserRole(maTaiKhoan: number, loaiTaiKhoan: string, trangThai?: string) {
-    const account = await this.userRepo.findOne({ where: { maTaiKhoan } });
-    if (!account) throw new Error('Không tìm thấy tài khoản');
-    account.loaiTaiKhoan = loaiTaiKhoan;
-    if (trangThai) account.trangThai = trangThai;
-    return await this.userRepo.save(account);
+  // Dashboard Stats
+  async getDashboardStats(page: number = 1, limit: number = 10, ordersOnly: boolean = false) {
+    return this.dashboardService.getDashboardStats(page, limit, ordersOnly);
   }
 
-  // ── 3. Quản lý Nhà hàng ────────────────────────────────────────────────────
-  async getRestaurants(page: number = 1, limit: number = 10, search: string = '') {
-    const skip = (page - 1) * limit;
-    const qb = this.storeRepo.createQueryBuilder('ch')
-      .orderBy('ch.maQuan', 'DESC')
-      .skip(skip)
-      .take(limit);
+  // Users
+  async getUsers(page?: number, limit?: number, search?: string, roleFilter?: string, statusFilter?: string) {
+    return this.userService.getUsers(page, limit, search, roleFilter, statusFilter);
+  }
 
-    if (search.trim()) {
-      qb.andWhere('(ch.tenQuan ILIKE :s OR ch.diaChi ILIKE :s OR ch.sdt ILIKE :s)', { s: `%${search.trim()}%` });
-    }
+  async getUserDetail(maTaiKhoan: number) {
+    return this.userService.getUserDetail(maTaiKhoan);
+  }
 
-    const [items, total] = await qb.getManyAndCount();
+  async createUser(data: any) {
+    return this.userService.createUser(data);
+  }
 
-    // Attach linked account info
-    const enriched = [];
-    for (const item of items) {
-      let linkedUser = null;
-      if (item.maTaiKhoan) {
-        linkedUser = await this.userRepo.findOne({ where: { maTaiKhoan: item.maTaiKhoan } });
-      }
-      enriched.push({
-        ...item,
-        taiKhoanLienKet: linkedUser ? { maTaiKhoan: linkedUser.maTaiKhoan, tenDangNhap: linkedUser.tenDangNhap } : null,
-      });
-    }
+  async updateUser(maTaiKhoan: number, data: any) {
+    return this.userService.updateUser(maTaiKhoan, data);
+  }
 
-    return { items: enriched, total, page, limit, totalPages: Math.ceil(total / limit) };
+  async scanCCCD(imageOrPayload: any, sideParam?: 'front' | 'back' | 'both') {
+    return this.userService.scanCCCD(imageOrPayload, sideParam);
+  }
+
+  async lockUser(maTaiKhoan: number, data: any) {
+    return this.userService.lockUser(maTaiKhoan, data);
+  }
+
+  async changeUserPassword(maTaiKhoan: number, matKhauMoi: string) {
+    return this.userService.changeUserPassword(maTaiKhoan, matKhauMoi);
+  }
+
+  async deleteUser(maTaiKhoan: number) {
+    return this.userService.deleteUser(maTaiKhoan);
+  }
+
+  // Restaurants
+  async getRestaurants(page?: number, limit?: number, search?: string) {
+    return this.restaurantService.getRestaurants(page, limit, search);
   }
 
   async createRestaurant(data: Partial<CuaHangModel>) {
-    const newStore = this.storeRepo.create(data);
-    return await this.storeRepo.save(newStore);
+    return this.restaurantService.createRestaurant(data);
+  }
+
+  async getRestaurantDetail(maQuan: number) {
+    return this.restaurantService.getRestaurantDetail(maQuan);
   }
 
   async updateRestaurant(maQuan: number, data: Partial<CuaHangModel>) {
-    const store = await this.storeRepo.findOne({ where: { maQuan } });
-    if (!store) throw new Error('Không tìm thấy nhà hàng');
-    Object.assign(store, data);
-    return await this.storeRepo.save(store);
+    return this.restaurantService.updateRestaurant(maQuan, data);
   }
 
-  // ── 4. Quản lý Danh mục & Món ăn ─────────────────────────────────────────
+  async deleteRestaurant(maQuan: number) {
+    return this.restaurantService.deleteRestaurant(maQuan);
+  }
+
+  async restoreRestaurant(maQuan: number) {
+    return this.restaurantService.restoreRestaurant(maQuan);
+  }
+
+  // Categories & Foods
   async getCategories() {
-    return await this.categoryRepo.find({ order: { maDanhMuc: 'ASC' } });
+    return this.catalogService.getCategories();
   }
 
-  async createCategory(tenDanhMuc: string) {
-    const cat = this.categoryRepo.create({ tenDanhMuc });
-    return await this.categoryRepo.save(cat);
+  async createCategory(tenDanhMuc: string, maDanhMuc?: number) {
+    return this.catalogService.createCategory(tenDanhMuc, maDanhMuc);
   }
 
-  async getFoods(page: number = 1, limit: number = 10, search: string = '', maQuan?: number) {
-    const skip = (page - 1) * limit;
-    const qb = this.foodRepo.createQueryBuilder('m')
-      .orderBy('m.maMonAn', 'DESC')
-      .skip(skip)
-      .take(limit);
+  async updateCategory(maDanhMuc: number, tenDanhMuc: string) {
+    return this.catalogService.updateCategory(maDanhMuc, tenDanhMuc);
+  }
 
-    if (search.trim()) {
-      qb.andWhere('m.tenMonAn ILIKE :s', { s: `%${search.trim()}%` });
-    }
+  async getCategoryFoods(maDanhMuc: number) {
+    return this.catalogService.getCategoryFoods(maDanhMuc);
+  }
 
-    if (maQuan) {
-      qb.andWhere('m.maQuan = :maQuan', { maQuan });
-    }
-
-    const [items, total] = await qb.getManyAndCount();
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  async getFoods(page?: number, limit?: number, search?: string, maQuan?: number, maDanhMuc?: number) {
+    return this.catalogService.getFoods(page, limit, search, maQuan, maDanhMuc);
   }
 
   async updateFood(maMonAn: number, data: Partial<MonAnModel>) {
-    const food = await this.foodRepo.findOne({ where: { maMonAn } });
-    if (!food) throw new Error('Không tìm thấy món ăn');
-    Object.assign(food, data);
-    return await this.foodRepo.save(food);
+    return this.catalogService.updateFood(maMonAn, data);
   }
 
-  // ── 5. Quản lý Đơn hàng & Thanh toán ───────────────────────────────────────
-  async getOrders(page: number = 1, limit: number = 10, status: string = '', search: string = '') {
-    const skip = (page - 1) * limit;
-    const qb = this.orderRepo.createQueryBuilder('dh')
-      .orderBy('dh.thoiGianDat', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    if (status.trim()) {
-      qb.andWhere('dh.trangThai = :status', { status });
-    }
-
-    if (search.trim()) {
-      qb.andWhere('CAST(dh.maDonHang AS TEXT) ILIKE :s', { s: `%${search.trim()}%` });
-    }
-
-    const [items, total] = await qb.getManyAndCount();
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  // Orders & Payments
+  async getOrders(page?: number, limit?: number, status?: string, search?: string, storeId?: number) {
+    return this.dashboardService.getOrders(page, limit, status, search, storeId);
   }
 
-  async getPayments(page: number = 1, limit: number = 10) {
-    const skip = (page - 1) * limit;
-    const [items, total] = await this.paymentRepo.findAndCount({
-      order: { maThanhToan: 'DESC' },
-      skip,
-      take: limit,
-    });
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+  async getPayments(page?: number, limit?: number) {
+    return this.dashboardService.getPayments(page, limit);
   }
 }

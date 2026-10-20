@@ -308,6 +308,10 @@ DO NOT make that change.
 
 - Prefer subtle, natural animations over exaggerated effects.
 
+### Mobile Loading UI Rule
+- When coding in the mobile application (Flutter), ALL data loading states (menu, restaurant lists, dish items, order history, category filters, profile, etc.) MUST use Skeleton Loading (`widgets/skeleton/*`).
+- EXCEPTION: The Home Screen (`lib/screens/home_screen.dart` and `lib/widgets/search_bar_widget.dart` for map/GPS route loading) MUST use standard loading indicators (`CircularProgressIndicator`), NOT skeleton loading.
+
 ## 12. Performance
 
 - Avoid unnecessary API requests.

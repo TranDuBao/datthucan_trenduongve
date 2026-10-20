@@ -31,6 +31,12 @@ export class TaiKhoanModel {
   @Column({ name: 'trangthai', length: 30, default: 'HOAT_DONG' })
   trangThai: string;
 
+  @Column({ name: 'khoadenngay', type: 'timestamp', nullable: true })
+  khoaDenNgay?: Date | null;
+
+  @Column({ name: 'lydokhoa', type: 'text', nullable: true })
+  lyDoKhoa?: string | null;
+
   @CreateDateColumn({ name: 'ngaytao' })
   ngayTao: Date;
 

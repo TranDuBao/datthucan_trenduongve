@@ -5,6 +5,7 @@ import '../common/color_extension.dart';
 import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
 import '../view/menu/item_details_view.dart';
+import '../common_widget/smart_network_image.dart';
 import 'custom_toast.dart';
 
 class RoutePickupFoodCard extends StatelessWidget {
@@ -44,9 +45,14 @@ class RoutePickupFoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = item["name"] ?? "Món tiện đường";
-    final price = (item["price"] as num? ?? 45000).toInt();
-    final img = item["image"] ?? "";
+    final name = item["name"] ?? item["tenMonAn"] ?? "Món tiện đường";
+    final price = (item["price"] as num? ?? item["giaMonAn"] as num? ?? 45000).toInt();
+    final img = item["image"] ?? item["img"] ?? "";
+
+    final int stockQty = int.tryParse((item["soLuongMon"] ?? item["quantity"] ?? item["soLuong"] ?? 0).toString()) ?? 0;
+    final String status = (item["trangThaiMon"] ?? item["status"] ?? "").toString().toUpperCase();
+    final bool isSoldOut = stockQty <= 0 || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG';
+    final int soldQty = int.tryParse((item["soLuongDaBan"] ?? item["soLuotBan"] ?? item["soldCount"] ?? 0).toString()) ?? 0;
 
     return GestureDetector(
       onTap: () {
@@ -70,72 +76,68 @@ class RoutePickupFoodCard extends StatelessWidget {
           children: [
             Stack(
               children: [
-                img.toString().startsWith("http")
-                    ? Image.network(
-                        img.toString(),
-                        width: double.infinity,
-                        height: 115,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(height: 115, color: Colors.grey),
-                      )
-                    : Image.asset(
-                        img.toString(),
-                        width: double.infinity,
-                        height: 115,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(height: 115, color: Colors.grey),
-                      ),
+                Opacity(
+                  opacity: isSoldOut ? 0.45 : 1.0,
+                  child: SmartNetworkImage(
+                    imageUrl: img.toString(),
+                    width: double.infinity,
+                    height: 115,
+                    fit: BoxFit.cover,
+                    placeholderIcon: Icons.fastfood,
+                  ),
+                ),
                 Positioned(
                   top: 6,
                   left: 6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFC6011),
+                      color: isSoldOut ? const Color(0xFFEF4444) : const Color(0xFFFC6011),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      "Ghé lấy sau 8p",
-                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                    child: Text(
+                      isSoldOut ? "Hết món" : "Ghé lấy sau 8p",
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 6,
-                  right: 6,
-                  child: InkWell(
-                    onTap: () {
-                      final foodId = (item["id"] as num? ?? 1).toInt();
-                      final name = item["name"] ?? "Món tiện đường";
-                      final price = (item["price"] as num? ?? 45000).toDouble();
-                      final image = item["image"]?.toString() ?? "";
-                      final restaurantId = (item["maQuan"] as num? ?? 1).toInt();
+                if (!isSoldOut)
+                  Positioned(
+                    bottom: 6,
+                    right: 6,
+                    child: InkWell(
+                      onTap: () {
+                        final foodId = (item["id"] as num? ?? item["maMonAn"] as num? ?? 1).toInt();
+                        final name = item["name"] ?? item["tenMonAn"] ?? "Món tiện đường";
+                        final price = (item["price"] as num? ?? item["giaMonAn"] as num? ?? 45000).toDouble();
+                        final image = item["image"]?.toString() ?? item["img"]?.toString() ?? "";
+                        final restaurantId = (item["maQuan"] as num? ?? 1).toInt();
 
-                      context.read<CartProvider>().addToCart(CartItemModel(
-                        foodId: foodId,
-                        foodName: name,
-                        price: price,
-                        quantity: 1,
-                        image: image,
-                        restaurantId: restaurantId,
-                      ));
+                        context.read<CartProvider>().addToCart(CartItemModel(
+                          foodId: foodId,
+                          foodName: name,
+                          price: price,
+                          quantity: 1,
+                          image: image,
+                          restaurantId: restaurantId,
+                        ));
 
-                      CustomToast.showSuccess(context, "Đã thêm '$name' vào giỏ hàng");
-                    },
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black26, blurRadius: 4),
-                        ],
+                        CustomToast.showSuccess(context, "Đã thêm '$name' vào giỏ hàng");
+                      },
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                        child: const Icon(Icons.add, color: Color(0xFFFC6011), size: 20),
                       ),
-                      child: const Icon(Icons.add, color: Color(0xFFFC6011), size: 20),
                     ),
                   ),
-                ),
               ],
             ),
             Padding(
@@ -148,7 +150,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: TColor.primaryTextOf(context),
+                      color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primaryTextOf(context),
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -170,30 +172,46 @@ class RoutePickupFoodCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (soldQty > 0) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          "• Đã bán $soldQty",
+                          style: TextStyle(
+                            color: TColor.secondaryTextOf(context),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                        style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
+                      Flexible(
+                        child: Text(
+                          "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
+                          color: isSoldOut ? const Color(0xFFFEE2E2) : const Color(0xFFE8F5E9),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          _formatDistance(),
-                          style: const TextStyle(
-                            color: Color(0xFF2E7D32),
+                          isSoldOut ? "Hết hàng" : "Còn $stockQty",
+                          style: TextStyle(
+                            color: isSoldOut ? const Color(0xFFDC2626) : const Color(0xFF2E7D32),
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
                           ),

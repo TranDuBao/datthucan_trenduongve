@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:food_delivery/common/user_role_helper.dart';
 import 'package:food_delivery/view/login/welcome_view.dart';
 import 'package:food_delivery/view/main_tabview/main_tabview.dart';
+import 'package:food_delivery/view/restaurant_owner/restaurant_owner_main_view.dart';
 
 import '../../common/globs.dart';
 
@@ -19,18 +21,22 @@ class _StarupViewState extends State<StartupView> {
   }
 
   void goWelcomePage() async {
-
-      await Future.delayed( const Duration(seconds: 3) );
-      welcomePage();
+    await Future.delayed(const Duration(seconds: 3));
+    welcomePage();
   }
-  void welcomePage(){
 
+  void welcomePage() {
     if (Globs.udValueBool(Globs.userLogin)) {
-       Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const MainTabView()));
-    }else{
-       Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const WelcomeView()));
+      if (UserRoleHelper.isMerchant) {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const RestaurantOwnerMainView()));
+      } else {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const MainTabView()));
+      }
+    } else {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const WelcomeView()));
     }
   }
 
