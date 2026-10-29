@@ -27,7 +27,7 @@ export class AdminController {
         data: stats,
       });
     } catch (error: any) {
-      console.error('❌ Error Admin Dashboard Stats:', error);
+      console.error('[AdminController] [Error] Error Admin Dashboard Stats:', error);
       return res.status(500).json({ statusCode: 500, message: error.message || 'Lỗi server' });
     }
   };
@@ -190,9 +190,9 @@ export class AdminController {
 
   createCategory = async (req: Request, res: Response) => {
     try {
-      const { tenDanhMuc, maDanhMuc } = req.body;
+      const { tenDanhMuc, hinhAnh, maDanhMuc } = req.body;
       if (!tenDanhMuc) return res.status(400).json({ statusCode: 400, message: 'Vui lòng nhập tên danh mục' });
-      const result = await this.adminService.createCategory(tenDanhMuc, maDanhMuc ? Number(maDanhMuc) : undefined);
+      const result = await this.adminService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc ? Number(maDanhMuc) : undefined);
       return res.status(201).json({ statusCode: 201, status: '1', data: result, message: maDanhMuc ? 'Cập nhật danh mục thành công' : 'Tạo danh mục thành công' });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: error.message });
@@ -202,10 +202,43 @@ export class AdminController {
   updateCategory = async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const { tenDanhMuc } = req.body;
+      const { tenDanhMuc, hinhAnh } = req.body;
       if (!tenDanhMuc) return res.status(400).json({ statusCode: 400, message: 'Vui lòng nhập tên danh mục' });
-      const result = await this.adminService.updateCategory(id, tenDanhMuc);
+      const result = await this.adminService.updateCategory(id, tenDanhMuc, hinhAnh);
       return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Cập nhật danh mục thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  deleteCategory = async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const result = await this.adminService.deleteCategory(id);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Xóa danh mục thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  assignFoodToCategory = async (req: Request, res: Response) => {
+    try {
+      const { maMonAn, maDanhMuc } = req.body;
+      if (!maMonAn || !maDanhMuc) {
+        return res.status(400).json({ statusCode: 400, message: 'Thiếu mã món ăn hoặc mã danh mục' });
+      }
+      const result = await this.adminService.assignFoodToCategory(Number(maMonAn), Number(maDanhMuc));
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Phân món vào thực đơn thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  removeFoodFromCategory = async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const result = await this.adminService.removeFoodFromCategory(id);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Đã gỡ món khỏi danh mục' });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: error.message });
     }
@@ -281,6 +314,53 @@ export class AdminController {
       const actionType = String(req.query.actionType || '');
 
       const result = await this.adminService.getActivityLogs(page, limit, search, actionType);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result });
+    } catch (error: any) {
+      return res.status(500).json({ statusCode: 500, message: error.message });
+    }
+  };
+
+  getBanners = async (req: Request, res: Response) => {
+    try {
+      const result = await this.adminService.getAllBanners();
+      return res.status(200).json({ statusCode: 200, status: '1', data: result });
+    } catch (error: any) {
+      return res.status(500).json({ statusCode: 500, message: error.message });
+    }
+  };
+
+  createBanner = async (req: Request, res: Response) => {
+    try {
+      const result = await this.adminService.createBanner(req.body);
+      return res.status(201).json({ statusCode: 201, status: '1', data: result, message: 'Tạo banner thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  updateBanner = async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const result = await this.adminService.updateBanner(id, req.body);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Cập nhật banner thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  deleteBanner = async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const result = await this.adminService.deleteBanner(id);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Xóa banner thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
+  getActiveBanners = async (req: Request, res: Response) => {
+    try {
+      const result = await this.adminService.getActiveBanners();
       return res.status(200).json({ statusCode: 200, status: '1', data: result });
     } catch (error: any) {
       return res.status(500).json({ statusCode: 500, message: error.message });

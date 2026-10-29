@@ -159,7 +159,7 @@ export const RestaurantReservations: React.FC = () => {
     const socket = getSocket();
     if (socket) {
       const handleRealtimeReservation = (payload: any) => {
-        console.log('⚡ Realtime reservation update received:', payload);
+        console.log('[RestaurantReservations] [Info] Realtime reservation update received:', payload);
         fetchStatsAndTables();
         fetchReservations();
       };

@@ -55,7 +55,7 @@ export class RestaurantController {
 
   getAlongRoute = async (req: Request, res: Response) => {
     try {
-      const { routePoints, points, maxDistance } = req.body;
+      const { routePoints, points, maxDistance, keyword, foodKeyword } = req.body;
       const pts = routePoints || points;
       if (!Array.isArray(pts) || pts.length === 0) {
         return res.status(400).json({
@@ -64,12 +64,14 @@ export class RestaurantController {
         });
       }
 
-      const maxDistanceMeters = Number(maxDistance) || 1000;
-      const restaurants = await this.restaurantService.getRestaurantsAlongRoute(pts, maxDistanceMeters);
+      const maxDistanceMeters = Number(maxDistance) || 2500;
+      const searchKeyword = (keyword || foodKeyword || req.query.keyword || req.query.foodKeyword || '').toString().trim();
+      const restaurants = await this.restaurantService.getRestaurantsAlongRoute(pts, maxDistanceMeters, searchKeyword);
 
       return res.status(200).json({
         status: 'success',
         total: restaurants.length,
+        keyword: searchKeyword || null,
         data: restaurants,
       });
     } catch (error: any) {

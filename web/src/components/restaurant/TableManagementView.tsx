@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../../api/apiClient';
 import { TableDetailModal } from './TableDetailModal';
-import { Plus, Edit3, Power, Utensils, Users, CheckCircle, AlertCircle, RefreshCw, Eye, Calendar } from 'lucide-react';
+import { Plus, Edit3, Power, Utensils, Users, CheckCircle, AlertCircle, RefreshCw, Eye, Calendar, AlertTriangle } from 'lucide-react';
 
 interface TableManagementViewProps {
   tables: any[];
@@ -318,7 +318,7 @@ export const TableManagementView: React.FC<TableManagementViewProps> = ({
 
             {error && (
               <div style={{ background: '#fef2f2', color: '#dc2626', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>
-                ⚠️ {error}
+                <AlertTriangle size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> {error}
               </div>
             )}
 

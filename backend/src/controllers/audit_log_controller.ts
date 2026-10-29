@@ -37,7 +37,7 @@ export class AuditLogController {
         data: logs,
       });
     } catch (error: any) {
-      console.error('❌ Lỗi lấy Nhật ký Audit Log:', error);
+      console.error('[AuditLogController] [Error] Lỗi lấy Nhật ký Audit Log:', error);
       return res.status(500).json({
         statusCode: 500,
         status: 'error',
@@ -87,7 +87,7 @@ export class AuditLogController {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       return res.status(200).send(csvData);
     } catch (error: any) {
-      console.error('❌ Lỗi xuất file CSV Nhật ký:', error);
+      console.error('[AuditLogController] [Error] Lỗi xuất file CSV Nhật ký:', error);
       return res.status(500).json({
         statusCode: 500,
         status: 'error',

@@ -15,7 +15,13 @@ export interface OrderStatusConfig {
 export const normalizeOrderStatus = (st?: string): string => {
   if (!st) return 'PENDING';
   const s = st.trim().toUpperCase();
-  if (s === 'CHO_XAC_NHAN' || s === 'PENDING' || s.includes('CHỜ') || s === 'CHỜ XÁC NHẬN' || s === 'CHỜ XỬ LÝ') {
+  if (s === 'CHO_THANH_TOAN' || s === 'UNPAID' || s === 'CHỜ THANH TOÁN') {
+    return 'UNPAID';
+  }
+  if (s === 'CHO_XAC_NHAN' || s === 'PENDING' || s === 'CHỜ XÁC NHẬN' || s === 'CHỜ XỬ LÝ') {
+    return 'PENDING';
+  }
+  if (s.includes('CHỜ')) {
     return 'PENDING';
   }
   if (s === 'DA_XAC_NHAN' || s === 'CONFIRMED' || s.includes('XÁC NHẬN')) {
@@ -37,6 +43,15 @@ export const normalizeOrderStatus = (st?: string): string => {
 };
 
 export const ORDER_STATUS_MAP: Record<string, OrderStatusConfig> = {
+  UNPAID: {
+    key: 'UNPAID',
+    label: 'CHỜ THANH TOÁN',
+    dotColor: '#ea580c',
+    textColor: '#9a3412',
+    bgColor: '#ffedd5',
+    borderColor: '#fed7aa',
+    barColor: '#f97316',
+  },
   PENDING: {
     key: 'PENDING',
     label: 'CHỜ XÁC NHẬN',

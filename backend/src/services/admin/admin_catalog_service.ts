@@ -12,9 +12,9 @@ export class AdminCatalogService {
     return await this.categoryRepo.find({ order: { maDanhMuc: 'ASC' } });
   }
 
-  async createCategory(tenDanhMuc: string, maDanhMuc?: number) {
+  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number) {
     if (maDanhMuc) {
-      return await this.updateCategory(maDanhMuc, tenDanhMuc);
+      return await this.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh);
     }
 
     const trimmed = tenDanhMuc.trim();
@@ -26,11 +26,14 @@ export class AdminCatalogService {
       throw new Error(`Tên danh mục "${existing.tenDanhMuc}" đã tồn tại trong hệ thống (không phân biệt chữ hoa/thường)!`);
     }
 
-    const cat = this.categoryRepo.create({ tenDanhMuc: trimmed });
+    const cat = this.categoryRepo.create({
+      tenDanhMuc: trimmed,
+      hinhAnh: hinhAnh?.trim() || undefined,
+    });
     return await this.categoryRepo.save(cat);
   }
 
-  async updateCategory(maDanhMuc: number, tenDanhMuc: string) {
+  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string) {
     const trimmed = tenDanhMuc.trim();
     const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
     if (!cat) throw new Error('Không tìm thấy danh mục');
@@ -45,7 +48,39 @@ export class AdminCatalogService {
     }
 
     cat.tenDanhMuc = trimmed;
+    if (hinhAnh !== undefined) {
+      cat.hinhAnh = hinhAnh.trim();
+    }
     return await this.categoryRepo.save(cat);
+  }
+
+  async deleteCategory(maDanhMuc: number) {
+    const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
+    if (!cat) throw new Error('Không tìm thấy danh mục');
+
+    // Unassign foods first so we don't violate constraints
+    await this.foodRepo.update({ maDanhMuc }, { maDanhMuc: undefined });
+    await this.categoryRepo.remove(cat);
+    return { success: true, message: 'Đã xóa danh mục tuyển chọn' };
+  }
+
+  async assignFoodToCategory(maMonAn: number, maDanhMuc: number) {
+    const food = await this.foodRepo.findOne({ where: { maMonAn } });
+    if (!food) throw new Error('Không tìm thấy món ăn');
+
+    const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
+    if (!cat) throw new Error('Không tìm thấy danh mục tuyển chọn');
+
+    food.maDanhMuc = maDanhMuc;
+    return await this.foodRepo.save(food);
+  }
+
+  async removeFoodFromCategory(maMonAn: number) {
+    const food = await this.foodRepo.findOne({ where: { maMonAn } });
+    if (!food) throw new Error('Không tìm thấy món ăn');
+
+    (food as any).maDanhMuc = null;
+    return await this.foodRepo.save(food);
   }
 
   async getCategoryFoods(maDanhMuc: number) {

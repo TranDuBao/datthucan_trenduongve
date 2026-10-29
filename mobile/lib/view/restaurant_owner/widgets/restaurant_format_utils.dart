@@ -40,6 +40,14 @@ class RestaurantFormatUtils {
 
   static Map<String, dynamic> getStatusBadge(String status) {
     switch (status.toUpperCase()) {
+      case 'CHO_THANH_TOAN':
+      case 'UNPAID':
+        return {
+          'text': 'Chờ thanh toán',
+          'bg': const Color(0xFFFFEDD5),
+          'fg': const Color(0xFFC2410C),
+          'border': const Color(0xFFFED7AA),
+        };
       case 'CHO_XAC_NHAN':
         return {
           'text': 'Chờ xác nhận',

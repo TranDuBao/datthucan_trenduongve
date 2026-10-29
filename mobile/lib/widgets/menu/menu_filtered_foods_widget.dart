@@ -130,6 +130,9 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                 final storeName = item["tenQuan"] ?? item["storeName"] ?? "Cửa hàng";
                 final price = (item["price"] ?? item["gia"] ?? 0) as num;
                 final img = item["image"] ?? item["hinhAnh"] ?? "";
+                final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
+                final double ratingNum = double.tryParse(rateVal) ?? 0.0;
+                final String ratingStr = (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1);
 
                 return GestureDetector(
                   onTap: () {
@@ -190,13 +193,33 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                "${price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                                style: TextStyle(
-                                  color: TColor.primary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "${price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                                    style: TextStyle(
+                                      color: TColor.primary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 14),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        ratingStr,
+                                        style: TextStyle(
+                                          color: TColor.primaryTextOf(context),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ],
                           ),

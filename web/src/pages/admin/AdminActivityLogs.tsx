@@ -1,25 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch, API_BASE_URL } from '../../api/apiClient';
 import { Modal } from '../../components/Modal';
-import {
-  Search,
-  ShieldAlert,
-  FileText,
-  Lock,
-  DollarSign,
-  RefreshCw,
-  Download,
-  Calendar,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  User,
-  Info,
-  Globe,
-  FileJson,
-  Layers,
-} from 'lucide-react';
+import { Search, ShieldAlert, FileText, Lock, DollarSign, RefreshCw, Download, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Info, Globe, FileJson, Layers, Tag, Unlock, Trash2 } from 'lucide-react';
 
 export const AdminActivityLogs: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0 });
@@ -56,7 +38,7 @@ export const AdminActivityLogs: React.FC = () => {
       .then((res) => {
         setData(res.data || { items: [], total: 0 });
       })
-      .catch((err) => console.error('❌ Error fetching activity logs:', err))
+      .catch((err) => console.error('[AdminActivityLogs] [Error] Error fetching activity logs:', err))
       .finally(() => setLoading(false));
   };
 
@@ -132,47 +114,47 @@ export const AdminActivityLogs: React.FC = () => {
   const renderActionBadge = (type: string) => {
     const t = (type || '').toUpperCase();
     if (t.includes('HUY_DON') || t.includes('CANCEL')) {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 700 }}>🚫 HỦY ĐƠN HÀNG</span>;
+      return <span className="badge" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 700 }}><XCircle size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HỦY ĐƠN HÀNG</span>;
     }
     if (t.includes('HOAN_TIEN') || t.includes('REFUND')) {
-      return <span className="badge" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', fontWeight: 700 }}>💸 HOÀN TIỀN</span>;
+      return <span className="badge" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', fontWeight: 700 }}><Tag size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HOÀN TIỀN</span>;
     }
     if (t.includes('KHOA_QUAN') || t.includes('LOCK_STORE')) {
-      return <span className="badge" style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700 }}>🔒 KHÓA NHÀ HÀNG</span>;
+      return <span className="badge" style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700 }}><Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA NHÀ HÀNG</span>;
     }
     if (t.includes('MO_KHOA_QUAN') || t.includes('UNLOCK_STORE')) {
-      return <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: 700 }}>🔓 MỞ KHÓA QUÁN</span>;
+      return <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: 700 }}><Unlock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA QUÁN</span>;
     }
     if (t.includes('XOA_NHA_HANG') || t.includes('DELETE_STORE')) {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontWeight: 700 }}>🗑️ XÓA MỀM NHÀ HÀNG</span>;
+      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontWeight: 700 }}><Trash2 size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> XÓA MỀM NHÀ HÀNG</span>;
     }
     if (t.includes('PHUOC_HOI_NHA_HANG') || t.includes('RESTORE_STORE')) {
-      return <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 700 }}>♻️ PHỤC HỒI NHÀ HÀNG</span>;
+      return <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 700 }}>PHỤC HỒI NHÀ HÀNG</span>;
     }
     if (t.includes('KHOA_USER') || t.includes('LOCK_USER')) {
-      return <span className="badge" style={{ background: '#fdf2f8', color: '#db2777', border: '1px solid #fbcfe8', fontWeight: 700 }}>👤 KHÓA TÀI KHOẢN</span>;
+      return <span className="badge" style={{ background: '#fdf2f8', color: '#db2777', border: '1px solid #fbcfe8', fontWeight: 700 }}><Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA TÀI KHOẢN</span>;
     }
     if (t.includes('MO_KHOA_USER') || t.includes('UNLOCK_USER')) {
-      return <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontWeight: 700 }}>✅ MỞ KHÓA USER</span>;
+      return <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontWeight: 700 }}><Unlock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA USER</span>;
     }
     if (t.includes('DOI_MAT_KHAU') || t.includes('PASSWORD')) {
-      return <span className="badge" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontWeight: 700 }}>🔑 ĐỔI MẬT KHAU</span>;
+      return <span className="badge" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontWeight: 700 }}>ĐỔI MẬT KHẨU</span>;
     }
     if (t.includes('EXPORT') || t.includes('CSV')) {
-      return <span className="badge" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 700 }}>📊 XUẤT CSV BÁO CÁO</span>;
+      return <span className="badge" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 700 }}>XUẤT CSV BÁO CÁO</span>;
     }
-    return <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontWeight: 600 }}>📝 {type}</span>;
+    return <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontWeight: 600 }}>{type}</span>;
   };
 
   const renderRiskBadge = (type: string) => {
     const risk = getRiskLevel(type);
     if (risk === 'HIGH') {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: '11px', fontWeight: 800 }}>⚠️ RỦI RO CAO</span>;
+      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: '11px', fontWeight: 800 }}><AlertTriangle size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> RỦI RO CAO</span>;
     }
     if (risk === 'MEDIUM') {
-      return <span className="badge" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', fontSize: '11px', fontWeight: 700 }}>⚡ TRUNG BÌNH</span>;
+      return <span className="badge" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', fontSize: '11px', fontWeight: 700 }}>TRUNG BÌNH</span>;
     }
-    return <span className="badge" style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600 }}>ℹ️ THẤP</span>;
+    return <span className="badge" style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600 }}><Info size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> THẤP</span>;
   };
 
   const renderResultBadge = (res: string) => {
@@ -317,17 +299,17 @@ export const AdminActivityLogs: React.FC = () => {
             value={actionType}
             onChange={(e) => setActionType(e.target.value)}
           >
-            <option value="">📋 Tất cả loại hành động</option>
-            <option value="KHOA_QUAN">🔒 Khóa nhà hàng (KHOA_QUAN)</option>
-            <option value="MO_KHOA_QUAN">🔓 Mở khóa quán (MO_KHOA_QUAN)</option>
-            <option value="XOA_NHA_HANG">🗑️ Xóa mềm nhà hàng (XOA_NHA_HANG)</option>
-            <option value="PHUOC_HOI_NHA_HANG">♻️ Phục hồi nhà hàng</option>
-            <option value="HUY_DON">🚫 Hủy đơn hàng (HUY_DON)</option>
-            <option value="HOAN_TIEN">💸 Hoàn tiền (HOAN_TIEN)</option>
-            <option value="KHOA_USER">👤 Khóa tài khoản (KHOA_USER)</option>
-            <option value="MO_KHOA_USER">✅ Mở khóa tài khoản (MO_KHOA_USER)</option>
-            <option value="DOI_MAT_KHAU">🔑 Đổi mật khẩu (DOI_MAT_KHAU)</option>
-            <option value="system.export_audit_log_csv">📊 Xuất CSV báo cáo</option>
+            <option value="">Tất cả loại hành động</option>
+            <option value="KHOA_QUAN">Khóa nhà hàng (KHOA_QUAN)</option>
+            <option value="MO_KHOA_QUAN">Mở khóa quán (MO_KHOA_QUAN)</option>
+            <option value="XOA_NHA_HANG">Xóa mềm nhà hàng (XOA_NHA_HANG)</option>
+            <option value="PHUOC_HOI_NHA_HANG">Phục hồi nhà hàng</option>
+            <option value="HUY_DON">Hủy đơn hàng (HUY_DON)</option>
+            <option value="HOAN_TIEN">Hoàn tiền (HOAN_TIEN)</option>
+            <option value="KHOA_USER">Khóa tài khoản (KHOA_USER)</option>
+            <option value="MO_KHOA_USER">Mở khóa tài khoản (MO_KHOA_USER)</option>
+            <option value="DOI_MAT_KHAU">Đổi mật khẩu (DOI_MAT_KHAU)</option>
+            <option value="system.export_audit_log_csv">Xuất CSV báo cáo</option>
           </select>
 
           <select
@@ -336,10 +318,10 @@ export const AdminActivityLogs: React.FC = () => {
             value={resultFilter}
             onChange={(e) => setResultFilter(e.target.value)}
           >
-            <option value="">🎯 Tất cả kết quả</option>
-            <option value="success">✅ Thành công</option>
-            <option value="failed">❌ Thất bại</option>
-            <option value="denied">⛔ Bị từ chối</option>
+            <option value="">Tất cả kết quả</option>
+            <option value="success">Thành công</option>
+            <option value="failed">Thất bại</option>
+            <option value="denied">Bị từ chối</option>
           </select>
 
           <button className="btn btn-outline" onClick={fetchLogs} title="Tải lại nhật ký">
@@ -481,14 +463,14 @@ export const AdminActivityLogs: React.FC = () => {
             {/* Content Description */}
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                📝 Nội dung mô tả hành động:
+                Nội dung mô tả hành động:
               </div>
               <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', lineHeight: '1.5' }}>
                 {selectedLog.moTa}
               </div>
               {selectedLog.reason && (
                 <div style={{ marginTop: '8px', padding: '8px 12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', fontSize: '12px', color: '#b45309' }}>
-                  💬 Lý do ghi nhận: <strong>{selectedLog.reason}</strong>
+                  Lý do ghi nhận: <strong>{selectedLog.reason}</strong>
                 </div>
               )}
             </div>
@@ -524,7 +506,7 @@ export const AdminActivityLogs: React.FC = () => {
             {/* User Agent Info if available */}
             {selectedLog.userAgent && (
               <div style={{ fontSize: '11px', color: '#94a3b8', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #f1f5f9' }}>
-                🌐 <strong>User Agent:</strong> {selectedLog.userAgent}
+                <strong>User Agent:</strong> {selectedLog.userAgent}
               </div>
             )}
           </div>

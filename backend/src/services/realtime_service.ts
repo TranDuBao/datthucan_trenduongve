@@ -41,6 +41,10 @@ export class RealtimeService {
     return RealtimeService.instance;
   }
 
+  public getIO(): SocketIOServer | null {
+    return this.io;
+  }
+
   public initialize(httpServer: HttpServer) {
     if (this.io) return;
 
@@ -96,7 +100,7 @@ export class RealtimeService {
           socket.join(`customer:${kh.maKhachHang}`);
         }
       } catch (e) {
-        console.error('⚠️ Realtime auto-join customer room error:', e);
+        console.error('[RealtimeService] [Warn] Realtime auto-join customer room error:', e);
       }
 
       // Auto join admin rooms if user is an ADMIN
@@ -115,7 +119,7 @@ export class RealtimeService {
             socket.join(`restaurant:${store.maQuan}`);
           }
         } catch (e) {
-          console.error('⚠️ Realtime auto-join restaurant error:', e);
+          console.error('[RealtimeService] [Warn] Realtime auto-join restaurant error:', e);
         }
       }
 
@@ -168,7 +172,7 @@ export class RealtimeService {
             }
           }
         } catch (err) {
-          console.error('⚠️ Error validating socket room join:', err);
+          console.error('[RealtimeService] [Warn] Error validating socket room join:', err);
         }
       });
 
@@ -178,7 +182,7 @@ export class RealtimeService {
       });
     });
 
-    console.log('⚡ Realtime Socket.io gateway initialized successfully');
+    console.log('[RealtimeService] [Info] Realtime Socket.io gateway initialized successfully');
   }
 
   // ── Emitter API Methods (Called ONLY AFTER Database Writes Succeed) ────────
@@ -200,7 +204,7 @@ export class RealtimeService {
         this.io.to(`customer:${data.maKhachHang}`).emit(REALTIME_EVENTS.ORDER_CREATED, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (order:created):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (order:created):', e);
     }
   }
 
@@ -221,7 +225,7 @@ export class RealtimeService {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.ORDER_STATUS_CHANGED, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (order:status_changed):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (order:status_changed):', e);
     }
   }
 
@@ -239,7 +243,7 @@ export class RealtimeService {
         this.io.to(`customer:${data.maKhachHang}`).emit(REALTIME_EVENTS.RESERVATION_CREATED, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (reservation:created):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (reservation:created):', e);
     }
   }
 
@@ -257,7 +261,7 @@ export class RealtimeService {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.RESERVATION_STATUS_CHANGED, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (reservation:status_changed):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (reservation:status_changed):', e);
     }
   }
 
@@ -266,7 +270,10 @@ export class RealtimeService {
     try {
       const payload = {
         id: orderId,
+        orderId,
+        maDonHang: orderId,
         status: 'THANH_TOAN_THANH_CONG',
+        trangThai: 'THANH_TOAN_THANH_CONG',
         amount,
         updatedAt: new Date().toISOString(),
       };
@@ -276,7 +283,7 @@ export class RealtimeService {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.PAYMENT_CONFIRMED, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (payment:confirmed):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (payment:confirmed):', e);
     }
   }
 
@@ -285,7 +292,7 @@ export class RealtimeService {
     try {
       this.io.to(room).emit(event, payload);
     } catch (e) {
-      console.error(`⚠️ Realtime emit error (${event} to ${room}):`, e);
+      console.error(`[RealtimeService] [Warn] Realtime emit error (${event} to ${room}):`, e);
     }
   }
 
@@ -318,7 +325,7 @@ export class RealtimeService {
         this.io.to(`customer:${recipientId}`).emit(REALTIME_EVENTS.NOTIFICATION_NEW, payload);
       }
     } catch (e) {
-      console.error('⚠️ Realtime emit error (notification:new):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (notification:new):', e);
     }
   }
 
@@ -332,7 +339,7 @@ export class RealtimeService {
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.VOUCHER_UPDATED, payload);
     } catch (e) {
-      console.error('⚠️ Realtime emit error (voucher:updated):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (voucher:updated):', e);
     }
   }
 
@@ -346,7 +353,7 @@ export class RealtimeService {
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.STORE_PROFILE_UPDATED, payload);
     } catch (e) {
-      console.error('⚠️ Realtime emit error (restaurant:profile_updated):', e);
+      console.error('[RealtimeService] [Warn] Realtime emit error (restaurant:profile_updated):', e);
     }
   }
 }

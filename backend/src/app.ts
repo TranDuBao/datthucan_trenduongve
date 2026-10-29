@@ -14,8 +14,10 @@ import customerReservationRoutes from './routes/customer_reservation_routes';
 import uploadRoutes from './routes/upload_routes';
 import reviewRoutes from './routes/review_routes';
 import notificationRoutes from './routes/notification_routes';
+import refundRoutes from './routes/refund_routes';
 
 import { RestaurantController } from './controllers/restaurant_controller';
+import { AdminBannerService } from './services/admin/admin_banner_service';
 import { createRateLimiter } from './middlewares/rate_limiter_middleware';
 
 dotenv.config();
@@ -25,6 +27,7 @@ const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS) || 1;
 app.set('trust proxy', trustProxyHops);
 
 const restaurantController = new RestaurantController();
+const adminBannerService = new AdminBannerService();
 
 // Configured CORS Origin (P3-02 Fix)
 const allowedOrigins = process.env.CLIENT_ORIGIN
@@ -83,6 +86,14 @@ if (fs.existsSync(fallbackUploadsDir)) {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/restaurants', restaurantRoutes);
 app.get('/api/v1/categories', restaurantController.getCategories);
+app.get('/api/v1/banners', async (_req, res) => {
+  try {
+    const banners = await adminBannerService.getActiveBanners();
+    return res.status(200).json({ statusCode: 200, status: '1', data: banners });
+  } catch (error: any) {
+    return res.status(500).json({ statusCode: 500, message: error.message });
+  }
+});
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/reservations', customerReservationRoutes);
@@ -93,6 +104,7 @@ app.use('/api/v1/vouchers', customerVoucherRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/refunds', refundRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

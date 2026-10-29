@@ -32,7 +32,7 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      console.error('❌ Register Error:', error);
+      console.error('[AuthController] [Error] Register Error:', error);
       return res.status(400).json({
         statusCode: 400,
         status: "0",
@@ -61,7 +61,7 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      console.error('❌ Login Error:', error);
+      console.error('[AuthController] [Error] Login Error:', error);
       return res.status(401).json({
         statusCode: 401,
         status: "0",
@@ -91,7 +91,7 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      console.error('❌ Google Auth Error:', error);
+      console.error('[AuthController] [Error] Google Auth Error:', error);
       return res.status(400).json({
         statusCode: 400,
         status: "0",
@@ -139,7 +139,7 @@ export class AuthController {
         data: userData,
       });
     } catch (error: any) {
-      console.error('❌ GetProfile Error:', error);
+      console.error('[AuthController] [Error] GetProfile Error:', error);
       return res.status(500).json({
         statusCode: 500,
         status: "0",
@@ -195,7 +195,7 @@ export class AuthController {
         data: userData,
       });
     } catch (error: any) {
-      console.error('❌ UpdateProfile Error:', error);
+      console.error('[AuthController] [Error] UpdateProfile Error:', error);
       return res.status(500).json({
         statusCode: 500,
         status: '0',
@@ -245,7 +245,7 @@ export class AuthController {
         message: 'Đổi mật khẩu thành công',
       });
     } catch (error: any) {
-      console.error('❌ ChangePassword Error:', error);
+      console.error('[AuthController] [Error] ChangePassword Error:', error);
       return res.status(500).json({
         statusCode: 500,
         status: '0',

@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import '../../../common/color_extension.dart';
 import 'restaurant_format_utils.dart';
@@ -301,7 +302,7 @@ class _OwnerOrderDetailSheetState extends State<OwnerOrderDetailSheet> {
                       style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
                     ),
                     Text(
-                      isPaid ? 'Đã thanh toán ✅' : 'Chưa thanh toán ⚠️',
+                      isPaid ? 'Đã thanh toán' : 'Chưa thanh toán',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

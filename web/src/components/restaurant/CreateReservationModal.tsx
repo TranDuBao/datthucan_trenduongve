@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../../api/apiClient';
-import { X, Calendar, Clock, User, Phone, Users, FileText, Utensils } from 'lucide-react';
+import { X, Calendar, Clock, User, Phone, Users, FileText, Utensils, AlertTriangle } from 'lucide-react';
 
 interface CreateReservationModalProps {
   isOpen: boolean;
@@ -162,7 +162,7 @@ export const CreateReservationModal: React.FC<CreateReservationModalProps> = ({
 
         {error && (
           <div style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '10px 14px', borderRadius: '8px', fontSize: '14px', marginBottom: '16px' }}>
-            ⚠️ {error}
+            <AlertTriangle size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> {error}
           </div>
         )}
 

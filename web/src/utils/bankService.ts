@@ -36,7 +36,7 @@ export async function fetchVietQRBanks(): Promise<BankItem[]> {
       return cachedBanks;
     }
   } catch (err) {
-    console.warn('⚡ Lỗi gọi API VietQR Banks, chuyển sang danh sách ngân hàng chuẩn:', err);
+    console.warn('[BankService] [Warn] Lỗi gọi API VietQR Banks, chuyển sang danh sách ngân hàng chuẩn:', err);
   }
 
   // Fallback complete Vietnamese banks list if offline/network restriction

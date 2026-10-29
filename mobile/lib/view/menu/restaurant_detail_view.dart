@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
@@ -5,9 +6,11 @@ import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
 import '../../services/order_service.dart';
 import '../../services/voucher_service.dart';
+import '../../services/review_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/skeleton/food_item_skeleton.dart';
 import '../more/my_order_view.dart';
+import '../more/restaurant_reviews_sheet.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
@@ -27,6 +30,9 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
   int selectedCategoryIndex = 0;
   bool isFav = false;
 
+  double currentRate = 0.0;
+  int currentRatingCount = 0;
+
   List<VoucherModel> storeVouchers = [];
   bool isLoadingVouchers = true;
   Set<int> collectedVoucherIds = {};
@@ -34,6 +40,20 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
   @override
   void initState() {
     super.initState();
+    final rawRate = widget.restaurantObj["danhGiaTrungBinh"] ??
+        widget.restaurantObj["danhgiatrungbinh"] ??
+        widget.restaurantObj["diemDanhGiaTB"] ??
+        widget.restaurantObj["rate"] ??
+        widget.restaurantObj["ratingAvg"];
+    final rawCount = widget.restaurantObj["soLuongDanhGia"] ??
+        widget.restaurantObj["soluongdanhgia"] ??
+        widget.restaurantObj["soLuotDanhGia"] ??
+        widget.restaurantObj["ratingCount"] ??
+        widget.restaurantObj["rating"] ??
+        0;
+    currentRatingCount = int.tryParse(rawCount.toString()) ?? 0;
+    currentRate = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
+
     _loadMenuData();
     locator<SocketService>().listenToVoucherUpdates((_) {
       if (mounted) {
@@ -95,9 +115,9 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     final resName = widget.restaurantObj['tenQuan'] ?? widget.restaurantObj['name'] ?? 'Phở Bò Gia Truyền Hà Nội - Nguyễn Trãi';
     final resAddress = widget.restaurantObj['diaChi'] ?? widget.restaurantObj['address'] ?? '235 Nguyễn Trãi, Quận 1, TP.HCM';
 
-    // Set active restaurant in CartProvider
+    // Đăng ký meta của quán vào CartProvider (không xóa giỏ hàng)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CartProvider>().setRestaurant(id: resId, name: resName, address: resAddress);
+      context.read<CartProvider>().registerRestaurant(id: resId, name: resName, address: resAddress);
     });
 
     // Fetch actual vouchers for this store from DB
@@ -106,6 +126,16 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
         setState(() {
           storeVouchers = vouchers;
           isLoadingVouchers = false;
+        });
+      }
+    });
+
+    // Fetch live ratings & reviews count directly from DB
+    ReviewService.fetchRestaurantReviews(resId, limit: 1).then((res) {
+      if (mounted && res['success'] == true) {
+        setState(() {
+          currentRatingCount = int.tryParse((res['total'] ?? currentRatingCount).toString()) ?? currentRatingCount;
+          currentRate = double.tryParse((res['averageRating'] ?? currentRate).toString()) ?? currentRate;
         });
       }
     });
@@ -166,7 +196,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              const Text("🎁", style: TextStyle(fontSize: 24)),
+              const Icon(LucideIcons.gift, size: 24, color: Color(0xFFFC6011)),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -248,7 +278,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                     });
                     _showResultModal(
                       isSuccess: true,
-                      title: "Lưu Voucher Thành Công! 🎉",
+                      title: "Lưu Voucher Thành Công!",
                       message: res['message'] ?? "Đã thêm mã ${v.code} vào ví voucher của bạn.",
                     );
                   } else {
@@ -326,6 +356,8 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     final resName = widget.restaurantObj['tenQuan'] ?? widget.restaurantObj['name'] ?? 'Phở Bò Gia Truyền Hà Nội - Nguyễn Trãi';
     final resImg = widget.restaurantObj['img'] ?? widget.restaurantObj['image'] ?? 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500';
     final resAddress = widget.restaurantObj['diaChi'] ?? widget.restaurantObj['address'] ?? '235 Nguyễn Trãi, Quận 1, TP.HCM';
+    final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
+    final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
@@ -407,7 +439,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
-                            "⏱️ 15-20 phút • 1.2 km",
+                            "15-20 phút • 1.2 km",
                             style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -438,37 +470,67 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00E676).withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              "• Đang mở",
-                              style: TextStyle(color: Color(0xFF00E676), fontSize: 12, fontWeight: FontWeight.w700),
-                            ),
-                          ),
+                          Builder(builder: (context) {
+                            final String storeStatus = (widget.restaurantObj['trangThai'] ?? widget.restaurantObj['trangthai'] ?? 'mở cửa').toString().toLowerCase().trim();
+                            final bool isStoreClosed = storeStatus == 'đóng cửa' || storeStatus == 'ngưng kinh doanh' || storeStatus == 'closed';
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: (isStoreClosed ? const Color(0xFFFF5252) : const Color(0xFF00E676)).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isStoreClosed ? "• Đóng cửa" : "• Đang mở",
+                                style: TextStyle(
+                                  color: isStoreClosed ? const Color(0xFFFF5252) : const Color(0xFF00E676),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            );
+                          }),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
-                          const SizedBox(width: 4),
-                          Text(
-                            "4.9 (124+)",
-                            style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13, fontWeight: FontWeight.w700),
-                          ),
-                          Expanded(
-                            child: Text(
-                              " • $resAddress",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 12),
+                      InkWell(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => RestaurantReviewsSheet(
+                              restaurantId: resId,
+                              restaurantName: resName,
+                              averageRating: currentRatingCount > 0 ? currentRate : 0.0,
+                              totalReviews: currentRatingCount,
                             ),
-                          ),
-                        ],
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              currentRatingCount > 0 && currentRate > 0
+                                  ? "${currentRate.toStringAsFixed(1)} ($currentRatingCount)"
+                                  : "0.0 (0)",
+                              style: TextStyle(
+                                color: TColor.primaryTextOf(context),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                " • $resAddress",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 14),
 
@@ -512,7 +574,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const Text("🎁", style: TextStyle(fontSize: 18)),
+                                        const Icon(LucideIcons.gift, size: 18, color: Color(0xFFFC6011)),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Column(
@@ -652,7 +714,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${cat['name']} 🔥",
+                                      cat['name'],
                                       style: TextStyle(
                                         color: TColor.primaryTextOf(context),
                                         fontSize: 18,
@@ -672,6 +734,11 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                         final int stockQty = int.tryParse((item['soLuongMon'] ?? item['quantity'] ?? item['soLuong'] ?? 0).toString()) ?? 0;
                                         final String status = (item['trangThaiMon'] ?? item['status'] ?? '').toString().toUpperCase();
                                         final bool isSoldOut = stockQty <= 0 || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG';
+
+                                        final rawDishRate = item['rating'] ?? item['diemDanhGiaTB'] ?? item['danhGiaTrungBinh'] ?? 0;
+                                        final rawDishRatingCount = item['ratingCount'] ?? item['soLuotDanhGia'] ?? item['soLuongDanhGia'] ?? 0;
+                                        final double dishRate = double.tryParse(rawDishRate.toString()) ?? 0.0;
+                                        final int dishRatingCount = int.tryParse(rawDishRatingCount.toString()) ?? 0;
 
                                         return GestureDetector(
                                           onTap: () {
@@ -758,14 +825,38 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                                       const SizedBox(height: 3),
                                                       Row(
                                                         children: [
+                                                          const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 14),
+                                                          const SizedBox(width: 3),
                                                           Text(
-                                                            isSoldOut ? "Tạm ngưng phục vụ" : "Chế biến tươi nóng",
+                                                            dishRatingCount > 0 && dishRate > 0
+                                                                ? "${dishRate.toStringAsFixed(1)}${dishRatingCount > 0 ? ' ($dishRatingCount)' : ''}"
+                                                                : "0.0",
                                                             style: TextStyle(
-                                                              color: TColor.secondaryTextOf(context),
+                                                              color: dishRatingCount > 0 && dishRate > 0
+                                                                  ? const Color(0xFFFF9800)
+                                                                  : TColor.secondaryTextOf(context),
                                                               fontSize: 11,
+                                                              fontWeight: FontWeight.w700,
                                                             ),
                                                           ),
-                                                          const SizedBox(width: 6),
+                                                          const SizedBox(width: 5),
+                                                          Text(
+                                                            "•",
+                                                            style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 10),
+                                                          ),
+                                                          const SizedBox(width: 5),
+                                                          Expanded(
+                                                            child: Text(
+                                                              isSoldOut ? "Tạm ngưng" : "Chế biến tươi nóng",
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis,
+                                                              style: TextStyle(
+                                                                color: TColor.secondaryTextOf(context),
+                                                                fontSize: 11,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 4),
                                                           Container(
                                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                             decoration: BoxDecoration(

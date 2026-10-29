@@ -105,7 +105,7 @@ class MenuItemRow extends StatelessWidget {
                           ),
                         ),
                       )
-                    else if (ratingNum > 0)
+                    else if (!isSoldOut)
                       // Rating Badge
                       Positioned(
                         top: 6,
@@ -122,7 +122,7 @@ class MenuItemRow extends StatelessWidget {
                               const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
                               const SizedBox(width: 2),
                               Text(
-                                ratingNum.toStringAsFixed(1),
+                                (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,

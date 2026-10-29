@@ -618,7 +618,7 @@ export class ReservationService {
         data: { reservationId: saved.maDatBan, maQuan: payload.maQuan },
       });
     } catch (err: any) {
-      console.warn('⚠️ Realtime emit error (reservation:created):', err?.message || err);
+      console.warn('[ReservationService] [Warn] Realtime emit error (reservation:created):', err?.message || err);
     }
 
     return saved;

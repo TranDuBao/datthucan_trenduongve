@@ -133,7 +133,7 @@ class NotificationService {
         return list.map((item) => NotificationModel.fromJson(item)).toList();
       }
     } catch (e) {
-      debugPrint('⚠️ Error fetching notifications: $e');
+      debugPrint('[NotificationService] [Warn] Error fetching notifications: $e');
     }
     return [];
   }
@@ -157,7 +157,7 @@ class NotificationService {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Error fetching unread count: $e');
+      debugPrint('[NotificationService] [Warn] Error fetching unread count: $e');
     }
     return 0;
   }

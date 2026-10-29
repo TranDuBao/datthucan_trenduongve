@@ -248,9 +248,9 @@ class DishReviewsSection extends StatelessWidget {
             children: [
               _filterChip(context, "all", "Tất cả ($totalReviewsCount)"),
               const SizedBox(width: 8),
-              _filterChip(context, "image", "📷 Có hình ảnh ($_imageReviewsCount)"),
+              _filterChip(context, "image", "Có hình ảnh ($_imageReviewsCount)"),
               const SizedBox(width: 8),
-              _filterChip(context, "5star", "5 ★ ($_fiveStarReviewsCount)"),
+              _filterChip(context, "5star", "5 sao ($_fiveStarReviewsCount)"),
               const SizedBox(width: 8),
               _filterChip(context, "latest", "Mới nhất"),
             ],

@@ -27,6 +27,9 @@ export class RestaurantRevenueService {
       .createQueryBuilder('dh')
       .where('dh.maquan = :maQuan', { maQuan })
       .andWhere('dh.thoigiandat >= :todayStart', { todayStart })
+      .andWhere('LOWER(dh.trangthai) NOT IN (:...unpaidList)', {
+        unpaidList: ['cho_thanh_toan', 'unpaid', 'chờ thanh toán'],
+      })
       .getCount();
 
     const upcomingPickupCount = await this.orderRepo
@@ -63,12 +66,16 @@ export class RestaurantRevenueService {
       .getRawOne();
     const revenue = Number(revenueRaw?.sum || 0);
 
-    // Fetch recent 5 orders
-    const rawRecentOrders = await this.orderRepo.find({
-      where: { maQuan },
-      order: { thoiGianDat: 'DESC' },
-      take: 5,
-    });
+    // Fetch recent 5 orders (excluding unpaid)
+    const rawRecentOrders = await this.orderRepo
+      .createQueryBuilder('dh')
+      .where('dh.maquan = :maQuan', { maQuan })
+      .andWhere('LOWER(dh.trangthai) NOT IN (:...unpaidList)', {
+        unpaidList: ['cho_thanh_toan', 'unpaid', 'chờ thanh toán'],
+      })
+      .orderBy('dh.thoigiandat', 'DESC')
+      .take(5)
+      .getMany();
 
     const recentOrders = [];
     for (const ord of rawRecentOrders) {
@@ -197,10 +204,13 @@ export class RestaurantRevenueService {
 
     const completedStatuses = ['HOAN_TAT', 'HOAN_THANH', 'COMPLETED', 'PICKED_UP', 'thành công', 'Đã lấy món', 'đã hoàn thành'];
 
-    // 1. Fetch all orders for this store in time range
+    // 1. Fetch all orders for this store in time range (excluding unpaid)
     const orders = await this.orderRepo.createQueryBuilder('dh')
       .where('dh.maquan = :maQuan', { maQuan })
       .andWhere('dh.thoigiandat >= :startDate AND dh.thoigiandat <= :endDate', { startDate, endDate })
+      .andWhere('LOWER(dh.trangthai) NOT IN (:...unpaidList)', {
+        unpaidList: ['cho_thanh_toan', 'unpaid', 'chờ thanh toán'],
+      })
       .orderBy('dh.thoigiandat', 'ASC')
       .getMany();
 

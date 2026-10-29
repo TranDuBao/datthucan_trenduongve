@@ -38,7 +38,7 @@ class _RestaurantStoreProfileTabState extends State<RestaurantStoreProfileTab> {
   void initState() {
     super.initState();
     _profileUpdatedCallback = (data) {
-      debugPrint('⚡ [RestaurantStoreProfileTab] Realtime profile updated received');
+      debugPrint('[RestaurantStoreProfileTab] [Info] Realtime profile updated received');
       if (mounted) {
         widget.onProfileUpdated();
       }

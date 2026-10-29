@@ -125,7 +125,7 @@ class RestaurantOrdersProvider with ChangeNotifier {
     _orderStatusChangedCallback = (data) => _handleOrderStatusChanged(data);
     _paymentConfirmedCallback = (data) => _handlePaymentConfirmed(data);
     _reconnectCallback = () {
-      debugPrint('⚡ [RestaurantOrdersProvider] Reconnected -> refetching orders');
+      debugPrint('[RestaurantOrdersProvider] [Info] Reconnected -> refetching orders');
       fetchOrders();
     };
 
@@ -163,6 +163,10 @@ class RestaurantOrdersProvider with ChangeNotifier {
       }
 
       if (newOrder != null) {
+        final st = (newOrder['trangThai'] ?? newOrder['status'] ?? '').toString().toUpperCase();
+        if (st == 'CHO_THANH_TOAN' || st == 'UNPAID') {
+          return;
+        }
         final newId = newOrder['maDonHang'] ?? newOrder['id'];
         final exists = _orders.any((o) => (o['maDonHang'] ?? o['id']) == newId);
         if (!exists) {
@@ -172,7 +176,7 @@ class RestaurantOrdersProvider with ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [RestaurantOrdersProvider] _handleOrderCreated error: $e');
+      debugPrint('[RestaurantOrdersProvider] [Warn] _handleOrderCreated error: $e');
     }
   }
 
@@ -193,7 +197,7 @@ class RestaurantOrdersProvider with ChangeNotifier {
         fetchOrders();
       }
     } catch (e) {
-      debugPrint('⚠️ [RestaurantOrdersProvider] _handleOrderStatusChanged error: $e');
+      debugPrint('[RestaurantOrdersProvider] [Warn] _handleOrderStatusChanged error: $e');
     }
   }
 
@@ -209,7 +213,7 @@ class RestaurantOrdersProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('⚠️ [RestaurantOrdersProvider] _handlePaymentConfirmed error: $e');
+      debugPrint('[RestaurantOrdersProvider] [Warn] _handlePaymentConfirmed error: $e');
     }
   }
 

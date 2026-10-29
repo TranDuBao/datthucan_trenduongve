@@ -292,7 +292,7 @@ export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
         finalUrl = res.url || (res as any).data?.url;
         if (!finalUrl) throw new Error('Không nhận được đường dẫn ảnh từ máy chủ');
       } catch (uploadErr: any) {
-        setNotice(`❌ Lỗi tải ảnh lên máy chủ: ${uploadErr.message || 'Vui lòng kiểm tra kết nối'}`);
+        setNotice(`Lỗi tải ảnh lên máy chủ: ${uploadErr.message || 'Vui lòng kiểm tra kết nối'}`);
         setTimeout(() => setNotice(null), 6000);
         return;
       }
@@ -308,7 +308,7 @@ export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
       setOriginalSrc(imageSrc);
       triggerChange(finalUrl);
       setIsCropping(false);
-      setNotice('✅ Đã cắt & cập nhật ảnh preview! Hãy nhấn nút "Lưu Thay Đổi" bên dưới để hoàn tất.');
+      setNotice('Đã cắt & cập nhật ảnh preview! Hãy nhấn nút "Lưu Thay Đổi" bên dưới để hoàn tất.');
       setTimeout(() => setNotice(null), 6000);
     } catch (err: any) {
       console.error('Lỗi cắt ảnh:', err);
@@ -445,7 +445,7 @@ export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
 
             <div className="modal-body" style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: '#475569', marginBottom: '10px', fontWeight: 500 }}>
-                💡 <b>Nội dung nằm bên trong viền cam nét đứt sẽ là ảnh đầu ra sau khi cắt.</b>
+                <b>Nội dung nằm bên trong viền cam nét đứt sẽ là ảnh đầu ra sau khi cắt.</b>
               </div>
 
               {/* Aspect ratio options toolbar */}

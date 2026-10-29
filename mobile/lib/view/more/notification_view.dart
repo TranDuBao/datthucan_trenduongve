@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
 import 'package:provider/provider.dart';
@@ -103,7 +104,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                   const SizedBox(width: 8),
                   _buildFilterChip("Đơn hàng", idx: 1, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip(isDark ? "Ưu đãi" : "Ưu đãi hot 🔥", idx: 2, isDark: isDark),
+                  _buildFilterChip(isDark ? "Ưu đãi" : "Ưu đãi hot", idx: 2, isDark: isDark),
                   const SizedBox(width: 8),
                   _buildFilterChip(isDark ? "Hệ thống" : "Cập nhật", idx: 3, isDark: isDark),
                 ],
@@ -209,7 +210,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Center(
-                        child: Text("🍴", style: TextStyle(fontSize: 18)),
+                        child: Icon(LucideIcons.store, size: 18, color: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 12),

@@ -186,7 +186,7 @@ class _CustomTimePickerSheetState extends State<CustomTimePickerSheet> {
             child: Row(
               children: [
                 _buildQuickChip(
-                  label: "⚡ +30 phút",
+                  label: "+30 phút",
                   isSelected: _isSameTime(_tempTime, plus30Min),
                   onTap: () => _updateTempTime(plus30Min),
                   isDark: isDark,

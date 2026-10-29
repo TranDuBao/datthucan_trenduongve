@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../common/color_extension.dart';
@@ -422,7 +423,7 @@ class _StoreProfileEditSheetState extends State<StoreProfileEditSheet> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('🎂', style: TextStyle(fontSize: 13)),
+                                const Icon(LucideIcons.store, size: 13, color: Color(0xFFEA580C)),
                                 const SizedBox(width: 5),
                                 Text(
                                   _txtDanhMuc.text.isNotEmpty ? _txtDanhMuc.text : 'Bánh kem',

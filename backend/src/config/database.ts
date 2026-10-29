@@ -21,6 +21,8 @@ import { NhatKyHoatDongModel } from '../models/nhat_ky_hoat_dong_model';
 import { BanModel } from '../models/ban_model';
 import { DatBanModel } from '../models/dat_ban_model';
 import { NotificationModel } from '../models/notification_model';
+import { BannerModel } from '../models/banner_model';
+import { HoanTienModel } from '../models/hoan_tien_model';
 
 dotenv.config();
 
@@ -53,6 +55,8 @@ export const AppDataSource = new DataSource({
     BanModel,
     DatBanModel,
     NotificationModel,
+    BannerModel,
+    HoanTienModel,
   ],
   migrations: [__dirname + '/../migrations/*.ts'],
   // CRITICAL DB SAFETY RULE: Never drop or synchronize schema automatically!
@@ -65,11 +69,27 @@ export const connectDatabase = async () => {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    console.log('✅ Kết nối PostgreSQL thành công (Bảo vệ dữ liệu synchronize=false)');
+    console.log('[Database] [Info] Kết nối PostgreSQL thành công (Bảo vệ dữ liệu synchronize=false)');
     await AppDataSource.query(`ALTER TABLE monan ALTER COLUMN img TYPE TEXT;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE cuahang ALTER COLUMN img TYPE TEXT;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS banner (
+        mabanner SERIAL PRIMARY KEY,
+        tieude VARCHAR(255) NOT NULL,
+        phude VARCHAR(255) NULL,
+        hinhanh TEXT NOT NULL,
+        lienket VARCHAR(255) NULL,
+        mausac VARCHAR(50) DEFAULT '#FC6011',
+        thutu INT DEFAULT 0,
+        trangthai VARCHAR(30) DEFAULT 'HOAT_DONG',
+        loaibanner VARCHAR(50) DEFAULT 'TRAN_VIEN',
+        ngaytao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE banner ADD COLUMN IF NOT EXISTS loaibanner VARCHAR(50) DEFAULT 'TRAN_VIEN';`).catch(() => {});
 
     // Activity / Audit Logs Table
     await AppDataSource.query(`
@@ -250,7 +270,7 @@ export const connectDatabase = async () => {
     await ensureAdminUserExists();
     // Auto-sanitization disabled to protect production/user data integrity
   } catch (error) {
-    console.error('❌ Lỗi kết nối PostgreSQL:', error);
+    console.error('[Database] [Error] Lỗi kết nối PostgreSQL:', error);
   }
 };
 
@@ -276,7 +296,7 @@ const ensureAdminUserExists = async () => {
     const userRepo = AppDataSource.getRepository(TaiKhoanModel);
     const existingAdmin = await userRepo.findOne({ where: { loaiTaiKhoan: 'ADMIN' } });
     if (!existingAdmin) {
-      console.log(`⚡ Tự động khởi tạo tài khoản Admin từ .env (${adminEmail})...`);
+      console.log(`[Database] [Info] Tự động khởi tạo tài khoản Admin từ .env (${adminEmail})...`);
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
 
@@ -293,9 +313,9 @@ const ensureAdminUserExists = async () => {
          ON CONFLICT (mataikhoan) DO NOTHING;`,
         [adminEmail],
       );
-      console.log('✅ Đã khởi tạo thành công tài khoản Admin từ biến môi trường');
+      console.log('[Database] [Info] Đã khởi tạo thành công tài khoản Admin từ biến môi trường');
     }
   } catch (e) {
-    console.error('⚠️ Không thể tự động kiểm tra tài khoản Admin:', e);
+    console.error('[Database] [Warn] Không thể tự động kiểm tra tài khoản Admin:', e);
   }
 };

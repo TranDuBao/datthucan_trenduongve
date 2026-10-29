@@ -14,6 +14,7 @@ import { ReservationService } from './reservation_service';
 import { RealtimeService } from './realtime_service';
 import { NotificationService } from './notification_service';
 import { RestaurantRevenueService } from './restaurant_revenue_service';
+import { RefundService } from './refund_service';
 import { IsNull, Between, Not, In } from 'typeorm';
 import { deleteUploadFile } from '../controllers/upload_controller';
 
@@ -80,7 +81,10 @@ export class RestaurantMgmtService {
     // NOTE: Do NOT use leftJoin here — TypeORM raw-table leftJoin breaks andWhere conditions.
     // Customer search is handled via a separate subquery below.
     const qb = this.orderRepo.createQueryBuilder('dh')
-      .where('dh.maquan = :maQuan', { maQuan });
+      .where('dh.maquan = :maQuan', { maQuan })
+      .andWhere('LOWER(dh.trangthai) NOT IN (:...unpaidList)', {
+        unpaidList: ['cho_thanh_toan', 'unpaid', 'chờ thanh toán'],
+      });
 
     // 1. Time / Period Filter (Local Timezone Preservation)
     // Skip time filter when user is searching — let search results span all time
@@ -277,11 +281,18 @@ export class RestaurantMgmtService {
       throw new Error('Đơn hàng không tồn tại hoặc không thuộc nhà hàng này!');
     }
 
+    const currentStatus = String(order.trangThai || '').trim().toUpperCase();
+    if (currentStatus === 'CHO_THANH_TOAN' || currentStatus === 'UNPAID' || currentStatus === 'CHỜ THANH TOÁN') {
+      throw new Error('Đơn hàng chưa hoàn tất thanh toán, quán không thể tiếp nhận hoặc xử lý!');
+    }
+
     // Normalize to canonical DB enum value
     const s = String(newStatus || '').trim().toUpperCase();
     let normalizedStatus: string;
 
-    if (s === 'CHO_XAC_NHAN' || s === 'PENDING' || s.includes('CHỜ')) {
+    if (s === 'CHO_THANH_TOAN' || s === 'UNPAID' || s === 'CHỜ THANH TOÁN') {
+      throw new Error('Không thể chuyển đơn sang trạng thái chờ thanh toán!');
+    } else if (s === 'CHO_XAC_NHAN' || s === 'PENDING' || s === 'CHỜ XỬ LÝ' || s === 'CHỜ XÁC NHẬN') {
       normalizedStatus = 'CHO_XAC_NHAN';
     } else if (s === 'DA_XAC_NHAN' || s === 'CONFIRMED') {
       normalizedStatus = 'DA_XAC_NHAN';
@@ -302,23 +313,20 @@ export class RestaurantMgmtService {
       return order;
     }
 
+    // Nếu hủy đơn: Đi qua RefundService xử lý hoàn tiền thống nhất
+    if (normalizedStatus === 'DA_HUY') {
+      const cancelResult = await RefundService.getInstance().cancelAndProcessRefund({
+        maDonHang,
+        requesterRole: 'restaurant',
+        maQuan,
+        reason: lyDo || 'Quán hủy đơn',
+      });
+      return cancelResult.order;
+    }
+
     const prevStatus = order.trangThai;
     order.trangThai = normalizedStatus;
-    if (lyDo) {
-      order.lyDoHuy = lyDo;
-    } else if (normalizedStatus === 'DA_HUY' && !order.lyDoHuy) {
-      order.lyDoHuy = 'Quán hủy đơn';
-    }
     const saved = await this.orderRepo.save(order);
-
-    if (normalizedStatus === 'DA_HUY' && prevStatus !== 'DA_HUY') {
-      try {
-        const { OrderService } = await import('./order_service');
-        await new OrderService().rollbackInventoryAndVoucher(maDonHang);
-      } catch (rollbackErr) {
-        console.error('[RestaurantMgmt] Failed to rollback inventory/voucher on order cancellation:', rollbackErr);
-      }
-    }
 
     // Emit realtime domain event
     try {

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Clock, PackageX, Phone, XCircle, Store, User, Trash2 } from 'lucide-react';
+import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag } from 'lucide-react';
 import {
   OrderStatusBadge,
   normalizeOrderStatus,
@@ -414,7 +414,7 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
                     style={{ padding: '5px 12px', fontSize: '12px', background: '#f59e0b', border: 'none', borderRadius: '7px' }}
                     title="Bắt đầu chuẩn bị món"
                   >
-                    🍳 Chuẩn Bị
+                    <Clock size={13} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> Chuẩn Bị
                   </button>
                 )}
 
@@ -425,7 +425,7 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
                     style={{ padding: '5px 12px', fontSize: '12px', background: '#8b5cf6', border: 'none', borderRadius: '7px' }}
                     title="Báo món ăn đã sẵn sàng"
                   >
-                    🔔 Sẵn Sàng
+                    <ShoppingBag size={13} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> Sẵn Sàng
                   </button>
                 )}
 

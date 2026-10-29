@@ -189,7 +189,7 @@ export const AdminDashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              💰 Tổng Doanh Thu
+              Tổng Doanh Thu
             </span>
             <div
               style={{
@@ -230,7 +230,7 @@ export const AdminDashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              👥 Tổng Người Dùng
+              Tổng Người Dùng
             </span>
             <div
               style={{
@@ -271,7 +271,7 @@ export const AdminDashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              🏪 Tổng Nhà Hàng
+              Tổng Nhà Hàng
             </span>
             <div
               style={{
@@ -312,7 +312,7 @@ export const AdminDashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              🛍️ Tổng Đơn Hàng
+              Tổng Đơn Hàng
             </span>
             <div
               style={{
@@ -449,7 +449,7 @@ export const AdminDashboard: React.FC = () => {
                             pointerEvents: 'none',
                           }}
                         >
-                          <div>📅 {d.fullDate || d.label}</div>
+                          <div>{d.fullDate || d.label}</div>
                           <div style={{ color: '#34d399', marginTop: '2px' }}>Doanh thu: {formatVND(d.revenue)}</div>
                           <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '1px' }}>{d.orders} đơn hàng</div>
                         </div>

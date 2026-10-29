@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +36,7 @@ class _AboutUsViewState extends State<AboutUsView> {
               _buildHeroCard(isDark),
               const SizedBox(height: 16),
 
-              // Stats Row (500K+, 4.9★, 98% / 25phút)
+              // Stats Row (500K+, 4.9, 98% / 25phút)
               _buildStatsRow(isDark),
               const SizedBox(height: 20),
 
@@ -123,7 +124,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "© 2025 Gourmet Kitchen Inc. Giữ toàn bộ bản quyền sở hữu trí tuệ.",
+                      "(C) 2025 Gourmet Kitchen Inc. Giữ toàn bộ bản quyền sở hữu trí tuệ.",
                       style: TextStyle(
                         color: TColor.secondaryTextOf(context).withOpacity(0.6),
                         fontSize: 10,
@@ -232,7 +233,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "✨",
+                    "",
                     style: TextStyle(fontSize: 12),
                   ),
                   const SizedBox(width: 4),
@@ -311,7 +312,7 @@ class _AboutUsViewState extends State<AboutUsView> {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("🍴", style: TextStyle(fontSize: 12)),
+                  Icon(LucideIcons.store, size: 12, color: Colors.white),
                   SizedBox(width: 4),
                   Text(
                     "ẨM THỰC TỪ TRÁI TIM",
@@ -357,7 +358,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.white,
-                          child: Text("👨‍🍳", style: TextStyle(fontSize: 11)),
+                          child: Icon(LucideIcons.user, size: 12, color: TColor.primary),
                         ),
                       ),
                       Positioned(
@@ -365,7 +366,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.white,
-                          child: Text("🍲", style: TextStyle(fontSize: 11)),
+                          child: Icon(LucideIcons.store, size: 12, color: TColor.primary),
                         ),
                       ),
                       Positioned(
@@ -373,7 +374,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.white,
-                          child: Text("🥗", style: TextStyle(fontSize: 11)),
+                          child: Icon(LucideIcons.shoppingBag, size: 12, color: TColor.primary),
                         ),
                       ),
                     ],
@@ -398,7 +399,7 @@ class _AboutUsViewState extends State<AboutUsView> {
   Widget _buildStatsRow(bool isDark) {
     final stats = [
       {"num": "500K+", "label": isDark ? "Bữa ăn đã phục vụ" : "Bữa ăn đã trao"},
-      {"num": "4.9 ★", "label": isDark ? "Đánh giá hài lòng" : "Đánh giá cao"},
+      {"num": "4.9", "label": isDark ? "Đánh giá hài lòng" : "Đánh giá cao"},
       {"num": "98%", "label": isDark ? "Khách hài lòng" : "Khách hài lòng"},
     ];
 
@@ -639,7 +640,7 @@ class _AboutUsViewState extends State<AboutUsView> {
   Widget _buildImpressiveNumbersCard(bool isDark) {
     final numbers = [
       {"val": "500K+", "sub": "Bữa ăn đã phục vụ"},
-      {"val": "4.9★", "sub": "Đánh giá hài lòng"},
+      {"val": "4.9", "sub": "Đánh giá hài lòng"},
       {"val": "25 phút", "sub": "Giao hàng bình quân"},
       {"val": "120+", "sub": "Đầu bếp thượng hạng"},
     ];
@@ -766,11 +767,11 @@ class _AboutUsViewState extends State<AboutUsView> {
               ),
               Row(
                 children: [
-                  _buildSocialBtn("📘"),
+                  _buildSocialBtn(LucideIcons.globe),
                   const SizedBox(width: 8),
-                  _buildSocialBtn("📸"),
+                  _buildSocialBtn(LucideIcons.image),
                   const SizedBox(width: 8),
-                  _buildSocialBtn("✉️"),
+                  _buildSocialBtn(LucideIcons.mail),
                 ],
               ),
             ],
@@ -780,7 +781,7 @@ class _AboutUsViewState extends State<AboutUsView> {
     );
   }
 
-  Widget _buildSocialBtn(String emoji) {
+  Widget _buildSocialBtn(IconData icon) {
     return Container(
       width: 32,
       height: 32,
@@ -789,7 +790,7 @@ class _AboutUsViewState extends State<AboutUsView> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(
-        child: Text(emoji, style: const TextStyle(fontSize: 14)),
+        child: Icon(icon, size: 16, color: TColor.primary),
       ),
     );
   }

@@ -62,7 +62,7 @@ export class AuditLogService {
 
       return await this.logRepo.save(entry);
     } catch (err) {
-      console.error('❌ Failed to record audit log entry:', err);
+      console.error('[AuditLogService] [Error] Failed to record audit log entry:', err);
       return null;
     }
   }

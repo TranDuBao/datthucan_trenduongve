@@ -352,7 +352,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                     }}
                     style={{ background: '#f59e0b', border: 'none', fontSize: '13px' }}
                   >
-                    🍳 Chuẩn Bị Món
+                    <Clock size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '6px' }} /> Chuẩn Bị Món
                   </button>
                 )}
 
@@ -365,7 +365,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                     }}
                     style={{ background: '#8b5cf6', border: 'none', fontSize: '13px' }}
                   >
-                    🔔 Món Đã Sẵn Sàng
+                    <ShoppingBag size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '6px' }} /> Món Đã Sẵn Sàng
                   </button>
                 )}
 

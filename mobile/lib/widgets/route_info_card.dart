@@ -13,7 +13,7 @@ class RouteInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MapProvider>(
       builder: (context, provider, _) {
-        final route = provider.currentRoute;
+        final route = provider.stopoverRoute ?? provider.currentRoute;
         if (route == null) return const SizedBox.shrink();
 
         return AnimatedSlide(
@@ -160,18 +160,24 @@ class _RouteCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFE0B2)),
-            ),
-            child: const Icon(
-              Icons.alt_route_rounded,
-              color: Color(0xFFFC6011),
-              size: 22,
+          GestureDetector(
+            onTap: () => _showStepsSheet(context),
+            child: Tooltip(
+              message: 'Xem chi tiết chặng đường',
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFE0B2)),
+                ),
+                child: const Icon(
+                  Icons.alt_route_rounded,
+                  color: Color(0xFFFC6011),
+                  size: 22,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -250,25 +256,48 @@ class _RouteCard extends StatelessWidget {
   }
 
   Widget _buildRouteBanner() {
+    final stopoverStore = provider.selectedStopoverStore;
+    final String bannerText;
+    final String badgeText;
+
+    if (stopoverStore != null) {
+      bannerText = 'Điểm dừng ghé lấy: ${stopoverStore['tenQuan'] ?? 'Đã chọn quán'}';
+      badgeText = 'GHÉ QUÁN';
+    } else if (provider.foodKeyword.isNotEmpty) {
+      if (provider.isSearchingFood) {
+        bannerText = 'Đang tìm: "${provider.foodKeyword}" dọc tuyến đường...';
+        badgeText = 'ĐANG TÌM';
+      } else if (provider.routeRestaurants.isEmpty) {
+        bannerText = 'Không tìm thấy quán bán "${provider.foodKeyword}" dọc tuyến này';
+        badgeText = '0 QUÁN';
+      } else {
+        bannerText = 'Tìm thấy ${provider.routeRestaurants.length} quán có "${provider.foodKeyword}" dọc tuyến';
+        badgeText = 'TIỆN ĐƯỜNG';
+      }
+    } else {
+      bannerText = 'Tiện đường đi làm về • Đặt trước ghé lấy không chờ đợi';
+      badgeText = 'TIỆN ĐƯỜNG';
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: stopoverStore != null ? const Color(0xFFFFF7ED) : const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE0B2)),
+        border: Border.all(color: stopoverStore != null ? const Color(0xFFFDBA74) : const Color(0xFFFFE0B2)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.storefront_rounded,
-            color: Color(0xFFFC6011),
+          Icon(
+            stopoverStore != null ? Icons.store_rounded : Icons.storefront_rounded,
+            color: const Color(0xFFFC6011),
             size: 16,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Tiện đường đi làm về • Đặt trước ghé lấy không chờ đợi',
+              bannerText,
               style: GoogleFonts.outfit(
                 color: const Color(0xFFE65100),
                 fontSize: 11,
@@ -286,7 +315,7 @@ class _RouteCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              'TIỆN ĐƯỜNG',
+              badgeText,
               style: GoogleFonts.outfit(
                 color: const Color(0xFFFC6011),
                 fontSize: 9,

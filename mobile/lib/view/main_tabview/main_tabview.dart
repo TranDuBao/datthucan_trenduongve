@@ -18,6 +18,10 @@ class MainTabView extends StatefulWidget {
   final int initialTab;
   const MainTabView({super.key, this.initialTab = 2});
 
+  static void switchTab(BuildContext context, int tab, {bool popToRoot = true}) {
+    context.findAncestorStateOfType<MainTabViewState>()?.changeTab(tab, popToRoot: popToRoot);
+  }
+
   @override
   State<MainTabView> createState() => MainTabViewState();
 }

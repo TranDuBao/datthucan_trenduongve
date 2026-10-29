@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../../api/apiClient';
-import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed } from 'lucide-react';
+import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed, Info } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { NotificationModal } from '../../components/NotificationModal';
@@ -307,7 +307,7 @@ export const AdminRestaurants: React.FC = () => {
                 transition: 'all 0.15s ease',
               }}
             >
-              🗑️ Đã Xóa Mềm ({deletedStores.length})
+              <Trash2 size={16} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '6px' }} /> Đã Xóa Mềm ({deletedStores.length})
             </button>
           </div>
         </div>
@@ -436,7 +436,7 @@ export const AdminRestaurants: React.FC = () => {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingStore ? 'Chỉnh Sửa Nhà Hàng & Chủ Quán' : 'Thêm Nhà Hàng Mới'} maxWidth="680px">
         <form onSubmit={handleSubmit}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#fc6011', marginBottom: '10px' }}>
-            🏪 1. Thông Tin Nhà Hàng
+            1. Thông Tin Nhà Hàng
           </div>
 
           <div className="form-group">
@@ -525,7 +525,7 @@ export const AdminRestaurants: React.FC = () => {
         <Modal
           isOpen={!!confirmDeleteStore}
           onClose={() => setConfirmDeleteStore(null)}
-          title="⚠️ Xác Nhận Xóa Mềm Nhà Hàng"
+          title="Xác Nhận Xóa Mềm Nhà Hàng"
           maxWidth="460px"
         >
           <div style={{ padding: '8px 0' }}>
@@ -533,7 +533,7 @@ export const AdminRestaurants: React.FC = () => {
               Bạn có chắc chắn muốn <strong>xóa mềm</strong> nhà hàng <strong>{confirmDeleteStore.tenQuan}</strong>?
             </p>
             <div style={{ fontSize: '13px', color: '#64748b', background: '#f8fafc', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #f59e0b', marginBottom: '20px' }}>
-              ℹ️ Khi xóa mềm:
+              <Info size={16} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Khi xóa mềm:
               <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
                 <li>Nhà hàng sẽ **hoàn toàn ẩn** khỏi App Khách Hàng.</li>
                 <li>Dữ liệu vẫn được giữ trên hệ thống Admin để có thể khôi phục lại bất cứ lúc nào.</li>

@@ -33,7 +33,7 @@ class SocketService {
 
       _setupSocketListeners();
     } catch (e) {
-      debugPrint('⚠️ Mobile Socket initialization error: $e');
+      debugPrint('[SocketService] [Warn] Mobile Socket initialization error: $e');
     }
   }
 
@@ -42,24 +42,24 @@ class SocketService {
 
   void _setupSocketListeners() {
     _socket?.onConnect((_) {
-      debugPrint('⚡ Mobile Socket connected: ${_socket?.id}');
+      debugPrint('[SocketService] [Info] Mobile Socket connected: ${_socket?.id}');
     });
 
     _socket?.onConnectError((err) {
-      debugPrint('⚠️ Mobile Socket connect error: $err');
+      debugPrint('[SocketService] [Warn] Mobile Socket connect error: $err');
     });
 
     _socket?.onDisconnect((reason) {
-      debugPrint('⚡ Mobile Socket disconnected: $reason');
+      debugPrint('[SocketService] [Info] Mobile Socket disconnected: $reason');
     });
 
     _socket?.onReconnect((_) {
-      debugPrint('⚡ Mobile Socket reconnected');
+      debugPrint('[SocketService] [Info] Mobile Socket reconnected');
       for (final cb in List<VoidCallback>.from(_reconnectCallbacks)) {
         try {
           cb();
         } catch (e) {
-          debugPrint('⚠️ Reconnect callback error: $e');
+          debugPrint('[SocketService] [Warn] Reconnect callback error: $e');
         }
       }
     });
@@ -79,7 +79,7 @@ class SocketService {
           try {
             cb(data);
           } catch (e) {
-            debugPrint('⚠️ Socket listener error for [$event]: $e');
+            debugPrint('[SocketService] [Warn] Socket listener error for [$event]: $e');
           }
         }
       }

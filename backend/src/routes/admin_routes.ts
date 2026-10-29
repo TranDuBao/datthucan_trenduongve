@@ -39,7 +39,15 @@ router.post('/restaurants/:id/restore', controller.restoreRestaurant as any);
 router.get('/categories', controller.getCategories as any);
 router.post('/categories', controller.createCategory as any);
 router.put('/categories/:id', controller.updateCategory as any);
+router.delete('/categories/:id', controller.deleteCategory as any);
+router.post('/categories/assign-food', controller.assignFoodToCategory as any);
+router.delete('/categories/foods/:id', controller.removeFoodFromCategory as any);
 router.get('/categories/:id/foods', controller.getCategoryFoods as any);
+
+router.get('/banners', controller.getBanners as any);
+router.post('/banners', controller.createBanner as any);
+router.put('/banners/:id', controller.updateBanner as any);
+router.delete('/banners/:id', controller.deleteBanner as any);
 
 router.get('/foods', controller.getFoods as any);
 router.put('/foods/:id', controller.updateFood as any);

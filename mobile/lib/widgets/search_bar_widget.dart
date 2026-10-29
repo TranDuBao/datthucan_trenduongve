@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/map_provider.dart';
 import '../models/place_model.dart';
-import '../services/directions_service.dart';
 import 'place_detail_sheet.dart';
 import 'notification_bell.dart';
 
@@ -198,8 +197,8 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
               child: Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF2F2F7),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -210,9 +209,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(color: const Color(0xFFF2F2F7), height: 1),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(color: Color(0xFFF2F2F7), height: 1),
           ),
           _buildLocationInputRow(
             label: 'ĐIỂM ĐẾN',
@@ -244,7 +243,106 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   )
                 : null,
           ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(color: Color(0xFFF2F2F7), height: 1),
+          ),
+          _buildFoodSearchRow(provider),
           _buildDeliveryOptionTabs(provider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodSearchRow(MapProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFC6011).withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.fastfood_rounded, color: Color(0xFFFC6011), size: 14),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'TÌM MÓN DỌC TUYẾN ĐƯỜNG',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFFFC6011),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (provider.isSearchingFood) ...[
+                      const SizedBox(width: 6),
+                      const SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(color: Color(0xFFFC6011), strokeWidth: 1.5),
+                      ),
+                    ],
+                  ],
+                ),
+                TextField(
+                  controller: provider.foodKeywordController,
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF1C1C1E),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Nhập món muốn tìm (phở bò, bánh mì, cơm tấm...)',
+                    hintStyle: GoogleFonts.outfit(
+                      color: const Color(0xFFC7C7CC),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 2),
+                  ),
+                  onSubmitted: (v) => provider.setFoodKeyword(v),
+                  onChanged: (v) {
+                    if (v.isEmpty) {
+                      provider.clearFoodKeyword();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          if (provider.foodKeyword.isNotEmpty)
+            GestureDetector(
+              onTap: provider.clearFoodKeyword,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE5E5EA),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close_rounded, color: Color(0xFF8E8E93), size: 14),
+              ),
+            )
+          else
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.search_rounded, color: Color(0xFFFC6011), size: 20),
+              onPressed: () => provider.setFoodKeyword(provider.foodKeywordController.text),
+            ),
         ],
       ),
     );
@@ -709,14 +807,6 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _clearButton(VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(Icons.close_rounded,
-          size: 16, color: Colors.white.withValues(alpha: 0.4)),
     );
   }
 }

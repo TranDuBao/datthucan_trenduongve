@@ -46,7 +46,7 @@ export async function parseCCCDImage(frontBase64?: string, backBase64?: string):
 
     await worker.terminate();
   } catch (err) {
-    console.warn('⚡ Tesseract OCR fallback to pattern analysis:', err);
+    console.warn('[OCRService] [Warn] Tesseract OCR fallback to pattern analysis:', err);
   }
 
   const rawData = combinedText;

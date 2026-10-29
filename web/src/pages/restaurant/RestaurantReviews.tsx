@@ -116,7 +116,7 @@ export const RestaurantReviews: React.FC = () => {
                 cursor: 'pointer',
               }}
             >
-              {star === 'ALL' ? 'Tất cả' : `${star}★`}
+              {star === 'ALL' ? 'Tất cả' : `${star} sao`}
             </button>
           ))}
         </div>

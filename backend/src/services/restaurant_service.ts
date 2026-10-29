@@ -10,12 +10,26 @@ export class RestaurantService {
   private monAnRepo = AppDataSource.getRepository(MonAnModel);
 
   async getAllRestaurants() {
-    return await this.cuaHangRepo.createQueryBuilder('ch')
+    const stores = await this.cuaHangRepo.createQueryBuilder('ch')
       .where('(ch.is_deleted IS NULL OR ch.is_deleted = false)')
       .andWhere('(ch.trangThai IS NULL OR UPPER(ch.trangThai) NOT IN (:...deletedStatus))', {
         deletedStatus: ['ĐÃ XÓA', 'DA_XOA', 'DELETED'],
       })
       .getMany();
+
+    return stores.map((s) => {
+      const reviewCount = Number(s.soLuongDanhGia || 0);
+      const avgRate = reviewCount > 0 ? Number(s.danhGiaTrungBinh || 0) : 0.0;
+      return {
+        ...s,
+        danhGiaTrungBinh: avgRate,
+        soLuongDanhGia: reviewCount,
+        diemDanhGiaTB: avgRate,
+        soLuotDanhGia: reviewCount,
+        rate: avgRate,
+        rating: reviewCount,
+      };
+    });
   }
 
   async getRestaurantById(maQuan: number) {
@@ -26,14 +40,26 @@ export class RestaurantService {
     if (store.isDeleted || ['ĐÃ XÓA', 'DA_XOA', 'DELETED'].includes((store.trangThai || '').toUpperCase())) {
       return null;
     }
-    return store;
+    const reviewCount = Number(store.soLuongDanhGia || 0);
+    const avgRate = reviewCount > 0 ? Number(store.danhGiaTrungBinh || 0) : 0.0;
+    return {
+      ...store,
+      danhGiaTrungBinh: avgRate,
+      soLuongDanhGia: reviewCount,
+      diemDanhGiaTB: avgRate,
+      soLuotDanhGia: reviewCount,
+      rate: avgRate,
+      rating: reviewCount,
+    };
   }
 
   async getAllCategories() {
-    const categories = await this.danhMucRepo.find();
+    const categories = await this.danhMucRepo.find({ order: { maDanhMuc: 'ASC' } });
     const items = await this.monAnRepo.find();
     return categories.map((cat) => {
-      const catItems = items.filter((item) => item.maDanhMuc === cat.maDanhMuc);
+      const catItems = items.filter((item) => Number(item.maDanhMuc) === Number(cat.maDanhMuc));
+      const firstFoodWithImage = catItems.find((item) => this.getValidFoodImageUrl(item.img));
+      const foodImg = cat.hinhAnh ? this.getValidFoodImageUrl(cat.hinhAnh) : (firstFoodWithImage ? this.getValidFoodImageUrl(firstFoodWithImage.img) : '');
       return {
         maDanhMuc: cat.maDanhMuc,
         id: cat.maDanhMuc,
@@ -42,6 +68,8 @@ export class RestaurantService {
         maQuan: cat.maQuan,
         soLuongMon: catItems.length,
         itemsCount: catItems.length,
+        hinhAnh: foodImg,
+        image: foodImg,
       };
     });
   }
@@ -57,6 +85,9 @@ export class RestaurantService {
         trimmed.startsWith('data:image/')
       ) {
         return trimmed;
+      }
+      if (trimmed.length > 4 && (trimmed.endsWith('.jpg') || trimmed.endsWith('.png') || trimmed.endsWith('.jpeg') || trimmed.endsWith('.webp'))) {
+        return `/uploads/${trimmed}`;
       }
     }
     return '';
@@ -91,6 +122,42 @@ export class RestaurantService {
     const soldMap = new Map<number, number>();
     for (const sc of soldCounts) {
       soldMap.set(Number(sc.maMonAn), Number(sc.totalSold || 0));
+    }
+
+    const dishRatings = await AppDataSource.query(`
+      WITH dish_reviews_combined AS (
+        SELECT 
+          dgm.mamon as mamonan,
+          dg.madanhgia,
+          COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+        FROM danhgia_mon dgm
+        JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+
+        UNION
+
+        SELECT 
+          ct.mamonan,
+          dg.madanhgia,
+          dg.soluongsao as stars
+        FROM chitietdonhang ct
+        JOIN danhgia dg ON dg.madonhang = ct.madonhang
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND ct.mamonan IS NOT NULL
+      )
+      SELECT 
+        mamonan,
+        COUNT(DISTINCT madanhgia) as total_reviews,
+        ROUND(AVG(stars)::numeric, 1) as avg_rating
+      FROM dish_reviews_combined
+      GROUP BY mamonan
+    `);
+    const dishRatingMap = new Map<number, { count: number; avg: number }>();
+    for (const dr of dishRatings) {
+      dishRatingMap.set(Number(dr.mamonan), {
+        count: Number(dr.total_reviews || 0),
+        avg: Math.round(Number(dr.avg_rating || 0) * 10) / 10,
+      });
     }
 
     if (categories.length === 0) {
@@ -146,6 +213,12 @@ export class RestaurantService {
         items: catItems.map((i) => {
           const dbSold = soldMap.get(i.maMonAn) || 0;
           const totalSold = dbSold > 0 ? dbSold : 0;
+          const ratingInfo = dishRatingMap.get(i.maMonAn) || {
+            count: Number(i.soLuotDanhGia || 0),
+            avg: Number(i.diemDanhGiaTB || 0.0),
+          };
+          const actualRating = ratingInfo.count > 0 ? ratingInfo.avg : 0.0;
+          const actualRatingCount = ratingInfo.count;
           return {
             id: i.maMonAn,
             maMonAn: i.maMonAn,
@@ -161,10 +234,12 @@ export class RestaurantService {
             trangThaiMon: i.trangThaiMon || ((Number(i.soLuongMon) > 0) ? 'DANG_BAN' : 'HET_HANG'),
             image: this.getValidFoodImageUrl(i.img),
             img: this.getValidFoodImageUrl(i.img),
-            rating: Number(i.diemDanhGiaTB || 0.0),
-            diemDanhGiaTB: Number(i.diemDanhGiaTB || 0.0),
-            ratingCount: i.soLuotDanhGia || 0,
-            soLuotDanhGia: i.soLuotDanhGia || 0,
+            rating: actualRating,
+            diemDanhGiaTB: actualRating,
+            danhGiaTrungBinh: actualRating,
+            ratingCount: actualRatingCount,
+            soLuotDanhGia: actualRatingCount,
+            soLuongDanhGia: actualRatingCount,
             maQuan: cat.maQuan,
             lat: res?.lat ? Number(res.lat) : 10.762622,
             lng: res?.lng ? Number(res.lng) : 106.682029,
@@ -177,20 +252,156 @@ export class RestaurantService {
 
   /**
    * Spatial query: Find restaurants along a given route polyline within maxDistanceMeters
+   * Supports optional keyword to find specific food along the route
    */
   async getRestaurantsAlongRoute(
     routePoints: { lat: number; lng: number }[],
-    maxDistanceMeters: number = 1000
+    maxDistanceMeters: number = 1000,
+    keyword?: string
   ) {
     if (!routePoints || routePoints.length === 0) {
       return [];
     }
 
     const allStores = await this.getAllRestaurants();
-    const validStores = allStores.filter((s) => s.lat != null && s.lng != null);
+    let validStores = allStores.filter((s) => s.lat != null && s.lng != null);
 
     if (validStores.length === 0) {
       return [];
+    }
+
+function removeVietnameseTones(str: string): string {
+  if (!str) return '';
+  str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, 'a');
+  str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, 'e');
+  str = str.replace(/ì|í|ị|ỉ|ĩ/g, 'i');
+  str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, 'o');
+  str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, 'u');
+  str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y');
+  str = str.replace(/đ/g, 'd');
+  str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, 'a');
+  str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, 'e');
+  str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, 'i');
+  str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, 'o');
+  str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, 'u');
+  str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, 'y');
+  str = str.replace(/Đ/g, 'd');
+  str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, '');
+  str = str.replace(/\u02C6|\u0306|\u031B/g, '');
+  return str.toLowerCase().trim();
+}
+
+    // Filter by keyword if provided
+    const matchingFoodsMap = new Map<number, any[]>();
+    const cleanKw = (keyword || '').trim().toLowerCase();
+    const cleanKwNoTone = removeVietnameseTones(cleanKw);
+
+    if (cleanKw.length > 0) {
+      const allActiveFoods = await this.monAnRepo
+        .createQueryBuilder('m')
+        .where('m.soLuongMon > 0')
+        .andWhere("(m.trangThaiMon IS NULL OR UPPER(m.trangThaiMon) NOT IN ('HET_HANG', 'HET_MON', 'TAM_NGUNG'))")
+        .getMany();
+
+      const foods = allActiveFoods.filter((f) => {
+        const nameLower = (f.tenMonAn || '').toLowerCase();
+        const nameNoTone = removeVietnameseTones(nameLower);
+        return nameLower.includes(cleanKw) || nameNoTone.includes(cleanKwNoTone);
+      });
+
+      for (const f of foods) {
+        if (!f.maQuan) continue;
+        const list = matchingFoodsMap.get(f.maQuan) || [];
+        list.push({
+          id: f.maMonAn,
+          maMonAn: f.maMonAn,
+          name: f.tenMonAn,
+          tenMonAn: f.tenMonAn,
+          price: Number(f.giaMonAn),
+          giaMonAn: Number(f.giaMonAn),
+          quantity: f.soLuongMon,
+          soLuongMon: f.soLuongMon,
+          image: this.getValidFoodImageUrl(f.img),
+          img: this.getValidFoodImageUrl(f.img),
+          rating: Number(f.diemDanhGiaTB || 0.0),
+          diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+          trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+        });
+        matchingFoodsMap.set(f.maQuan, list);
+      }
+
+      // Also support matching store names directly
+      const matchingStoreIds = validStores
+        .filter((s) => {
+          const sNameLower = (s.tenQuan || '').toLowerCase();
+          const sNameNoTone = removeVietnameseTones(sNameLower);
+          return sNameLower.includes(cleanKw) || sNameNoTone.includes(cleanKwNoTone);
+        })
+        .map((s) => s.maQuan);
+
+      if (matchingStoreIds.length > 0) {
+        const storeFoods = allActiveFoods.filter((f) => f.maQuan && matchingStoreIds.includes(f.maQuan));
+        for (const f of storeFoods) {
+          if (!f.maQuan) continue;
+          const list = matchingFoodsMap.get(f.maQuan) || [];
+          if (!list.some((existing) => existing.id === f.maMonAn)) {
+            list.push({
+              id: f.maMonAn,
+              maMonAn: f.maMonAn,
+              name: f.tenMonAn,
+              tenMonAn: f.tenMonAn,
+              price: Number(f.giaMonAn),
+              giaMonAn: Number(f.giaMonAn),
+              quantity: f.soLuongMon,
+              soLuongMon: f.soLuongMon,
+              image: this.getValidFoodImageUrl(f.img),
+              img: this.getValidFoodImageUrl(f.img),
+              rating: Number(f.diemDanhGiaTB || 0.0),
+              diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+              trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+            });
+            matchingFoodsMap.set(f.maQuan, list);
+          }
+        }
+      }
+
+      validStores = validStores.filter((s) => matchingFoodsMap.has(s.maQuan));
+      if (validStores.length === 0) {
+        return [];
+      }
+    } else {
+      const storeIds = validStores.map((s) => s.maQuan);
+      if (storeIds.length > 0) {
+        const topFoods = await this.monAnRepo
+          .createQueryBuilder('m')
+          .where('m.maQuan IN (:...storeIds)', { storeIds })
+          .andWhere('m.soLuongMon > 0')
+          .andWhere("(m.trangThaiMon IS NULL OR UPPER(m.trangThaiMon) NOT IN ('HET_HANG', 'HET_MON', 'TAM_NGUNG'))")
+          .getMany();
+
+        for (const f of topFoods) {
+          if (!f.maQuan) continue;
+          const list = matchingFoodsMap.get(f.maQuan) || [];
+          if (list.length < 5) {
+            list.push({
+              id: f.maMonAn,
+              maMonAn: f.maMonAn,
+              name: f.tenMonAn,
+              tenMonAn: f.tenMonAn,
+              price: Number(f.giaMonAn),
+              giaMonAn: Number(f.giaMonAn),
+              quantity: f.soLuongMon,
+              soLuongMon: f.soLuongMon,
+              image: this.getValidFoodImageUrl(f.img),
+              img: this.getValidFoodImageUrl(f.img),
+              rating: Number(f.diemDanhGiaTB || 0.0),
+              diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+              trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+            });
+            matchingFoodsMap.set(f.maQuan, list);
+          }
+        }
+      }
     }
 
     // Pre-calculate segments from route points
@@ -233,9 +444,34 @@ export class RestaurantService {
       });
     }
 
+    // Fast bounding-box pre-filtering to avoid checking stores far away from route
+    let minLat = 90;
+    let maxLat = -90;
+    let minLng = 180;
+    let maxLng = -180;
+    for (const pt of routePoints) {
+      if (pt.lat < minLat) minLat = pt.lat;
+      if (pt.lat > maxLat) maxLat = pt.lat;
+      if (pt.lng < minLng) minLng = pt.lng;
+      if (pt.lng > maxLng) maxLng = pt.lng;
+    }
+    // Margin buffer based on maxDistanceMeters + safety buffer (~0.01 deg ~= 1.1km)
+    const latBuffer = (maxDistanceMeters / 110540) + 0.01;
+    const lngBuffer = (maxDistanceMeters / (111320 * Math.cos(((minLat + maxLat) / 2) * deg2rad))) + 0.01;
+    const bMinLat = minLat - latBuffer;
+    const bMaxLat = maxLat + latBuffer;
+    const bMinLng = minLng - lngBuffer;
+    const bMaxLng = maxLng + lngBuffer;
+
+    const candidateStores = validStores.filter((s) => {
+      const sLat = Number(s.lat);
+      const sLng = Number(s.lng);
+      return sLat >= bMinLat && sLat <= bMaxLat && sLng >= bMinLng && sLng <= bMaxLng;
+    });
+
     const matchedStores: any[] = [];
 
-    for (const store of validStores) {
+    for (const store of candidateStores) {
       const sLat = Number(store.lat);
       const sLng = Number(store.lng);
       let minDistance = Infinity;
@@ -260,10 +496,13 @@ export class RestaurantService {
       }
 
       if (minDistance <= maxDistanceMeters) {
+        const matchedFoods = matchingFoodsMap.get(store.maQuan) || [];
         matchedStores.push({
           ...store,
           distanceFromRouteMeters: Math.round(minDistance),
           thoiGianChuanBi: store.thoiGianChuanBi || 20,
+          matchedFoods,
+          primaryFood: matchedFoods.length > 0 ? matchedFoods[0] : null,
         });
       }
     }

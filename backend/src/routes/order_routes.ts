@@ -10,6 +10,7 @@ router.use(authMiddleware as any);
 router.post('/', orderController.createOrder);
 router.get('/my-orders', orderController.getMyOrders);
 router.get('/:id', orderController.getOrderById);
+router.get('/:id/refund', orderController.getOrderRefund);
 router.patch('/:id/status', orderController.updateStatus);
 
 export default router;

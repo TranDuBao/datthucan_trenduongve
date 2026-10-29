@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -39,8 +40,13 @@ class OrderServiceModel {
   final String pickupTime;
   final String restaurantName;
   final String restaurantAddress;
+  final String restaurantPhone;
+  final double? lat;
+  final double? lng;
   final String createdAt;
   final String? cancelReason;
+  final String? refundStatus;
+  final double? refundAmount;
   final List<dynamic> items;
 
   OrderServiceModel({
@@ -51,8 +57,13 @@ class OrderServiceModel {
     required this.pickupTime,
     this.restaurantName = 'Nhà hàng lộ trình',
     this.restaurantAddress = 'Địa chỉ tự đến lấy',
+    this.restaurantPhone = '',
+    this.lat,
+    this.lng,
     this.createdAt = '',
     this.cancelReason,
+    this.refundStatus,
+    this.refundAmount,
     this.items = const [],
   });
 
@@ -65,8 +76,13 @@ class OrderServiceModel {
       pickupTime: json['thoiGianHenNhan'] ?? json['pickupTime'] ?? '',
       restaurantName: json['tenQuan'] ?? json['cuaHang']?['tenQuan'] ?? 'Nhà hàng lộ trình',
       restaurantAddress: json['diaChi'] ?? json['cuaHang']?['diaChi'] ?? 'Địa chỉ tự đến lấy',
+      restaurantPhone: (json['sdt'] ?? json['cuaHang']?['sdt'] ?? '').toString(),
+      lat: (json['lat'] ?? json['cuaHang']?['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] ?? json['cuaHang']?['lng'] as num?)?.toDouble(),
       createdAt: json['thoiGianDat'] ?? json['createdAt'] ?? '',
       cancelReason: json['lyDoHuy'] ?? json['cancelReason'],
+      refundStatus: json['refundStatus'] ?? json['refund']?['trangThaiHoanTien'],
+      refundAmount: (json['refundAmount'] ?? json['refund']?['soTienHoan'] as num?)?.toDouble(),
       items: json['items'] ?? json['chiTietDonHang'] ?? [],
     );
   }
@@ -102,7 +118,7 @@ class OrderService {
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
         body: body,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final resJson = json.decode(response.body);
@@ -121,6 +137,11 @@ class OrderService {
           'message': resJson['message'] ?? 'Không thể tạo đơn hàng pre-order',
         };
       }
+    } on TimeoutException {
+      return {
+        'success': false,
+        'message': 'Kết nối quá thời gian chờ (Timeout). Vui lòng thử lại!',
+      };
     } catch (e) {
       return {
         'success': false,
@@ -161,7 +182,7 @@ class OrderService {
     return [];
   }
 
-  static Future<bool> cancelOrder(int orderId) async {
+  static Future<Map<String, dynamic>> cancelOrder(int orderId, {String? reason}) async {
     try {
       final token = Globs.udValueString(KKey.authToken);
       final url = Uri.parse('${SVKey.svOrders}/$orderId/status');
@@ -171,13 +192,25 @@ class OrderService {
           'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-        body: json.encode({'status': 'DA_HUY'}),
-      ).timeout(const Duration(seconds: 5));
+        body: json.encode({
+          'status': 'DA_HUY',
+          if (reason != null && reason.isNotEmpty) 'lyDo': reason,
+        }),
+      ).timeout(const Duration(seconds: 6));
 
-      return (response.statusCode == 200 || response.statusCode == 201);
+      final resJson = json.decode(response.body);
+      final isOk = (response.statusCode == 200 || response.statusCode == 201);
+      return {
+        'success': isOk,
+        'message': resJson['message'] ?? (isOk ? 'Hủy đơn hàng thành công' : 'Không thể hủy đơn hàng'),
+        'data': resJson['data'],
+      };
     } catch (e) {
       debugPrint('[OrderService] cancelOrder exception: $e');
+      return {
+        'success': false,
+        'message': 'Lỗi kết nối máy chủ: $e',
+      };
     }
-    return false;
   }
 }

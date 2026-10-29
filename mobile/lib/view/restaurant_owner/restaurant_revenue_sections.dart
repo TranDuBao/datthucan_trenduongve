@@ -314,7 +314,7 @@ class RevenueChartSection extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "📅 ${sel['label']} (${sel['fullDate']})",
+                      "${sel['label']} (${sel['fullDate']})",
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: TColor.primaryTextOf(context)),
                     ),
                     Text(

@@ -191,7 +191,7 @@ export const RestaurantOrders: React.FC = () => {
     const socket = getSocket();
     if (socket) {
       const handleRealtimeOrder = (payload: any) => {
-        console.log('⚡ Realtime order update received:', payload);
+        console.log('[RestaurantOrders] [Info] Realtime order update received:', payload);
         playOrderAlertSound();
         fetchOrders();
       };
@@ -832,6 +832,23 @@ export const RestaurantOrders: React.FC = () => {
             Vui lòng chọn hoặc nhập lý do hủy đơn. Đơn sau khi hủy sẽ được chuyển vào mục{' '}
             <strong style={{ color: '#ef4444' }}>Đơn đã hủy</strong> và hệ thống sẽ gửi thông báo cho khách hàng.
           </p>
+
+          {/* Refund Notice Box */}
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: '8px',
+            padding: '10px 12px',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '8px'
+          }}>
+            <AlertCircle size={16} color="#d97706" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ fontSize: '12px', color: '#92400e', lineHeight: 1.4 }}>
+              <strong>Chính sách hoàn tiền:</strong> Nếu đơn hàng đã được thanh toán qua VietQR/PayOS, hệ thống sẽ tự động tạo yêu cầu hoàn trả 100% số tiền thực tế cho khách hàng và lưu vào danh sách đối soát.
+            </div>
+          </div>
 
           {/* Quick suggestions */}
           <div style={{ marginBottom: '12px' }}>

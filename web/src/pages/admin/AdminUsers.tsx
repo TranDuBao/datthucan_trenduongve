@@ -8,15 +8,7 @@ import { UserFormModal } from './users/UserFormModal';
 import { UserLockModal } from './users/UserLockModal';
 import { parseCCCDImage, formatDateVN, toISODate } from '../../utils/ocrService';
 import { getImageUrl, handleImageError, isValidImageUrl } from '../../utils/imageUtils';
-import {
-  Search,
-  Plus,
-  Eye,
-  Edit,
-  Lock,
-  Unlock,
-  Key,
-} from 'lucide-react';
+import { Search, Plus, Eye, Edit, Lock, Unlock, Key, Clock, Users, User, Store } from 'lucide-react';
 
 export const AdminUsers: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0, totalPages: 1 });
@@ -172,7 +164,7 @@ export const AdminUsers: React.FC = () => {
         setUserDetailData(res.data || res);
       }
     } catch (err: any) {
-      console.warn('⚠️ Endpoint /admin/users/:id chưa cập nhật hoặc lỗi, hiển thị dữ liệu có sẵn:', err);
+      console.warn('[AdminUsers] [Warn] Endpoint /admin/users/:id chưa cập nhật hoặc lỗi, hiển thị dữ liệu có sẵn:', err);
     }
   };
 
@@ -231,7 +223,7 @@ export const AdminUsers: React.FC = () => {
           ocrData.soCCCD ? `Số CCCD: ${ocrData.soCCCD}` : '',
           ocrData.hoTen ? `Họ tên: ${ocrData.hoTen}` : '',
         ].filter(Boolean).join(' • ');
-        setOcrNotice(`🤖 AI OCR đã trích xuất thành công! ${foundStr}`);
+        setOcrNotice(`AI OCR đã trích xuất thành công! ${foundStr}`);
         showNotify('success', 'AI Quét Thành Công', `Đã tự động trích xuất dữ liệu CCCD thành công.`);
       } else {
         showNotify('warning', 'Không Thể Đọc Ảnh CCCD', 'AI không trích xuất được chữ từ ảnh này. Vui lòng tải ảnh CCCD chụp thẳng, rõ nét hơn.');
@@ -409,11 +401,11 @@ export const AdminUsers: React.FC = () => {
       return <span className="badge badge-success">● Đang Hoạt Động</span>;
     }
     if (u.trangThai === 'KHOA_VINH_VIEN') {
-      return <span className="badge badge-danger">🔒 Khóa Vĩnh Viễn</span>;
+      return <span className="badge badge-danger"><Lock size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> Khóa Vĩnh Viễn</span>;
     }
     if (u.trangThai === 'KHOA_TAM_THOI' || u.khoaDenNgay) {
       const dateStr = u.khoaDenNgay ? new Date(u.khoaDenNgay).toLocaleDateString('vi-VN') : '';
-      return <span className="badge badge-warning">⏳ Khóa đến {dateStr || 'tạm thời'}</span>;
+      return <span className="badge badge-warning"><Clock size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> Khóa đến {dateStr || 'tạm thời'}</span>;
     }
     return <span className="badge badge-warning">{u.trangThai}</span>;
   };
@@ -455,7 +447,7 @@ export const AdminUsers: React.FC = () => {
             boxShadow: roleFilter === '' ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
           }}
         >
-          👥 Tất Cả ({countAll})
+          <Users size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Tất Cả ({countAll})
         </button>
         <button
           className={`btn btn-sm ${roleFilter === 'KHACH_HANG' ? 'btn-primary' : 'btn-outline'}`}
@@ -468,7 +460,7 @@ export const AdminUsers: React.FC = () => {
             boxShadow: roleFilter === 'KHACH_HANG' ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
           }}
         >
-          👤 Khách Hàng ({countCustomers})
+          <User size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Khách Hàng ({countCustomers})
         </button>
         <button
           className={`btn btn-sm ${roleFilter === 'CUAN_HANG' ? 'btn-primary' : 'btn-outline'}`}
@@ -481,7 +473,7 @@ export const AdminUsers: React.FC = () => {
             boxShadow: roleFilter === 'CUAN_HANG' ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
           }}
         >
-          🏪 Cửa Hàng / Chủ Quán ({countMerchants})
+          <Store size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Cửa Hàng / Chủ Quán ({countMerchants})
         </button>
         <button
           className={`btn btn-sm ${roleFilter === 'NHAN_VIEN' ? 'btn-primary' : 'btn-outline'}`}
@@ -494,7 +486,7 @@ export const AdminUsers: React.FC = () => {
             boxShadow: roleFilter === 'NHAN_VIEN' ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
           }}
         >
-          👔 Nhân Viên ({countStaff})
+          <Users size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Nhân Viên ({countStaff})
         </button>
         <button
           className={`btn btn-sm ${roleFilter === 'ADMIN' ? 'btn-primary' : 'btn-outline'}`}
@@ -507,7 +499,7 @@ export const AdminUsers: React.FC = () => {
             boxShadow: roleFilter === 'ADMIN' ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
           }}
         >
-          🛡️ Quản Trị Viên ({countAdmins})
+          <Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Quản Trị Viên ({countAdmins})
         </button>
       </div>
 

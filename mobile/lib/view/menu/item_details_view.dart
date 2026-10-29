@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
@@ -44,8 +45,10 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     itemData = Map<String, dynamic>.from(widget.itemObj);
     basePrice = double.tryParse((itemData["price"] ?? itemData["giaMonAn"] ?? 65000).toString()) ?? 65000.0;
 
-    _avgRating = double.tryParse((itemData["danhGiaTrungBinh"] ?? itemData["rating"] ?? 0.0).toString()) ?? 0.0;
-    _totalReviewsCount = int.tryParse((itemData["soLuongDanhGia"] ?? 0).toString()) ?? 0;
+    final rawRate = itemData["rating"] ?? itemData["diemDanhGiaTB"] ?? itemData["danhGiaTrungBinh"] ?? itemData["rate"] ?? 0.0;
+    final rawCount = itemData["soLuotDanhGia"] ?? itemData["ratingCount"] ?? itemData["soLuongDanhGia"] ?? itemData["reviewsCount"] ?? 0;
+    _avgRating = double.tryParse(rawRate.toString()) ?? 0.0;
+    _totalReviewsCount = int.tryParse(rawCount.toString()) ?? 0;
 
     _initCustomizationOptions();
     _loadDishReviewsAndStats();
@@ -103,19 +106,19 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
       return [
         {"icon": Icons.access_time_rounded, "text": "~10 phút"},
         {"icon": Icons.local_fire_department_rounded, "text": "180 kcal"},
-        {"icon": Icons.ac_unit_rounded, "text": "🧊 Đá riêng / Nóng"},
+        {"icon": LucideIcons.snowflake, "text": "Đá riêng / Nóng"},
       ];
     } else if (_isCakeOrSweet(foodName.toLowerCase())) {
       return [
         {"icon": Icons.access_time_rounded, "text": "~15 phút"},
         {"icon": Icons.local_fire_department_rounded, "text": "320 kcal"},
-        {"icon": Icons.cake_rounded, "text": "🍰 Bánh tươi mỗi ngày"},
+        {"icon": Icons.cake_rounded, "text": "Bánh tươi mỗi ngày"},
       ];
     } else {
       return [
         {"icon": Icons.access_time_rounded, "text": "~15 phút"},
         {"icon": Icons.local_fire_department_rounded, "text": "580 kcal"},
-        {"icon": Icons.eco_rounded, "text": "🌱 Nguyên liệu tươi sạch"},
+        {"icon": Icons.eco_rounded, "text": "Nguyên liệu tươi sạch"},
       ];
     }
   }
@@ -398,7 +401,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text("⚠️ ", style: TextStyle(fontSize: 12)),
+                                  Icon(LucideIcons.alertTriangle, size: 12, color: Colors.white), const SizedBox(width: 3),
                                   Text(
                                     "Hết Hàng",
                                     style: TextStyle(
@@ -420,7 +423,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text("🔥 ", style: TextStyle(fontSize: 12)),
+                                  Icon(LucideIcons.flame, size: 12, color: Color(0xFF111827)), const SizedBox(width: 3),
                                   Text(
                                     "Bán Chạy",
                                     style: TextStyle(
@@ -549,6 +552,25 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                   ),
                                 ),
                               ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Rating & Reviews Count Row below Sold Count
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              _totalReviewsCount > 0 && _avgRating > 0
+                                  ? "${_avgRating.toStringAsFixed(1)} ($_totalReviewsCount đánh giá)"
+                                  : "0.0 (0 đánh giá)",
+                              style: TextStyle(
+                                color: TColor.primaryTextOf(context),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),

@@ -35,7 +35,7 @@ export const RestaurantDashboard: React.FC = () => {
     const socket = getSocket();
     if (socket) {
       const handleUpdate = () => {
-        console.log('⚡ Realtime dashboard update event received');
+        console.log('[RestaurantDashboard] [Info] Realtime dashboard update event received');
         loadDashboard();
       };
 
@@ -158,7 +158,7 @@ export const RestaurantDashboard: React.FC = () => {
       {/* TOP IMPORTANT METRICS CARDS */}
       <div style={{ marginBottom: '24px' }}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-          📌 Chỉ Số Quan Trọng Hàng Đầu
+          Chỉ Số Quan Trọng Hàng Đầu
         </div>
         <div className="grid-metrics">
           <div onClick={() => navigate('/restaurant/reservations')} style={{ cursor: 'pointer' }}>
@@ -210,7 +210,7 @@ export const RestaurantDashboard: React.FC = () => {
       {/* SECONDARY OPERATIONAL METRICS */}
       <div style={{ marginBottom: '28px', backgroundColor: '#ffffff', borderRadius: '12px', padding: '16px 20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-          🛍️ Tiến Độ Đơn Mang Đi (Takeaway Pipeline)
+          <ShoppingBag size={18} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: '6px' }} /> Tiến Độ Đơn Mang Đi (Takeaway Pipeline)
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
@@ -291,13 +291,13 @@ export const RestaurantDashboard: React.FC = () => {
                     </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#1e293b' }}>{res.tenBan}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>👥 {res.soNguoi} người</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}><Users size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> {res.soNguoi} người</div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#8b5cf6' }}>
-                        🕒 {formatTime(res.thoiGianBatDau)} - {formatTime(res.thoiGianKetThuc)}
+                        <Clock size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> {formatTime(res.thoiGianBatDau)} - {formatTime(res.thoiGianKetThuc)}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>📅 {formatDate(res.thoiGianBatDau)}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}><Clock size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> {formatDate(res.thoiGianBatDau)}</div>
                     </td>
                     <td><StatusBadge status={res.trangThai} /></td>
                   </tr>
@@ -346,7 +346,7 @@ export const RestaurantDashboard: React.FC = () => {
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{ord.sdtKhachHang}</div>
                     </td>
                     <td style={{ fontWeight: 700, color: '#f59e0b' }}>
-                      ⏰ {ord.thoiGianHenNhan ? formatTime(ord.thoiGianHenNhan) : 'Ghé liền'}
+                      <Clock size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> {ord.thoiGianHenNhan ? formatTime(ord.thoiGianHenNhan) : 'Ghé liền'}
                     </td>
                     <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(ord.tongTien)}</td>
                     <td><StatusBadge status={ord.trangThai} /></td>

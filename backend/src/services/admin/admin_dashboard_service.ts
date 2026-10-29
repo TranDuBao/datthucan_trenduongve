@@ -242,6 +242,11 @@ export class AdminDashboardService {
 
     for (const ord of allOrders) {
       const st = String(ord.trangThai || (ord as any).trangthai || '').toLowerCase().trim();
+      const isUnpaid = st === 'cho_thanh_toan' || st === 'unpaid' || st === 'chờ thanh toán';
+      if (isUnpaid) {
+        continue;
+      }
+
       const rawAmt = ord.tongTien ?? (ord as any).tongtien ?? 0;
       const amount = parseFloat(String(rawAmt).replace(/[^0-9.]/g, '')) || 0;
       const ordDate = new Date(ord.thoiGianDat || (ord as any).thoigiandat || Date.now());

@@ -86,12 +86,12 @@ export const RestaurantVouchers: React.FC = () => {
     const socket = getSocket();
     if (socket) {
       const handleRealtimeUpdate = (payload: any) => {
-        console.log('⚡ Realtime voucher update received:', payload);
+        console.log('[RestaurantVouchers] [Info] Realtime voucher update received:', payload);
         fetchVouchers(false);
       };
 
       const handleReconnect = () => {
-        console.log('⚡ Socket reconnected: sync vouchers');
+        console.log('[RestaurantVouchers] [Info] Socket reconnected: sync vouchers');
         fetchVouchers(false);
       };
 

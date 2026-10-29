@@ -12,9 +12,9 @@ async function startServer() {
   RealtimeService.getInstance().initialize(server);
 
   server.listen(PORT, () => {
-    console.log(`🚀 Server đang lắng nghe tại cổng ${PORT}`);
-    console.log(`🔗 Healthcheck: http://localhost:${PORT}/health`);
-    console.log(`🔑 Auth API: http://localhost:${PORT}/api/v1/auth`);
+    console.log(`[Server] [Info] Server đang lắng nghe tại cổng ${PORT}`);
+    console.log(`[Server] [Info] Healthcheck: http://localhost:${PORT}/health`);
+    console.log(`[Server] [Info] Auth API: http://localhost:${PORT}/api/v1/auth`);
   });
 }
 

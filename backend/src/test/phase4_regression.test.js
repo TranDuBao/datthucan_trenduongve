@@ -14,7 +14,7 @@ try {
 }
 
 console.log('===============================================================');
-console.log('🚀 RUNNING PHASE 4 COMPREHENSIVE ARCHITECTURE & LOGIC TEST SUITE');
+console.log('[Test] [Info] RUNNING PHASE 4 COMPREHENSIVE ARCHITECTURE & LOGIC TEST SUITE');
 console.log('===============================================================\n');
 
 let totalTests = 0;
@@ -25,9 +25,9 @@ function test(name, fn) {
   try {
     fn();
     passedTests++;
-    console.log(`  ✅ [PASS] ${name}`);
+    console.log(`  [Test] [Pass] ${name}`);
   } catch (err) {
-    console.error(`  ❌ [FAIL] ${name}`);
+    console.error(`  [Test] [Fail] ${name}`);
     console.error(`     Error: ${err.message}`);
     throw err;
   }
@@ -36,7 +36,7 @@ function test(name, fn) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 1: AUTHENTICATION & TOKEN LIFECYCLE (SEC-02)
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('📋 1. Authentication & Token Lifecycle Tests (SEC-02)');
+console.log('[Test] [Info] 1. Authentication & Token Lifecycle Tests (SEC-02)');
 const blacklist = TokenBlacklistService.getInstance();
 blacklist.resetForTesting();
 
@@ -76,7 +76,7 @@ test('1.4 Refresh token rotation: previous refresh token is revoked after renewa
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 2: RBAC & STORE DATA ISOLATION (PHASE 2)
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n📋 2. RBAC & Multi-tenant Store Isolation Tests (Phase 2)');
+console.log('\n[Test] [Info] 2. RBAC & Multi-tenant Store Isolation Tests (Phase 2)');
 
 test('2.1 Restaurant owner can only access orders belonging to their own store', () => {
   const authenticatedStoreId = 15;
@@ -101,7 +101,7 @@ test('2.2 Customer cannot modify or cancel reservation of another customer', () 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 3: PAYOS PAYMENT & WEBHOOK SECURITY (SEC-03)
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n📋 3. PayOS Webhook & Payment Security Tests (SEC-03)');
+console.log('\n[Test] [Info] 3. PayOS Webhook & Payment Security Tests (SEC-03)');
 
 function verifyPayOsSignature(data, signature, checksumKey) {
   if (!checksumKey) return false;
@@ -140,7 +140,7 @@ test('3.3 Webhook verification fails safely when checksum key is missing (no fal
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 4: TABLE RESERVATION STATE & CONCURRENCY (PHASE 3)
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n📋 4. Table Reservation Business Rules & Overlap Prevention (Phase 3)');
+console.log('\n[Test] [Info] 4. Table Reservation Business Rules & Overlap Prevention (Phase 3)');
 
 test('4.1 Reservation rejects time outside operating hours', () => {
   const openHour = 10;
@@ -178,7 +178,7 @@ test('4.3 Table under maintenance (TAM_NGUNG) cannot be reserved', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 5: VOUCHER CONCURRENCY & IDEMPOTENT ROLLBACK (PHASE 3)
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n📋 5. Voucher Concurrency & Rollback Tests (Phase 3)');
+console.log('\n[Test] [Info] 5. Voucher Concurrency & Rollback Tests (Phase 3)');
 
 test('5.1 Percentage voucher discount correctly honors maximum cap', () => {
   const orderTotal = 200000;
@@ -222,7 +222,7 @@ test('5.3 Voucher rollback on order cancellation is strictly idempotent', () => 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUITE 6: REVIEW CONFLICT & RATING CALCULATION
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n📋 6. Review & Rating Calculation Tests');
+console.log('\n[Test] [Info] 6. Review & Rating Calculation Tests');
 
 test('6.1 Recalculate restaurant average rating excludes hidden reviews', () => {
   const reviews = [
@@ -239,5 +239,5 @@ test('6.1 Recalculate restaurant average rating excludes hidden reviews', () => 
 });
 
 console.log('\n===============================================================');
-console.log(`🎉 ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY!`);
+console.log(`[Test] [Info] ALL ${passedTests}/${totalTests} TESTS PASSED SUCCESSFULLY!`);
 console.log('===============================================================\n');

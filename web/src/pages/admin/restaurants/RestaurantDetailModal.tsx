@@ -210,8 +210,8 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
                 <MapPin size={14} color="#fc6011" /> {store.diaChi || 'Chưa cập nhật địa chỉ'}
               </div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px', display: 'flex', gap: '16px' }}>
-                <span>📞 SDT: <strong>{store.sdt || '—'}</strong></span>
-                <span>👤 Chủ quán: <strong>{store.hoTenChuQuan || '—'}</strong></span>
+                <span><Phone size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> SDT: <strong>{store.sdt || '—'}</strong></span>
+                <span><User size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Chủ quán: <strong>{store.hoTenChuQuan || '—'}</strong></span>
               </div>
             </div>
           </div>
@@ -352,7 +352,7 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
                       <td style={{ fontWeight: 700, color: '#0f172a' }}>{f.tenMonAn}</td>
                       <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
                       <td><span className="badge badge-info">{f.soLuongMon || 100} phần</span></td>
-                      <td>⭐ {f.diemDanhGiaTB && Number(f.diemDanhGiaTB) > 0 ? Number(f.diemDanhGiaTB).toFixed(1) : 'Chưa có'}</td>
+                      <td><Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />{f.diemDanhGiaTB && Number(f.diemDanhGiaTB) > 0 ? Number(f.diemDanhGiaTB).toFixed(1) : 'Chưa có'}</td>
                     </tr>
                   ))}
                 </tbody>

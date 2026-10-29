@@ -25,7 +25,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
   String searchQuery = "";
   int selectedFilterIndex = 0;
 
-  final List<String> filterTags = ["Tất cả", "🔥 Bán chạy", "⭐ 4.5+", "⚡ Chuẩn bị nhanh"];
+  final List<String> filterTags = ["Tất cả", "Bán chạy", "4.5+", "Chuẩn bị nhanh"];
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
       }
     });
 
-    if (widget.mObj["items"] != null && (widget.mObj["items"] as List).isNotEmpty) {
+    if (widget.mObj["items"] != null) {
       menuItemsArr = widget.mObj["items"];
     } else {
       _loadRealMenuFromDB();
@@ -53,24 +53,24 @@ class _MenuItemsViewState extends State<MenuItemsView> {
 
   Future<void> _loadRealMenuFromDB() async {
     setState(() => isLoading = true);
-    var resId = widget.mObj["maQuan"] ?? 0;
-    if (resId == 0) {
-      final restaurants = await CategoryService.fetchRestaurantsFromDB();
-      if (restaurants.isNotEmpty) {
-        resId = restaurants.first["maQuan"] ?? restaurants.first["id"] ?? 2;
-      }
-    }
-    if (resId == 0) resId = 2;
+    final catId = widget.mObj["id"] ?? widget.mObj["maDanhMuc"];
+    final catName = (widget.mObj["name"] ?? widget.mObj["tenDanhMuc"] ?? '').toString().trim().toLowerCase();
 
-    final categories = await CategoryService.fetchRestaurantMenuFromDB(resId);
+    final allFoods = await CategoryService.fetchFoodsOverviewFromDB();
     if (mounted) {
-      if (categories.isNotEmpty) {
-        final cat = categories.firstWhere(
-          (c) => c["name"] == widget.mObj["name"] || c["id"] == widget.mObj["id"],
-          orElse: () => categories.first,
-        );
+      if (allFoods.isNotEmpty) {
+        final matchedFoods = allFoods.where((f) {
+          if (f is! Map) return false;
+          final fId = f['maDanhMuc'] ?? f['idDanhMuc'];
+          if (catId != null && fId != null && int.tryParse(fId.toString()) == int.tryParse(catId.toString())) {
+            return true;
+          }
+          final fCatName = (f['tenDanhMuc'] ?? f['categoryName'] ?? '').toString().trim().toLowerCase();
+          return catName.isNotEmpty && fCatName == catName;
+        }).toList();
+
         setState(() {
-          menuItemsArr = cat["items"] ?? [];
+          menuItemsArr = matchedFoods;
           isLoading = false;
         });
       } else {

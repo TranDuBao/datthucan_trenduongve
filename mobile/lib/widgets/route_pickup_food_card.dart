@@ -53,6 +53,9 @@ class RoutePickupFoodCard extends StatelessWidget {
     final String status = (item["trangThaiMon"] ?? item["status"] ?? "").toString().toUpperCase();
     final bool isSoldOut = stockQty <= 0 || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG';
     final int soldQty = int.tryParse((item["soLuongDaBan"] ?? item["soLuotBan"] ?? item["soldCount"] ?? 0).toString()) ?? 0;
+    final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
+    final double ratingNum = double.tryParse(rateVal) ?? 0.0;
+    final String ratingStr = (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1);
 
     return GestureDetector(
       onTap: () {
@@ -158,8 +161,19 @@ class RoutePickupFoodCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Icon(Icons.storefront, size: 12, color: TColor.secondaryTextOf(context)),
-                      const SizedBox(width: 3),
+                      const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 12),
+                      const SizedBox(width: 2),
+                      Text(
+                        ratingStr,
+                        style: TextStyle(
+                          color: TColor.primaryTextOf(context),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(Icons.storefront, size: 11, color: TColor.secondaryTextOf(context)),
+                      const SizedBox(width: 2),
                       Expanded(
                         child: Text(
                           item["tenQuan"] ?? "Cửa hàng",

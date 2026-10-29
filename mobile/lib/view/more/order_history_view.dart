@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/locator.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/map_provider.dart';
 import '../../services/order_service.dart';
 import '../../services/review_service.dart';
 import '../../services/socket_service.dart';
@@ -12,6 +13,7 @@ import 'order_detail_sheet.dart';
 import 'order_history_cards.dart';
 import 'order_history_widgets.dart';
 import 'order_review_view.dart';
+import '../../widgets/order_cancelled_modal.dart';
 
 class OrderHistoryView extends StatefulWidget {
   const OrderHistoryView({super.key});
@@ -49,8 +51,8 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       final socketService = locator<SocketService>();
       socketService.connect();
       socketService.onReconnect(() {
-        debugPrint('⚡ Socket reconnected -> Refetching orders...');
-        _fetchOrdersHistory();
+        debugPrint('[OrderHistory] [Info] Socket reconnected -> Refetching orders silently...');
+        _fetchOrdersHistory(silent: true);
       });
       socketService.listenToOrderUpdates((data) {
         if (!mounted || data == null) return;
@@ -69,21 +71,31 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
         }
       });
     } catch (e) {
-      debugPrint('⚠️ Socket listener error: $e');
+      debugPrint('[OrderHistory] [Warn] Socket listener error: $e');
     }
   }
 
   // ───────────────────────── Data loading ───────────────────────────────────
-  Future<void> _fetchOrdersHistory() async {
-    setState(() => isLoadingOrders = true);
+  Future<void> _fetchOrdersHistory({bool silent = false}) async {
+    if (!silent && ordersList.isEmpty) {
+      setState(() => isLoadingOrders = true);
+    }
     final list = await OrderService.fetchMyOrders();
     final Set<int> reviewedSet = {};
-    for (var order in list) {
-      if (OrderProgressStepper.getStepFromStatus(order.status) == 5) {
-        final review = await ReviewService.getReviewByOrder(order.orderId);
-        if (review != null) reviewedSet.add(order.orderId);
+    
+    // Tải song song đánh giá các đơn đã hoàn tất thay vì tuần tự
+    final completedOrders = list.where((o) => OrderProgressStepper.getStepFromStatus(o.status) == 5).toList();
+    if (completedOrders.isNotEmpty) {
+      final reviews = await Future.wait(
+        completedOrders.map((order) => ReviewService.getReviewByOrder(order.orderId).catchError((_) => null)),
+      );
+      for (int i = 0; i < completedOrders.length; i++) {
+        if (reviews[i] != null) {
+          reviewedSet.add(completedOrders[i].orderId);
+        }
       }
     }
+
     if (mounted) {
       setState(() {
         ordersList = list;
@@ -176,15 +188,41 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đang xử lý hủy đơn...'), duration: Duration(seconds: 1)),
       );
-      final success = await OrderService.cancelOrder(order.orderId);
+      final res = await OrderService.cancelOrder(order.orderId);
+      final success = res['success'] == true;
+      final msg = res['message'] ?? (success ? 'Đã hủy đơn hàng thành công!' : 'Không thể hủy đơn hàng');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? 'Đã hủy đơn hàng thành công!' : 'Không thể hủy đơn hàng. Vui lòng thử lại sau!'),
-          backgroundColor: success ? const Color(0xFFFC6011) : Colors.redAccent,
-        ),
-      );
-      if (success) _fetchOrdersHistory();
+      if (success) {
+        OrderCancelledModal.show(context: context, orderId: order.orderId);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      if (success) {
+        // Cập nhật trạng thái tức thì không cần reload lại màn hình
+        setState(() {
+          order.status = 'DA_HUY';
+        });
+        _activeSheetSetState?.call(() {});
+
+        // Nếu đơn đang hủy là đơn ghé quán trên bản đồ thì giải phóng lộ trình
+        try {
+          final mapProvider = Provider.of<MapProvider>(context, listen: false);
+          if (mapProvider.activeStopoverOrder != null) {
+            final activeId = mapProvider.activeStopoverOrder!['id'] ?? mapProvider.activeStopoverOrder!['maDonHang'];
+            if (activeId != null && activeId.toString() == order.orderId.toString()) {
+              mapProvider.clearActiveStopoverOrder();
+            }
+          }
+        } catch (_) {}
+
+        // Đồng bộ ngầm với server không gây giật lag / nháy skeleton
+        _fetchOrdersHistory(silent: true);
+      }
     }
   }
 
@@ -205,7 +243,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => OrderReviewView(order: order)),
-    ).then((_) => _fetchOrdersHistory());
+    ).then((_) => _fetchOrdersHistory(silent: true));
   }
 
   // ───────────────────────── Build ──────────────────────────────────────────

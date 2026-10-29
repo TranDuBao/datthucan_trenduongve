@@ -68,10 +68,12 @@ export class PaymentController {
         status: 'success',
         data: {
           maDonHang,
+          orderId: maDonHang,
           trangThaiThanhToan: payment ? payment.trangThai : 'CHO_THANH_TOAN',
+          trangThaiDonHang: order.trangThai,
           soTien: payment ? payment.soTien : order.tongTien,
           loaiThanhToan: payment ? payment.loaiThanhToan : order.phuongThucThanhToan,
-          ngayThanhToan: payment ? payment.ngayThanhToan : null,
+          ngayThanhToan: payment ? payment.ngayThanhToan : (order.trangThai !== 'CHO_THANH_TOAN' ? new Date().toISOString() : null),
         },
       });
     } catch (error: any) {
@@ -92,7 +94,7 @@ export class PaymentController {
       const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
 
       if (!webhookSecret) {
-        console.error('❌ CẢNH BÁO BẢO MẬT: PAYMENT_WEBHOOK_SECRET chưa được cấu hình trong .env!');
+        console.error('[PaymentController] [Error] CẢNH BÁO BẢO MẬT: PAYMENT_WEBHOOK_SECRET chưa được cấu hình trong .env!');
         return res.status(500).json({
           status: 'error',
           message: 'Hệ thống chưa thiết lập khóa bảo mật Webhook thanh toán (PAYMENT_WEBHOOK_SECRET)',
@@ -163,12 +165,31 @@ export class PaymentController {
 
       const webhookData =
         req.body?.data && typeof req.body.data === 'object' ? req.body.data : req.body;
-      const targetOrderId = Number(webhookData.orderCode || webhookData.maDonHang);
 
+      console.log('[PaymentController] [Info] [Payment Webhook Received]:', JSON.stringify({
+        code: req.body?.code,
+        status: req.body?.status || webhookData?.status,
+        orderCode: webhookData?.orderCode,
+        amount: webhookData?.amount,
+        desc: webhookData?.description,
+      }));
+
+      let targetOrderId = Number(webhookData.orderCode || webhookData.maDonHang);
+
+      // Fallback: If orderCode is not provided or 0, extract from transfer description (e.g. "DH25")
       if (!targetOrderId || isNaN(targetOrderId) || targetOrderId <= 0) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Mã đơn hàng không hợp lệ trong webhook payload',
+        const desc = String(webhookData.description || req.body?.description || '');
+        const match = desc.match(/DH\s*(\d+)/i);
+        if (match) {
+          targetOrderId = Number(match[1]);
+        }
+      }
+
+      // If signature is valid but targetOrderId is missing/0, it is a PayOS webhook verification ping
+      if (!targetOrderId || isNaN(targetOrderId) || targetOrderId <= 0) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'Webhook URL verified successfully by PayOS',
         });
       }
 
@@ -184,9 +205,27 @@ export class PaymentController {
 
       // Idempotent Transaction Execution
       const result = await AppDataSource.transaction(async (manager) => {
-        const order = await manager.findOne(DonHangModel, { where: { maDonHang: targetOrderId } });
+        let order = await manager.findOne(DonHangModel, { where: { maDonHang: targetOrderId } });
+
+        // If order not found by orderCode, check if description has DH<id>
         if (!order) {
-          throw new Error('Đơn hàng không tồn tại');
+          const desc = String(webhookData.description || req.body?.description || '');
+          const match = desc.match(/DH\s*(\d+)/i);
+          if (match) {
+            const fallbackId = Number(match[1]);
+            if (fallbackId && fallbackId !== targetOrderId) {
+              const fallbackOrder = await manager.findOne(DonHangModel, { where: { maDonHang: fallbackId } });
+              if (fallbackOrder) {
+                targetOrderId = fallbackId;
+                order = fallbackOrder;
+              }
+            }
+          }
+        }
+
+        if (!order) {
+          // Order not found (e.g. PayOS sample test orderCode), return success for test verification
+          return { alreadyProcessed: true, payment: null, order: null, isTest: true };
         }
 
         // Strict Amount Matching Check: Prevent underpayment tampering
@@ -202,8 +241,15 @@ export class PaymentController {
 
         let payment = await manager.findOne(ThanhToanModel, { where: { maDonHang: targetOrderId } });
 
-        // Idempotency check: If already finalized (success or failure), do not process twice
-        if (payment && (payment.trangThai === 'THANH_TOAN_THANH_CONG' || payment.trangThai === 'THANH_TOAN_THAT_BAI')) {
+        // Idempotency check: If already finalized (success, completed, refunded, or failure), do not process twice
+        if (
+          payment &&
+          (payment.trangThai === 'THANH_TOAN_THANH_CONG' ||
+            payment.trangThai === 'DA_THANH_TOAN' ||
+            payment.trangThai === 'CHO_HOAN_TIEN' ||
+            payment.trangThai === 'DA_HOAN_TIEN' ||
+            payment.trangThai === 'THANH_TOAN_THAT_BAI')
+        ) {
           return { alreadyProcessed: true, payment, order };
         }
 
@@ -225,23 +271,84 @@ export class PaymentController {
 
         await manager.save(payment);
 
-        if (!isSuccess && order.trangThai === 'CHO_XAC_NHAN') {
-          order.trangThai = 'DA_HUY';
-          order.lyDoHuy = 'Thanh toán trực tuyến thất bại';
-          await manager.save(order);
+        if (isSuccess) {
+          // Transition order from CHO_THANH_TOAN to CHO_XAC_NHAN (Ready for store to accept & prepare)
+          if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'UNPAID') {
+            order.trangThai = 'CHO_XAC_NHAN';
+            await manager.save(order);
+          }
+        } else {
+          // If payment failed, mark order as DA_HUY
+          if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'CHO_XAC_NHAN' || order.trangThai === 'UNPAID') {
+            order.trangThai = 'DA_HUY';
+            order.lyDoHuy = 'Thanh toán trực tuyến thất bại';
+            await manager.save(order);
+          }
         }
 
         return { alreadyProcessed: false, payment, order };
       });
 
-      if (!result.alreadyProcessed) {
+      if (!result.alreadyProcessed && result.payment && result.order) {
         if (result.payment.trangThai === 'THANH_TOAN_THANH_CONG') {
+          // 1. Emit payment confirmed event
           RealtimeService.getInstance().emitPaymentConfirmed(
             result.order.maQuan,
             targetOrderId,
             result.payment.soTien,
             result.order.maKhachHang
           );
+
+          // 2. NOW emit order:created to restaurant because payment is verified!
+          try {
+            const chiTietRepo = AppDataSource.getRepository((await import('../models/chi_tiet_don_hang_model')).ChiTietDonHangModel);
+            const items = await chiTietRepo.find({ where: { maDonHang: targetOrderId } });
+
+            RealtimeService.getInstance().emitOrderCreated(result.order.maQuan, targetOrderId, {
+              maDonHang: targetOrderId,
+              maKhachHang: result.order.maKhachHang,
+              tongTien: result.order.tongTien,
+              thoiGianHenNhan: result.order.thoiGianHenNhan,
+              itemsCount: items.length,
+              status: result.order.trangThai, // 'CHO_XAC_NHAN'
+            });
+
+            // 3. Send Notification to Restaurant
+            if (result.order.maQuan) {
+              await NotificationService.getInstance().sendNotification({
+                recipientId: result.order.maQuan,
+                recipientRole: 'restaurant',
+                type: 'order:created',
+                title: 'Đơn hàng mới đã thanh toán',
+                body: `Đơn hàng mới #DH-${targetOrderId} (${items.length} món) đã được thanh toán thành công. Tổng tiền: ${Number(result.payment.soTien).toLocaleString('vi-VN')}đ. Mời quán chuẩn bị món!`,
+                data: { orderId: targetOrderId, maQuan: result.order.maQuan, status: result.order.trangThai },
+              });
+            }
+
+            // 4. Send Notification to Admin
+            await NotificationService.getInstance().sendNotification({
+              recipientId: 0,
+              recipientRole: 'admin',
+              type: 'order:created',
+              title: 'Đơn hàng mới đã thanh toán',
+              body: `Đơn hàng #DH-${targetOrderId} tại quán ID ${result.order.maQuan} đã thanh toán thành công (${Number(result.payment.soTien).toLocaleString('vi-VN')}đ).`,
+              data: { orderId: targetOrderId, maQuan: result.order.maQuan },
+            });
+
+            // 5. Send Notification to Customer
+            if (result.order.maKhachHang) {
+              await NotificationService.getInstance().sendNotification({
+                recipientId: result.order.maKhachHang,
+                recipientRole: 'user',
+                type: 'payment:confirmed',
+                title: 'Thanh toán thành công',
+                body: `Đơn hàng #DH-${targetOrderId} đã thanh toán thành công (${Number(result.payment.soTien).toLocaleString('vi-VN')}đ). Quán đang tiếp nhận đơn.`,
+                data: { orderId: targetOrderId, maQuan: result.order.maQuan },
+              });
+            }
+          } catch (notifErr) {
+            console.error('[PaymentController] Error notifying store after payment:', notifErr);
+          }
         } else if (result.payment.trangThai === 'THANH_TOAN_THAT_BAI') {
           try {
             const { OrderService } = await import('../services/order_service');
@@ -255,10 +362,10 @@ export class PaymentController {
       return res.status(200).json({
         status: 'success',
         message: 'Xử lý webhook thanh toán thành công',
-        data: { maDonHang: targetOrderId, trangThai: result.payment.trangThai },
+        data: { maDonHang: targetOrderId, trangThai: result.payment?.trangThai || 'TEST_VERIFIED' },
       });
     } catch (error: any) {
-      console.error('❌ Lỗi xử lý Webhook thanh toán:', error);
+      console.error('[PaymentController] [Error] Lỗi xử lý Webhook thanh toán:', error);
       return res.status(500).json({
         status: 'error',
         message: error.message || 'Lỗi khi xử lý Webhook thanh toán',
@@ -310,6 +417,11 @@ export class PaymentController {
       }
 
       await this.thanhToanRepo.save(payment);
+
+      if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'CHO_XAC_NHAN' || order.trangThai === 'UNPAID') {
+        order.trangThai = 'DA_XAC_NHAN';
+        await this.donHangRepo.save(order);
+      }
 
       RealtimeService.getInstance().emitPaymentConfirmed(
         order.maQuan,

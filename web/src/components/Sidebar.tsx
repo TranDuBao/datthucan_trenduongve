@@ -26,6 +26,8 @@ export const Sidebar: React.FC = () => {
     { title: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { title: 'Người Dùng', path: '/admin/users', icon: Users },
     { title: 'Nhà Hàng', path: '/admin/restaurants', icon: Store },
+    { title: 'Thực Đơn Tuyển Chọn', path: '/admin/categories', icon: FolderTree },
+    { title: 'Quản Lý Banner', path: '/admin/banners', icon: Sliders },
     { title: 'Đơn Hàng', path: '/admin/orders', icon: ShoppingBag },
     { title: 'Đánh Giá & Kiểm Duyệt', path: '/admin/reviews', icon: Star },
     { title: 'Nhật Ký', path: '/admin/logs', icon: ShieldAlert },

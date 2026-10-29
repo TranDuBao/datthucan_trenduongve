@@ -117,13 +117,14 @@ class ReviewService {
           'success': true,
           'reviews': reviews,
           'total': data['total'] ?? 0,
+          'averageRating': double.tryParse((data['averageRating'] ?? 0.0).toString()) ?? 0.0,
           'totalPages': data['totalPages'] ?? 1,
         };
       } else {
-        return {'success': false, 'reviews': <ReviewModel>[], 'total': 0, 'totalPages': 1};
+        return {'success': false, 'reviews': <ReviewModel>[], 'total': 0, 'averageRating': 0.0, 'totalPages': 1};
       }
     } catch (e) {
-      return {'success': false, 'reviews': <ReviewModel>[], 'total': 0, 'totalPages': 1};
+      return {'success': false, 'reviews': <ReviewModel>[], 'total': 0, 'averageRating': 0.0, 'totalPages': 1};
     }
   }
 

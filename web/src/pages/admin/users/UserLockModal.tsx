@@ -1,3 +1,4 @@
+import { Unlock, Clock, Lock } from 'lucide-react';
 import React from 'react';
 import { Modal } from '../../../components/Modal';
 
@@ -54,7 +55,7 @@ export const UserLockModal: React.FC<UserLockModalProps> = ({
                 checked={lockForm.lockType === 'MO_KHOA'}
                 onChange={() => setLockForm({ ...lockForm, lockType: 'MO_KHOA' })}
               />{' '}
-              <strong style={{ color: '#15803d' }}>🟢 Mở Khóa</strong>
+              <strong style={{ color: '#15803d' }}><Unlock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Mở Khóa</strong>
             </label>
 
             <label
@@ -74,7 +75,7 @@ export const UserLockModal: React.FC<UserLockModalProps> = ({
                 checked={lockForm.lockType === 'TAM_THOI'}
                 onChange={() => setLockForm({ ...lockForm, lockType: 'TAM_THOI' })}
               />{' '}
-              <strong style={{ color: '#b45309' }}>⏳ Tạm Khóa</strong>
+              <strong style={{ color: '#b45309' }}><Clock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Tạm Khóa</strong>
             </label>
 
             <label
@@ -94,7 +95,7 @@ export const UserLockModal: React.FC<UserLockModalProps> = ({
                 checked={lockForm.lockType === 'VINH_VIEN'}
                 onChange={() => setLockForm({ ...lockForm, lockType: 'VINH_VIEN' })}
               />{' '}
-              <strong style={{ color: '#b91c1c' }}>🔒 Khóa Vĩnh Viễn</strong>
+              <strong style={{ color: '#b91c1c' }}><Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Khóa Vĩnh Viễn</strong>
             </label>
           </div>
         </div>

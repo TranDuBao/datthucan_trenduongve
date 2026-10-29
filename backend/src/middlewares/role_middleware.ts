@@ -80,7 +80,7 @@ export const requireStoreOwner = async (
     req.maQuan = store.maQuan;
     next();
   } catch (error: any) {
-    console.error('❌ Lỗi xác thực quyền sở hữu nhà hàng:', error);
+    console.error('[RoleMiddleware] [Error] Lỗi xác thực quyền sở hữu nhà hàng:', error);
     return res.status(500).json({
       statusCode: 500,
       message: 'Lỗi kiểm tra quyền hạn nhà hàng',

@@ -57,7 +57,7 @@ class CategoryService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print('❌ Error fetchCategoriesFromDB: $e');
+      print('[CategoryService] [Error] Error fetchCategoriesFromDB: $e');
     }
 
     return [];
@@ -81,7 +81,7 @@ class CategoryService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print('❌ Error fetchRestaurantMenuFromDB: $e');
+      print('[CategoryService] [Error] Error fetchRestaurantMenuFromDB: $e');
     }
 
     return [];
@@ -105,7 +105,7 @@ class CategoryService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print('❌ Error fetchRestaurantsFromDB: $e');
+      print('[CategoryService] [Error] Error fetchRestaurantsFromDB: $e');
     }
 
     return [];
@@ -113,7 +113,8 @@ class CategoryService {
 
   static Future<List<dynamic>> fetchRestaurantsAlongRoute(
     List<LatLng> points, {
-    int maxDistanceMeters = 1000,
+    int maxDistanceMeters = 2500,
+    String? keyword,
   }) async {
     try {
       final token = Globs.udValueString(KKey.authToken);
@@ -121,6 +122,7 @@ class CategoryService {
       final body = json.encode({
         'routePoints': points.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
         'maxDistance': maxDistanceMeters,
+        if (keyword != null && keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
       });
 
       final response = await http.post(
@@ -138,7 +140,7 @@ class CategoryService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print('❌ Error fetchRestaurantsAlongRoute: $e');
+      print('[CategoryService] [Error] Error fetchRestaurantsAlongRoute: $e');
     }
 
     return [];
@@ -162,7 +164,7 @@ class CategoryService {
       }
     } catch (e) {
       // ignore: avoid_print
-      print('❌ Error fetchFoodsOverviewFromDB: $e');
+      print('[CategoryService] [Error] Error fetchFoodsOverviewFromDB: $e');
     }
 
     return [];

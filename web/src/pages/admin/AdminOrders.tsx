@@ -82,7 +82,7 @@ export const AdminOrders: React.FC = () => {
             value={storeFilter}
             onChange={(e) => setStoreFilter(e.target.value)}
           >
-            <option value="">🏪 Tất cả nhà hàng ({stores.length})</option>
+            <option value="">Tất cả nhà hàng ({stores.length})</option>
             {stores.map((s: any) => (
               <option key={s.maQuan} value={s.maQuan}>
                 {s.tenQuan}
@@ -97,7 +97,7 @@ export const AdminOrders: React.FC = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">📋 Tất cả trạng thái</option>
+            <option value="">Tất cả trạng thái</option>
             <option value="PENDING">Chờ xác nhận (PENDING)</option>
             <option value="CONFIRMED">Đã xác nhận (CONFIRMED)</option>
             <option value="PREPARING">Đang chuẩn bị (PREPARING)</option>

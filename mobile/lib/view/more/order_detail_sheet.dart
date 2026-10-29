@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import '../../providers/map_provider.dart';
+import '../../services/category_service.dart';
 import '../../services/order_service.dart';
+import '../../widgets/custom_toast.dart';
 import '../../widgets/order_progress_stepper.dart';
+import '../main_tabview/main_tabview.dart';
+import '../../common_widget/smart_network_image.dart';
 import 'order_history_widgets.dart';
 
 /// Displays the full order detail as a bottom sheet.
@@ -195,38 +202,163 @@ class _OrderDetailSheetContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Progress tracker
-                  _buildCard(
-                    isDark: isDark,
-                    borderColor: isDark ? const Color(0xFF2C3240) : const Color(0xFFFFF0EA),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Tiến độ lấy món',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF101828),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
+                  // 1. Progress tracker / Cancellation & Refund card
+                  if (isCancelled)
+                    _buildCard(
+                      isDark: isDark,
+                      borderColor: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                          ? const Color(0xFF6CE9A6)
+                          : const Color(0xFFFDA29B),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                      ? (isDark ? const Color(0xFF0F291E) : const Color(0xFFECFDF3))
+                                      : (isDark ? const Color(0xFF2E1715) : const Color(0xFFFEF3F2)),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                      ? Icons.check_circle_outline_rounded
+                                      : Icons.cancel_outlined,
+                                  color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                      ? const Color(0xFF027A48)
+                                      : const Color(0xFFD92D20),
+                                  size: 20,
+                                ),
                               ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Đơn hàng đã hủy',
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : const Color(0xFF101828),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      currentOrder.refundStatus != null
+                                          ? 'Chính sách hoàn tiền tự động 100%'
+                                          : 'Đơn hàng không phát sinh thanh toán',
+                                      style: TextStyle(
+                                        color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (currentOrder.refundStatus != null) ...[
+                            const SizedBox(height: 14),
+                            Divider(
+                              height: 1,
+                              color: isDark ? const Color(0xFF2C3240) : const Color(0xFFF2F4F7),
                             ),
-                            Text(
-                              'Bước $stepNum/5',
-                              style: const TextStyle(
-                                color: Color(0xFFFC6011),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Trạng thái hoàn tiền:',
+                                  style: TextStyle(
+                                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                        ? const Color(0xFFECFDF3)
+                                        : const Color(0xFFFFF6ED),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                        ? 'Hoàn tiền thành công'
+                                        : (currentOrder.refundStatus == 'DANG_XU_LY'
+                                            ? 'Đang chuyển khoản hoàn tiền'
+                                            : 'Chờ duyệt hoàn tiền'),
+                                    style: TextStyle(
+                                      color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                                          ? const Color(0xFF027A48)
+                                          : const Color(0xFFB54708),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Số tiền hoàn:',
+                                  style: TextStyle(
+                                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  formatOrderTotal(currentOrder.refundAmount ?? currentOrder.totalAmount),
+                                  style: const TextStyle(
+                                    color: Color(0xFFFC6011),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 16),
-                        OrderFiveStepStepper(currentStep: stepNum, isDark: isDark),
-                      ],
+                        ],
+                      ),
+                    )
+                  else
+                    _buildCard(
+                      isDark: isDark,
+                      borderColor: isDark ? const Color(0xFF2C3240) : const Color(0xFFFFF0EA),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Tiến độ lấy món',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : const Color(0xFF101828),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                'Bước $stepNum/5',
+                                style: const TextStyle(
+                                  color: Color(0xFFFC6011),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          OrderFiveStepStepper(currentStep: stepNum, isDark: isDark),
+                        ],
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 16),
 
@@ -298,7 +430,45 @@ class _OrderDetailSheetContent extends StatelessWidget {
                               child: SizedBox(
                                 height: 40,
                                 child: OutlinedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    final phone = currentOrder.restaurantPhone.isNotEmpty
+                                        ? currentOrder.restaurantPhone
+                                        : '0909998877';
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                        title: Row(
+                                          children: [
+                                            const Icon(Icons.call_rounded, color: Color(0xFFFC6011), size: 22),
+                                            const SizedBox(width: 8),
+                                            const Text('Liên hệ nhà hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                        content: Text(
+                                          'Số điện thoại của ${currentOrder.restaurantName}:\n$phone',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx),
+                                            child: const Text('Đóng', style: TextStyle(color: Colors.grey)),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFFC6011),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                            onPressed: () {
+                                              Navigator.pop(ctx);
+                                              CustomToast.showSuccess(context, 'Đang kết nối cuộc gọi tới $phone...');
+                                            },
+                                            child: const Text('Gọi ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                   icon: const Icon(Icons.call_outlined, color: Color(0xFFFC6011), size: 16),
                                   label: const Text(
                                     'Gọi quán',
@@ -322,7 +492,50 @@ class _OrderDetailSheetContent extends StatelessWidget {
                               child: SizedBox(
                                 height: 40,
                                 child: OutlinedButton.icon(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    // 1. Tìm tọa độ điểm đến của quán
+                                    double? sLat = currentOrder.lat;
+                                    double? sLng = currentOrder.lng;
+
+                                    if (sLat == null || sLng == null) {
+                                      try {
+                                        final stores = await CategoryService.fetchRestaurantsFromDB();
+                                        final matched = stores.firstWhere(
+                                          (s) => s['maQuan'] == currentOrder.restaurantId || s['tenQuan'] == currentOrder.restaurantName,
+                                          orElse: () => null,
+                                        );
+                                        if (matched != null) {
+                                          sLat = (matched['lat'] as num?)?.toDouble();
+                                          sLng = (matched['lng'] as num?)?.toDouble();
+                                        }
+                                      } catch (_) {}
+                                    }
+
+                                    // Tọa độ mặc định an toàn nếu chưa cập nhật GPS quán
+                                    sLat ??= 10.7812;
+                                    sLng ??= 106.6985;
+
+                                    final storePos = LatLng(sLat, sLng);
+
+                                    // 2. Đóng bottom sheet
+                                    Navigator.pop(context);
+
+                                    // 3. Chuyển Tab về Home Map (Tab 2)
+                                    MainTabView.switchTab(context, 2);
+
+                                    // 4. Kích hoạt tính năng Dẫn đường trên MapProvider
+                                    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+                                    await mapProvider.navigateToOrderStore(
+                                      orderId: currentOrder.orderId,
+                                      storeName: currentOrder.restaurantName,
+                                      storeAddress: currentOrder.restaurantAddress,
+                                      storeLatLng: storePos,
+                                      pickupTime: currentOrder.pickupTime,
+                                      status: currentOrder.status,
+                                    );
+
+                                    CustomToast.showSuccess(context, "Đang dẫn đường đến ${currentOrder.restaurantName}");
+                                  },
                                   icon: const Icon(Icons.near_me_outlined, color: Color(0xFFFC6011), size: 16),
                                   label: const Text(
                                     'Dẫn đường',
@@ -377,17 +590,15 @@ class _OrderDetailSheetContent extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF4EE),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SmartNetworkImage(
+                                    imageUrl: (item['img'] ?? item['image'] ?? item['hinhAnh'] ?? '').toString(),
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
                                     borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.lunch_dining_rounded,
-                                    color: Color(0xFFFC6011),
-                                    size: 22,
+                                    placeholderIcon: Icons.lunch_dining_rounded,
                                   ),
                                 ),
                                 const SizedBox(width: 10),

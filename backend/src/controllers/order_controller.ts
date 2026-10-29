@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { OrderService, normalizeOrderStatus } from '../services/order_service';
+import { RefundService } from '../services/refund_service';
 import { AppDataSource } from '../config/database';
 import { KhachHangModel } from '../models/khach_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
@@ -161,6 +162,14 @@ export class OrderController {
           });
         }
 
+        const currentOrderStatus = normalizeOrderStatus(order.trangThai);
+        if (currentOrderStatus === 'CHO_THANH_TOAN') {
+          return res.status(400).json({
+            status: 'error',
+            message: 'Đơn hàng chưa hoàn tất thanh toán, cửa hàng không thể tiếp nhận hoặc chuẩn bị món!',
+          });
+        }
+
         const allowedStoreTransitions = ['DA_XAC_NHAN', 'DANG_CHUAN_BI', 'SAN_SANG', 'HOAN_TAT', 'DA_HUY'];
         if (!allowedStoreTransitions.includes(targetStatus)) {
           return res.status(400).json({
@@ -178,7 +187,7 @@ export class OrderController {
           });
         }
 
-        // Customers can ONLY cancel ('DA_HUY') their own pending order
+        // Customers can ONLY cancel ('DA_HUY') their own pending or unpaid order
         if (targetStatus !== 'DA_HUY') {
           return res.status(403).json({
             status: 'error',
@@ -187,7 +196,7 @@ export class OrderController {
         }
 
         const currentOrderStatus = normalizeOrderStatus(order.trangThai);
-        if (currentOrderStatus !== 'CHO_XAC_NHAN') {
+        if (currentOrderStatus !== 'CHO_XAC_NHAN' && currentOrderStatus !== 'CHO_THANH_TOAN') {
           return res.status(400).json({
             status: 'error',
             message: 'Đơn hàng đã được xác nhận hoặc đang chế biến, không thể hủy!',
@@ -197,6 +206,26 @@ export class OrderController {
 
       const updatedBy = (userRole === 'CUAN_HANG' || userRole === 'CUA_HANG' || userRole === 'ADMIN') ? 'restaurant' : 'user';
       const cancellationReason = lyDo || reason || (updatedBy === 'user' ? 'Khách hàng hủy đơn' : 'Quán hủy đơn');
+
+      // Khi hủy đơn: Đi qua RefundService xử lý hoàn tiền thống nhất
+      if (targetStatus === 'DA_HUY') {
+        const cancelResult = await RefundService.getInstance().cancelAndProcessRefund({
+          maDonHang,
+          requesterRole: userRole === 'ADMIN' ? 'admin' : ((userRole === 'CUAN_HANG' || userRole === 'CUA_HANG' || userRole === 'RESTAURANT' || userRole === 'STORE') ? 'restaurant' : 'user'),
+          requesterSub: userSub,
+          reason: cancellationReason,
+          bankInfo: req.body.bankInfo,
+        });
+
+        return res.status(200).json({
+          status: 'success',
+          message: cancelResult.message,
+          data: {
+            ...cancelResult.order,
+            refund: cancelResult.refund,
+          },
+        });
+      }
 
       const updatedOrder = await this.orderService.updateOrderStatus(
         maDonHang,
@@ -213,6 +242,29 @@ export class OrderController {
       return res.status(400).json({
         status: 'error',
         message: error.message || 'Lỗi khi cập nhật trạng thái đơn hàng',
+      });
+    }
+  };
+
+  /**
+   * Lấy thông tin hoàn tiền của một đơn hàng
+   */
+  getOrderRefund = async (req: Request, res: Response) => {
+    try {
+      const maDonHang = Number(req.params.id);
+      if (!maDonHang || isNaN(maDonHang)) {
+        return res.status(400).json({ status: 'error', message: 'Mã đơn hàng không hợp lệ' });
+      }
+
+      const refund = await RefundService.getInstance().getRefundByOrderId(maDonHang);
+      return res.status(200).json({
+        status: 'success',
+        data: refund,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        status: 'error',
+        message: error.message || 'Lỗi khi tra cứu thông tin hoàn tiền',
       });
     }
   };

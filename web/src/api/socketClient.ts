@@ -26,15 +26,15 @@ export const getSocket = (): Socket | null => {
     });
 
     socket.on('connect', () => {
-      console.log('⚡ Web Socket connected:', socket?.id);
+      console.log('[SocketClient] [Info] Web Socket connected:', socket?.id);
     });
 
     socket.on('connect_error', (err) => {
-      console.warn('⚠️ Web Socket connect error:', err.message);
+      console.warn('[SocketClient] [Warn] Web Socket connect error:', err.message);
     });
 
     socket.on('disconnect', (reason) => {
-      console.log('⚡ Web Socket disconnected:', reason);
+      console.log('[SocketClient] [Info] Web Socket disconnected:', reason);
     });
   }
 

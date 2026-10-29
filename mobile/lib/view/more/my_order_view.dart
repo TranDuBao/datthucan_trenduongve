@@ -8,7 +8,9 @@ import '../../widgets/custom_toast.dart';
 import '../../widgets/customer_voucher_modal.dart';
 import '../../widgets/custom_date_picker_sheet.dart';
 import '../../widgets/custom_time_picker_sheet.dart';
+import '../../common_widget/smart_network_image.dart';
 import 'checkout_view.dart';
+
 
 class MyOrderView extends StatefulWidget {
   const MyOrderView({super.key});
@@ -537,187 +539,222 @@ class _MyOrderViewState extends State<MyOrderView> {
   }
 
   Widget _buildCartItemsList(CartProvider cart, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: TColor.cardOf(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: TColor.borderOf(context), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    final restaurantIds = cart.restaurantIds;
+
+    return Column(
+      children: restaurantIds.map((resId) {
+        final resItems = cart.itemsForRestaurant(resId);
+        final resName = cart.restaurantName(resId);
+        final resSubTotal = cart.subTotalForRestaurant(resId);
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          decoration: BoxDecoration(
+            color: TColor.cardOf(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: TColor.borderOf(context), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ListView.separated(
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        itemCount: cart.items.length,
-        separatorBuilder: (context, index) => Divider(
-          color: TColor.borderOf(context),
-          height: 1,
-        ),
-        itemBuilder: (context, index) {
-          var item = cart.items[index];
-          final itemPrice = item.price.toInt();
-          final itemTotal = (item.price * item.quantity).toInt();
-
-          return Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                // 1. Food Thumbnail
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: item.image.toString().startsWith("http")
-                      ? Image.network(
-                          item.image.toString(),
-                          width: 64,
-                          height: 64,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 64,
-                            height: 64,
-                            color: TColor.primary.withOpacity(0.12),
-                            child: Icon(Icons.fastfood_rounded,
-                                color: TColor.primary, size: 28),
-                          ),
-                        )
-                      : Image.asset(
-                          item.image.toString(),
-                          width: 64,
-                          height: 64,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 64,
-                            height: 64,
-                            color: TColor.primary.withOpacity(0.12),
-                            child: Icon(Icons.fastfood_rounded,
-                                color: TColor.primary, size: 28),
-                          ),
-                        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header quán ──
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: TColor.primary.withOpacity(0.07),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
                 ),
-                const SizedBox(width: 14),
-
-                // 2. Info & Price
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.foodName,
+                child: Row(
+                  children: [
+                    Icon(Icons.storefront_rounded, color: TColor.primary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        resName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "${itemPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                        style: TextStyle(
-                          color: TColor.secondaryTextOf(context),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    ),
+                    Text(
+                      "${resSubTotal.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                      style: TextStyle(
+                        color: TColor.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "${itemTotal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                        style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
+              // ── Danh sách món ──
+              ListView.separated(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: resItems.length,
+                separatorBuilder: (_, __) => Divider(
+                  color: TColor.borderOf(context),
+                  height: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final item = resItems[index];
+                  final itemPrice = item.price.toInt();
+                  final itemTotal = (item.price * item.quantity).toInt();
 
-                // 3. Modern Quantity Selector
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF2C3240)
-                        : const Color(0xFFF5F5F7),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: TColor.borderOf(context), width: 1),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () {
-                          cart.updateQuantity(item.foodId, -1);
-                        },
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 4,
+                  return Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        // 1. Food Thumbnail — dùng SmartNetworkImage để hiển thị đúng URL
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SmartNetworkImage(
+                            imageUrl: item.image,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // 2. Info & Price
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.foodName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: TColor.primaryTextOf(context),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${itemPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                                style: TextStyle(
+                                  color: TColor.secondaryTextOf(context),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "${itemTotal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                                style: TextStyle(
+                                  color: TColor.primary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ],
                           ),
-                          child: Icon(
-                            item.quantity == 1
-                                ? Icons.delete_outline_rounded
-                                : Icons.remove_rounded,
-                            size: 16,
-                            color: item.quantity == 1
-                                ? const Color(0xFFD32F2F)
-                                : Colors.black87,
+                        ),
+
+                        // 3. Quantity Selector
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF2C3240)
+                                : const Color(0xFFF5F5F7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: TColor.borderOf(context), width: 1),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                borderRadius: BorderRadius.circular(14),
+                                onTap: () {
+                                  cart.updateQuantity(item.foodId, -1);
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    item.quantity == 1
+                                        ? Icons.delete_outline_rounded
+                                        : Icons.remove_rounded,
+                                    size: 16,
+                                    color: item.quantity == 1
+                                        ? const Color(0xFFD32F2F)
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: Text(
+                                  "${item.quantity}",
+                                  style: TextStyle(
+                                    color: TColor.primaryTextOf(context),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(14),
+                                onTap: () {
+                                  cart.updateQuantity(item.foodId, 1);
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFC6011),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.add_rounded,
+                                      size: 16, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          "${item.quantity}",
-                          style: TextStyle(
-                            color: TColor.primaryTextOf(context),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () {
-                          cart.updateQuantity(item.foodId, 1);
-                        },
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFC6011),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.add_rounded,
-                              size: 16, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
+

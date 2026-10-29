@@ -155,11 +155,11 @@ class RouteStep {
     final m = maneuver.toUpperCase();
     if (m.contains('LEFT')) return '↰';
     if (m.contains('RIGHT')) return '↱';
-    if (m.contains('UTURN') || m.contains('U_TURN')) return '↩';
-    if (m.contains('ROUNDABOUT')) return '🔄';
-    if (m.contains('ARRIVE')) return '🏁';
-    if (m.contains('DEPART')) return '🚀';
-    if (m.contains('MOTORWAY') || m.contains('FREEWAY')) return '🛣️';
+    if (m.contains('UTURN') || m.contains('U_TURN')) return '⮌';
+    if (m.contains('ROUNDABOUT')) return '↺';
+    if (m.contains('ARRIVE')) return '⇥';
+    if (m.contains('DEPART')) return '↑';
+    if (m.contains('MOTORWAY') || m.contains('FREEWAY')) return '⇈';
     switch (maneuver) {
       case 'left':
       case 'slight left':
@@ -170,15 +170,15 @@ class RouteStep {
       case 'sharp right':
         return '↱';
       case 'uturn':
-        return '↩';
+        return '⮌';
       case 'roundabout':
-        return '🔄';
+        return '↺';
       case 'arrive':
-        return '🏁';
+        return '⇥';
       case 'depart':
-        return '🚀';
+        return '↑';
       default:
-        return '⬆';
+        return '↑';
     }
   }
 }
@@ -186,6 +186,22 @@ class RouteStep {
 // ─────────────────────────────────────────────────────────────────────────────
 // RouteModel
 // ─────────────────────────────────────────────────────────────────────────────
+
+class RouteLeg {
+  final String distance;
+  final String duration;
+  final int distanceMeters;
+  final int durationSeconds;
+  final List<LatLng> polylinePoints;
+
+  RouteLeg({
+    required this.distance,
+    required this.duration,
+    required this.distanceMeters,
+    required this.durationSeconds,
+    this.polylinePoints = const [],
+  });
+}
 
 class RouteModel {
   final String totalDistance;
@@ -195,6 +211,7 @@ class RouteModel {
   final List<RouteStep> steps;
   final List<LatLng> polylinePoints;
   final String summary;
+  final List<RouteLeg> legs;
 
   // ── Traffic info (từ TomTom) ─────────────────────────────────────────────
   final int trafficDelayInSeconds;
@@ -208,11 +225,35 @@ class RouteModel {
     required this.steps,
     required this.polylinePoints,
     required this.summary,
+    this.legs = const [],
     this.trafficDelayInSeconds = 0,
     this.trafficLengthInMeters = 0,
   });
 
-  // ── ETA (giờ đến dự kiến) ────────────────────────────────────────────────
+  List<LatLng>? _cachedSimplifiedPoints;
+
+  /// Danh sách tọa độ đã được tối ưu hóa (decimated) giúp render GPU/Raster cực mượt, tránh giật lag bản đồ
+  List<LatLng> get simplifiedPolylinePoints {
+    if (_cachedSimplifiedPoints != null) return _cachedSimplifiedPoints!;
+    if (polylinePoints.length <= 150) {
+      _cachedSimplifiedPoints = polylinePoints;
+      return _cachedSimplifiedPoints!;
+    }
+    final result = <LatLng>[polylinePoints.first];
+    const double deg2m = 111000.0;
+    for (int i = 1; i < polylinePoints.length - 1; i++) {
+      final prev = result.last;
+      final curr = polylinePoints[i];
+      final dLat = (curr.latitude - prev.latitude) * deg2m;
+      final dLon = (curr.longitude - prev.longitude) * deg2m;
+      if (dLat * dLat + dLon * dLon >= 324.0) {
+        result.add(curr);
+      }
+    }
+    result.add(polylinePoints.last);
+    _cachedSimplifiedPoints = result;
+    return result;
+  }
   /// Giờ đến dự kiến = giờ hiện tại + thời gian di chuyển
   String get etaText {
     final eta = DateTime.now().add(Duration(seconds: totalDurationSeconds));
@@ -269,21 +310,44 @@ class RouteModel {
     final int trafficLen =
         (routeSummary['trafficLengthInMeters'] as num? ?? 0).toInt();
 
-    // ── Parse polyline từ legs[0].points ──
+    // ── Parse polyline và các chặng (legs) ──
     final List<LatLng> polylinePoints = [];
+    final List<RouteLeg> legsList = [];
     final legs = route['legs'] as List?;
     if (legs != null && legs.isNotEmpty) {
-      final leg = legs[0] as Map<String, dynamic>;
-      final points = leg['points'] as List?;
-      if (points != null) {
-        for (final p in points) {
-          final point = p as Map<String, dynamic>;
-          final lat = (point['latitude'] as num?)?.toDouble();
-          final lon = (point['longitude'] as num?)?.toDouble();
-          if (lat != null && lon != null) {
-            polylinePoints.add(LatLng(lat, lon));
+      for (final legObj in legs) {
+        final leg = legObj as Map<String, dynamic>;
+        final legSummary = leg['summary'] as Map<String, dynamic>? ?? {};
+        final int lDistM = (legSummary['lengthInMeters'] as num? ?? 0).toInt();
+        final int lDurS = (legSummary['travelTimeInSeconds'] as num? ?? 0).toInt();
+        final List<LatLng> legPoints = [];
+        final points = leg['points'] as List?;
+        if (points != null) {
+          for (final p in points) {
+            final point = p as Map<String, dynamic>;
+            final lat = (point['latitude'] as num?)?.toDouble();
+            final lon = (point['longitude'] as num?)?.toDouble();
+            if (lat != null && lon != null) {
+              final pt = LatLng(lat, lon);
+              legPoints.add(pt);
+              polylinePoints.add(pt);
+            }
           }
         }
+        final String lDistStr = lDistM >= 1000
+            ? '${(lDistM / 1000).toStringAsFixed(1)} km'
+            : '$lDistM m';
+        final String lDurStr = lDurS >= 3600
+            ? '${(lDurS / 3600).toInt()} giờ ${((lDurS % 3600) / 60).toInt()} phút'
+            : '${(lDurS / 60).toInt()} phút';
+
+        legsList.add(RouteLeg(
+          distance: lDistStr,
+          duration: lDurStr,
+          distanceMeters: lDistM,
+          durationSeconds: lDurS,
+          polylinePoints: legPoints,
+        ));
       }
     }
 
@@ -314,6 +378,7 @@ class RouteModel {
       totalDurationSeconds: durS,
       steps: steps,
       polylinePoints: polylinePoints,
+      legs: legsList,
       summary: routeSummary['departureTime']?.toString() ?? '',
       trafficDelayInSeconds: trafficDelay,
       trafficLengthInMeters: trafficLen,
@@ -333,14 +398,50 @@ class RouteModel {
     final durS = (route['duration'] as num? ?? 0).toInt();
 
     List<RouteStep> steps = [];
+    final List<RouteLeg> legsList = [];
     final legs = route['legs'] as List?;
     if (legs != null && legs.isNotEmpty) {
-      final leg = legs[0] as Map<String, dynamic>;
-      final legSteps = leg['steps'] as List?;
-      if (legSteps != null) {
-        steps = legSteps
-            .map((s) => RouteStep.fromJson(s as Map<String, dynamic>))
-            .toList();
+      for (final legObj in legs) {
+        final leg = legObj as Map<String, dynamic>;
+        final int lDistM = (leg['distance'] as num? ?? 0).toInt();
+        final int lDurS = (leg['duration'] as num? ?? 0).toInt();
+        final String lDistStr = lDistM >= 1000
+            ? '${(lDistM / 1000).toStringAsFixed(1)} km'
+            : '$lDistM m';
+        final String lDurStr = lDurS >= 3600
+            ? '${(lDurS / 3600).toInt()} giờ ${((lDurS % 3600) / 60).toInt()} phút'
+            : '${(lDurS / 60).toInt()} phút';
+
+        final List<LatLng> legPoints = [];
+        final legSteps = leg['steps'] as List?;
+        if (legSteps != null) {
+          for (final st in legSteps) {
+            final geom = (st as Map)['geometry'] as Map<String, dynamic>?;
+            final coords = geom?['coordinates'] as List?;
+            if (coords != null) {
+              for (final c in coords) {
+                if (c is List && c.length >= 2) {
+                  final lon = (c[0] as num).toDouble();
+                  final lat = (c[1] as num).toDouble();
+                  legPoints.add(LatLng(lat, lon));
+                }
+              }
+            }
+          }
+          if (steps.isEmpty) {
+            steps = legSteps
+                .map((s) => RouteStep.fromJson(s as Map<String, dynamic>))
+                .toList();
+          }
+        }
+
+        legsList.add(RouteLeg(
+          distance: lDistStr,
+          duration: lDurStr,
+          distanceMeters: lDistM,
+          durationSeconds: lDurS,
+          polylinePoints: legPoints,
+        ));
       }
     }
 
@@ -358,6 +459,7 @@ class RouteModel {
       totalDurationSeconds: durS,
       steps: steps,
       polylinePoints: decodedPolyline,
+      legs: legsList,
       summary: route['name']?.toString() ?? '',
     );
   }

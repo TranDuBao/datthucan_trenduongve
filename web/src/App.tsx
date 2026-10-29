@@ -10,6 +10,8 @@ import { isTokenExpired, getUserRoleFromToken } from './utils/jwtUtils';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminRestaurants } from './pages/admin/AdminRestaurants';
+import { AdminCategories } from './pages/admin/AdminCategories';
+import { AdminBanners } from './pages/admin/AdminBanners';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminActivityLogs } from './pages/admin/AdminActivityLogs';
 import { AdminReviews } from './pages/admin/AdminReviews';
@@ -77,7 +79,8 @@ export const App: React.FC = () => {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/restaurants" element={<AdminRestaurants />} />
-            <Route path="/admin/categories" element={<Navigate to="/admin/restaurants?tab=categories" replace />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/banners" element={<AdminBanners />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/admin/logs" element={<AdminActivityLogs />} />

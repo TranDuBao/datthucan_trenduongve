@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../../services/category_service.dart';
 import '../../view/menu/menu_items_view.dart';
 import '../skeleton/food_item_skeleton.dart';
@@ -163,33 +164,13 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                       // Thumbnail
                       Stack(
                         children: [
-                          ClipRRect(
+                          SmartNetworkImage(
+                            imageUrl: mObj.image,
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
                             borderRadius: BorderRadius.circular(14),
-                            child: mObj.image.startsWith("http")
-                                ? Image.network(
-                                    mObj.image,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 72,
-                                      height: 72,
-                                      color: TColor.primary.withOpacity(0.2),
-                                      child: Icon(Icons.restaurant_rounded, color: TColor.primary),
-                                    ),
-                                  )
-                                : Image.asset(
-                                    mObj.image,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 72,
-                                      height: 72,
-                                      color: TColor.primary.withOpacity(0.2),
-                                      child: Icon(Icons.restaurant_rounded, color: TColor.primary),
-                                    ),
-                                  ),
+                            placeholderIcon: Icons.restaurant_rounded,
                           ),
                           Positioned(
                             top: 4,

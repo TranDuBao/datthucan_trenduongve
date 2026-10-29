@@ -395,7 +395,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {/* Chuỗi Địa Chỉ Hoàn Chỉnh */}
       <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
-        📍 Địa chỉ đầy đủ: <strong>{street || ward || province ? `${street ? street + ', ' : ''}${ward && ward !== 'Khác / Tự nhập' ? ward + ', ' : customWard ? customWard + ', ' : ''}${province ? province + ', ' : ''}${country}` : 'Chưa nhập'}</strong>
+        Địa chỉ đầy đủ: <strong>{street || ward || province ? `${street ? street + ', ' : ''}${ward && ward !== 'Khác / Tự nhập' ? ward + ', ' : customWard ? customWard + ', ' : ''}${province ? province + ', ' : ''}${country}` : 'Chưa nhập'}</strong>
       </div>
     </div>
   );

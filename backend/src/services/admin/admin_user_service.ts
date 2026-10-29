@@ -276,8 +276,8 @@ export class AdminUserService {
       side: backImg && frontImg ? 'both' : targetSide,
       aiConfidence: hasExtractedData ? '95.0%' : '0%',
       message: hasExtractedData
-        ? '🤖 AI OCR đã tự động quét và trích xuất thành công dữ liệu CCCD!'
-        : '⚠️ Không tìm thấy thông tin trên ảnh CCCD, vui lòng kiểm tra độ rõ nét của ảnh.',
+        ? 'AI OCR đã tự động quét và trích xuất thành công dữ liệu CCCD!'
+        : 'Không tìm thấy thông tin trên ảnh CCCD, vui lòng kiểm tra độ rõ nét của ảnh.',
     };
   }
 

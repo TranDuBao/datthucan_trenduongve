@@ -322,7 +322,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               onClick={() => handleScanCCCD(form.cccdMatTruoc || form.cccdMatSau, 'both')}
               disabled={scanningCCCD}
             >
-              <Bot size={18} /> {scanningCCCD ? 'Đang Quét AI...' : '🤖 AI Quét'}
+              <Bot size={18} /> {scanningCCCD ? 'Đang Quét AI...' : 'AI Quét'}
             </button>
           </div>
         )}

@@ -1,8 +1,122 @@
 import 'package:flutter/material.dart';
+import '../../common/globs.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../../services/order_service.dart';
 import '../../view/main_tabview/main_tabview.dart';
 import '../../widgets/order_progress_stepper.dart';
 import 'order_history_widgets.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared Helper: Food Thumbnail + Name + Store
+// ─────────────────────────────────────────────────────────────────────────────
+Widget _buildFoodThumbnailRow({
+  required dynamic firstItem,
+  required int qty,
+  required String summary,
+  required String restaurantName,
+  required bool isDark,
+  required VoidCallback onTap,
+  Widget? trailingBadge,
+}) {
+  final rawImg = firstItem != null
+      ? (firstItem['img'] ?? firstItem['image'] ?? firstItem['hinhAnh'] ?? '')
+      : '';
+
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2C3240) : const Color(0xFFF2F4F7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? const Color(0xFF3B4052) : const Color(0xFFEAECF0),
+              width: 1,
+            ),
+          ),
+          child: SmartNetworkImage(
+            imageUrl: rawImg.toString(),
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            borderRadius: BorderRadius.circular(12),
+            placeholderIcon: Icons.fastfood_rounded,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${qty}x ',
+                            style: const TextStyle(
+                              color: Color(0xFFFC6011),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: summary,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF101828),
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFFC6011)),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Icon(
+                    Icons.storefront_rounded,
+                    size: 14,
+                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      restaurantName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (trailingBadge != null) trailingBadge,
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Active Order Card (Đang chuẩn bị / chờ lấy)
@@ -120,67 +234,27 @@ class ActiveOrderCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Food name
-          RichText(
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: '${qty}x ',
-                  style: const TextStyle(
-                    color: Color(0xFFFC6011),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14.5,
-                  ),
-                ),
-                TextSpan(
-                  text: summary,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF101828),
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+          _buildFoodThumbnailRow(
+            firstItem: order.items.isNotEmpty ? order.items[0] : null,
+            qty: qty,
+            summary: summary,
+            restaurantName: order.restaurantName,
+            isDark: isDark,
+            onTap: () => onNavigateToItem(
+              order.items.isNotEmpty ? order.items[0] : null,
+              order,
             ),
-          ),
-
-          const SizedBox(height: 6),
-
-          // Store name row
-          Row(
-            children: [
-              Icon(
-                Icons.storefront_rounded,
-                size: 15,
-                color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+            trailingBadge: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF3),
+                borderRadius: BorderRadius.circular(6),
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  order.restaurantName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              child: const Text(
+                'Tự ghé lấy',
+                style: TextStyle(color: Color(0xFF00A86B), fontSize: 11, fontWeight: FontWeight.w800),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF3),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'Tự ghé lấy',
-                  style: TextStyle(color: Color(0xFF00A86B), fontSize: 11, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -429,71 +503,18 @@ class CompletedOrderCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Food name (clickable)
-          InkWell(
+          _buildFoodThumbnailRow(
+            firstItem: order.items.isNotEmpty ? order.items[0] : null,
+            qty: qty,
+            summary: summary,
+            restaurantName: order.restaurantName,
+            isDark: isDark,
             onTap: () => onNavigateToItem(
               order.items.isNotEmpty ? order.items[0] : null,
               order,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${qty}x ',
-                          style: const TextStyle(
-                            color: Color(0xFFFC6011),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.5,
-                          ),
-                        ),
-                        TextSpan(
-                          text: summary,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : const Color(0xFF101828),
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFFC6011)),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          // Store name
-          Row(
-            children: [
-              Icon(
-                Icons.storefront_rounded,
-                size: 15,
-                color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  order.restaurantName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
           ),
 
           const SizedBox(height: 12),
@@ -705,72 +726,66 @@ class CancelledOrderCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Food name (clickable)
-          InkWell(
+          _buildFoodThumbnailRow(
+            firstItem: order.items.isNotEmpty ? order.items[0] : null,
+            qty: qty,
+            summary: summary,
+            restaurantName: order.restaurantName,
+            isDark: isDark,
             onTap: () => onNavigateToItem(
               order.items.isNotEmpty ? order.items[0] : null,
               order,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${qty}x ',
-                          style: const TextStyle(
-                            color: Color(0xFFFC6011),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.5,
-                          ),
-                        ),
-                        TextSpan(
-                          text: summary,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : const Color(0xFF101828),
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
+          ),
+
+          if (order.refundStatus != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                    ? (isDark ? const Color(0xFF0F291E) : const Color(0xFFECFDF3))
+                    : (isDark ? const Color(0xFF2E200C) : const Color(0xFFFFF6ED)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                      ? const Color(0xFF6CE9A6)
+                      : const Color(0xFFFDB022),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                        ? Icons.check_circle_rounded
+                        : Icons.hourglass_top_rounded,
+                    size: 14,
+                    color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                        ? const Color(0xFF027A48)
+                        : const Color(0xFFB54708),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                          ? 'Đã hoàn ${formatOrderTotal(order.refundAmount ?? 0)} vào TK ngân hàng'
+                          : 'Đang hoàn tiền: ${formatOrderTotal(order.refundAmount ?? 0)}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
+                            ? (isDark ? const Color(0xFF6CE9A6) : const Color(0xFF027A48))
+                            : (isDark ? const Color(0xFFFDB022) : const Color(0xFFB54708)),
+                      ),
                     ),
                   ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFFC6011)),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 5),
-
-          // Store name
-          Row(
-            children: [
-              Icon(
-                Icons.storefront_rounded,
-                size: 15,
-                color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  order.restaurantName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ],
 
           const SizedBox(height: 12),
 

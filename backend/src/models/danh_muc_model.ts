@@ -10,4 +10,7 @@ export class DanhMucModel {
 
   @Column({ name: 'tendanhmuc', length: 100 })
   tenDanhMuc: string;
+
+  @Column({ name: 'hinhanh', type: 'text', nullable: true })
+  hinhAnh?: string;
 }

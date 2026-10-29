@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../services/order_service.dart';
 
+class RestaurantMeta {
+  final int id;
+  final String name;
+  final String address;
+  const RestaurantMeta({required this.id, required this.name, required this.address});
+}
+
 class CartProvider extends ChangeNotifier {
   final List<CartItemModel> _items = [];
-  int _restaurantId = 1;
-  String _restaurantName = 'Phở Bò Gia Truyền Hà Nội - Nguyễn Trãi';
-  String _restaurantAddress = '235 Nguyễn Trãi, Quận 1, TP.HCM';
+  // Lưu thông tin tên/địa chỉ của từng quán đang có món trong giỏ
+  final Map<int, RestaurantMeta> _restaurantMetas = {};
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay(
@@ -14,9 +20,33 @@ class CartProvider extends ChangeNotifier {
   );
 
   List<CartItemModel> get items => List.unmodifiable(_items);
-  int get restaurantId => _restaurantId;
-  String get restaurantName => _restaurantName;
-  String get restaurantAddress => _restaurantAddress;
+
+  /// Danh sách ID các quán đang có món trong giỏ
+  List<int> get restaurantIds =>
+      _items.map((i) => i.restaurantId).toSet().toList();
+
+  /// ID quán đại diện (hoặc quán đầu tiên trong giỏ)
+  int? get restaurantId => _items.isNotEmpty
+      ? _items.first.restaurantId
+      : (_restaurantMetas.isNotEmpty ? _restaurantMetas.keys.first : null);
+
+  /// Trả về tên quán theo ID (dùng cho UI)
+  String restaurantName(int id) =>
+      _restaurantMetas[id]?.name ?? 'Quán $id';
+
+  /// Trả về địa chỉ quán theo ID
+  String restaurantAddress(int id) =>
+      _restaurantMetas[id]?.address ?? '';
+
+  /// Lấy các món thuộc một quán cụ thể
+  List<CartItemModel> itemsForRestaurant(int restaurantId) =>
+      _items.where((i) => i.restaurantId == restaurantId).toList();
+
+  /// Tổng tiền các món thuộc một quán cụ thể
+  double subTotalForRestaurant(int restaurantId) =>
+      _items
+          .where((i) => i.restaurantId == restaurantId)
+          .fold(0.0, (sum, i) => sum + i.price * i.quantity);
 
   int get itemCount => totalItemCount;
   int get totalItemCount => _items.fold(0, (sum, item) => sum + item.quantity);
@@ -34,20 +64,27 @@ class CartProvider extends ChangeNotifier {
     );
   }
 
-  void setRestaurant({required int id, required String name, required String address}) {
-    if (_restaurantId != id) {
-      _items.clear(); // Clear cart if switching restaurant
-    }
-    _restaurantId = id;
-    _restaurantName = name;
-    _restaurantAddress = address;
-    notifyListeners();
+  /// Đăng ký / cập nhật thông tin tên-địa chỉ của một quán.
+  /// Gọi mỗi lần mở trang chi tiết quán để luôn có meta mới nhất.
+  void registerRestaurant({
+    required int id,
+    required String name,
+    required String address,
+  }) {
+    _restaurantMetas[id] = RestaurantMeta(id: id, name: name, address: address);
+    // Không notifyListeners ở đây vì chỉ cập nhật meta, không thay đổi items
+  }
+
+  /// Alias tương thích ngược cho registerRestaurant
+  void setRestaurant({
+    required int id,
+    required String name,
+    required String address,
+  }) {
+    registerRestaurant(id: id, name: name, address: address);
   }
 
   void addToCart(CartItemModel item) {
-    if (_items.isEmpty && item.restaurantId > 0) {
-      _restaurantId = item.restaurantId;
-    }
     final index = _items.indexWhere((i) => i.foodId == item.foodId);
     if (index >= 0) {
       _items[index].quantity += item.quantity;
@@ -59,6 +96,7 @@ class CartProvider extends ChangeNotifier {
 
   void removeFromCart(int foodId) {
     _items.removeWhere((i) => i.foodId == foodId);
+    _cleanOrphanMetas();
     notifyListeners();
   }
 
@@ -69,8 +107,14 @@ class CartProvider extends ChangeNotifier {
       if (_items[index].quantity <= 0) {
         _items.removeAt(index);
       }
+      _cleanOrphanMetas();
       notifyListeners();
     }
+  }
+
+  void _cleanOrphanMetas() {
+    final activeIds = _items.map((i) => i.restaurantId).toSet();
+    _restaurantMetas.removeWhere((id, _) => !activeIds.contains(id));
   }
 
   void setPickupDate(DateTime date) {
@@ -108,7 +152,6 @@ class CartProvider extends ChangeNotifier {
   bool isPickupTimeValid() {
     final pickup = combinedPickupDateTime;
     final now = DateTime.now();
-    // Must be at least 5 minutes in the future
     return pickup.isAfter(now.add(const Duration(minutes: 5)));
   }
 
@@ -126,7 +169,15 @@ class CartProvider extends ChangeNotifier {
 
   void clearCart() {
     _items.clear();
+    _restaurantMetas.clear();
     removeVoucher();
+    notifyListeners();
+  }
+
+  /// Xoá toàn bộ món của một quán cụ thể
+  void clearRestaurant(int restaurantId) {
+    _items.removeWhere((i) => i.restaurantId == restaurantId);
+    _restaurantMetas.remove(restaurantId);
     notifyListeners();
   }
 }

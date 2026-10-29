@@ -2,14 +2,17 @@ import { AdminDashboardService } from './admin/admin_dashboard_service';
 import { AdminUserService } from './admin/admin_user_service';
 import { AdminRestaurantService } from './admin/admin_restaurant_service';
 import { AdminCatalogService } from './admin/admin_catalog_service';
+import { AdminBannerService } from './admin/admin_banner_service';
 import { CuaHangModel } from '../models/cua_hang_model';
 import { MonAnModel } from '../models/mon_an_model';
+import { BannerModel } from '../models/banner_model';
 
 export class AdminService {
   private dashboardService = new AdminDashboardService();
   private userService = new AdminUserService();
   private restaurantService = new AdminRestaurantService();
   private catalogService = new AdminCatalogService();
+  private bannerService = new AdminBannerService();
 
   // Activity Logs
   async logActivity(data: {
@@ -96,12 +99,24 @@ export class AdminService {
     return this.catalogService.getCategories();
   }
 
-  async createCategory(tenDanhMuc: string, maDanhMuc?: number) {
-    return this.catalogService.createCategory(tenDanhMuc, maDanhMuc);
+  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number) {
+    return this.catalogService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc);
   }
 
-  async updateCategory(maDanhMuc: number, tenDanhMuc: string) {
-    return this.catalogService.updateCategory(maDanhMuc, tenDanhMuc);
+  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string) {
+    return this.catalogService.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh);
+  }
+
+  async deleteCategory(maDanhMuc: number) {
+    return this.catalogService.deleteCategory(maDanhMuc);
+  }
+
+  async assignFoodToCategory(maMonAn: number, maDanhMuc: number) {
+    return this.catalogService.assignFoodToCategory(maMonAn, maDanhMuc);
+  }
+
+  async removeFoodFromCategory(maMonAn: number) {
+    return this.catalogService.removeFoodFromCategory(maMonAn);
   }
 
   async getCategoryFoods(maDanhMuc: number) {
@@ -114,6 +129,27 @@ export class AdminService {
 
   async updateFood(maMonAn: number, data: Partial<MonAnModel>) {
     return this.catalogService.updateFood(maMonAn, data);
+  }
+
+  // Banners
+  async getAllBanners() {
+    return this.bannerService.getAllBanners();
+  }
+
+  async getActiveBanners() {
+    return this.bannerService.getActiveBanners();
+  }
+
+  async createBanner(data: Partial<BannerModel>) {
+    return this.bannerService.createBanner(data);
+  }
+
+  async updateBanner(maBanner: number, data: Partial<BannerModel>) {
+    return this.bannerService.updateBanner(maBanner, data);
+  }
+
+  async deleteBanner(maBanner: number) {
+    return this.bannerService.deleteBanner(maBanner);
   }
 
   // Orders & Payments

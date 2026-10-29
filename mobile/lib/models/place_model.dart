@@ -120,14 +120,14 @@ class PlaceModel {
 
   String get typeLabel {
     final t = type?.toLowerCase() ?? '';
-    if (t.contains('restaurant') || t.contains('food')) return '🍽️ Nhà hàng';
-    if (t.contains('hotel') || t.contains('lodging')) return '🏨 Khách sạn';
-    if (t.contains('hospital')) return '🏥 Bệnh viện';
-    if (t.contains('school') || t.contains('university')) return '🏫 Trường học';
-    if (t.contains('cafe') || t.contains('coffee')) return '☕ Café';
-    if (t.contains('bank')) return '🏦 Ngân hàng';
-    if (t.contains('park')) return '🌳 Công viên';
-    if (t.contains('airport')) return '✈️ Sân bay';
-    return '📍 Địa điểm';
+    if (t.contains('restaurant') || t.contains('food')) return 'Nhà hàng';
+    if (t.contains('hotel') || t.contains('lodging')) return 'Khách sạn';
+    if (t.contains('hospital')) return 'Bệnh viện';
+    if (t.contains('school') || t.contains('university')) return 'Trường học';
+    if (t.contains('cafe') || t.contains('coffee')) return 'Café';
+    if (t.contains('bank')) return 'Ngân hàng';
+    if (t.contains('park')) return 'Công viên';
+    if (t.contains('airport')) return 'Sân bay';
+    return 'Địa điểm';
   }
 }

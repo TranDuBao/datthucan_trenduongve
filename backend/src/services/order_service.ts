@@ -11,8 +11,11 @@ import { KhachHangVoucherModel } from '../models/khach_hang_voucher_model';
 import { VoucherService } from './voucher_service';
 import { RealtimeService } from './realtime_service';
 import { NotificationService } from './notification_service';
+import { PayOSService } from './payos_service';
+import { HoanTienModel } from '../models/hoan_tien_model';
 
 export enum OrderStatus {
+  UNPAID = 'CHO_THANH_TOAN',
   PENDING = 'CHO_XAC_NHAN',
   CONFIRMED = 'DA_XAC_NHAN',
   PREPARING = 'DANG_CHUAN_BI',
@@ -24,6 +27,7 @@ export enum OrderStatus {
 export function normalizeOrderStatus(statusStr: string | null | undefined): string {
   if (!statusStr) return OrderStatus.PENDING;
   const s = statusStr.trim().toUpperCase();
+  if (s === 'CHO_THANH_TOAN' || s === 'UNPAID' || s === 'CHỜ THANH TOÁN') return OrderStatus.UNPAID;
   if (s === 'CHO_XAC_NHAN' || s === 'PENDING' || s === 'CHỜ XỬ LÝ' || s === 'CHỜ XÁC NHẬN') return OrderStatus.PENDING;
   if (s === 'DA_XAC_NHAN' || s === 'CONFIRMED' || s === 'ĐÃ XÁC NHẬN') return OrderStatus.CONFIRMED;
   if (s === 'DANG_CHUAN_BI' || s === 'PREPARING' || s === 'ĐANG CHUẨN BỊ' || s === 'CHƯA LÀM') return OrderStatus.PREPARING;
@@ -158,11 +162,15 @@ export class OrderService {
         }
       }
 
+      const method = (dto.phuongThucThanhToan || 'PAYOS').toUpperCase();
+      const isOnlineMethod = method === 'PAYOS' || method === 'VIETQR' || method === 'MOMO' || method === 'VNPAY';
+      const initialStatus = isOnlineMethod ? OrderStatus.UNPAID : OrderStatus.PENDING;
+
       const donHang = manager.create(DonHangModel, {
         maKhachHang: validKhachHangId,
         maQuan: dto.maQuan,
         maVoucher: appliedVoucherId,
-        trangThai: OrderStatus.PENDING,
+        trangThai: initialStatus,
         tongTien: finalTotal,
         thoiGianHenNhan: pickupDate,
         loaiDonHang: 'PRE_ORDER',
@@ -218,14 +226,49 @@ export class OrderService {
       return { savedOrder, itemEntities, thanhToan, finalTotal };
     });
 
-    RealtimeService.getInstance().emitOrderCreated(savedOrder.maQuan, savedOrder.maDonHang, {
-      maDonHang: savedOrder.maDonHang,
-      maKhachHang: savedOrder.maKhachHang,
-      tongTien: savedOrder.tongTien,
-      thoiGianHenNhan: savedOrder.thoiGianHenNhan,
-      itemsCount: validatedItems.length,
-      status: savedOrder.trangThai,
-    });
+    const isOnline =
+      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'PAYOS' ||
+      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'VIETQR' ||
+      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'MOMO' ||
+      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'VNPAY';
+
+    // Only emit order:created to restaurant immediately for non-online methods (e.g. COD)
+    // For online payments, order:created will be emitted after payment verification succeeds
+    if (!isOnline) {
+      RealtimeService.getInstance().emitOrderCreated(savedOrder.maQuan, savedOrder.maDonHang, {
+        maDonHang: savedOrder.maDonHang,
+        maKhachHang: savedOrder.maKhachHang,
+        tongTien: savedOrder.tongTien,
+        thoiGianHenNhan: savedOrder.thoiGianHenNhan,
+        itemsCount: validatedItems.length,
+        status: savedOrder.trangThai,
+      });
+
+      // Persist & Emit Notifications for New Order
+      try {
+        if (savedOrder.maQuan) {
+          await NotificationService.getInstance().sendNotification({
+            recipientId: savedOrder.maQuan,
+            recipientRole: 'restaurant',
+            type: 'order:created',
+            title: 'Đơn hàng mới',
+            body: `Đơn hàng mới #DH-${savedOrder.maDonHang} (${validatedItems.length} món). Tổng tiền: ${Number(savedOrder.tongTien).toLocaleString('vi-VN')}đ.`,
+            data: { orderId: savedOrder.maDonHang, maQuan: savedOrder.maQuan, status: savedOrder.trangThai },
+          });
+        }
+
+        await NotificationService.getInstance().sendNotification({
+          recipientId: 0,
+          recipientRole: 'admin',
+          type: 'order:created',
+          title: 'Đơn hàng mới trên hệ thống',
+          body: `Đơn hàng mới #DH-${savedOrder.maDonHang} vừa được tạo tại quán ID ${savedOrder.maQuan}.`,
+          data: { orderId: savedOrder.maDonHang, maQuan: savedOrder.maQuan },
+        });
+      } catch (notifErr) {
+        console.error('[OrderService] Failed to send order:created notification:', notifErr);
+      }
+    }
 
     if (savedOrder.maVoucher && savedOrder.maQuan) {
       RealtimeService.getInstance().emitVoucherUpdated(savedOrder.maQuan, {
@@ -235,67 +278,83 @@ export class OrderService {
       });
     }
 
-    // Persist & Emit Notifications for New Order
-    try {
-      if (savedOrder.maQuan) {
-        await NotificationService.getInstance().sendNotification({
-          recipientId: savedOrder.maQuan,
-          recipientRole: 'restaurant',
-          type: 'order:created',
-          title: 'Đơn hàng mới',
-          body: `Đơn hàng mới #DH-${savedOrder.maDonHang} (${validatedItems.length} món). Tổng tiền: ${Number(savedOrder.tongTien).toLocaleString('vi-VN')}đ.`,
-          data: { orderId: savedOrder.maDonHang, maQuan: savedOrder.maQuan, status: savedOrder.trangThai },
-        });
-      }
-
-      await NotificationService.getInstance().sendNotification({
-        recipientId: 0,
-        recipientRole: 'admin',
-        type: 'order:created',
-        title: 'Đơn hàng mới trên hệ thống',
-        body: `Đơn hàng mới #DH-${savedOrder.maDonHang} vừa được tạo tại quán ID ${savedOrder.maQuan}.`,
-        data: { orderId: savedOrder.maDonHang, maQuan: savedOrder.maQuan },
-      });
-    } catch (notifErr) {
-      console.error('[OrderService] Failed to send order:created notification:', notifErr);
-    }
-
-    const isOnline =
-      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'PAYOS' ||
-      (savedOrder.phuongThucThanhToan || '').toUpperCase() === 'VIETQR';
-
     let paymentData: any = null;
     if (isOnline && thanhToan) {
-      const bankId = (store.tenNganHang || '').trim();
-      const accountNo = (store.soTaiKhoanNganHang || '').trim();
-      const accountName = (store.tenChuTaiKhoan || store.tenQuan || '').trim();
+      // 1. Tạo Payment Link chính thức từ PayOS để nhận Webhook TỨC THÌ (1-2s)
+      const payosResult = await PayOSService.createPaymentLink({
+        orderCode: savedOrder.maDonHang,
+        amount: finalTotal,
+        description: `DH${savedOrder.maDonHang}`,
+      });
 
-      if (bankId && accountNo) {
-        const transferContent = `DH${savedOrder.maDonHang}`;
-        const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${Math.round(finalTotal)}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`;
+      if (payosResult) {
+        const transferContent = payosResult.description;
+        // Sử dụng QR chuẩn từ PayOS
+        const qrUrl = `https://img.vietqr.io/image/${payosResult.bin}-${payosResult.accountNumber}-compact2.png?amount=${Math.round(finalTotal)}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(payosResult.accountName)}`;
 
         paymentData = {
           maThanhToan: thanhToan.maThanhToan,
           loaiThanhToan: savedOrder.phuongThucThanhToan,
           soTien: finalTotal,
           trangThai: thanhToan.trangThai,
-          bankName: bankId,
-          accountNumber: accountNo,
-          accountName: accountName,
+          bankName: payosResult.bin,
+          accountNumber: payosResult.accountNumber,
+          accountName: payosResult.accountName,
           transferContent,
           qrUrl,
         };
+      } else {
+        // Fallback tài khoản ngân hàng của quán nếu PayOS gặp lỗi
+        const rawBank = (store.tenNganHang || '').trim();
+        const match = rawBank.match(/\(([^)]+)\)/);
+        const bankId = match ? match[1].trim() : rawBank;
+        const accountNo = (store.soTaiKhoanNganHang || '').trim();
+        const accountName = (store.tenChuTaiKhoan || store.tenQuan || '').trim();
+
+        if (bankId && accountNo) {
+          const transferContent = `DH${savedOrder.maDonHang}`;
+          const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${Math.round(finalTotal)}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`;
+
+          paymentData = {
+            maThanhToan: thanhToan.maThanhToan,
+            loaiThanhToan: savedOrder.phuongThucThanhToan,
+            soTien: finalTotal,
+            trangThai: thanhToan.trangThai,
+            bankName: bankId,
+            accountNumber: accountNo,
+            accountName: accountName,
+            transferContent,
+            qrUrl,
+          };
+        }
       }
     }
 
     return {
       orderId: savedOrder.maDonHang,
       maDonHang: savedOrder.maDonHang,
+      restaurantId: store.maQuan,
+      restaurantName: store.tenQuan,
+      tenQuan: store.tenQuan,
+      restaurantAddress: store.diaChi,
+      diaChi: store.diaChi,
+      lat: store.lat ? Number(store.lat) : undefined,
+      lng: store.lng ? Number(store.lng) : undefined,
+      restaurantPhone: store.sdt || '',
+      sdt: store.sdt || '',
       status: savedOrder.trangThai,
+      trangThai: savedOrder.trangThai,
       tongTien: savedOrder.tongTien,
       phuongThucThanhToan: savedOrder.phuongThucThanhToan,
       thoiGianHenNhan: savedOrder.thoiGianHenNhan,
-      items: itemEntities,
+      items: itemEntities.map((item) => ({
+        maMonAn: item.maMonAn,
+        tenMonAn: item.tenMonAn,
+        soLuong: item.soLuong,
+        gia: Number(item.gia),
+        img: foodMap.get(item.maMonAn)?.img || '',
+        image: foodMap.get(item.maMonAn)?.img || '',
+      })),
       payment: paymentData,
     };
   }
@@ -332,8 +391,24 @@ export class OrderService {
     const restaurantMap = new Map<number, CuaHangModel>();
     for (const r of restaurants) restaurantMap.set(r.maQuan, r);
 
+    // Batch load refunds
+    const hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
+    const refunds = await hoanTienRepo.find({ where: { maDonHang: In(orderIds) } });
+    const refundMap = new Map<number, HoanTienModel>();
+    for (const rf of refunds) refundMap.set(rf.maDonHang, rf);
+
+    // Batch load food items to include images
+    const allFoodIds = [...new Set(allItems.map((i) => i.maMonAn).filter(Boolean) as number[])];
+    const foods = allFoodIds.length > 0
+      ? await this.foodRepo.find({ where: { maMonAn: In(allFoodIds) } })
+      : [];
+    const foodMap = new Map<number, MonAnModel>();
+    for (const f of foods) foodMap.set(f.maMonAn, f);
+
     return orders.map((order) => {
       const cuaHang = order.maQuan ? restaurantMap.get(order.maQuan) : undefined;
+      const ref = refundMap.get(order.maDonHang);
+
       return {
         maDonHang: order.maDonHang,
         maQuan: order.maQuan,
@@ -343,14 +418,27 @@ export class OrderService {
         thoiGianDat: order.thoiGianDat,
         loaiDonHang: order.loaiDonHang,
         phuongThucThanhToan: order.phuongThucThanhToan,
+        lyDoHuy: order.lyDoHuy,
         tenQuan: cuaHang?.tenQuan ?? 'Nhà hàng lộ trình',
         diaChi: cuaHang?.diaChi ?? 'Địa chỉ tự đến lấy',
-        items: (itemsByOrder.get(order.maDonHang) || []).map((item) => ({
-          maMonAn: item.maMonAn,
-          tenMonAn: item.tenMonAn,
-          soLuong: item.soLuong,
-          gia: Number(item.gia),
-        })),
+        lat: cuaHang?.lat ? Number(cuaHang.lat) : undefined,
+        lng: cuaHang?.lng ? Number(cuaHang.lng) : undefined,
+        sdt: cuaHang?.sdt || undefined,
+        refund: ref || null,
+        refundStatus: ref?.trangThaiHoanTien || null,
+        refundAmount: ref?.soTienHoan ? Number(ref.soTienHoan) : null,
+        items: (itemsByOrder.get(order.maDonHang) || []).map((item) => {
+          const food = foodMap.get(item.maMonAn);
+          return {
+            maMonAn: item.maMonAn,
+            tenMonAn: item.tenMonAn,
+            soLuong: item.soLuong,
+            gia: Number(item.gia),
+            img: food?.img || '',
+            image: food?.img || '',
+            hinhAnh: food?.img || '',
+          };
+        }),
       };
     });
   }
@@ -367,15 +455,32 @@ export class OrderService {
       ? await this.storeRepo.findOne({ where: { maQuan: order.maQuan } })
       : null;
 
+    const foodIds = [...new Set(items.map((i) => i.maMonAn).filter(Boolean) as number[])];
+    const foods = foodIds.length > 0
+      ? await this.foodRepo.find({ where: { maMonAn: In(foodIds) } })
+      : [];
+    const foodMap = new Map<number, MonAnModel>();
+    for (const f of foods) foodMap.set(f.maMonAn, f);
+
     return {
       ...order,
       tenQuan: cuaHang?.tenQuan ?? 'Nhà hàng lộ trình',
       diaChi: cuaHang?.diaChi ?? 'Địa chỉ tự đến lấy',
-      items: items.map((item) => ({
-        tenMonAn: item.tenMonAn,
-        soLuong: item.soLuong,
-        gia: Number(item.gia),
-      })),
+      lat: cuaHang?.lat ? Number(cuaHang.lat) : undefined,
+      lng: cuaHang?.lng ? Number(cuaHang.lng) : undefined,
+      sdt: cuaHang?.sdt || undefined,
+      items: items.map((item) => {
+        const food = foodMap.get(item.maMonAn);
+        return {
+          maMonAn: item.maMonAn,
+          tenMonAn: item.tenMonAn,
+          soLuong: item.soLuong,
+          gia: Number(item.gia),
+          img: food?.img || '',
+          image: food?.img || '',
+          hinhAnh: food?.img || '',
+        };
+      }),
     };
   }
 

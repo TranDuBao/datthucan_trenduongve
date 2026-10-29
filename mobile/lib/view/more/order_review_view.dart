@@ -286,17 +286,17 @@ class _OrderReviewViewState extends State<OrderReviewView> {
   String _getRatingText(int rating) {
     switch (rating) {
       case 1:
-        return "1★ - Rất tệ";
+        return "1 sao - Rất tệ";
       case 2:
-        return "2★ - Không hài lòng";
+        return "2 sao - Không hài lòng";
       case 3:
-        return "3★ - Bình thường";
+        return "3 sao - Bình thường";
       case 4:
-        return "4★ - Rất ngon";
+        return "4 sao - Rất ngon";
       case 5:
-        return "5★ - Xuất sắc!";
+        return "5 sao - Xuất sắc!";
       default:
-        return "5★ - Xuất sắc!";
+        return "5 sao - Xuất sắc!";
     }
   }
 

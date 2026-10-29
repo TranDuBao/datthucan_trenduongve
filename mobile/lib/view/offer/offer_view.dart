@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,16 +23,16 @@ class _OfferViewState extends State<OfferView> {
   int selectFilterIndex = 0;
 
   List filterCategories = [
-    {"name": "Tất cả", "icon": "🔥", "key": "all"},
-    {"name": "Phở", "icon": "🍜", "key": "phở"},
-    {"name": "Bún", "icon": "🍲", "key": "bún"},
-    {"name": "Cơm", "icon": "🍚", "key": "cơm"},
-    {"name": "Cà phê", "icon": "☕", "key": "cà phê"},
-    {"name": "Trà sữa", "icon": "🧋", "key": "trà sữa"},
-    {"name": "Bánh ngọt", "icon": "🍰", "key": "bánh ngọt"},
-    {"name": "Bánh mì", "icon": "🥖", "key": "bánh mì"},
-    {"name": "Bánh sinh nhật", "icon": "🎂", "key": "bánh sinh nhật"},
-    {"name": "Kem", "icon": "🍦", "key": "kem"},
+    {"name": "Tất cả", "icon": LucideIcons.store, "key": "all"},
+    {"name": "Phở", "icon": LucideIcons.soup, "key": "phở"},
+    {"name": "Bún", "icon": LucideIcons.utensilsCrossed, "key": "bún"},
+    {"name": "Cơm", "icon": LucideIcons.utensils, "key": "cơm"},
+    {"name": "Cà phê", "icon": LucideIcons.coffee, "key": "cà phê"},
+    {"name": "Trà sữa", "icon": LucideIcons.cupSoda, "key": "trà sữa"},
+    {"name": "Bánh ngọt", "icon": LucideIcons.cakeSlice, "key": "bánh ngọt"},
+    {"name": "Bánh mì", "icon": LucideIcons.sandwich, "key": "bánh mì"},
+    {"name": "Bánh sinh nhật", "icon": LucideIcons.cake, "key": "bánh sinh nhật"},
+    {"name": "Kem", "icon": LucideIcons.iceCream, "key": "kem"},
   ];
 
   List offerArr = [];
@@ -64,16 +65,35 @@ class _OfferViewState extends State<OfferView> {
             }
           }
 
+          final rawRate = res["danhGiaTrungBinh"] ??
+              res["danhgiatrungbinh"] ??
+              res["diemDanhGiaTB"] ??
+              res["rate"] ??
+              res["ratingAvg"];
+          final rawCount = res["soLuongDanhGia"] ??
+              res["soluongdanhgia"] ??
+              res["soLuotDanhGia"] ??
+              res["ratingCount"] ??
+              res["rating"] ??
+              0;
+          final int ratingCount = int.tryParse(rawCount.toString()) ?? 0;
+          final double rateVal = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
+          final String formattedRate = (ratingCount > 0 && rateVal > 0) ? rateVal.toStringAsFixed(1) : "0.0";
+
           return {
             "id": maQuan,
             "maQuan": maQuan,
             "name": res["tenQuan"] ?? "Quán ăn lộ trình",
             "tenQuan": res["tenQuan"] ?? "Quán ăn lộ trình",
             "address": res["diaChi"] ?? "",
-            "rate": (res["diemDanhGiaTB"] != null && (double.tryParse(res["diemDanhGiaTB"].toString()) ?? 0) > 0)
-                ? (double.tryParse(res["diemDanhGiaTB"].toString()) ?? 0).toStringAsFixed(1)
-                : "0.0",
-            "rating": (res["soLuongDanhGia"] ?? res["soLuotDanhGia"] ?? 0).toString(),
+            "rate": formattedRate,
+            "rating": ratingCount.toString(),
+            "ratingCount": ratingCount,
+            "danhGiaTrungBinh": rateVal,
+            "soLuongDanhGia": ratingCount,
+            "diemDanhGiaTB": rateVal,
+            "soLuotDanhGia": ratingCount,
+            "trangThai": res["trangThai"] ?? res["trangthai"] ?? "Đang mở",
             "type": "Món Việt",
             "food_type": "Đặc sản lộ trình",
             "discount": "ƯU ĐÃI LỘ TRÌNH 10K",
@@ -261,12 +281,13 @@ class _OfferViewState extends State<OfferView> {
                     crossAxisCount: 2,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    mainAxisExtent: 130,
+                    mainAxisExtent: 135,
                   ),
                   itemCount: filterCategories.length,
                   itemBuilder: (context, index) {
                     final item = filterCategories[index] as Map;
                     final isSelected = selectFilterIndex == index;
+                    final iconData = item["icon"] is IconData ? item["icon"] as IconData : null;
 
                     return GestureDetector(
                       onTap: () {
@@ -291,11 +312,16 @@ class _OfferViewState extends State<OfferView> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              item["icon"].toString(),
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            const SizedBox(width: 4),
+                            if (iconData != null) ...[
+                              Icon(
+                                iconData,
+                                size: 14,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark ? const Color(0xFFFC6011) : const Color(0xFFFC6011)),
+                              ),
+                              const SizedBox(width: 5),
+                            ],
                             Flexible(
                               child: Text(
                                 item["name"].toString(),
@@ -432,7 +458,7 @@ class _OfferViewState extends State<OfferView> {
                                               borderRadius: BorderRadius.circular(10),
                                             ),
                                             child: Text(
-                                              "🏷️ ${pObj["discount"].toString()}",
+                                              "${pObj["discount"].toString()}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 11,
@@ -565,7 +591,7 @@ class _OfferViewState extends State<OfferView> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  "🔥 Món nổi bật:",
+                                                  "Món nổi bật:",
                                                   style: TextStyle(
                                                     color: TColor.primary,
                                                     fontSize: 11,
@@ -652,7 +678,7 @@ class _OfferViewState extends State<OfferView> {
                                             ),
                                             child: Row(
                                               children: [
-                                                const Text("🎁", style: TextStyle(fontSize: 13)),
+                                                const Icon(LucideIcons.gift, size: 13, color: Color(0xFFFC6011)),
                                                 const SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(

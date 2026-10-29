@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../api/apiClient';
-import { Plus, Edit2, Trash2, UtensilsCrossed, Star, X, ChevronLeft, ChevronRight, Search, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, UtensilsCrossed, Star, X, ChevronLeft, ChevronRight, Search, Sparkles, AlertTriangle } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { NotificationModal } from '../../components/NotificationModal';
 import { ImageCropUpload } from '../../components/ImageCropUpload';
@@ -401,11 +401,11 @@ export const RestaurantMenu: React.FC = () => {
                           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                             <div style={{ display: 'flex', gap: '2px' }}>
                               {Array.from({ length: fullStars }).map((_, i) => (
-                                <span key={`full-${i}`} style={{ color: '#f59e0b', fontSize: '15px' }}>★</span>
+                                <Star key={`full-${i}`} size={14} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b' }} />
                               ))}
                               {hasHalf && <span style={{ color: '#f59e0b', fontSize: '15px' }}>⯨</span>}
                               {Array.from({ length: emptyStars }).map((_, i) => (
-                                <span key={`empty-${i}`} style={{ color: '#d1d5db', fontSize: '15px' }}>★</span>
+                                <Star key={`empty-${i}`} size={14} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#d1d5db' }} />
                               ))}
                             </div>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>
@@ -504,7 +504,7 @@ export const RestaurantMenu: React.FC = () => {
                       {aiSuggestion.suggestedCategoryName}
                     </span>
                     <span style={{ fontSize: '11px', color: '#a21caf', fontWeight: 700 }}>
-                      ⚡ Độ khớp {aiSuggestion.confidence}%
+                      Độ khớp {aiSuggestion.confidence}%
                     </span>
                   </div>
                   <div style={{ fontSize: '12px', color: '#701a75', marginTop: '3px' }}>
@@ -659,7 +659,7 @@ export const RestaurantMenu: React.FC = () => {
             Bạn có chắc chắn muốn xóa món <b style={{ color: '#0f172a' }}>"{deleteModal.food?.tenMonAn}"</b> khỏi thực đơn quán?
           </p>
           <div style={{ marginTop: '10px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px', fontSize: '12px', color: '#dc2626' }}>
-            ⚠️ Thao tác này sẽ xóa vĩnh viễn món ăn và tệp hình ảnh liên quan khỏi máy chủ.
+            <AlertTriangle size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px', color: '#f59e0b' }} /> Thao tác này sẽ xóa vĩnh viễn món ăn và tệp hình ảnh liên quan khỏi máy chủ.
           </div>
           <div className="modal-footer" style={{ margin: '-24px', marginTop: '24px' }}>
             <button type="button" className="btn btn-outline" onClick={() => setDeleteModal({ isOpen: false, food: null })}>
@@ -721,7 +721,7 @@ export const RestaurantMenu: React.FC = () => {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '4px' }}>
                         {[1,2,3,4,5].map(s => (
-                          <span key={s} style={{ color: s <= Math.round(reviewsData.summary.avg) ? '#f59e0b' : '#d1d5db', fontSize: '14px' }}>★</span>
+                          <Star key={s} size={14} style={{ display: 'inline-block', verticalAlign: '-1px', color: s <= Math.round(reviewsData.summary.avg) ? '#f59e0b' : '#d1d5db', fill: s <= Math.round(reviewsData.summary.avg) ? '#f59e0b' : 'none' }} />
                         ))}
                       </div>
                       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>{reviewsData.summary.total} đánh giá</div>
@@ -733,7 +733,7 @@ export const RestaurantMenu: React.FC = () => {
                         return (
                           <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
                             <span style={{ fontSize: '12px', color: '#64748b', width: '12px', textAlign: 'right' }}>{star}</span>
-                            <span style={{ color: '#f59e0b', fontSize: '12px' }}>★</span>
+                            <Star size={12} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b' }} />
                             <div style={{ flex: 1, background: '#e2e8f0', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
                               <div style={{ width: `${pct}%`, background: '#f59e0b', height: '100%', borderRadius: '4px', transition: 'width 0.4s' }} />
                             </div>
@@ -769,7 +769,7 @@ export const RestaurantMenu: React.FC = () => {
                                 <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>{rv.customerName}</div>
                                 <div style={{ display: 'flex', gap: '2px' }}>
                                   {[1,2,3,4,5].map(s => (
-                                    <span key={s} style={{ color: s <= rv.soLuongSao ? '#f59e0b' : '#d1d5db', fontSize: '13px' }}>★</span>
+                                    <Star key={s} size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: s <= rv.soLuongSao ? '#f59e0b' : '#d1d5db', fill: s <= rv.soLuongSao ? '#f59e0b' : 'none' }} />
                                   ))}
                                 </div>
                               </div>

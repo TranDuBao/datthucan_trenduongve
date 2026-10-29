@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../../view/menu/item_details_view.dart';
 import '../skeleton/skeleton_shimmer.dart';
 import '../skeleton/skeleton_box.dart';
@@ -49,7 +50,7 @@ class FlashSaleSectionWidget extends StatelessWidget {
           child: Row(
             children: [
               const Text(
-                "⚡ FLASH SALE",
+                "FLASH SALE",
                 style: TextStyle(
                   color: Color(0xFFD32F2F),
                   fontSize: 16,
@@ -77,7 +78,7 @@ class FlashSaleSectionWidget extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 195,
+          height: 215,
           child: flashSaleItems.isEmpty
               ? SkeletonShimmer(
                   key: const ValueKey("flash_sale_skeleton"),
@@ -112,10 +113,13 @@ class FlashSaleSectionWidget extends StatelessWidget {
                   itemCount: flashSaleItems.length,
                   itemBuilder: (context, index) {
                     final item = flashSaleItems[index];
-                    final name = item["name"] ?? "Món ngon";
-                    final price = (item["price"] as num? ?? 50000).toInt();
+                    final name = item["name"] ?? item["tenMonAn"] ?? "Món ngon";
+                    final price = (item["price"] as num? ?? item["giaMonAn"] as num? ?? 50000).toInt();
                     final oldPrice = (price * 1.4).toInt();
-                    final img = item["image"] ?? "";
+                    final img = (item["image"] ?? item["img"] ?? item["hinhAnh"] ?? "").toString();
+                    final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
+                    final double ratingNum = double.tryParse(rateVal) ?? 0.0;
+                    final String ratingStr = (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1);
 
                     return GestureDetector(
                       onTap: () {
@@ -140,21 +144,13 @@ class FlashSaleSectionWidget extends StatelessWidget {
                           children: [
                             Stack(
                               children: [
-                                img.toString().startsWith("http")
-                                    ? Image.network(
-                                        img.toString(),
-                                        width: 135,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey),
-                                      )
-                                    : Image.asset(
-                                        img.toString(),
-                                        width: 135,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(height: 100, color: Colors.grey),
-                                      ),
+                                SmartNetworkImage(
+                                  imageUrl: img,
+                                  width: 135,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  placeholderIcon: Icons.fastfood_rounded,
+                                ),
                                 Positioned(
                                   top: 6,
                                   right: 6,
@@ -205,7 +201,22 @@ class FlashSaleSectionWidget extends StatelessWidget {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 13),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        ratingStr,
+                                        style: TextStyle(
+                                          color: TColor.primaryTextOf(context),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
                                   Row(
                                     children: [
                                       Text(

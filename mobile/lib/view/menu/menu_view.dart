@@ -16,6 +16,9 @@ import '../../widgets/menu/quick_categories_widget.dart';
 import '../../widgets/menu/flash_sale_section_widget.dart';
 import '../../widgets/menu/menu_filtered_foods_widget.dart';
 import '../../widgets/menu/menu_categories_section_widget.dart';
+import '../../models/banner_item_model.dart';
+import '../../services/banner_service.dart';
+import '../../widgets/menu/menu_banner_carousel.dart';
 
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
@@ -31,6 +34,7 @@ class _MenuViewState extends State<MenuView> {
   List<dynamic> flashSaleItems = [];
   List<dynamic> routePickupFoods = [];
   List<dynamic> allFoodsList = [];
+  List<BannerItemModel> _bannersList = [];
 
   String _searchQuery = '';
   String? _selectedCategory;
@@ -298,18 +302,58 @@ class _MenuViewState extends State<MenuView> {
       final results = await Future.wait([
         CategoryService.fetchCategoriesFromDB(),
         CategoryService.fetchFoodsOverviewFromDB(),
+        BannerService.fetchBanners(),
       ]);
       final cats = results[0] as List<CategoryModel>;
       final foods = results[1] as List<dynamic>;
+      final banners = results[2] as List<BannerItemModel>;
 
       _sortMenuItems(foods);
+
+      // Tự động gán hình ảnh và số lượng món ăn thực tế từ DB cho từng nhóm món
+      final enrichedCats = cats.map((cat) {
+        final catFoods = foods.where((f) {
+          if (f is! Map) return false;
+          final fCatId = f['maDanhMuc'] ?? f['idDanhMuc'];
+          if (fCatId != null && int.tryParse(fCatId.toString()) == cat.id) {
+            return true;
+          }
+          final fCatName = (f['tenDanhMuc'] ?? f['categoryName'] ?? '').toString().trim().toLowerCase();
+          return fCatName.isNotEmpty && fCatName == cat.name.trim().toLowerCase();
+        }).toList();
+
+        final actualCount = catFoods.length;
+
+        String foodImg = cat.image;
+        if (foodImg.isEmpty || foodImg.startsWith('assets/')) {
+          final matchFood = catFoods.firstWhere(
+            (f) => (f['image'] ?? f['img'] ?? f['hinhAnh'] ?? '').toString().isNotEmpty,
+            orElse: () => null,
+          );
+          if (matchFood != null) {
+            foodImg = (matchFood['image'] ?? matchFood['img'] ?? matchFood['hinhAnh'] ?? '').toString();
+          }
+        }
+
+        return CategoryModel(
+          id: cat.id,
+          maQuan: cat.maQuan,
+          key: cat.key,
+          name: cat.name,
+          image: foodImg,
+          itemsCount: actualCount,
+          isHot: actualCount > 0,
+          items: catFoods,
+        );
+      }).toList();
 
       if (mounted) {
         setState(() {
           allFoodsList = foods.toList();
-          categoryList = cats;
+          categoryList = enrichedCats;
           flashSaleItems = foods.take(6).toList();
           routePickupFoods = foods.toList();
+          _bannersList = banners;
           isLoading = false;
         });
       }
@@ -545,167 +589,10 @@ class _MenuViewState extends State<MenuView> {
                 ),
               ),
 
-              const SizedBox(height: 10),
-
-              // Search Suggestions Row (Gợi ý tìm kiếm thông minh)
-              SizedBox(
-                height: 32,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _currentSuggestions.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final suggestion = _currentSuggestions[index];
-                    return GestureDetector(
-                      onTap: () {
-                        txtSearch.text = suggestion;
-                        setState(() {
-                          _searchQuery = suggestion;
-                          _selectedCategory = null;
-                        });
-                        FocusScope.of(context).unfocus();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF262A36) : const Color(0xFFFFF0E6),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFFC6011).withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.search, size: 12, color: Color(0xFFFC6011)),
-                            const SizedBox(width: 4),
-                            Text(
-                              suggestion,
-                              style: const TextStyle(
-                                color: Color(0xFFFC6011),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
               const SizedBox(height: 14),
 
-              // 3. Hero Promo Banner
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFC6011), Color(0xFF00C853)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFC6011).withOpacity(0.3),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.bolt_rounded, color: Colors.yellowAccent, size: 14),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "ƯU ĐÃI GHÉ LẤY",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "QUÁN NGON SÀI GÒN\nGIẢM 40.000Đ",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                height: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              "Đặt trước 15p - Ghé là lấy ngay",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                              image: const DecorationImage(
-                                image: NetworkImage("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD32F2F),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              "-40K",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // 3. Hero Promo Banner Carousel (Dynamic Admin Banners)
+              MenuBannerCarousel(banners: _bannersList),
 
               const SizedBox(height: 20),
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/view/more/add_card_view.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/globs.dart';
 import '../../providers/language_provider.dart';
-import '../../services/payment_service.dart';
+import '../../widgets/custom_toast.dart';
 import 'my_order_view.dart';
 
 class PaymentDetailsView extends StatefulWidget {
@@ -15,30 +15,69 @@ class PaymentDetailsView extends StatefulWidget {
 }
 
 class _PaymentDetailsViewState extends State<PaymentDetailsView> {
-  int selectMethod = 0; // 0: COD, 1+: Card/Wallet
-  bool isLoading = true;
-  List<PaymentMethodModel> savedCards = [];
+  static const String _prefKey = "preferred_payment_wallet";
+  String selectedWalletCode = "PAYOS";
+
+  final List<Map<String, dynamic>> wallets = [
+    {
+      "name": "VietQR / PayOS",
+      "code": "PAYOS",
+      "subtitle": "Quét mã QR tự động qua hơn 40 ứng dụng ngân hàng và ví điện tử, không mất phí.",
+      "tag": "KHUYÊN DÙNG",
+      "tagColor": const Color(0xFF10B981),
+      "badgeBg": const Color(0xFFE8F5E9),
+      "iconBg": const Color(0xFFFFECE5),
+      "iconColor": const Color(0xFFFC6011),
+      "icon": Icons.qr_code_2_rounded,
+    },
+    {
+      "name": "Ví MoMo",
+      "code": "MOMO",
+      "subtitle": "Thanh toán một chạm qua ví điện tử MoMo hoặc quét mã QR MoMo liên kết.",
+      "tag": "PHỔ BIẾN",
+      "tagColor": const Color(0xFFA50064),
+      "badgeBg": const Color(0xFFFCE4EC),
+      "iconBg": const Color(0xFFA50064),
+      "iconColor": Colors.white,
+      "textIcon": "M",
+    },
+    {
+      "name": "ZaloPay",
+      "code": "ZALOPAY",
+      "subtitle": "Thanh toán an toàn, tức thì qua ứng dụng ví điện tử ZaloPay & Zalo.",
+      "tag": "TIỆN LỢI",
+      "tagColor": const Color(0xFF0068FF),
+      "badgeBg": const Color(0xFFE3F2FD),
+      "iconBg": const Color(0xFF0068FF),
+      "iconColor": Colors.white,
+      "textIcon": "Zalo",
+    },
+    {
+      "name": "VNPay QR",
+      "code": "VNPAY",
+      "subtitle": "Cổng thanh toán quốc gia, quét mã thanh toán trực tiếp từ mọi ứng dụng ngân hàng.",
+      "tag": "TOÀN QUỐC",
+      "tagColor": const Color(0xFF005BAA),
+      "badgeBg": const Color(0xFFE1F5FE),
+      "iconBg": const Color(0xFF005BAA),
+      "iconColor": Colors.white,
+      "icon": Icons.account_balance_rounded,
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadPaymentMethods();
-  }
-
-  Future<void> _loadPaymentMethods() async {
-    setState(() => isLoading = true);
-    final cards = await PaymentService.getSavedPaymentMethods();
-    if (mounted) {
-      setState(() {
-        savedCards = cards;
-        isLoading = false;
-      });
+    final saved = Globs.udValueString(_prefKey);
+    if (saved.isNotEmpty && wallets.any((w) => w["code"] == saved)) {
+      selectedWalletCode = saved;
     }
   }
 
-  Future<void> _deleteCard(String id) async {
-    await PaymentService.deleteCard(id);
-    await _loadPaymentMethods();
+  void _selectWallet(String code, String name) {
+    setState(() => selectedWalletCode = code);
+    Globs.udStringSet(code, _prefKey);
+    CustomToast.showSuccess(context, "Đã chọn $name làm ví thanh toán mặc định");
   }
 
   @override
@@ -70,7 +109,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Chọn phương thức bạn muốn sử dụng cho đơn đặt hàng lần này hoặc quản lý các thẻ đã lưu.",
+                "Chọn ví điện tử hoặc cổng thanh toán trực tuyến bạn muốn sử dụng làm mặc định khi đặt món.",
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 12,
@@ -79,12 +118,61 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
               ),
               const SizedBox(height: 20),
 
-              // Section 1: COD / Cash on Delivery
+              // Banner thông báo thanh toán không tiền mặt
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1F2430) : const Color(0xFFFFF4EE),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF2C3240) : const Color(0xFFFFD8C2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: TColor.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.flash_on_rounded, color: TColor.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Thanh toán trực tuyến (Cashless)",
+                            style: TextStyle(
+                              color: TColor.primaryTextOf(context),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Tất cả đơn hàng Pre-Order được thanh toán và xác nhận tự động qua ví điện tử.",
+                            style: TextStyle(
+                              color: TColor.secondaryTextOf(context),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Section Header: Ví điện tử & Cổng thanh toán
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "TIỀN MẶT & TRỰC TIẾP",
+                    "VÍ ĐIỆN TỬ & CỔNG THANH TOÁN",
                     style: TextStyle(
                       color: TColor.secondaryTextOf(context),
                       fontSize: 11,
@@ -98,9 +186,9 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                       color: const Color(0xFFE8F5E9),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      "PHỔ BIẾN",
-                      style: TextStyle(
+                    child: Text(
+                      "${wallets.length} CỔNG KHẢ DỤNG",
+                      style: const TextStyle(
                         color: Color(0xFF2E7D32),
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -109,124 +197,135 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              _buildCodCard(isDark),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
-              // Section 2: Saved Cards from Database
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "THẺ NGÂN HÀNG ĐÃ LIÊN KẾT",
-                    style: TextStyle(
-                      color: TColor.secondaryTextOf(context),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  Text(
-                    "${savedCards.length} THẺ KHẢ DỤNG",
-                    style: TextStyle(
-                      color: TColor.secondaryTextOf(context).withOpacity(0.8),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (isLoading)
-                Center(child: CircularProgressIndicator(color: TColor.primary))
-              else if (savedCards.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: TColor.cardOf(context),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: TColor.borderOf(context)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Chưa có thẻ ngân hàng nào được liên kết",
-                      style: TextStyle(
-                        color: TColor.secondaryTextOf(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: savedCards.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final card = savedCards[index];
-                    return _buildCardItem(card, index + 1, isDark);
-                  },
-                ),
-              const SizedBox(height: 24),
+              // Danh sách các Ví điện tử
+              ...wallets.map((wallet) {
+                final code = wallet["code"] as String;
+                final name = wallet["name"] as String;
+                final subtitle = wallet["subtitle"] as String;
+                final tag = wallet["tag"] as String?;
+                final tagColor = wallet["tagColor"] as Color;
+                final badgeBg = wallet["badgeBg"] as Color;
+                final iconBg = wallet["iconBg"] as Color;
+                final iconColor = wallet["iconColor"] as Color;
+                final icon = wallet["icon"] as IconData?;
+                final textIcon = wallet["textIcon"] as String?;
+                final isSelected = selectedWalletCode == code;
 
-              // Section 3: E-Wallets
-              Text(
-                "VÍ ĐIỆN TỬ & CỔNG THANH TOÁN",
-                style: TextStyle(
-                  color: TColor.secondaryTextOf(context),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 10),
-              _buildEWalletsRow(isDark),
-              const SizedBox(height: 28),
-
-              // Add Card Button
-              InkWell(
-                onTap: () async {
-                  await showModalBottomSheet(
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    context: context,
-                    builder: (context) => const AddCardView(),
-                  );
-                  await _loadPaymentMethods();
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: double.infinity,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: TColor.primary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: TColor.primary.withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_rounded, color: Colors.white, size: 22),
-                      SizedBox(width: 6),
-                      Text(
-                        "Thêm thẻ tín dụng / ghi nợ mới",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: InkWell(
+                    onTap: () => _selectWallet(code, name),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: TColor.cardOf(context),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isSelected ? TColor.primary : TColor.borderOf(context),
+                          width: isSelected ? 1.8 : 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Logo / Icon ví
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: iconBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: icon != null
+                                  ? Icon(icon, color: iconColor, size: 24)
+                                  : Text(
+                                      textIcon ?? '',
+                                      style: TextStyle(
+                                        color: iconColor,
+                                        fontSize: textIcon != null && textIcon.length > 2 ? 11 : 16,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // Thông tin ví
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: TextStyle(
+                                        color: TColor.primaryTextOf(context),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (tag != null) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: badgeBg,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: TextStyle(
+                                            color: tagColor,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  subtitle,
+                                  style: TextStyle(
+                                    color: TColor.secondaryTextOf(context),
+                                    fontSize: 11,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Nút chọn (Radio indicator)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Icon(
+                              isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+                              color: isSelected ? TColor.primary : TColor.secondaryTextOf(context),
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
+
               const SizedBox(height: 20),
 
               // Security Footnote
@@ -248,7 +347,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                           const Icon(Icons.verified_user_rounded, color: Color(0xFF2E7D32), size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            "Bảo mật PCI-DSS cấp độ 1 & Mã hóa an toàn",
+                            "Bảo mật PCI-DSS cấp độ 1 & Mã hóa SSL 256-bit",
                             style: TextStyle(
                               color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1B5E20),
                               fontSize: 11,
@@ -260,7 +359,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Thông tin thẻ được mã hoá & không lưu trữ trực tiếp trên thiết bị",
+                      "Giao dịch được đối soát và xác thực tự động trực tiếp qua cổng thanh toán",
                       style: TextStyle(
                         color: TColor.secondaryTextOf(context).withOpacity(0.7),
                         fontSize: 10,
@@ -334,328 +433,14 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
               color: isDark ? const Color(0xFF1E2330) : const Color(0xFFF2F3F5),
               shape: BoxShape.circle,
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 20,
-                  color: TColor.primaryTextOf(context),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: TColor.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
+            child: Icon(
+              Icons.shopping_cart_outlined,
+              size: 20,
+              color: TColor.primaryTextOf(context),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCodCard(bool isDark) {
-    final isSelected = selectMethod == 0;
-    return InkWell(
-      onTap: () => setState(() => selectMethod = 0),
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: TColor.cardOf(context),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isSelected ? TColor.primary : TColor.borderOf(context),
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.payments_outlined,
-                color: Color(0xFFE65100),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        "Thanh toán khi nhận hàng",
-                        style: TextStyle(
-                          color: TColor.primaryTextOf(context),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: TColor.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          "COD",
-                          style: TextStyle(
-                            color: TColor.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    "Tiền mặt hoặc quẹt thẻ POS giao tận nơi",
-                    style: TextStyle(
-                      color: TColor.secondaryTextOf(context),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? TColor.primary : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? TColor.primary : TColor.secondaryTextOf(context).withOpacity(0.5),
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardItem(PaymentMethodModel card, int idx, bool isDark) {
-    final isSelected = selectMethod == idx;
-    return InkWell(
-      onTap: () => setState(() => selectMethod = idx),
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: TColor.cardOf(context),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isSelected ? TColor.primary : TColor.borderOf(context),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1F2C),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      card.cardType.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card.cardNumber,
-                        style: TextStyle(
-                          color: TColor.primaryTextOf(context),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "${card.bankName.isNotEmpty ? '${card.bankName} • ' : ''}Hết hạn ${card.expiryDate}",
-                        style: TextStyle(
-                          color: TColor.secondaryTextOf(context),
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton(
-                  onPressed: () => _deleteCard(card.id),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF5252),
-                    side: const BorderSide(color: Color(0xFFFF5252), width: 1),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text("Xóa", style: TextStyle(fontSize: 11)),
-                ),
-              ],
-            ),
-            if (card.isDefault) ...[
-              const SizedBox(height: 12),
-              Divider(color: TColor.borderOf(context), height: 1),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                        color: isSelected ? TColor.primary : TColor.secondaryTextOf(context),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "Chọn thẻ này thanh toán",
-                        style: TextStyle(
-                          color: TColor.primaryTextOf(context),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32), size: 12),
-                        SizedBox(width: 4),
-                        Text(
-                          "Mặc định",
-                          style: TextStyle(
-                            color: Color(0xFF2E7D32),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEWalletsRow(bool isDark) {
-    final wallets = [
-      {"name": "Ví MoMo", "code": "momo", "icon": "M", "color": const Color(0xFFA50064), "idx": 10},
-      {"name": "Apple Pay", "code": "apple", "icon": "", "color": const Color(0xFF000000), "idx": 11},
-      {"name": "ZaloPay", "code": "zalo", "icon": "Zalo", "color": const Color(0xFF0068FF), "idx": 12},
-    ];
-
-    return Row(
-      children: wallets.map((item) {
-        final idx = item["idx"] as int;
-        final isSelected = selectMethod == idx;
-        return Expanded(
-          child: InkWell(
-            onTap: () => setState(() => selectMethod = idx),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: TColor.cardOf(context),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected ? TColor.primary : TColor.borderOf(context),
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: item["color"] as Color,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        item["icon"] as String,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item["name"] as String,
-                    style: TextStyle(
-                      color: TColor.primaryTextOf(context),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }

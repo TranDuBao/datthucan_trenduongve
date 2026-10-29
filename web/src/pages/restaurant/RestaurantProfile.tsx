@@ -3,6 +3,7 @@ import { apiFetch } from '../../api/apiClient';
 import { Store, Save, Building, Bot, CheckCircle, Clock, MapPin, Settings2, ShieldCheck, CheckSquare, Square } from 'lucide-react';
 import { ImageCropUpload } from '../../components/ImageCropUpload';
 import { LocationSelector } from '../../components/LocationSelector';
+import { MapLocationPicker } from '../../components/MapLocationPicker';
 import { NotificationModal } from '../../components/NotificationModal';
 import { BankSelector } from '../../components/BankSelector';
 import { DatePickerInput } from '../../components/DatePickerInput';
@@ -364,6 +365,13 @@ export const RestaurantProfile: React.FC = () => {
                 <input type="number" step="any" className="form-control" value={form.lng} onChange={(e) => setForm({ ...form, lng: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
+
+            <MapLocationPicker
+              lat={form.lat}
+              lng={form.lng}
+              currentAddress={form.diaChi}
+              onChange={({ lat, lng }) => setForm((prev) => ({ ...prev, lat, lng }))}
+            />
           </div>
 
           {/* SECTION 4: GIỜ HOẠT ĐỘNG */}

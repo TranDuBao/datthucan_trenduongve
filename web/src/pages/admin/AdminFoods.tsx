@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../api/apiClient';
-import { Search, Edit2, UtensilsCrossed } from 'lucide-react';
+import { Search, Edit2, UtensilsCrossed, Star } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { NotificationModal } from '../../components/NotificationModal';
 import { ImageCropUpload } from '../../components/ImageCropUpload';
@@ -194,10 +194,10 @@ export const AdminFoods: React.FC = () => {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
-              <option value="">📂 Tất Cả Danh Mục</option>
+              <option value="">Tất Cả Danh Mục</option>
               {categories.map((c: any) => (
                 <option key={c.maDanhMuc} value={c.maDanhMuc}>
-                  🏷️ {c.tenDanhMuc}
+                  {c.tenDanhMuc}
                 </option>
               ))}
             </select>
@@ -252,7 +252,7 @@ export const AdminFoods: React.FC = () => {
                       <span className="badge" style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0' }}>Đang bán</span>
                     )}
                   </td>
-                  <td>⭐ {f.diemDanhGiaTB && Number(f.diemDanhGiaTB) > 0 ? Number(f.diemDanhGiaTB).toFixed(1) : 'Chưa có'} ({f.soLuotDanhGia || 0})</td>
+                  <td><Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />{f.diemDanhGiaTB && Number(f.diemDanhGiaTB) > 0 ? Number(f.diemDanhGiaTB).toFixed(1) : 'Chưa có'} ({f.soLuotDanhGia || 0})</td>
                   <td>
                     <button className="btn btn-outline btn-sm" onClick={() => handleOpenEdit(f)}>
                       <Edit2 size={14} /> Chỉnh Sửa

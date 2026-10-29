@@ -69,7 +69,7 @@ class RestaurantVouchersProvider with ChangeNotifier {
     _voucherUpdatedCallback = (data) => _handleRealtimeUpdate(data);
     _orderCreatedCallback = (data) => _handleRealtimeUpdate(data);
     _reconnectCallback = () {
-      debugPrint('⚡ [RestaurantVouchersProvider] Reconnected -> refetching vouchers');
+      debugPrint('[RestaurantVouchersProvider] [Info] Reconnected -> refetching vouchers');
       fetchVouchers();
     };
 
@@ -104,7 +104,7 @@ class RestaurantVouchersProvider with ChangeNotifier {
   }
 
   void _handleRealtimeUpdate(dynamic data) {
-    debugPrint('⚡ [RestaurantVouchersProvider] Realtime voucher event received');
+    debugPrint('[RestaurantVouchersProvider] [Info] Realtime voucher event received');
     fetchVouchers();
   }
 

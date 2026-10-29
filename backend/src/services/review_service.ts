@@ -5,6 +5,7 @@ import { DanhGiaMonModel } from '../models/danh_gia_mon_model';
 import { DonHangModel } from '../models/don_hang_model';
 import { ChiTietDonHangModel } from '../models/chi_tiet_don_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
+import { MonAnModel } from '../models/mon_an_model';
 import { KhachHangModel } from '../models/khach_hang_model';
 import { RealtimeService } from './realtime_service';
 
@@ -73,6 +74,47 @@ export class ReviewService {
       {
         danhGiaTrungBinh: avgRating,
         soLuongDanhGia: totalCount,
+      },
+    );
+  }
+
+  private async recalculateDishRating(queryRunner: any, dishId: number) {
+    if (!dishId || isNaN(dishId)) return;
+
+    const result = await queryRunner.manager.query(
+      `WITH dish_reviews_combined AS (
+        SELECT 
+          dgm.mamon as mamonan,
+          dg.madanhgia,
+          COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+        FROM danhgia_mon dgm
+        JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+        WHERE dgm.mamon = $1 AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+
+        UNION
+
+        SELECT 
+          ct.mamonan,
+          dg.madanhgia,
+          dg.soluongsao as stars
+        FROM chitietdonhang ct
+        JOIN danhgia dg ON dg.madonhang = ct.madonhang
+        WHERE ct.mamonan = $1 AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+      )
+      SELECT COUNT(DISTINCT madanhgia) as total_count, ROUND(AVG(stars)::numeric, 1) as avg_rating
+      FROM dish_reviews_combined`,
+      [dishId],
+    );
+
+    const totalCount = Number(result[0]?.total_count || 0);
+    const avgRating = totalCount > 0 ? (Math.round(Number(result[0]?.avg_rating || 0) * 10) / 10) : 0.0;
+
+    await queryRunner.manager.update(
+      MonAnModel,
+      { maMonAn: dishId },
+      {
+        diemDanhGiaTB: avgRating,
+        soLuotDanhGia: totalCount,
       },
     );
   }
@@ -146,6 +188,7 @@ export class ReviewService {
               nhanXet: this.sanitizeText(dr.comment),
             });
             await queryRunner.manager.save(DanhGiaMonModel, dishRating);
+            await this.recalculateDishRating(queryRunner, dr.dishId);
           } catch (e) {
             console.error('Không thể lưu đánh giá món chi tiết:', e);
           }
@@ -289,9 +332,14 @@ export class ReviewService {
       dishReviews: dishReviewsMap.get(r.maDanhGia) || [],
     }));
 
+    const store = await this.storeRepo.findOne({ where: { maQuan: restaurantId } });
+    const storeReviewCount = Number(store?.soLuongDanhGia ?? total);
+    const avgRating = storeReviewCount > 0 ? Number(store?.danhGiaTrungBinh || 0) : 0.0;
+
     return {
       reviews: formattedReviews,
-      total,
+      total: storeReviewCount,
+      averageRating: avgRating,
       page: safePage,
       limit: safeLimit,
       totalPages: Math.ceil(total / safeLimit),

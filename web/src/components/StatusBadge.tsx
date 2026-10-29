@@ -1,3 +1,4 @@
+import { Clock, ShoppingBag, Trash2 } from 'lucide-react';
 import React from 'react';
 
 interface StatusBadgeProps {
@@ -47,7 +48,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
           fontWeight: 600,
         }}
       >
-        👨‍🍳 Đang chuẩn bị
+        <Clock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Đang chuẩn bị
       </span>
     );
   }
@@ -70,7 +71,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
           fontWeight: 600,
         }}
       >
-        🛍️ Chờ ghé lấy
+        <ShoppingBag size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Chờ ghé lấy
       </span>
     );
   }
@@ -186,7 +187,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
           fontSize: '12px',
         }}
       >
-        🗑️ Đã xóa mềm
+        <Trash2 size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> Đã xóa mềm
       </span>
     );
   }

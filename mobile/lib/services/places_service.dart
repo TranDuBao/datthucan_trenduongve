@@ -44,7 +44,7 @@ class PlacesService {
       ).replace(queryParameters: queryParams);
 
       try {
-        debugPrint('🔍 TomTom Search URI: $uri');
+        debugPrint('[PlacesService] [Info] TomTom Search URI: $uri');
         final response = await http.get(uri);
 
         if (response.statusCode == 200) {
@@ -57,10 +57,10 @@ class PlacesService {
               .toList();
           debugPrint('   → TomTom trả về ${results.length} kết quả');
         } else {
-          debugPrint('❌ TomTom Search status: ${response.statusCode} - ${response.body}');
+          debugPrint('[PlacesService] [Error] TomTom Search status: ${response.statusCode} - ${response.body}');
         }
       } catch (e) {
-        debugPrint('❌ PlacesService TomTom search error: $e');
+        debugPrint('[PlacesService] [Error] PlacesService TomTom search error: $e');
       }
     }
 
@@ -87,7 +87,7 @@ class PlacesService {
     );
 
     try {
-      debugPrint('🌐 Photon OSM Fallback Search: "$input"');
+      debugPrint('[PlacesService] [Info] Photon OSM Fallback Search: "$input"');
       final response = await http.get(
         uri,
         headers: {
@@ -106,10 +106,10 @@ class PlacesService {
                 PlaceModel.fromPhotonJson(item as Map<String, dynamic>))
             .toList();
       } else {
-        debugPrint('❌ Photon Search status: ${response.statusCode}');
+        debugPrint('[PlacesService] [Error] Photon Search status: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ Photon Search error: $e');
+      debugPrint('[PlacesService] [Error] Photon Search error: $e');
     }
     return [];
   }
@@ -121,7 +121,7 @@ class PlacesService {
     );
 
     try {
-      debugPrint('🗺️ Nominatim OSM Fallback Search: "$input"');
+      debugPrint('[PlacesService] [Info] Nominatim OSM Fallback Search: "$input"');
       final response = await http.get(
         uri,
         headers: {
@@ -149,7 +149,7 @@ class PlacesService {
         }).toList();
       }
     } catch (e) {
-      debugPrint('❌ Nominatim Search error: $e');
+      debugPrint('[PlacesService] [Error] Nominatim Search error: $e');
     }
     return [];
   }
@@ -168,7 +168,7 @@ class PlacesService {
       );
 
       try {
-        debugPrint('📍 TomTom Reverse: ${latLng.latitude}, ${latLng.longitude}');
+        debugPrint('[PlacesService] [Info] TomTom Reverse: ${latLng.latitude}, ${latLng.longitude}');
         final response = await http.get(uri);
 
         if (response.statusCode == 200) {
@@ -180,10 +180,10 @@ class PlacesService {
                 addresses[0] as Map<String, dynamic>);
           }
         } else {
-          debugPrint('❌ TomTom Reverse status: ${response.statusCode}');
+          debugPrint('[PlacesService] [Error] TomTom Reverse status: ${response.statusCode}');
         }
       } catch (e) {
-        debugPrint('❌ PlacesService TomTom reverse error: $e');
+        debugPrint('[PlacesService] [Error] PlacesService TomTom reverse error: $e');
       }
     }
 
@@ -196,7 +196,7 @@ class PlacesService {
     );
 
     try {
-      debugPrint('🗺️ Nominatim Reverse Geocoding: ${latLng.latitude}, ${latLng.longitude}');
+      debugPrint('[PlacesService] [Info] Nominatim Reverse Geocoding: ${latLng.latitude}, ${latLng.longitude}');
       final response = await http.get(
         uri,
         headers: {
@@ -231,7 +231,7 @@ class PlacesService {
         );
       }
     } catch (e) {
-      debugPrint('❌ Nominatim reverse error: $e');
+      debugPrint('[PlacesService] [Error] Nominatim reverse error: $e');
     }
     return null;
   }

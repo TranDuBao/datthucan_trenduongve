@@ -101,7 +101,7 @@ export class UploadController {
         message: 'Tải lên & cắt hình ảnh thành công',
       });
     } catch (error: any) {
-      console.error('❌ Lỗi upload hình ảnh:', error);
+      console.error('[UploadController] [Error] Lỗi upload hình ảnh:', error);
       return res.status(500).json({ statusCode: 500, message: error.message || 'Lỗi lưu tệp hình ảnh' });
     }
   };
@@ -194,12 +194,12 @@ export async function deleteUploadFile(fileUrl?: string) {
       for (const p of [filePath1, filePath2, filePath3]) {
         if (fs.existsSync(p)) {
           await fs.promises.unlink(p);
-          console.log(`🗑️ Đã dọn dẹp tệp ảnh cũ thành công: ${fileName}`);
+          console.log(`[UploadController] [Info] Đã dọn dẹp tệp ảnh cũ thành công: ${fileName}`);
           break;
         }
       }
     }
   } catch (err) {
-    console.warn('⚠️ Lỗi xóa tệp ảnh trên đĩa:', err);
+    console.warn('[UploadController] [Warn] Lỗi xóa tệp ảnh trên đĩa:', err);
   }
 }

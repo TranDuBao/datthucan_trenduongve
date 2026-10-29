@@ -81,7 +81,7 @@ export class AuthService {
         isValidPassword = true;
         const newHash = await bcrypt.hash(data.password, 10);
         await this.userService.updatePassword(account.taiKhoan.maTaiKhoan, newHash);
-        console.log(`🔒 Đã tự động mã hóa Bcrypt Hash cho maTaiKhoan: ${account.taiKhoan.maTaiKhoan}`);
+        console.log(`[AuthService] [Info] Đã tự động mã hóa Bcrypt Hash cho maTaiKhoan: ${account.taiKhoan.maTaiKhoan}`);
       }
     }
 
@@ -129,7 +129,7 @@ export class AuthService {
       });
       payload = ticket.getPayload();
     } catch (err: any) {
-      console.error('❌ Google Token Verification Error:', err?.message || err);
+      console.error('[AuthService] [Error] Google Token Verification Error:', err?.message || err);
       throw new Error('Google ID Token không hợp lệ hoặc đã hết hạn');
     }
 
