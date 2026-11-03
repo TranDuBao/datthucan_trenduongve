@@ -1,3 +1,4 @@
+import '../services/category_service.dart';
 import 'package:flutter/material.dart';
 import '../services/order_service.dart';
 
@@ -30,13 +31,76 @@ class CartProvider extends ChangeNotifier {
       ? _items.first.restaurantId
       : (_restaurantMetas.isNotEmpty ? _restaurantMetas.keys.first : null);
 
+  /// ID quán đang có món trong giỏ
+  int? get activeRestaurantId => _items.isNotEmpty ? _items.first.restaurantId : null;
+
+  /// Tên quán đang có món trong giỏ
+  String get activeRestaurantName {
+    final id = activeRestaurantId;
+    if (id == null) return '';
+    return restaurantName(id);
+  }
+
+  /// Kiểm tra xem giỏ hàng hiện tại có món thuộc quán khác không
+  bool hasConflictWith(int newRestaurantId) {
+    if (_items.isEmpty) return false;
+    final ids = restaurantIds;
+    return ids.isNotEmpty && !ids.contains(newRestaurantId);
+  }
+
+  final Set<int> _resolvingIds = {};
+
+  Future<void> _resolveRestaurantMeta(int id) async {
+    if (_resolvingIds.contains(id)) return;
+    _resolvingIds.add(id);
+    try {
+      final res = await CategoryService.fetchRestaurantById(id);
+      if (res != null) {
+        final name = (res['tenQuan'] ?? res['name'] ?? '').toString();
+        final addr = (res['diaChi'] ?? res['address'] ?? '').toString();
+        if (name.isNotEmpty) {
+          _restaurantMetas[id] = RestaurantMeta(id: id, name: name, address: addr);
+          notifyListeners();
+        }
+      }
+    } catch (_) {} finally {
+      _resolvingIds.remove(id);
+    }
+  }
+
   /// Trả về tên quán theo ID (dùng cho UI)
-  String restaurantName(int id) =>
-      _restaurantMetas[id]?.name ?? 'Quán $id';
+  String restaurantName(int id) {
+    final meta = _restaurantMetas[id];
+    if (meta != null && meta.name.isNotEmpty && !meta.name.startsWith('Quán ')) {
+      return meta.name;
+    }
+    for (var i in _items) {
+      if (i.restaurantId == id && i.restaurantName.isNotEmpty && !i.restaurantName.startsWith('Quán ')) {
+        _restaurantMetas[id] = RestaurantMeta(
+          id: id,
+          name: i.restaurantName,
+          address: i.restaurantAddress,
+        );
+        return i.restaurantName;
+      }
+    }
+    _resolveRestaurantMeta(id);
+    return meta?.name ?? 'Quán $id';
+  }
 
   /// Trả về địa chỉ quán theo ID
-  String restaurantAddress(int id) =>
-      _restaurantMetas[id]?.address ?? '';
+  String restaurantAddress(int id) {
+    final meta = _restaurantMetas[id];
+    if (meta != null && meta.address.isNotEmpty) {
+      return meta.address;
+    }
+    for (var i in _items) {
+      if (i.restaurantId == id && i.restaurantAddress.isNotEmpty) {
+        return i.restaurantAddress;
+      }
+    }
+    return '';
+  }
 
   /// Lấy các món thuộc một quán cụ thể
   List<CartItemModel> itemsForRestaurant(int restaurantId) =>
@@ -85,6 +149,15 @@ class CartProvider extends ChangeNotifier {
   }
 
   void addToCart(CartItemModel item) {
+    if (item.restaurantName.isNotEmpty) {
+      registerRestaurant(
+        id: item.restaurantId,
+        name: item.restaurantName,
+        address: item.restaurantAddress,
+      );
+    } else {
+      _resolveRestaurantMeta(item.restaurantId);
+    }
     final index = _items.indexWhere((i) => i.foodId == item.foodId);
     if (index >= 0) {
       _items[index].quantity += item.quantity;
@@ -169,7 +242,6 @@ class CartProvider extends ChangeNotifier {
 
   void clearCart() {
     _items.clear();
-    _restaurantMetas.clear();
     removeVoucher();
     notifyListeners();
   }

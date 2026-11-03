@@ -132,7 +132,8 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                 final img = item["image"] ?? item["hinhAnh"] ?? "";
                 final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
                 final double ratingNum = double.tryParse(rateVal) ?? 0.0;
-                final String ratingStr = (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1);
+                final int ratingCount = int.tryParse((item["soLuotDanhGia"] ?? item["ratingCount"] ?? 0).toString()) ?? 0;
+                final bool hasRating = ratingNum > 0 && ratingCount > 0 && item["chuaCoDanhGia"] != true;
 
                 return GestureDetector(
                   onTap: () {
@@ -204,21 +205,22 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 14),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        ratingStr,
-                                        style: TextStyle(
-                                          color: TColor.primaryTextOf(context),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
+                                  if (hasRating)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 14),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          ratingNum.toStringAsFixed(1),
+                                          style: TextStyle(
+                                            color: TColor.primaryTextOf(context),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
                                 ],
                               ),
                             ],

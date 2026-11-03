@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common_widget/round_button.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common_widget/round_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
@@ -10,8 +10,10 @@ import '../../widgets/custom_toast.dart';
 import '../../widgets/vietqr_payment_modal.dart';
 import '../../widgets/payment_success_modal.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../widgets/single_restaurant_warning_modal.dart';
 import 'checkout_message_view.dart';
 import 'order_history_view.dart';
+import '../main_tabview/main_tabview.dart';
 
 class CheckoutView extends StatefulWidget {
   const CheckoutView({super.key});
@@ -39,8 +41,17 @@ class _CheckoutViewState extends State<CheckoutView> {
     final timeStr = "${pickupDateTime.hour.toString().padLeft(2, '0')}:${pickupDateTime.minute.toString().padLeft(2, '0')} - ${pickupDateTime.day}/${pickupDateTime.month}/${pickupDateTime.year}";
     final restaurantIds = cart.restaurantIds;
 
-    return Scaffold(
-      backgroundColor: TColor.bgOf(context),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          try {
+            context.read<MapProvider>().cancelStopoverOrder();
+          } catch (_) {}
+        }
+      },
+      child: Scaffold(
+        backgroundColor: TColor.bgOf(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -54,6 +65,9 @@ class _CheckoutViewState extends State<CheckoutView> {
                   children: [
                     IconButton(
                       onPressed: () {
+                        try {
+                          context.read<MapProvider>().cancelStopoverOrder();
+                        } catch (_) {}
                         Navigator.pop(context);
                       },
                       icon: Icon(Icons.arrow_back_ios_new_rounded, color: TColor.primaryTextOf(context), size: 20),
@@ -369,6 +383,7 @@ class _CheckoutViewState extends State<CheckoutView> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -379,6 +394,20 @@ class _CheckoutViewState extends State<CheckoutView> {
     final methodCode = paymentArr[selectMethod]["code"]!;
     final restaurantIds = cart.restaurantIds;
     if (restaurantIds.isEmpty) return;
+
+    if (restaurantIds.length > 1) {
+      final firstResName = cart.restaurantName(restaurantIds.first);
+      final secondResName = cart.restaurantName(restaurantIds[1]);
+      SingleRestaurantWarningModal.show(
+        context: context,
+        existingRestaurantName: firstResName,
+        newRestaurantName: secondResName,
+        onClearAndOrder: () {
+          cart.clearRestaurant(restaurantIds.first);
+        },
+      );
+      return;
+    }
 
     setState(() => isSubmitting = true);
 
@@ -421,9 +450,6 @@ class _CheckoutViewState extends State<CheckoutView> {
     }
 
     if (successOrders.isNotEmpty) {
-      try {
-        mapProvider.setActiveStopoverOrder(successOrders.first);
-      } catch (_) {}
       cart.clearCart();
       if (failMessages.isNotEmpty && mounted) {
         CustomToast.showError(context,
@@ -455,6 +481,10 @@ class _CheckoutViewState extends State<CheckoutView> {
         if (updatedData != null) ...updatedData,
       };
 
+      try {
+        context.read<MapProvider>().setActiveStopoverOrder(finalOrderData);
+      } catch (_) {}
+
       final action = await PaymentSuccessModal.show(
         context: context,
         orderData: finalOrderData,
@@ -469,11 +499,17 @@ class _CheckoutViewState extends State<CheckoutView> {
 
       if (action == PaymentSuccessAction.viewOrder) {
         Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
+          (route) => false,
+        );
+        Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const OrderHistoryView()),
-          (route) => route.isFirst,
         );
       } else {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
+          (route) => false,
+        );
       }
     }
 

@@ -582,21 +582,14 @@ class MapProvider extends ChangeNotifier {
     final route = _originalRoute ?? _currentRoute;
     if (route == null) return;
 
-    // Chỉ tìm kiếm và hiển thị quán khi người dùng đã nhập món ăn tìm kiếm
-    if (_foodKeyword.trim().isEmpty) {
-      _routeRestaurants = [];
-      _isSearchingFood = false;
-      notifyListeners();
-      return;
-    }
-
     _isSearchingFood = true;
     notifyListeners();
 
     try {
+      final kw = _foodKeyword.trim();
       _routeRestaurants = await CategoryService.fetchRestaurantsAlongRoute(
         route.simplifiedPolylinePoints,
-        keyword: _foodKeyword.trim(),
+        keyword: kw.isNotEmpty ? kw : null,
       );
     } catch (_) {
       _routeRestaurants = [];
@@ -642,9 +635,46 @@ class MapProvider extends ChangeNotifier {
     _selectedStopoverStore = null;
     _selectedStopoverFood = null;
     if (_originalRoute != null) {
-      _fitBoundsToRoute(_originalRoute!.polylinePoints);
+      _currentRoute = _originalRoute;
+      _fitBoundsToRoute(_originalRoute!.simplifiedPolylinePoints);
     }
     notifyListeners();
+  }
+
+  /// Dọn sạch hoàn toàn lộ trình ghé quán khi người dùng hủy món / hủy đơn / không thanh toán:
+  /// - Xóa bỏ chặng rẽ vào quán (_stopoverRoute = null)
+  /// - Xóa quán dừng chân (_selectedStopoverStore = null, _selectedStopoverFood = null)
+  /// - Xóa đơn hàng ghé lấy (_activeStopoverOrder = null, _isOrderPickedUp = false)
+  /// - Khôi phục lại tuyến đường thẳng ban đầu A -> B (_currentRoute = _originalRoute)
+  void cancelStopoverOrder() {
+    _stopoverRoute = null;
+    _selectedStopoverStore = null;
+    _selectedStopoverFood = null;
+    _activeStopoverOrder = null;
+    _isOrderPickedUp = false;
+    if (_originalRoute != null) {
+      _currentRoute = _originalRoute;
+      _fitBoundsToRoute(_originalRoute!.simplifiedPolylinePoints);
+    }
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void setStopoverRouteForTesting({
+    RouteModel? original,
+    RouteModel? stopover,
+    Map<String, dynamic>? store,
+    Map<String, dynamic>? food,
+    Map<String, dynamic>? order,
+  }) {
+    if (original != null) {
+      _originalRoute = original;
+      _currentRoute = original;
+    }
+    _stopoverRoute = stopover;
+    _selectedStopoverStore = store;
+    _selectedStopoverFood = food;
+    _activeStopoverOrder = order;
   }
 
   void changeTravelMode(TravelMode mode) {

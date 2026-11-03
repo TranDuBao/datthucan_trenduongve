@@ -40,6 +40,7 @@ export class ReviewService {
   private orderRepo = AppDataSource.getRepository(DonHangModel);
   private chiTietDonRepo = AppDataSource.getRepository(ChiTietDonHangModel);
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
+  private foodRepo = AppDataSource.getRepository(MonAnModel);
   private customerRepo = AppDataSource.getRepository(KhachHangModel);
   private realtimeService = RealtimeService.getInstance();
 
@@ -117,6 +118,58 @@ export class ReviewService {
         soLuotDanhGia: totalCount,
       },
     );
+  }
+
+  private async getDishesForReview(queryRunner: any, reviewId: number, orderId?: number): Promise<number[]> {
+    const dishIds = new Set<number>();
+    try {
+      const dmList = await queryRunner.manager.find(DanhGiaMonModel, { where: { maDanhGia: reviewId } });
+      dmList.forEach((d: any) => {
+        if (d.maMon) dishIds.add(Number(d.maMon));
+      });
+
+      if (orderId) {
+        const odList = await queryRunner.manager.find(ChiTietDonHangModel, { where: { maDonHang: orderId } });
+        odList.forEach((od: any) => {
+          if (od.maMonAn) dishIds.add(Number(od.maMonAn));
+        });
+      }
+    } catch (e) {
+      console.error('[ReviewService] [Warn] Error fetching dishes for review:', e);
+    }
+    return Array.from(dishIds);
+  }
+
+  private async getRatingSyncPayload(storeId: number, dishIds: number[]) {
+    try {
+      const store = await this.storeRepo.findOne({ where: { maQuan: storeId } });
+      const storeRating = Number(store?.danhGiaTrungBinh || 0);
+      const storeRatingCount = Number(store?.soLuongDanhGia || 0);
+
+      const dishRatings: Array<{ dishId: number; rating: number; count: number }> = [];
+      if (dishIds.length > 0) {
+        const dishes = await this.foodRepo.find({ where: { maMonAn: In(dishIds) } });
+        for (const d of dishes) {
+          dishRatings.push({
+            dishId: d.maMonAn,
+            rating: Number(d.diemDanhGiaTB || 0),
+            count: Number(d.soLuotDanhGia || 0),
+          });
+        }
+      }
+
+      return {
+        storeId,
+        dishIds,
+        storeRating,
+        storeRatingCount,
+        dishRatings,
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (e) {
+      console.error('[ReviewService] [Warn] Error preparing rating sync payload:', e);
+      return null;
+    }
   }
 
   async createReview(dto: CreateReviewDTO) {
@@ -198,8 +251,14 @@ export class ReviewService {
       await this.recalculateStoreRating(queryRunner, storeId);
       await queryRunner.commitTransaction();
 
-      // Realtime Socket Notification to Store
-      this.realtimeService.emitToRoom(`restaurant:${storeId}`, 'review:created', {
+      // Realtime Rating Synchronization
+      const dishIds = dishRatingsToSave.map((dr: any) => dr.dishId).filter(Boolean);
+      const syncPayload = await this.getRatingSyncPayload(storeId, dishIds);
+      if (syncPayload) {
+        this.realtimeService.emitRatingUpdated(storeId, syncPayload);
+      }
+
+      this.realtimeService.emitReviewEvent('review:created', storeId, {
         id: savedReview.maDanhGia,
         orderId: dto.orderId,
         storeId,
@@ -251,6 +310,8 @@ export class ReviewService {
     await queryRunner.startTransaction();
 
     try {
+      const relatedDishIds = await this.getDishesForReview(queryRunner, review.maDanhGia, review.maDonHang);
+
       if (dto.rating !== undefined) {
         review.soLuongSao = Math.min(5, Math.max(1, Math.round(dto.rating)));
       }
@@ -267,9 +328,28 @@ export class ReviewService {
 
       if (review.maQuan) {
         await this.recalculateStoreRating(queryRunner, review.maQuan);
+        for (const dishId of relatedDishIds) {
+          await this.recalculateDishRating(queryRunner, dishId);
+        }
       }
 
       await queryRunner.commitTransaction();
+
+      if (review.maQuan) {
+        const syncPayload = await this.getRatingSyncPayload(review.maQuan, relatedDishIds);
+        if (syncPayload) {
+          this.realtimeService.emitRatingUpdated(review.maQuan, syncPayload);
+        }
+        this.realtimeService.emitReviewEvent('review:updated', review.maQuan, {
+          id: updated.maDanhGia,
+          orderId: updated.maDonHang,
+          storeId: review.maQuan,
+          rating: updated.soLuongSao,
+          comment: updated.nhanXet,
+          updatedAt: updated.updatedAt,
+        });
+      }
+
       return updated;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
@@ -402,15 +482,35 @@ export class ReviewService {
     await queryRunner.startTransaction();
 
     try {
+      const relatedDishIds = await this.getDishesForReview(queryRunner, review.maDanhGia, review.maDonHang);
+
       review.isHidden = Boolean(isHidden);
       review.lyDoAn = isHidden ? this.sanitizeText(reason) : undefined;
       const updated = await queryRunner.manager.save(DanhGiaModel, review);
 
       if (review.maQuan) {
         await this.recalculateStoreRating(queryRunner, review.maQuan);
+        for (const dishId of relatedDishIds) {
+          await this.recalculateDishRating(queryRunner, dishId);
+        }
       }
 
       await queryRunner.commitTransaction();
+
+      if (review.maQuan) {
+        const syncPayload = await this.getRatingSyncPayload(review.maQuan, relatedDishIds);
+        if (syncPayload) {
+          this.realtimeService.emitRatingUpdated(review.maQuan, syncPayload);
+        }
+        this.realtimeService.emitReviewEvent('review:visibility_changed', review.maQuan, {
+          id: updated.maDanhGia,
+          orderId: updated.maDonHang,
+          storeId: review.maQuan,
+          isHidden: updated.isHidden,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
       return updated;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();

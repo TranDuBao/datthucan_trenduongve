@@ -7,6 +7,7 @@ import '../services/order_service.dart';
 import '../view/menu/item_details_view.dart';
 import '../common_widget/smart_network_image.dart';
 import 'custom_toast.dart';
+import 'single_restaurant_warning_modal.dart';
 
 class RoutePickupFoodCard extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -55,7 +56,8 @@ class RoutePickupFoodCard extends StatelessWidget {
     final int soldQty = int.tryParse((item["soLuongDaBan"] ?? item["soLuotBan"] ?? item["soldCount"] ?? 0).toString()) ?? 0;
     final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
     final double ratingNum = double.tryParse(rateVal) ?? 0.0;
-    final String ratingStr = (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1);
+    final int ratingCount = int.tryParse((item["soLuotDanhGia"] ?? item["ratingCount"] ?? 0).toString()) ?? 0;
+    final bool hasRating = ratingNum > 0 && ratingCount > 0 && item["chuaCoDanhGia"] != true;
 
     return GestureDetector(
       onTap: () {
@@ -110,22 +112,54 @@ class RoutePickupFoodCard extends StatelessWidget {
                     right: 6,
                     child: InkWell(
                       onTap: () {
-                        final foodId = (item["id"] as num? ?? item["maMonAn"] as num? ?? 1).toInt();
-                        final name = item["name"] ?? item["tenMonAn"] ?? "Món tiện đường";
-                        final price = (item["price"] as num? ?? item["giaMonAn"] as num? ?? 45000).toDouble();
+                        final rawFId = item["id"] ?? item["maMonAn"];
+                        final foodId = rawFId is int ? rawFId : (int.tryParse(rawFId?.toString() ?? '') ?? 1);
+                        final name = (item["name"] ?? item["tenMonAn"] ?? "Món tiện đường").toString();
+                        final rawPrice = item["price"] ?? item["giaMonAn"];
+                        final price = rawPrice is num ? rawPrice.toDouble() : (double.tryParse(rawPrice?.toString() ?? '') ?? 45000.0);
                         final image = item["image"]?.toString() ?? item["img"]?.toString() ?? "";
-                        final restaurantId = (item["maQuan"] as num? ?? 1).toInt();
+                        final rawResId = item["maQuan"] ?? item["restaurantId"] ?? item["idQuan"];
+                        final restaurantId = rawResId is int ? rawResId : (int.tryParse(rawResId?.toString() ?? '') ?? 1);
+                        final storeName = (item["tenQuan"] ?? item["restaurantName"] ?? "Quán mới").toString();
+                        final storeAddress = (item["diaChi"] ?? item["address"] ?? "").toString();
 
-                        context.read<CartProvider>().addToCart(CartItemModel(
-                          foodId: foodId,
-                          foodName: name,
-                          price: price,
-                          quantity: 1,
-                          image: image,
-                          restaurantId: restaurantId,
-                        ));
+                        final cart = context.read<CartProvider>();
 
-                        CustomToast.showSuccess(context, "Đã thêm '$name' vào giỏ hàng");
+                        void doAdd() {
+                          if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
+                            cart.registerRestaurant(id: restaurantId, name: storeName, address: storeAddress);
+                          }
+                          cart.addToCart(CartItemModel(
+                            foodId: foodId,
+                            foodName: name,
+                            price: price,
+                            quantity: 1,
+                            image: image,
+                            restaurantId: restaurantId,
+                            restaurantName: storeName,
+                            restaurantAddress: storeAddress,
+                          ));
+                          CustomToast.showSuccess(context, "Đã thêm '$name' vào giỏ hàng");
+                        }
+
+                        if (cart.hasConflictWith(restaurantId)) {
+                          final existingResName = cart.activeRestaurantName;
+                          SingleRestaurantWarningModal.show(
+                            context: context,
+                            existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
+                            newRestaurantName: storeName,
+                            onClearAndOrder: () {
+                              cart.clearCart();
+                              if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
+                                cart.registerRestaurant(id: restaurantId, name: storeName, address: storeAddress);
+                              }
+                              doAdd();
+                            },
+                          );
+                          return;
+                        }
+
+                        doAdd();
                       },
                       child: Container(
                         width: 28,
@@ -161,17 +195,19 @@ class RoutePickupFoodCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 12),
-                      const SizedBox(width: 2),
-                      Text(
-                        ratingStr,
-                        style: TextStyle(
-                          color: TColor.primaryTextOf(context),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+                      if (hasRating) ...[
+                        const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 12),
+                        const SizedBox(width: 2),
+                        Text(
+                          ratingNum.toStringAsFixed(1),
+                          style: TextStyle(
+                            color: TColor.primaryTextOf(context),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
+                        const SizedBox(width: 6),
+                      ],
                       Icon(Icons.storefront, size: 11, color: TColor.secondaryTextOf(context)),
                       const SizedBox(width: 2),
                       Expanded(

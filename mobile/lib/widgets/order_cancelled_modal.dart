@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/map_provider.dart';
 import '../common/color_extension.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../view/more/order_history_view.dart';
@@ -186,9 +188,12 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                             height: 46,
                             child: OutlinedButton(
                               onPressed: () {
+                                try {
+                                  context.read<MapProvider>().cancelStopoverOrder();
+                                } catch (_) {}
                                 Navigator.of(context).pushAndRemoveUntil(
                                   MaterialPageRoute(
-                                    builder: (_) => const MainTabView(initialTab: 0),
+                                    builder: (_) => const MainTabView(initialTab: 2),
                                   ),
                                   (route) => false,
                                 );
@@ -220,11 +225,19 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                             height: 46,
                             child: ElevatedButton(
                               onPressed: () {
+                                try {
+                                  context.read<MapProvider>().cancelStopoverOrder();
+                                } catch (_) {}
                                 Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => const MainTabView(initialTab: 2),
+                                  ),
+                                  (route) => false,
+                                );
+                                Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => const OrderHistoryView(),
                                   ),
-                                  (route) => route.isFirst,
                                 );
                               },
                               style: ElevatedButton.styleFrom(

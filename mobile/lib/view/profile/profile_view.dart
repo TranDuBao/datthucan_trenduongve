@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/globs.dart';
-import 'package:food_delivery/common/service_call.dart';
+import 'package:food_route/common/globs.dart';
+import 'package:food_route/common/service_call.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 

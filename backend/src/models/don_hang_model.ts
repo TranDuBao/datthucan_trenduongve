@@ -29,7 +29,7 @@ export class DonHangModel {
   @Column({ name: 'loaidonhang', length: 30, default: 'PRE_ORDER' })
   loaiDonHang: string;
 
-  @Column({ name: 'phuongthucthanhtoan', length: 50, default: 'COD' })
+  @Column({ name: 'phuongthucthanhtoan', length: 50, default: 'PAYOS' })
   phuongThucThanhToan: string;
 
   @Column({ name: 'lydohuy', type: 'text', nullable: true })

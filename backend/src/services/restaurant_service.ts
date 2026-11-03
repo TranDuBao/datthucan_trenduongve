@@ -28,6 +28,7 @@ export class RestaurantService {
         soLuotDanhGia: reviewCount,
         rate: avgRate,
         rating: reviewCount,
+        chuaCoDanhGia: reviewCount === 0,
       };
     });
   }
@@ -50,6 +51,7 @@ export class RestaurantService {
       soLuotDanhGia: reviewCount,
       rate: avgRate,
       rating: reviewCount,
+      chuaCoDanhGia: reviewCount === 0,
     };
   }
 
@@ -213,12 +215,9 @@ export class RestaurantService {
         items: catItems.map((i) => {
           const dbSold = soldMap.get(i.maMonAn) || 0;
           const totalSold = dbSold > 0 ? dbSold : 0;
-          const ratingInfo = dishRatingMap.get(i.maMonAn) || {
-            count: Number(i.soLuotDanhGia || 0),
-            avg: Number(i.diemDanhGiaTB || 0.0),
-          };
-          const actualRating = ratingInfo.count > 0 ? ratingInfo.avg : 0.0;
-          const actualRatingCount = ratingInfo.count;
+          const ratingInfo = dishRatingMap.get(i.maMonAn);
+          const actualRatingCount = ratingInfo ? Number(ratingInfo.count || 0) : 0;
+          const actualRating = actualRatingCount > 0 ? Number(ratingInfo?.avg || 0.0) : 0.0;
           return {
             id: i.maMonAn,
             maMonAn: i.maMonAn,
@@ -240,6 +239,7 @@ export class RestaurantService {
             ratingCount: actualRatingCount,
             soLuotDanhGia: actualRatingCount,
             soLuongDanhGia: actualRatingCount,
+            chuaCoDanhGia: actualRatingCount === 0,
             maQuan: cat.maQuan,
             lat: res?.lat ? Number(res.lat) : 10.762622,
             lng: res?.lng ? Number(res.lng) : 106.682029,
@@ -323,8 +323,10 @@ function removeVietnameseTones(str: string): string {
           soLuongMon: f.soLuongMon,
           image: this.getValidFoodImageUrl(f.img),
           img: this.getValidFoodImageUrl(f.img),
-          rating: Number(f.diemDanhGiaTB || 0.0),
-          diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+          rating: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+          diemDanhGiaTB: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+          soLuotDanhGia: Number(f.soLuotDanhGia || 0),
+          chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
           trangThaiMon: f.trangThaiMon || 'DANG_BAN',
         });
         matchingFoodsMap.set(f.maQuan, list);
@@ -356,8 +358,10 @@ function removeVietnameseTones(str: string): string {
               soLuongMon: f.soLuongMon,
               image: this.getValidFoodImageUrl(f.img),
               img: this.getValidFoodImageUrl(f.img),
-              rating: Number(f.diemDanhGiaTB || 0.0),
-              diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+              rating: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+              diemDanhGiaTB: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+              soLuotDanhGia: Number(f.soLuotDanhGia || 0),
+              chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
               trangThaiMon: f.trangThaiMon || 'DANG_BAN',
             });
             matchingFoodsMap.set(f.maQuan, list);
@@ -394,8 +398,10 @@ function removeVietnameseTones(str: string): string {
               soLuongMon: f.soLuongMon,
               image: this.getValidFoodImageUrl(f.img),
               img: this.getValidFoodImageUrl(f.img),
-              rating: Number(f.diemDanhGiaTB || 0.0),
-              diemDanhGiaTB: Number(f.diemDanhGiaTB || 0.0),
+              rating: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+              diemDanhGiaTB: Number(f.soLuotDanhGia || 0) > 0 ? Number(f.diemDanhGiaTB || 0.0) : 0.0,
+              soLuotDanhGia: Number(f.soLuotDanhGia || 0),
+              chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
               trangThaiMon: f.trangThaiMon || 'DANG_BAN',
             });
             matchingFoodsMap.set(f.maQuan, list);
@@ -563,10 +569,11 @@ function removeVietnameseTones(str: string): string {
         trangThaiMon: i.trangThaiMon || ((Number(i.soLuongMon) > 0) ? 'DANG_BAN' : 'HET_HANG'),
         image: this.getValidFoodImageUrl(i.img),
         img: this.getValidFoodImageUrl(i.img),
-        rating: Number(i.diemDanhGiaTB || 0.0),
-        diemDanhGiaTB: Number(i.diemDanhGiaTB || 0.0),
-        ratingCount: i.soLuotDanhGia || 0,
-        soLuotDanhGia: i.soLuotDanhGia || 0,
+        rating: Number(i.soLuotDanhGia || 0) > 0 ? Number(i.diemDanhGiaTB || 0.0) : 0.0,
+        diemDanhGiaTB: Number(i.soLuotDanhGia || 0) > 0 ? Number(i.diemDanhGiaTB || 0.0) : 0.0,
+        ratingCount: Number(i.soLuotDanhGia || 0),
+        soLuotDanhGia: Number(i.soLuotDanhGia || 0),
+        chuaCoDanhGia: Number(i.soLuotDanhGia || 0) === 0,
         maQuan: i.maQuan,
         lat: store?.lat ? Number(store.lat) : 10.762622,
         lng: store?.lng ? Number(store.lng) : 106.682029,

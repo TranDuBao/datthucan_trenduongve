@@ -147,6 +147,10 @@ class SocketService {
     subscribe('restaurant:profile_updated', onProfileUpdate);
   }
 
+  void listenToRatingUpdates(void Function(dynamic data) onRatingUpdate) {
+    subscribe('rating:updated', onRatingUpdate);
+  }
+
   void offNotifications([void Function(dynamic data)? listener]) {
     unsubscribe('notification:new', listener);
   }
@@ -170,15 +174,19 @@ class SocketService {
     unsubscribe('restaurant:profile_updated', listener);
   }
 
+  void offRatingUpdates([void Function(dynamic data)? listener]) {
+    unsubscribe('rating:updated', listener);
+  }
+
   void joinRestaurantRoom(int maQuan) {
     if (isConnected && maQuan > 0) {
-      _socket?.emit('room:join', {'roomType': 'restaurant', 'id': maQuan});
+      _socket?.emit('room:join', {'roomType': 'restaurant_public', 'id': maQuan});
     }
   }
 
   void leaveRestaurantRoom(int maQuan) {
     if (isConnected && maQuan > 0) {
-      _socket?.emit('room:leave', {'roomType': 'restaurant', 'id': maQuan});
+      _socket?.emit('room:leave', {'roomType': 'restaurant_public', 'id': maQuan});
     }
   }
 

@@ -20,6 +20,10 @@ export const REALTIME_EVENTS = {
   NOTIFICATION_NEW: 'notification:new',
   VOUCHER_UPDATED: 'voucher:updated',
   STORE_PROFILE_UPDATED: 'restaurant:profile_updated',
+  RATING_UPDATED: 'rating:updated',
+  REVIEW_CREATED: 'review:created',
+  REVIEW_UPDATED: 'review:updated',
+  REVIEW_VISIBILITY_CHANGED: 'review:visibility_changed',
 } as const;
 
 export interface RealtimeUserPayload {
@@ -124,14 +128,21 @@ export class RealtimeService {
       }
 
       // Client room join requests (strictly validated by server for ownership)
-      socket.on('room:join', async (data: { roomType: string; id: number }) => {
-        if (!data || !data.roomType || !data.id) return;
-        const roomId = Number(data.id);
+      socket.on('room:join', async (data: { roomType: string; id?: number }) => {
+        if (!data || !data.roomType) return;
+        const roomId = Number(data.id || 0);
         const userRole = String(user.role || '').toUpperCase();
         const subId = Number(user.sub);
 
         try {
-          if (data.roomType === 'restaurant') {
+          if (data.roomType === 'admin') {
+            if (userRole === 'ADMIN') {
+              socket.join('admin');
+              console.log(`[RealtimeService] [Info] Admin #${subId} joined room: admin`);
+            } else {
+              console.warn(`[RealtimeService] [Security] Non-admin user #${subId} (role: ${userRole}) denied joining admin room`);
+            }
+          } else if (data.roomType === 'restaurant') {
             if (userRole === 'ADMIN') {
               socket.join(`restaurant:${roomId}`);
             } else if (userRole === 'CUAN_HANG' || userRole === 'CUA_HANG') {
@@ -140,6 +151,9 @@ export class RealtimeService {
                 socket.join(`restaurant:${roomId}`);
               }
             }
+          } else if (data.roomType === 'restaurant_public' || data.roomType === 'restaurant_menu') {
+            // Public viewers for real-time rating & menu sync
+            socket.join(`restaurant_public:${roomId}`);
           } else if (data.roomType === 'order') {
             if (userRole === 'ADMIN') {
               socket.join(`order:${roomId}`);
@@ -200,6 +214,7 @@ export class RealtimeService {
         data,
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.ORDER_CREATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.ORDER_CREATED, payload);
       if (data.maKhachHang) {
         this.io.to(`customer:${data.maKhachHang}`).emit(REALTIME_EVENTS.ORDER_CREATED, payload);
       }
@@ -221,6 +236,7 @@ export class RealtimeService {
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.ORDER_STATUS_CHANGED, payload);
       this.io.to(`order:${orderId}`).emit(REALTIME_EVENTS.ORDER_STATUS_CHANGED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.ORDER_STATUS_CHANGED, payload);
       if (maKhachHang) {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.ORDER_STATUS_CHANGED, payload);
       }
@@ -239,6 +255,7 @@ export class RealtimeService {
         data,
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.RESERVATION_CREATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.RESERVATION_CREATED, payload);
       if (data.maKhachHang) {
         this.io.to(`customer:${data.maKhachHang}`).emit(REALTIME_EVENTS.RESERVATION_CREATED, payload);
       }
@@ -257,6 +274,7 @@ export class RealtimeService {
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.RESERVATION_STATUS_CHANGED, payload);
       this.io.to(`reservation:${reservationId}`).emit(REALTIME_EVENTS.RESERVATION_STATUS_CHANGED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.RESERVATION_STATUS_CHANGED, payload);
       if (maKhachHang) {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.RESERVATION_STATUS_CHANGED, payload);
       }
@@ -279,6 +297,7 @@ export class RealtimeService {
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.PAYMENT_CONFIRMED, payload);
       this.io.to(`order:${orderId}`).emit(REALTIME_EVENTS.PAYMENT_CONFIRMED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.PAYMENT_CONFIRMED, payload);
       if (maKhachHang) {
         this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.PAYMENT_CONFIRMED, payload);
       }
@@ -354,6 +373,47 @@ export class RealtimeService {
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.STORE_PROFILE_UPDATED, payload);
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (restaurant:profile_updated):', e);
+    }
+  }
+
+  public emitRatingUpdated(maQuan: number, payload: {
+    storeId: number;
+    dishIds: number[];
+    storeRating: number;
+    storeRatingCount: number;
+    dishRatings: Array<{ dishId: number; rating: number; count: number }>;
+    updatedAt: string;
+  }) {
+    if (!this.io) return;
+    try {
+      this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.RATING_UPDATED, payload);
+      this.io.to(`restaurant_public:${maQuan}`).emit(REALTIME_EVENTS.RATING_UPDATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.RATING_UPDATED, payload);
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (rating:updated):', e);
+    }
+  }
+
+  public emitReviewEvent(event: string, maQuan: number, payload: any) {
+    if (!this.io) return;
+    try {
+      this.io.to(`restaurant:${maQuan}`).emit(event, payload);
+      this.io.to(`restaurant_public:${maQuan}`).emit(event, payload);
+      this.io.to('admin').emit(event, payload);
+    } catch (e) {
+      console.error(`[RealtimeService] [Warn] Realtime emit error (${event}):`, e);
+    }
+  }
+
+  public emitAboutUsUpdated(data: any) {
+    if (!this.io) return;
+    try {
+      this.io.emit('about_us:updated', {
+        updatedAt: new Date().toISOString(),
+        data,
+      });
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (about_us:updated):', e);
     }
   }
 }

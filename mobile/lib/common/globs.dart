@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:food_delivery/main.dart';
+import 'package:food_route/main.dart';
 
 class Globs {
-  static const appName = "Food Delivery";
+  static const appName = "Food Route";
 
   static const userPayload = "user_payload";
   static const userLogin = "user_login";

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common/extension.dart';
-import 'package:food_delivery/common/globs.dart';
-import 'package:food_delivery/common_widget/auth_header_widget.dart';
-import 'package:food_delivery/common_widget/auth_textfield.dart';
-import 'package:food_delivery/view/login/rest_password_view.dart';
-import 'package:food_delivery/view/login/sing_up_view.dart';
-import 'package:food_delivery/view/on_boarding/on_boarding_view.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/extension.dart';
+import 'package:food_route/common/globs.dart';
+import 'package:food_route/common_widget/auth_header_widget.dart';
+import 'package:food_route/common_widget/auth_textfield.dart';
+import 'package:food_route/view/login/rest_password_view.dart';
+import 'package:food_route/view/login/sing_up_view.dart';
+import 'package:food_route/view/on_boarding/on_boarding_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 

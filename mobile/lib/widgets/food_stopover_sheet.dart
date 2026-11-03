@@ -9,6 +9,7 @@ import '../view/menu/restaurant_detail_view.dart';
 import '../view/menu/item_details_view.dart';
 import '../view/more/checkout_view.dart';
 import 'custom_toast.dart';
+import 'single_restaurant_warning_modal.dart';
 
 class FoodStopoverSheet extends StatefulWidget {
   final Map<String, dynamic> restaurant;
@@ -79,6 +80,16 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
     }
   }
 
+  int _getRestaurantId() {
+    final raw = widget.restaurant['maQuan'] ??
+        widget.restaurant['id'] ??
+        widget.restaurant['restaurantId'];
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw != null) return int.tryParse(raw.toString()) ?? 1;
+    return 1;
+  }
+
   void _openItemDetail(Map<String, dynamic> food) {
     Navigator.push(
       context,
@@ -88,9 +99,57 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
     );
   }
 
+  /// Thêm các món đã chọn vào giỏ, cập nhật MapProvider và chuyển sang Checkout
+  void _proceedToOrder(
+    BuildContext context,
+    int resId,
+    String storeName,
+    CartProvider cart,
+  ) {
+    final address = (widget.restaurant['diaChi'] ?? widget.restaurant['address'] ?? '').toString();
+    final provider = context.read<MapProvider>();
+
+    // Đăng ký quán vào giỏ hàng
+    cart.setRestaurant(id: resId, name: storeName, address: address);
+
+    // Thêm tất cả món đã tích chọn vào giỏ hàng
+    Map<String, dynamic>? firstFood;
+    for (final f in _foodsList) {
+      final fId = (f['id'] as num? ?? f['maMonAn'] as num? ?? 0).toInt();
+      if (_selectedFoodIds.contains(fId)) {
+        firstFood ??= f;
+        final fName = (f['name'] ?? f['tenMonAn'] ?? 'Món ngon').toString();
+        final fPrice = (f['price'] as num?)?.toDouble() ?? (f['giaMonAn'] as num?)?.toDouble() ?? 0.0;
+        final fImg = (f['image'] ?? f['img'] ?? '').toString();
+        final q = _quantities[fId] ?? 1;
+
+        cart.addToCart(CartItemModel(
+          foodId: fId,
+          foodName: fName,
+          price: fPrice,
+          quantity: q,
+          image: fImg,
+          restaurantId: resId,
+          restaurantName: storeName,
+          restaurantAddress: address,
+        ));
+      }
+    }
+
+    // Lưu quán ghé lấy vào MapProvider
+    provider.selectStopoverRestaurant(widget.restaurant, firstFood);
+
+    // Đóng sheet và chuyển sang màn hình Thanh Toán & Hẹn Giờ Lấy
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CheckoutView()),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<MapProvider>();
     final storeName = (widget.restaurant['tenQuan'] ?? widget.restaurant['name'] ?? 'Quán tiện đường').toString();
     final address = (widget.restaurant['diaChi'] ?? widget.restaurant['address'] ?? 'Địa chỉ trên lộ trình').toString();
     final int dist = (widget.restaurant['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
@@ -111,7 +170,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
+        color: Color(0xFFF8FAFC),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -129,7 +188,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFCBD5E1),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -144,7 +203,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                    color: const Color(0xFFFC6011).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.storefront_rounded, color: Color(0xFFFC6011), size: 24),
@@ -157,7 +216,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                       Text(
                         storeName,
                         style: GoogleFonts.outfit(
-                          color: Colors.white,
+                          color: const Color(0xFF0F172A),
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -167,7 +226,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                       const SizedBox(height: 2),
                       Text(
                         address,
-                        style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11),
+                        style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -179,13 +238,14 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                              color: const Color(0xFFECFDF5),
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
                             ),
                             child: Text(
                               dist > 0 ? 'Lệch tuyến ${dist}m' : 'Ngay trên tuyến',
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFF10B981),
+                                color: const Color(0xFF059669),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -194,13 +254,14 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
+                              color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Text(
                               'Chuẩn bị ~$prepTime phút',
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFFCBD5E1),
+                                color: const Color(0xFF64748B),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -221,7 +282,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                 Text(
                   'Món ăn tiện đường (${_foodsList.length})',
                   style: GoogleFonts.outfit(
-                    color: Colors.white,
+                    color: const Color(0xFF0F172A),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -262,13 +323,22 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: isChecked
-                          ? const Color(0xFFFC6011).withValues(alpha: 0.12)
-                          : const Color(0xFF0F172A),
+                          ? const Color(0xFFFFF7ED)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isChecked ? const Color(0xFFFC6011) : Colors.white12,
+                        color: isChecked ? const Color(0xFFFC6011) : const Color(0xFFE2E8F0),
                         width: isChecked ? 1.5 : 1.0,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isChecked
+                              ? const Color(0xFFFC6011).withValues(alpha: 0.06)
+                              : Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -277,6 +347,26 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                           onTap: isSoldOut
                               ? null
                               : () {
+                                  final resId = _getRestaurantId();
+                                  final cart = context.read<CartProvider>();
+                                  if (!isChecked && cart.hasConflictWith(resId)) {
+                                    final existingResName = cart.activeRestaurantName;
+                                    SingleRestaurantWarningModal.show(
+                                      context: context,
+                                      existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
+                                      newRestaurantName: storeName,
+                                      onClearAndOrder: () {
+                                        cart.clearCart();
+                                        setState(() {
+                                          _selectedFoodIds.add(fId);
+                                          if (!_quantities.containsKey(fId)) {
+                                            _quantities[fId] = 1;
+                                          }
+                                        });
+                                      },
+                                    );
+                                    return;
+                                  }
                                   setState(() {
                                     if (isChecked) {
                                       _selectedFoodIds.remove(fId);
@@ -292,12 +382,12 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: isChecked ? const Color(0xFFFC6011) : Colors.transparent,
+                              color: isChecked ? const Color(0xFFFC6011) : Colors.white,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: isChecked
                                     ? const Color(0xFFFC6011)
-                                    : (isSoldOut ? Colors.white24 : Colors.white60),
+                                    : (isSoldOut ? const Color(0xFFCBD5E1) : const Color(0xFF94A3B8)),
                                 width: 1.8,
                               ),
                             ),
@@ -311,31 +401,15 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                         // 2. Hình ảnh món (Click để xem chi tiết)
                         GestureDetector(
                           onTap: () => _openItemDetail(food),
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: SmartNetworkImage(
-                                  imageUrl: fImg,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                  placeholderIcon: Icons.fastfood_rounded,
-                                ),
-                              ),
-                              Positioned(
-                                right: 2,
-                                bottom: 2,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 10),
-                                ),
-                              ),
-                            ],
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SmartNetworkImage(
+                              imageUrl: fImg,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              placeholderIcon: Icons.fastfood_rounded,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -353,7 +427,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                       child: Text(
                                         fName,
                                         style: GoogleFonts.outfit(
-                                          color: isSoldOut ? const Color(0xFF94A3B8) : Colors.white,
+                                          color: isSoldOut ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w700,
                                           decoration: isSoldOut ? TextDecoration.lineThrough : null,
@@ -363,7 +437,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 16),
+                                    const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 16),
                                   ],
                                 ),
                                 const SizedBox(height: 2),
@@ -381,7 +455,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                     Text(
                                       isSoldOut ? 'Hết hàng' : 'Còn $stock',
                                       style: GoogleFonts.outfit(
-                                        color: isSoldOut ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                                        color: isSoldOut ? const Color(0xFFEF4444) : const Color(0xFF059669),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -398,8 +472,9 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                           const SizedBox(width: 6),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white10,
+                              color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -416,13 +491,13 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                   },
                                   child: const Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    child: Icon(Icons.remove_rounded, color: Colors.white, size: 14),
+                                    child: Icon(Icons.remove_rounded, color: Color(0xFF475569), size: 14),
                                   ),
                                 ),
                                 Text(
                                   '$quantity',
                                   style: GoogleFonts.outfit(
-                                    color: Colors.white,
+                                    color: const Color(0xFF0F172A),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -439,7 +514,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                   },
                                   child: const Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    child: Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                                    child: Icon(Icons.add_rounded, color: Color(0xFF475569), size: 14),
                                   ),
                                 ),
                               ],
@@ -463,7 +538,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                   children: [
                     Text(
                       'Đã chọn $totalCount món:',
-                      style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       "${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
@@ -479,7 +554,8 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 13),
-                      side: const BorderSide(color: Colors.white24),
+                      backgroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     onPressed: () {
@@ -493,7 +569,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                     },
                     child: Text(
                       'Xem Menu Quán',
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.outfit(color: const Color(0xFF334155), fontSize: 12.5, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -506,6 +582,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 2,
+                      shadowColor: const Color(0xFFFC6011).withValues(alpha: 0.35),
                     ),
                     onPressed: () {
                       if (_selectedFoodIds.isEmpty) {
@@ -513,49 +590,28 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                         return;
                       }
 
-                      final resId = (widget.restaurant['maQuan'] as num? ?? 1).toInt();
+                      final resId = _getRestaurantId();
                       final cart = context.read<CartProvider>();
+                      final storeName = (widget.restaurant['tenQuan'] ?? widget.restaurant['name'] ?? 'Quán tiện đường').toString();
 
-                      // Cập nhật quán cho giỏ hàng
-                      cart.setRestaurant(
-                        id: resId,
-                        name: storeName,
-                        address: address,
-                      );
+                      // ── Kiểm tra đơn quán: chỉ được đặt 1 quán cùng lúc ──
+                      if (cart.hasConflictWith(resId)) {
+                        final existingResName = cart.activeRestaurantName;
 
-                      // Thêm tất cả món đã tích chọn vào giỏ hàng
-                      Map<String, dynamic>? firstFood;
-                      for (final f in _foodsList) {
-                        final fId = (f['id'] as num? ?? f['maMonAn'] as num? ?? 0).toInt();
-                        if (_selectedFoodIds.contains(fId)) {
-                          firstFood ??= f;
-                          final fName = (f['name'] ?? f['tenMonAn'] ?? 'Món ngon').toString();
-                          final fPrice = (f['price'] as num?)?.toDouble() ?? (f['giaMonAn'] as num?)?.toDouble() ?? 0.0;
-                          final fImg = (f['image'] ?? f['img'] ?? '').toString();
-                          final q = _quantities[fId] ?? 1;
-
-                          cart.addToCart(CartItemModel(
-                            foodId: fId,
-                            foodName: fName,
-                            price: fPrice,
-                            quantity: q,
-                            image: fImg,
-                            restaurantId: resId,
-                          ));
-                        }
+                        SingleRestaurantWarningModal.show(
+                          context: context,
+                          existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
+                          newRestaurantName: storeName,
+                          onClearAndOrder: () {
+                            // Xóa giỏ cũ và tiến hành đặt quán mới
+                            cart.clearCart();
+                            _proceedToOrder(context, resId, storeName, cart);
+                          },
+                        );
+                        return;
                       }
 
-                      // Lưu quán ghé lấy vào MapProvider
-                      provider.selectStopoverRestaurant(widget.restaurant, firstFood);
-
-                      // Đóng sheet và chuyển thẳng sang màn hình Thanh Toán & Hẹn Giờ Lấy
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CheckoutView(),
-                        ),
-                      );
+                      _proceedToOrder(context, resId, storeName, cart);
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,

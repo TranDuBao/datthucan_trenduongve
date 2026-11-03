@@ -39,3 +39,18 @@ Thumbs.db
 # Temporary & Local files
 tmp/
 temp/
+
+audit/
+backups/
+*.bak
+*.backup
+mobile/assets/img/*_backup.*
+
+# Uploaded media (runtime user/merchant content)
+uploads/*
+!uploads/.gitkeep
+
+# Android Keystores & Credentials
+*.keystore
+*.jks
+key.properties

@@ -9,6 +9,8 @@ import '../common/globs.dart';
 import '../common/locator.dart';
 import '../services/order_service.dart';
 import '../services/socket_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/map_provider.dart';
 import 'custom_toast.dart';
 import 'order_cancelled_modal.dart';
 
@@ -158,6 +160,10 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           'order:status_changed', _onSocketOrderStatusChanged);
     } catch (_) {}
 
+    try {
+      context.read<MapProvider>().cancelStopoverOrder();
+    } catch (_) {}
+
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -236,32 +242,199 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
   Future<void> _handleCancelOrder() async {
     if (_isSuccess || _isCancelling) return;
 
+    final formattedAmount = totalAmount.toInt().toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
+
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hủy đơn hàng?',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
-        content: Text(
-          'Bạn chưa thanh toán cho đơn #DH-$orderId.\nNếu đóng, đơn hàng sẽ bị hủy.',
-          style: const TextStyle(fontSize: 14),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.55),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Nut dong (x) goc phai
+              Align(
+                alignment: Alignment.topRight,
+                child: InkWell(
+                  onTap: () => Navigator.pop(ctx, false),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3F4F6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Icon canh bao hinh tron cam nhat kem badge cham than do
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFF3E6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 36,
+                        color: Color(0xFFFF5722),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Tieu de
+              const Text(
+                'Hủy đơn hàng?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Mo ta chi tiet don hang
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: Color(0xFF6B7280),
+                  ),
+                  children: [
+                    const TextSpan(text: 'Đơn hàng '),
+                    TextSpan(
+                      text: '#DH-$orderId',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    TextSpan(
+                      text: totalAmount > 0
+                          ? ' ($formattedAmountđ) sẽ bị hủy và không thể khôi phục.'
+                          : ' sẽ bị hủy và không thể khôi phục.',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Nut Tiep tuc thanh toan (cam noi bat)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5722),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.credit_card_outlined,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Tiếp tục thanh toán',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Nut Xac nhan huy (xam nhe)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF3F4F6),
+                    foregroundColor: const Color(0xFF6B7280),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'Xác nhận hủy',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5A6275),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Tiếp tục thanh toán',
-                style: TextStyle(color: TColor.primary, fontWeight: FontWeight.w700)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hủy đơn',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
       ),
     );
-
     if (confirmed != true || !mounted) return;
 
     setState(() => _isCancelling = true);
@@ -278,6 +451,12 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
 
     try {
       await OrderService.cancelOrder(orderId);
+    } catch (_) {}
+
+    try {
+      if (mounted) {
+        context.read<MapProvider>().cancelStopoverOrder();
+      }
     } catch (_) {}
 
     if (mounted) {
@@ -344,18 +523,26 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           (m) => '${m[1]}.',
         );
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: media.height * 0.88),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: TColor.cardOf(context),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && !_isCancelling && !_isSuccess) {
+          _handleCancelOrder();
+        }
+      },
+      child: Container(
+        constraints: BoxConstraints(maxHeight: media.height * 0.88),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: TColor.cardOf(context),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
         ),
-      ),
-      child: SingleChildScrollView(
-        child: _buildQrPaymentView(context, media, formattedAmount),
+        child: SingleChildScrollView(
+          child: _buildQrPaymentView(context, media, formattedAmount),
+        ),
       ),
     );
   }

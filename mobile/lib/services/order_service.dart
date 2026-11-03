@@ -12,6 +12,8 @@ class CartItemModel {
   int quantity;
   final String image;
   final int restaurantId;
+  final String restaurantName;
+  final String restaurantAddress;
 
   CartItemModel({
     required this.foodId,
@@ -20,6 +22,8 @@ class CartItemModel {
     this.quantity = 1,
     required this.image,
     required this.restaurantId,
+    this.restaurantName = '',
+    this.restaurantAddress = '',
   });
 
   Map<String, dynamic> toJson() {
@@ -48,6 +52,7 @@ class OrderServiceModel {
   final String? refundStatus;
   final double? refundAmount;
   final List<dynamic> items;
+  final String paymentMethod;
 
   OrderServiceModel({
     required this.orderId,
@@ -65,6 +70,7 @@ class OrderServiceModel {
     this.refundStatus,
     this.refundAmount,
     this.items = const [],
+    this.paymentMethod = 'PAYOS',
   });
 
   factory OrderServiceModel.fromJson(Map<String, dynamic> json) {
@@ -84,6 +90,7 @@ class OrderServiceModel {
       refundStatus: json['refundStatus'] ?? json['refund']?['trangThaiHoanTien'],
       refundAmount: (json['refundAmount'] ?? json['refund']?['soTienHoan'] as num?)?.toDouble(),
       items: json['items'] ?? json['chiTietDonHang'] ?? [],
+      paymentMethod: (json['phuongThucThanhToan'] ?? json['paymentMethod'] ?? json['payment']?['phuongThucThanhToan'] ?? 'PAYOS').toString(),
     );
   }
 }

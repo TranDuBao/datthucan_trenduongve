@@ -31,7 +31,6 @@ class _CheckoutMessageViewState extends State<CheckoutMessageView> {
     final pickupTimeRaw = widget.orderData?['pickupTime'] ?? widget.orderData?['thoiGianHenNhan'] ?? '';
     final totalAmount = (widget.orderData?['tongTien'] ?? widget.orderData?['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final statusRaw = (widget.orderData?['status'] ?? widget.orderData?['trangThai'] ?? 'PENDING').toString();
-    final paymentMethod = (widget.orderData?['phuongThucThanhToan'] ?? 'COD').toString();
 
     final items = (widget.orderData?['items'] as List?) ?? [];
 
@@ -54,9 +53,11 @@ class _CheckoutMessageViewState extends State<CheckoutMessageView> {
       statusText = 'Chờ ghé lấy';
     }
 
-    final isPaid = widget.orderData?['payment']?['trangThai'] == 'DA_THANH_TOAN' || paymentMethod.toUpperCase() == 'COD';
+    final isPaid = widget.orderData?['payment']?['trangThai'] == 'DA_THANH_TOAN' ||
+        widget.orderData?['trangThai'] == 'CHO_XAC_NHAN' ||
+        widget.orderData?['trangThai'] == 'DA_XAC_NHAN';
     final paymentStatusText = isPaid
-        ? (paymentMethod.toUpperCase() == 'COD' ? 'Thanh toán tiền mặt khi lấy' : 'Đã thanh toán Online')
+        ? 'Đã thanh toán Online (VietQR)'
         : 'Chờ thanh toán';
 
     return Container(

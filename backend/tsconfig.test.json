@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist-test",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/config/**/*",
+    "src/controllers/**/*",
+    "src/middlewares/**/*",
+    "src/models/**/*",
+    "src/routes/**/*",
+    "src/services/**/*",
+    "src/test/**/*",
+    "src/app.ts",
+    "src/server.ts"
+  ]
+}

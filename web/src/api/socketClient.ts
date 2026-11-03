@@ -54,6 +54,19 @@ export const leaveRestaurantRoom = (maQuan: number) => {
   }
 };
 
+export const joinAdminRoom = () => {
+  const s = getSocket();
+  if (s) {
+    s.emit('room:join', { roomType: 'admin' });
+  }
+};
+
+export const leaveAdminRoom = () => {
+  if (socket) {
+    socket.emit('room:leave', { roomType: 'admin' });
+  }
+};
+
 export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();

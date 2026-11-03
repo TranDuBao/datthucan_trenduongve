@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common_widget/round_button.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common_widget/round_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
@@ -10,6 +10,7 @@ import '../../widgets/custom_date_picker_sheet.dart';
 import '../../widgets/custom_time_picker_sheet.dart';
 import '../../common_widget/smart_network_image.dart';
 import 'checkout_view.dart';
+import '../../widgets/single_restaurant_warning_modal.dart';
 
 
 class MyOrderView extends StatefulWidget {
@@ -464,6 +465,21 @@ class _MyOrderViewState extends State<MyOrderView> {
                           return;
                         }
 
+                        if (cart.restaurantIds.length > 1) {
+                          final firstResName = cart.restaurantName(cart.restaurantIds.first);
+                          final secondResName = cart.restaurantName(cart.restaurantIds[1]);
+                          SingleRestaurantWarningModal.show(
+                            context: context,
+                            existingRestaurantName: firstResName,
+                            newRestaurantName: secondResName,
+                            onClearAndOrder: () {
+                              // Giữ lại quán thứ hai, xoá quán đầu
+                              cart.clearRestaurant(cart.restaurantIds.first);
+                            },
+                          );
+                          return;
+                        }
+
                         if (!cart.isPickupTimeValid()) {
                           CustomToast.showError(context,
                               "Thời gian hẹn lấy phải cách hiện tại ít nhất 5 phút!");
@@ -544,7 +560,10 @@ class _MyOrderViewState extends State<MyOrderView> {
     return Column(
       children: restaurantIds.map((resId) {
         final resItems = cart.itemsForRestaurant(resId);
-        final resName = cart.restaurantName(resId);
+        String resName = cart.restaurantName(resId);
+        if (resName.startsWith('Quán ') && resItems.any((i) => i.restaurantName.isNotEmpty && !i.restaurantName.startsWith('Quán '))) {
+          resName = resItems.firstWhere((i) => i.restaurantName.isNotEmpty && !i.restaurantName.startsWith('Quán ')).restaurantName;
+        }
         final resSubTotal = cart.subTotalForRestaurant(resId);
 
         return Container(

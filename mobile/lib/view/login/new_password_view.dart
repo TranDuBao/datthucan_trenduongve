@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common/extension.dart';
-import 'package:food_delivery/common_widget/auth_header_widget.dart';
-import 'package:food_delivery/common_widget/auth_textfield.dart';
-import 'package:food_delivery/view/login/login_view.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/extension.dart';
+import 'package:food_route/common_widget/auth_header_widget.dart';
+import 'package:food_route/common_widget/auth_textfield.dart';
+import 'package:food_route/view/login/login_view.dart';
 import '../../common/globs.dart';
 import '../../common/service_call.dart';
 

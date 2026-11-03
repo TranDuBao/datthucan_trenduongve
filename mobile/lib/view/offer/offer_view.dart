@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
-import 'package:food_delivery/providers/language_provider.dart';
+import 'package:food_route/providers/language_provider.dart';
 import '../more/my_order_view.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../menu/restaurant_detail_view.dart';

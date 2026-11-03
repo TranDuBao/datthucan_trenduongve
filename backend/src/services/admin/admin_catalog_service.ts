@@ -135,9 +135,14 @@ export class AdminCatalogService {
 
     const enrichedItems = items.map((f) => {
       const cat = categories.find((c) => Number(c.maDanhMuc) === Number(f.maDanhMuc));
+      const count = Number(f.soLuotDanhGia || 0);
+      const isUnrated = count === 0;
       return {
         ...f,
         tenDanhMuc: cat ? cat.tenDanhMuc : null,
+        diemDanhGiaTB: isUnrated ? 0 : Number(f.diemDanhGiaTB || 0),
+        soLuotDanhGia: count,
+        chuaCoDanhGia: isUnrated,
       };
     });
 

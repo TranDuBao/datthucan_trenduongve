@@ -454,26 +454,38 @@ export class RestaurantMgmtService {
     const storeObj = await this.storeRepo.findOne({ where: { maQuan } });
     const storeAvg = Number(storeObj?.danhGiaTrungBinh || 0.0);
 
-    const menuWithRatings = await Promise.all(
-      items.map(async (f) => {
-        const dishRatings = await danhGiaMonRepo.find({ where: { maMon: f.maMonAn } });
-        let score = 0.0;
-        let reviewCount = 0;
-        if (dishRatings.length > 0) {
-          const sum = dishRatings.reduce((acc, r) => acc + Number(r.soLuongSao || 0), 0);
-          score = Math.round((sum / dishRatings.length) * 10) / 10;
-          reviewCount = dishRatings.length;
-        }
+    // Tối ưu N+1: Lấy toàn bộ đánh giá của tất cả món ăn trong một query duy nhất dùng In(dishIds)
+    const dishIds = items.map((f) => f.maMonAn);
+    const allDishRatings = dishIds.length > 0
+      ? await danhGiaMonRepo.find({ where: { maMon: In(dishIds) } })
+      : [];
 
-        return {
-          ...f,
-          image: f.img,
-          diemDanhGiaTB: score,
-          soLuotDanhGia: reviewCount,
-          tenDanhMuc: f.maDanhMuc ? catMap.get(f.maDanhMuc) || `Danh mục #${f.maDanhMuc}` : 'Chưa phân loại',
-        };
-      })
-    );
+    const ratingsByDish = new Map<number, DanhGiaMonModel[]>();
+    for (const dr of allDishRatings) {
+      const list = ratingsByDish.get(dr.maMon) || [];
+      list.push(dr);
+      ratingsByDish.set(dr.maMon, list);
+    }
+
+    const menuWithRatings = items.map((f) => {
+      const dishRatings = ratingsByDish.get(f.maMonAn) || [];
+      let score = 0.0;
+      let reviewCount = 0;
+      if (dishRatings.length > 0) {
+        const sum = dishRatings.reduce((acc, r) => acc + Number(r.soLuongSao || 0), 0);
+        score = Math.round((sum / dishRatings.length) * 10) / 10;
+        reviewCount = dishRatings.length;
+      }
+
+      return {
+        ...f,
+        image: f.img,
+        diemDanhGiaTB: score,
+        soLuotDanhGia: reviewCount,
+        chuaCoDanhGia: reviewCount === 0,
+        tenDanhMuc: f.maDanhMuc ? catMap.get(f.maDanhMuc) || `Danh mục #${f.maDanhMuc}` : 'Chưa phân loại',
+      };
+    });
 
     return menuWithRatings;
   }
@@ -545,40 +557,25 @@ export class RestaurantMgmtService {
     let totalReviews = 0;
 
     try {
-      // Direct query from dish reviews (danhgia_mon joined with monan)
-      const dishReviewAgg = await AppDataSource.query(`
+      // Direct query from real reviews (danhgia where is_hidden is not true)
+      const storeReviewAgg = await AppDataSource.query(`
         SELECT 
-          ROUND(AVG(dm.soluongsao)::numeric, 1) as avg_score,
-          COUNT(dm.madanhgiamon) as total_reviews
-        FROM danhgia_mon dm
-        JOIN monan m ON dm.mamon = m.mamonan
-        WHERE m.maquan = $1
+          ROUND(AVG(soluongsao)::numeric, 1) as avg_score,
+          COUNT(madanhgia) as total_reviews
+        FROM danhgia
+        WHERE maquan = $1 AND (is_hidden IS NOT TRUE OR is_hidden IS NULL)
       `, [actualStoreId]);
 
-      if (dishReviewAgg && dishReviewAgg[0] && Number(dishReviewAgg[0].total_reviews) > 0) {
-        avgRating = Number(dishReviewAgg[0].avg_score) || 0;
-        totalReviews = Number(dishReviewAgg[0].total_reviews) || 0;
+      if (storeReviewAgg && storeReviewAgg[0] && Number(storeReviewAgg[0].total_reviews) > 0) {
+        avgRating = Number(storeReviewAgg[0].avg_score) || 0;
+        totalReviews = Number(storeReviewAgg[0].total_reviews) || 0;
       } else {
-        // Fallback: check average diemDanhGiaTB across all dishes of this restaurant
-        const dishScoreAgg = await this.foodRepo
-          .createQueryBuilder('m')
-          .select('ROUND(AVG(m.diemdanhgiatb)::numeric, 1)', 'avgScore')
-          .addSelect('SUM(m.soluotdanhgia)', 'totalReviews')
-          .where('m.maquan = :maQuan', { maQuan: actualStoreId })
-          .andWhere('m.diemdanhgiatb > 0')
-          .getRawOne();
-
-        if (dishScoreAgg && Number(dishScoreAgg.avgScore) > 0) {
-          avgRating = Number(dishScoreAgg.avgScore) || 0;
-          totalReviews = Number(dishScoreAgg.totalReviews) || 0;
-        } else if (store.danhGiaTrungBinh && Number(store.danhGiaTrungBinh) > 0) {
-          avgRating = Number(Number(store.danhGiaTrungBinh).toFixed(1)) || 0;
-          totalReviews = Number(store.soLuongDanhGia) || 0;
-        }
+        avgRating = 0;
+        totalReviews = 0;
       }
     } catch (e) {
-      avgRating = Number(store.danhGiaTrungBinh || 0);
-      totalReviews = Number(store.soLuongDanhGia || 0);
+      avgRating = 0;
+      totalReviews = 0;
     }
 
     return {

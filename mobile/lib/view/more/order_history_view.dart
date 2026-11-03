@@ -13,6 +13,7 @@ import 'order_detail_sheet.dart';
 import 'order_history_cards.dart';
 import 'order_history_widgets.dart';
 import 'order_review_view.dart';
+import '../main_tabview/main_tabview.dart';
 import '../../widgets/order_cancelled_modal.dart';
 
 class OrderHistoryView extends StatefulWidget {
@@ -213,9 +214,11 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
         try {
           final mapProvider = Provider.of<MapProvider>(context, listen: false);
           if (mapProvider.activeStopoverOrder != null) {
-            final activeId = mapProvider.activeStopoverOrder!['id'] ?? mapProvider.activeStopoverOrder!['maDonHang'];
+            final activeId = mapProvider.activeStopoverOrder!['id'] ??
+                mapProvider.activeStopoverOrder!['maDonHang'] ??
+                mapProvider.activeStopoverOrder!['orderId'];
             if (activeId != null && activeId.toString() == order.orderId.toString()) {
-              mapProvider.clearActiveStopoverOrder();
+              mapProvider.cancelStopoverOrder();
             }
           }
         } catch (_) {}
@@ -252,24 +255,45 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     context.watch<LanguageProvider>(); // rebuild on locale change
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF12141C) : const Color(0xFFF9FAFB),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
+    void handleBack() {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
+          (route) => false,
+        );
+      }
+    }
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  OrderHistoryRoundIconButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.pop(context),
-                    isDark: isDark,
-                  ),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? const Color(0xFF12141C) : const Color(0xFFF9FAFB),
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    OrderHistoryRoundIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      onTap: handleBack,
+                      isDark: isDark,
+                    ),
                   Text(
                     'Đơn hàng của tôi',
                     style: TextStyle(
@@ -391,6 +415,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

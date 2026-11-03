@@ -55,7 +55,7 @@ export const requireStoreOwner = async (
 
   try {
     const storeRepo = AppDataSource.getRepository(CuaHangModel);
-    const explicitStoreId = req.query.maQuan || req.body.maQuan;
+    const explicitStoreId = (req as any).query?.maQuan || (req as any).body?.maQuan;
 
     // Find store linked to this user's account ID (req.user.sub)
     const store = await storeRepo.findOne({

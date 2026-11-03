@@ -574,7 +574,7 @@ class _OptimizedMapWidget extends StatelessWidget {
 
       final matchedFoods = (res['matchedFoods'] as List?) ?? [];
       final primaryFood = res['primaryFood'] ?? (matchedFoods.isNotEmpty ? matchedFoods[0] : null);
-      final String labelName = primaryFood != null ? (primaryFood['name'] ?? primaryFood['tenMonAn'] ?? storeName).toString() : storeName;
+      final String labelName = storeName;
 
       final bool isStopover = selectedStopoverStore != null && selectedStopoverStore['maQuan'] == res['maQuan'];
 
@@ -616,7 +616,7 @@ class _OptimizedMapWidget extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isStopover ? Icons.star_rounded : (primaryFood != null ? Icons.ramen_dining_rounded : Icons.storefront_rounded),
+                          isStopover ? Icons.star_rounded : Icons.storefront_rounded,
                           color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
                           size: 13,
                         ),

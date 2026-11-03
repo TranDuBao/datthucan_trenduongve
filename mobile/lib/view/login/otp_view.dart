@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common/extension.dart';
-import 'package:food_delivery/common_widget/auth_header_widget.dart';
-import 'package:food_delivery/view/login/new_password_view.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/extension.dart';
+import 'package:food_route/common_widget/auth_header_widget.dart';
+import 'package:food_route/view/login/new_password_view.dart';
 import 'package:otp_pin_field/otp_pin_field.dart';
 
 import '../../common/globs.dart';

@@ -3,6 +3,7 @@ import { Star, MessageSquare, Search, Filter, CheckCircle2, AlertCircle } from '
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../api/apiClient';
 import { getImageUrl, handleImageError } from '../../utils/imageUtils';
+import { getSocket } from '../../api/socketClient';
 
 interface Review {
   maDanhGia: number;
@@ -58,6 +59,26 @@ export const RestaurantReviews: React.FC = () => {
 
   useEffect(() => {
     fetchReviews();
+
+    const socket = getSocket();
+    if (socket) {
+      const handleRealtimeReview = () => {
+        fetchReviews();
+      };
+      socket.on('review:created', handleRealtimeReview);
+      socket.on('review:updated', handleRealtimeReview);
+      socket.on('review:replied', handleRealtimeReview);
+      socket.on('review:visibility_changed', handleRealtimeReview);
+      socket.on('rating:updated', handleRealtimeReview);
+
+      return () => {
+        socket.off('review:created', handleRealtimeReview);
+        socket.off('review:updated', handleRealtimeReview);
+        socket.off('review:replied', handleRealtimeReview);
+        socket.off('review:visibility_changed', handleRealtimeReview);
+        socket.off('rating:updated', handleRealtimeReview);
+      };
+    }
   }, [token]);
 
   const handleSendReply = async (reviewId: number) => {

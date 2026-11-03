@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:food_delivery/common/color_extension.dart';
-import 'package:food_delivery/common_widget/tab_button.dart';
+import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common_widget/tab_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/user_role_helper.dart';

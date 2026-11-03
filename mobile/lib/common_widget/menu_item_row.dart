@@ -25,6 +25,8 @@ class MenuItemRow extends StatelessWidget {
 
     final rateVal = (mObj["rate"] ?? mObj["diemDanhGiaTB"] ?? mObj["diemDanhGia"] ?? mObj["rating"] ?? 0.0).toString();
     final double ratingNum = double.tryParse(rateVal) ?? 0.0;
+    final int ratingCount = int.tryParse((mObj["soLuotDanhGia"] ?? mObj["ratingCount"] ?? 0).toString()) ?? 0;
+    final bool hasRating = ratingNum > 0 && ratingCount > 0 && mObj["chuaCoDanhGia"] != true;
 
     final storeName = mObj["type"]?.toString() ?? mObj["tenQuan"]?.toString() ?? "Nhà hàng tuyển chọn";
     
@@ -105,7 +107,7 @@ class MenuItemRow extends StatelessWidget {
                           ),
                         ),
                       )
-                    else if (!isSoldOut)
+                    else if (!isSoldOut && hasRating)
                       // Rating Badge
                       Positioned(
                         top: 6,
@@ -122,7 +124,7 @@ class MenuItemRow extends StatelessWidget {
                               const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
                               const SizedBox(width: 2),
                               Text(
-                                (ratingNum > 0 ? ratingNum : 5.0).toStringAsFixed(1),
+                                ratingNum.toStringAsFixed(1),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,

@@ -82,14 +82,14 @@ export class OrderService {
     }
 
     // BIZ-03 Hardening: Prevent online bank transfer if store has not configured receiving bank account
-    const requestedPaymentMethod = (dto.phuongThucThanhToan || 'COD').toUpperCase().trim();
+    const requestedPaymentMethod = (dto.phuongThucThanhToan || 'PAYOS').toUpperCase().trim();
     const isOnlinePayment = requestedPaymentMethod === 'PAYOS' || requestedPaymentMethod === 'VIETQR';
     if (isOnlinePayment) {
       const bankId = (store.tenNganHang || '').trim();
       const accountNo = (store.soTaiKhoanNganHang || '').trim();
       if (!bankId || !accountNo) {
         throw new Error(
-          `Nhà hàng "${store.tenQuan}" chưa thiết lập tài khoản ngân hàng nhận tiền. Vui lòng chọn phương thức thanh toán khi nhận hàng (COD).`
+          `Nhà hàng "${store.tenQuan}" chưa thiết lập tài khoản ngân hàng nhận tiền. Vui lòng liên hệ nhà hàng để cập nhật thông tin nhận tiền.`
         );
       }
     }
@@ -202,8 +202,26 @@ export class OrderService {
 
       await manager.save(thanhToan);
 
-      // Trừ số lượng món ăn (soLuongMon) có khóa ghi pessimistic_write
+      // Gom số lượng cần trừ theo maMonAn và sắp xếp tăng dần theo ID để loại trừ hoàn toàn nguy cơ Deadlock giữa các transaction
+      const itemQtyMap = new Map<number, { maMonAn: number; tenMonAn: string; totalQty: number }>();
       for (const item of validatedItems) {
+        const existing = itemQtyMap.get(item.maMonAn);
+        if (existing) {
+          existing.totalQty += item.soLuong;
+        } else {
+          itemQtyMap.set(item.maMonAn, {
+            maMonAn: item.maMonAn,
+            tenMonAn: item.tenMonAn,
+            totalQty: item.soLuong,
+          });
+        }
+      }
+
+      // Sắp xếp ID món tăng dần trước khi lock (pessimistic_write) trong cùng một transaction
+      const sortedItemsForLock = Array.from(itemQtyMap.values()).sort((a, b) => a.maMonAn - b.maMonAn);
+
+      // Trừ số lượng món ăn (soLuongMon) có khóa ghi pessimistic_write theo thứ tự ID đã sắp xếp
+      for (const item of sortedItemsForLock) {
         const dbFood = await manager.findOne(MonAnModel, {
           where: { maMonAn: item.maMonAn },
           lock: { mode: 'pessimistic_write' },
@@ -211,10 +229,10 @@ export class OrderService {
 
         if (dbFood) {
           const currentStock = dbFood.soLuongMon !== null && dbFood.soLuongMon !== undefined ? Number(dbFood.soLuongMon) : 100;
-          if (currentStock < item.soLuong) {
-            throw new Error(`Món ăn "${dbFood.tenMonAn}" chỉ còn ${currentStock} phần, không đủ số lượng đặt (${item.soLuong})`);
+          if (currentStock < item.totalQty) {
+            throw new Error(`Món ăn "${dbFood.tenMonAn}" chỉ còn ${currentStock} phần, không đủ số lượng đặt (${item.totalQty})`);
           }
-          const newStock = Math.max(0, currentStock - item.soLuong);
+          const newStock = Math.max(0, currentStock - item.totalQty);
           dbFood.soLuongMon = newStock;
           if (newStock === 0) {
             dbFood.trangThaiMon = 'HET_HANG';

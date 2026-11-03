@@ -284,7 +284,7 @@ class _OwnerOrderDetailSheetState extends State<OwnerOrderDetailSheet> {
                       style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
                     ),
                     Text(
-                      pMethod == 'TIEN_MAT' ? 'Tiền mặt khi nhận' : pMethod,
+                      (pMethod == 'TIEN_MAT' || pMethod == 'COD' || pMethod == 'PAYOS' || pMethod == 'VIETQR') ? 'VietQR / PayOS' : pMethod,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

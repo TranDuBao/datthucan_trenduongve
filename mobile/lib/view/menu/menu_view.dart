@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
-import 'package:food_delivery/providers/language_provider.dart';
+import 'package:food_route/providers/language_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../services/category_service.dart';

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { apiFetch } from '../../api/apiClient';
+import { getSocket, joinAdminRoom } from '../../api/socketClient';
 import {
   Users,
   Store,
@@ -80,9 +81,16 @@ export const AdminDashboard: React.FC = () => {
   // Hovered Chart Bar State for Tooltip
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
-  useEffect(() => {
+  const currentPageRef = useRef<number>(1);
+  currentPageRef.current = tablePagination.page;
+
+  const fetchDashboardStats = (targetPage: number = 1, silent: boolean = false) => {
     const requestId = ++latestRequestIdRef.current;
-    apiFetch<any>('/admin/stats?page=1&limit=10')
+    if (!silent) {
+      setLoading(true);
+    }
+
+    apiFetch<any>(`/admin/stats?page=${targetPage}&limit=10`)
       .then((res) => {
         if (requestId !== latestRequestIdRef.current) return;
         setStats(res.data);
@@ -96,10 +104,34 @@ export const AdminDashboard: React.FC = () => {
         console.error('Error fetching admin dashboard stats:', err);
       })
       .finally(() => {
-        if (requestId === latestRequestIdRef.current) {
+        if (requestId === latestRequestIdRef.current && !silent) {
           setLoading(false);
         }
       });
+  };
+
+  useEffect(() => {
+    fetchDashboardStats(1, false);
+
+    const socket = getSocket();
+    if (socket) {
+      joinAdminRoom();
+
+      const handleRealtimeUpdate = (payload: any) => {
+        console.log('[AdminDashboard] [Info] Realtime update event received:', payload);
+        fetchDashboardStats(currentPageRef.current, true);
+      };
+
+      socket.on('order:created', handleRealtimeUpdate);
+      socket.on('order:status_changed', handleRealtimeUpdate);
+      socket.on('payment:confirmed', handleRealtimeUpdate);
+
+      return () => {
+        socket.off('order:created', handleRealtimeUpdate);
+        socket.off('order:status_changed', handleRealtimeUpdate);
+        socket.off('payment:confirmed', handleRealtimeUpdate);
+      };
+    }
   }, []);
 
   const handlePageChange = (targetPage: number) => {

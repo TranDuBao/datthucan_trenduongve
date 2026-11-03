@@ -111,6 +111,22 @@ class CategoryService {
     return [];
   }
 
+  static Future<Map<String, dynamic>?> fetchRestaurantById(int restaurantId) async {
+    try {
+      final list = await fetchRestaurantsFromDB();
+      for (var r in list) {
+        final id = r['maQuan'] ?? r['id'];
+        if (id == restaurantId || id.toString() == restaurantId.toString()) {
+          return Map<String, dynamic>.from(r);
+        }
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('[CategoryService] [Error] Error fetchRestaurantById: $e');
+    }
+    return null;
+  }
+
   static Future<List<dynamic>> fetchRestaurantsAlongRoute(
     List<LatLng> points, {
     int maxDistanceMeters = 2500,

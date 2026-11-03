@@ -1,6 +1,6 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:food_delivery/common/color_extension.dart';
+import 'package:food_route/common/color_extension.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';

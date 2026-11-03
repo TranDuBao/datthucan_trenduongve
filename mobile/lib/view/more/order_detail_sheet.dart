@@ -95,18 +95,18 @@ class _OrderDetailSheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.82),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF12141C) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           // Handle bar
           Center(
             child: Container(
-              width: 40,
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF3B4052) : const Color(0xFFD0D4E0),
@@ -114,11 +114,11 @@ class _OrderDetailSheetContent extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
 
           // Title row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -128,16 +128,16 @@ class _OrderDetailSheetContent extends StatelessWidget {
                       'Chi tiết đơn #DH${currentOrder.orderId}',
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF101828),
-                        fontSize: 19,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF9E6),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFFFFE5A3)),
                       ),
                       child: Text(
@@ -151,26 +151,36 @@ class _OrderDetailSheetContent extends StatelessWidget {
                     ),
                   ],
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                    size: 22,
+                InkWell(
+                  onTap: () => Navigator.pop(context),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E2230) : const Color(0xFFF3F4F6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
+                      size: 16,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 4),
 
           // Subtitle
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 Container(
-                  width: 4,
-                  height: 12,
+                  width: 3.5,
+                  height: 11,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFC6011),
                     borderRadius: BorderRadius.circular(2),
@@ -184,7 +194,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
                     ', ${currentOrder.createdAt.length > 10 ? currentOrder.createdAt.substring(0, 10) : ''}',
                     style: TextStyle(
                       color: isDark ? const Color(0xFF707688) : const Color(0xFF667085),
-                      fontSize: 12,
+                      fontSize: 11.5,
                     ),
                   ),
                 ),
@@ -192,13 +202,13 @@ class _OrderDetailSheetContent extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(height: 1, color: Color(0xFFF2F4F7)),
 
           // Scrollable body
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -723,12 +733,20 @@ class _OrderDetailSheetContent extends StatelessWidget {
                                 fontSize: 13,
                               ),
                             ),
-                            const Text(
-                              'Tiền mặt khi nhận hàng',
-                              style: TextStyle(
-                                color: Color(0xFF00A86B),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                currentOrder.paymentMethod.toUpperCase() == 'MOMO'
+                                    ? 'Ví MoMo'
+                                    : 'VietQR / PayOS',
+                                textAlign: TextAlign.end,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF00A86B),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -848,12 +866,18 @@ class _OrderDetailSheetContent extends StatelessWidget {
             fontSize: 13,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF101828),
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF101828),
+              fontSize: 13,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+            ),
           ),
         ),
       ],

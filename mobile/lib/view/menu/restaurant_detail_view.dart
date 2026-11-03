@@ -15,6 +15,7 @@ import '../../common_widget/smart_network_image.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
 import 'item_details_view.dart';
+import '../../widgets/single_restaurant_warning_modal.dart';
 
 class RestaurantDetailView extends StatefulWidget {
   final Map restaurantObj;
@@ -745,7 +746,15 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => ItemDetailsView(itemObj: item),
+                                                builder: (context) => ItemDetailsView(
+                                                itemObj: {
+                                                  ...item,
+                                                  'maQuan': resId,
+                                                  'restaurantId': resId,
+                                                  'tenQuan': widget.restaurantObj['tenQuan'] ?? widget.restaurantObj['name'] ?? item['tenQuan'],
+                                                  'diaChi': widget.restaurantObj['diaChi'] ?? widget.restaurantObj['address'] ?? item['diaChi'],
+                                                },
+                                              ),
                                               ),
                                             );
                                           },
@@ -914,22 +923,42 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                                           else
                                                             InkWell(
                                                               onTap: () {
-                                                                final foodId = item['id'] ?? item['maMonAn'] ?? 1;
-                                                                final foodName = item['name'] ?? item['tenMonAn'] ?? 'Món';
-                                                                final resId = widget.restaurantObj['maQuan'] ?? 1;
+                                                                final rawFId = item['id'] ?? item['maMonAn'];
+                                                                final foodId = rawFId is int ? rawFId : (int.tryParse(rawFId?.toString() ?? '') ?? 1);
+                                                                final foodName = (item['name'] ?? item['tenMonAn'] ?? 'Món').toString();
+                                                                final rawResId = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? widget.restaurantObj['restaurantId'];
+                                                                final resId = rawResId is int ? rawResId : (int.tryParse(rawResId?.toString() ?? '') ?? 1);
+                                                                final storeName = (widget.restaurantObj['tenQuan'] ?? widget.restaurantObj['name'] ?? 'Quán mới').toString();
 
-                                                                cart.addToCart(
-                                                                  CartItemModel(
-                                                                    foodId: foodId,
-                                                                    foodName: foodName,
-                                                                    price: price,
-                                                                    quantity: 1,
-                                                                    image: img,
-                                                                    restaurantId: resId,
-                                                                  ),
-                                                                );
+                                                                void doAdd() {
+                                                                  cart.addToCart(
+                                                                    CartItemModel(
+                                                                      foodId: foodId,
+                                                                      foodName: foodName,
+                                                                      price: price,
+                                                                      quantity: 1,
+                                                                      image: img,
+                                                                      restaurantId: resId,
+                                                                    ),
+                                                                  );
+                                                                  CustomToast.showSuccess(context, "Đã thêm $foodName vào giỏ hàng!");
+                                                                }
 
-                                                                CustomToast.showSuccess(context, "Đã thêm $foodName vào giỏ hàng!");
+                                                                if (cart.hasConflictWith(resId)) {
+                                                                  final existingResName = cart.activeRestaurantName;
+                                                                  SingleRestaurantWarningModal.show(
+                                                                    context: context,
+                                                                    existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
+                                                                    newRestaurantName: storeName,
+                                                                    onClearAndOrder: () {
+                                                                      cart.clearCart();
+                                                                      doAdd();
+                                                                    },
+                                                                  );
+                                                                  return;
+                                                                }
+
+                                                                doAdd();
                                                               },
                                                               child: Container(
                                                                 width: 32,

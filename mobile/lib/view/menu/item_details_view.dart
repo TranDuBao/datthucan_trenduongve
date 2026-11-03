@@ -11,6 +11,7 @@ import '../../widgets/custom_toast.dart';
 import '../../widgets/skeleton/skeleton_box.dart';
 import '../../widgets/dish_reviews_section.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../widgets/single_restaurant_warning_modal.dart';
 
 class ItemDetailsView extends StatefulWidget {
   final Map itemObj;
@@ -951,22 +952,50 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                           onPressed: isSoldOut
                               ? null
                               : () {
-                                  final foodId = itemData["id"] ?? itemData["maMonAn"] ?? 1;
-                                  final resId = itemData["maQuan"] ?? itemData["restaurantId"] ?? 1;
+                                  final rawFId = itemData["id"] ?? itemData["maMonAn"];
+                                  final foodId = rawFId is int ? rawFId : (int.tryParse(rawFId?.toString() ?? '') ?? 1);
+                                  final rawResId = itemData["maQuan"] ?? itemData["restaurantId"] ?? itemData["idQuan"];
+                                  final resId = rawResId is int ? rawResId : (int.tryParse(rawResId?.toString() ?? '') ?? 1);
+                                  final storeName = (itemData["tenQuan"] ?? itemData["restaurantName"] ?? "Quán mới").toString();
+                                  final storeAddress = (itemData["diaChi"] ?? itemData["address"] ?? "").toString();
 
-                                  context.read<CartProvider>().addToCart(
-                                        CartItemModel(
-                                          foodId: foodId,
-                                          foodName: foodName,
-                                          price: calculatedUnitPrice,
-                                          quantity: qty,
-                                          image: imgUrl,
-                                          restaurantId: resId,
-                                        ),
-                                      );
+                                  final cart = context.read<CartProvider>();
 
-                                  CustomToast.showSuccess(context, "Đã thêm $foodName (x$qty) vào giỏ hàng!");
-                                  Navigator.pop(context);
+                                  void doAdd() {
+                                    if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
+                                      cart.registerRestaurant(id: resId, name: storeName, address: storeAddress);
+                                    }
+                                    cart.addToCart(
+                                      CartItemModel(
+                                        foodId: foodId,
+                                        foodName: foodName,
+                                        price: calculatedUnitPrice,
+                                        quantity: qty,
+                                        image: imgUrl,
+                                        restaurantId: resId,
+                                        restaurantName: storeName,
+                                        restaurantAddress: storeAddress,
+                                      ),
+                                    );
+                                    CustomToast.showSuccess(context, "Đã thêm $foodName (x$qty) vào giỏ hàng!");
+                                    Navigator.pop(context);
+                                  }
+
+                                  if (cart.hasConflictWith(resId)) {
+                                    final existingResName = cart.activeRestaurantName;
+                                    SingleRestaurantWarningModal.show(
+                                      context: context,
+                                      existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
+                                      newRestaurantName: storeName,
+                                      onClearAndOrder: () {
+                                        cart.clearCart();
+                                        doAdd();
+                                      },
+                                    );
+                                    return;
+                                  }
+
+                                  doAdd();
                                 },
                           child: Text(
                             isSoldOut

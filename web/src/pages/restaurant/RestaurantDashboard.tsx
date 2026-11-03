@@ -45,6 +45,7 @@ export const RestaurantDashboard: React.FC = () => {
       socket.on('reservation:status_changed', handleUpdate);
       socket.on('payment:confirmed', handleUpdate);
       socket.on('voucher:updated', handleUpdate);
+      socket.on('rating:updated', handleUpdate);
 
       return () => {
         socket.off('order:created', handleUpdate);
@@ -53,6 +54,7 @@ export const RestaurantDashboard: React.FC = () => {
         socket.off('reservation:status_changed', handleUpdate);
         socket.off('payment:confirmed', handleUpdate);
         socket.off('voucher:updated', handleUpdate);
+        socket.off('rating:updated', handleUpdate);
       };
     }
   }, []);

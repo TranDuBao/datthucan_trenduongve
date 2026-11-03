@@ -7,6 +7,7 @@ import { ImageCropUpload } from '../../components/ImageCropUpload';
 import { AnimatedCounter } from '../../components/AnimatedCounter';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../utils/imageUtils';
 import { suggestCategoryForDish, AISuggestionResult } from '../../utils/aiCategorySuggester';
+import { getSocket } from '../../api/socketClient';
 
 export const RestaurantMenu: React.FC = () => {
   const [foods, setFoods] = useState<any[]>([]);
@@ -101,6 +102,35 @@ export const RestaurantMenu: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+
+    const socket = getSocket();
+    if (socket) {
+      const handleRatingUpdated = (payload: any) => {
+        if (payload?.dishRatings && Array.isArray(payload.dishRatings)) {
+          setFoods((prev) =>
+            prev.map((f) => {
+              const matched = payload.dishRatings.find((d: any) => d.dishId === f.maMonAn);
+              if (matched) {
+                return {
+                  ...f,
+                  diemDanhGiaTB: matched.count > 0 ? matched.rating : 0.0,
+                  soLuotDanhGia: matched.count,
+                  chuaCoDanhGia: matched.count === 0,
+                };
+              }
+              return f;
+            })
+          );
+        } else {
+          fetchData();
+        }
+      };
+
+      socket.on('rating:updated', handleRatingUpdated);
+      return () => {
+        socket.off('rating:updated', handleRatingUpdated);
+      };
+    }
   }, []);
 
   const handleOpenAdd = () => {
@@ -330,7 +360,9 @@ export const RestaurantMenu: React.FC = () => {
               {sortedFoods.map((f, idx: number) => {
                 const qty = Number(f.soLuongMon ?? 1);
                 const outOfStock = qty <= 0;
-                const score = Number(f.diemDanhGiaTB || 0);
+                const reviewCount = Number(f.soLuotDanhGia || 0);
+                const hasReview = !f.chuaCoDanhGia && reviewCount > 0 && Number(f.diemDanhGiaTB || 0) > 0;
+                const score = hasReview ? Number(f.diemDanhGiaTB || 0) : 0;
                 const fullStars = Math.floor(score);
                 const hasHalf = score - fullStars >= 0.5;
                 const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
@@ -397,7 +429,7 @@ export const RestaurantMenu: React.FC = () => {
                         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                         title="Xem chi tiết đánh giá"
                       >
-                        {score > 0 ? (
+                        {hasReview && score > 0 ? (
                           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                             <div style={{ display: 'flex', gap: '2px' }}>
                               {Array.from({ length: fullStars }).map((_, i) => (
@@ -409,7 +441,7 @@ export const RestaurantMenu: React.FC = () => {
                               ))}
                             </div>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>
-                              {score.toFixed(1)} / 5.0
+                              {score.toFixed(1)} / 5.0 ({reviewCount})
                             </span>
                           </div>
                         ) : (

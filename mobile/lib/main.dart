@@ -87,7 +87,7 @@ class _MyAppState extends State<MyApp> {
     final languageProvider = context.watch<LanguageProvider>();
 
     return MaterialApp(
-      title: 'Food Delivery',
+      title: 'Food Route',
       debugShowCheckedModeBanner: false,
       locale: languageProvider.locale,
       theme: ThemeProvider.lightTheme,
