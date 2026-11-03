@@ -247,9 +247,9 @@ flutter run
 ## 👨‍💻 8. Thông Tin Tác Giả & Đồ Án Tốt Nghiệp
 
 - **Đề Tài:** Ứng Dụng Tối Ưu Lộ Trình Đặt Đồ Ăn & Mua Sắm Tiện Đường Về (Food Route)
-- **Hệ Thống:** Khóa Luận Tốt Nghiệp Ngành Công Nghệ Thông Tin (KLTN)
+- **Hệ Thống:** Khóa Luận Tốt Nghiệp Chuyên Ngành Hệ Thống Thông Tin (KLTN)
 - **Tác Giả:** Trần Dũ Bảo & Dương Minh Quốc Bảo ([@TranDuBao](https://github.com/TranDuBao) [@DuongMinhQuocBao](https://github.com/Anh3DaoPhay))
 - **Mã Nguồn Repository:** [https://github.com/TranDuBao/datthucan_trenduongve](https://github.com/TranDuBao/datthucan_trenduongve)
 
 ---
-*Dự án được xây dựng với mục tiêu ứng dụng công nghệ đô thị thông minh (Smart City Logistics), giảm thiểu phát thải và tắc nghẽn giao thông thông qua việc tối ưu tuyến đường ghé lấy món ăn.*
+*Dự án được xây dựng với mục tiêu ứng dụng công nghệ đặt thức ăn trên đường về thông minh giúp khách hàng tiết kiệm thời gian khi tan làm hoặc tan học hoặc đến một địa điểm nào đó có thể ghé mua những thứ mình cần (Smart Food Route), giảm thiểu phát thải và tắc nghẽn giao thông thông qua việc tối ưu tuyến đường ghé lấy món ăn.*
