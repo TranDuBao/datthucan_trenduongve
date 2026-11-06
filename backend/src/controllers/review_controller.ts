@@ -240,4 +240,25 @@ export class ReviewController {
       });
     }
   };
+
+  getAllReviewsForAdmin = async (req: Request, res: Response) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 1000;
+      const storeId = req.query.storeId ? Number(req.query.storeId) : undefined;
+      let isHidden: boolean | undefined = undefined;
+      if (req.query.isHidden === 'true' || req.query.status === 'hidden') isHidden = true;
+      if (req.query.isHidden === 'false' || req.query.status === 'visible') isHidden = false;
+      const search = req.query.search ? String(req.query.search).trim() : undefined;
+
+      const result = await this.reviewService.getAllReviewsForAdmin(page, limit, { storeId, isHidden, search });
+      return res.status(200).json({
+        statusCode: 200,
+        status: 'success',
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ status: 'error', message: error.message });
+    }
+  };
 }

@@ -658,4 +658,89 @@ export class ReviewService {
       averageRating: avg,
     };
   }
+
+  async getAllReviewsForAdmin(page: number = 1, limit: number = 1000, filter?: { storeId?: number; isHidden?: boolean; search?: string }) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(1000, Math.max(1, limit));
+    const offset = (safePage - 1) * safeLimit;
+
+    const qb = this.reviewRepo.createQueryBuilder('dg')
+      .orderBy('dg.ngayNhanXet', 'DESC');
+
+    if (filter?.storeId) {
+      qb.andWhere('dg.maQuan = :storeId', { storeId: filter.storeId });
+    }
+
+    if (filter?.isHidden !== undefined) {
+      if (filter.isHidden) {
+        qb.andWhere('dg.isHidden = true');
+      } else {
+        qb.andWhere('(dg.isHidden = false OR dg.isHidden IS NULL)');
+      }
+    }
+
+    if (filter?.search) {
+      qb.andWhere('(LOWER(dg.nhanXet) LIKE :search OR LOWER(dg.lyDoAn) LIKE :search)', {
+        search: `%${filter.search.toLowerCase()}%`,
+      });
+    }
+
+    const [reviews, total] = await qb.skip(offset).take(safeLimit).getManyAndCount();
+
+    const custIds = Array.from(new Set(reviews.map((r) => r.maKhachHang).filter((id): id is number => Boolean(id))));
+    const storeIds = Array.from(new Set(reviews.map((r) => r.maQuan).filter((id): id is number => Boolean(id))));
+    const reviewIds = reviews.map((r) => r.maDanhGia).filter(Boolean);
+
+    const custMap = new Map<number, string>();
+    if (custIds.length > 0) {
+      const customers = await this.customerRepo.find({
+        where: { maKhachHang: In(custIds) },
+        select: ['maKhachHang', 'hoTen'],
+      });
+      customers.forEach((c) => custMap.set(c.maKhachHang, c.hoTen));
+    }
+
+    const storeMap = new Map<number, string>();
+    if (storeIds.length > 0) {
+      const stores = await this.storeRepo.find({
+        where: { maQuan: In(storeIds) },
+        select: ['maQuan', 'tenQuan'],
+      });
+      stores.forEach((s) => storeMap.set(s.maQuan, s.tenQuan));
+    }
+
+    const dishReviewsMap = new Map<number, any[]>();
+    if (reviewIds.length > 0) {
+      const allDishReviews = await this.reviewMonRepo.find({
+        where: { maDanhGia: In(reviewIds) },
+        relations: ['monAn'],
+      });
+      allDishReviews.forEach((dr) => {
+        const list = dishReviewsMap.get(dr.maDanhGia) || [];
+        list.push({
+          id: dr.maDanhGiaMon,
+          dishId: dr.maMon,
+          dishName: dr.monAn ? dr.monAn.tenMonAn : '',
+          rating: dr.soLuongSao,
+          comment: dr.nhanXet,
+        });
+        dishReviewsMap.set(dr.maDanhGia, list);
+      });
+    }
+
+    const formattedReviews = reviews.map((r) => ({
+      ...r,
+      tenKhachHang: (r.maKhachHang ? custMap.get(r.maKhachHang) : null) || `Khách hàng #${r.maKhachHang || ''}`,
+      tenQuan: (r.maQuan ? storeMap.get(r.maQuan) : null) || `Nhà hàng #${r.maQuan || ''}`,
+      dishReviews: dishReviewsMap.get(r.maDanhGia) || [],
+    }));
+
+    return {
+      reviews: formattedReviews,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+    };
+  }
 }

@@ -6,12 +6,14 @@ import { authMiddleware } from '../middlewares/auth_middleware';
 import { requireRole } from '../middlewares/role_middleware';
 
 import { AuditLogController } from '../controllers/audit_log_controller';
+import { ReviewController } from '../controllers/review_controller';
 
 const router = Router();
 const controller = new AdminController();
 const auditLogController = new AuditLogController();
 const storeCatController = new StoreCategoryController();
 const systemInfoController = new SystemInfoController();
+const reviewController = new ReviewController();
 
 
 // All Admin routes require Auth & ADMIN Role
@@ -69,6 +71,10 @@ router.get('/orders', controller.getOrders as any);
 router.get('/payments', controller.getPayments as any);
 router.get('/activity-logs/export-csv', auditLogController.exportCsv as any);
 router.get('/activity-logs', auditLogController.getLogs as any);
+
+// Reviews & Moderation
+router.get('/reviews', reviewController.getAllReviewsForAdmin as any);
+router.patch('/reviews/:id/visibility', reviewController.updateVisibility as any);
 
 // System Info / About Us Management
 router.get('/about-us', systemInfoController.getAboutUs as any);

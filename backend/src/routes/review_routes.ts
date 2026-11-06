@@ -15,7 +15,8 @@ router.get('/reviews/my-reviews', authMiddleware as any, controller.getMyReviews
 // Store reply endpoint (requires CUAN_HANG or ADMIN)
 router.post('/reviews/:id/reply', authMiddleware as any, requireRole(['CUAN_HANG', 'ADMIN']) as any, controller.replyReview as any);
 
-// Admin moderation endpoint (strictly requires ADMIN)
+// Admin moderation endpoints (strictly requires ADMIN)
+router.get('/admin/reviews', authMiddleware as any, requireRole(['ADMIN']) as any, controller.getAllReviewsForAdmin as any);
 router.patch('/reviews/:id/visibility', authMiddleware as any, requireRole(['ADMIN']) as any, controller.updateVisibility as any);
 
 // Public restaurant reviews endpoint
