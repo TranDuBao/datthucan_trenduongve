@@ -36,21 +36,21 @@ export function getImageUrl(
     return fallback;
   }
 
-  // Handle uploaded images containing /uploads/
-  if (trimmed.includes('/uploads/')) {
-    const fileName = trimmed.split('/uploads/').pop();
-    if (fileName) {
-      return `${API_HOST}/uploads/${fileName}`;
-    }
-  }
-
-  // Return base64 or complete external URLs directly (e.g. Unsplash, CDN)
+  // Return base64 or complete external URLs directly (e.g. Cloudinary, Unsplash, CDN)
   if (
     trimmed.startsWith('data:image/') ||
     trimmed.startsWith('http://') ||
     trimmed.startsWith('https://')
   ) {
     return trimmed;
+  }
+
+  // Handle relative uploaded images (e.g. /uploads/abc.jpg or uploads/abc.jpg)
+  if (trimmed.includes('/uploads/')) {
+    const fileName = trimmed.split('/uploads/').pop();
+    if (fileName) {
+      return `${API_HOST}/uploads/${fileName}`;
+    }
   }
 
   return trimmed;

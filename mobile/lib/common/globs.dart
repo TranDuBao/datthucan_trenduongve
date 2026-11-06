@@ -147,13 +147,13 @@ class SVKey {
     if (trimmed.startsWith('data:image')) {
       return trimmed;
     }
-    // Handle uploaded images containing /uploads/
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    // Handle local uploaded images containing /uploads/
     if (trimmed.contains('/uploads/')) {
       final fileName = trimmed.split('/uploads/').last;
       return '${mainUrl}/uploads/$fileName';
-    }
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
     }
     final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
     return '${mainUrl}$cleanPath';

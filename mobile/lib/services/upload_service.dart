@@ -24,7 +24,11 @@ class UploadService {
         final rawUrl = resJson['url'] ?? resJson['data'];
         if (rawUrl != null && rawUrl.toString().isNotEmpty) {
           final cleanUrl = rawUrl.toString().trim();
-          // Always return relative path e.g. /uploads/img_....jpg
+          // Full remote URL (e.g. Cloudinary, HTTPS CDN) -> return directly
+          if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+            return cleanUrl;
+          }
+          // Relative path e.g. /uploads/img_....jpg
           if (cleanUrl.contains('/uploads/')) {
             final fileName = cleanUrl.split('/uploads/').last;
             return '/uploads/$fileName';
