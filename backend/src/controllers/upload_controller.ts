@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { AppDataSource } from '../config/database';
 import { KhachHangModel } from '../models/khach_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
@@ -83,6 +84,34 @@ export class UploadController {
       const isKyc = req.body.isKyc === true || req.body.isKyc === 'true';
       const userSub = (req as any).user?.sub ? String((req as any).user.sub) : '0';
 
+      // 1. Cloudinary Integration: If configured, upload directly to cloud CDN
+      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+
+        const folder = isKyc ? 'foodroute/kyc' : 'foodroute/uploads';
+        const prefix = isKyc ? `kyc_u${userSub}_` : `img_u${userSub}_`;
+        const publicId = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+        const uploadResult = await cloudinary.uploader.upload(image, {
+          folder,
+          public_id: publicId,
+          resource_type: 'image',
+          overwrite: true,
+        });
+
+        return res.status(200).json({
+          statusCode: 200,
+          status: '1',
+          url: uploadResult.secure_url,
+          message: 'Tải lên & xử lý hình ảnh thành công qua Cloudinary',
+        });
+      }
+
+      // 2. Local Filesystem Fallback
       const targetDir = isKyc
         ? path.join(process.cwd(), 'uploads_kyc')
         : path.join(process.cwd(), 'uploads');
@@ -233,6 +262,31 @@ export class UploadController {
 
 export async function deleteUploadFile(fileUrl?: string) {
   if (!fileUrl || typeof fileUrl !== 'string') return;
+
+  // Cloudinary deletion support
+  if (fileUrl.includes('res.cloudinary.com')) {
+    try {
+      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+
+        // Extract public_id from Cloudinary URL: e.g. /upload/v12345/foodroute/uploads/xyz.jpg
+        const match = fileUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z0-9]+$/);
+        if (match && match[1]) {
+          await cloudinary.uploader.destroy(match[1]);
+          console.log(`[UploadController] [Info] Đã xóa ảnh trên Cloudinary: ${match[1]}`);
+          return;
+        }
+      }
+    } catch (cErr) {
+      console.warn('[UploadController] [Warn] Lỗi xóa ảnh Cloudinary:', cErr);
+    }
+    return;
+  }
+
   if (!fileUrl.includes('/uploads/')) return;
   try {
     const fileName = fileUrl.split('/uploads/').pop();
