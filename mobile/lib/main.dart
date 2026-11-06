@@ -17,6 +17,8 @@ import 'providers/language_provider.dart';
 import 'providers/map_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/reservation_provider.dart';
+import 'providers/support_provider.dart';
 import 'view/login/welcome_view.dart';
 import 'view/main_tabview/main_tabview.dart';
 import 'view/on_boarding/startup_view.dart';
@@ -52,6 +54,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => ReservationProvider()),
+        ChangeNotifierProvider(create: (_) => SupportProvider()),
       ],
       child: const MyApp(defaultHome: StartupView()),
     ),

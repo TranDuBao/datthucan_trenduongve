@@ -5,8 +5,10 @@ import { ThanhToanModel } from '../models/thanh_toan_model';
 import { DonHangModel } from '../models/don_hang_model';
 import { KhachHangModel } from '../models/khach_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
+import { ChiTietDonHangModel } from '../models/chi_tiet_don_hang_model';
 import { RealtimeService } from '../services/realtime_service';
 import { NotificationService } from '../services/notification_service';
+import { PayOSService } from '../services/payos_service';
 
 export class PaymentController {
   private thanhToanRepo = AppDataSource.getRepository(ThanhToanModel);
@@ -15,7 +17,8 @@ export class PaymentController {
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
 
   /**
-   * Safe status check endpoint for Frontend (Read-only, cannot mutate payment state)
+   * Safe status check endpoint for Frontend (Syncs directly with PayOS gateway)
+   * If webhook was delayed or missed, this actively verifies with PayOS and confirms the order immediately!
    */
   getPaymentStatus = async (req: Request, res: Response) => {
     try {
@@ -62,7 +65,107 @@ export class PaymentController {
         }
       }
 
-      const payment = await this.thanhToanRepo.findOne({ where: { maDonHang } });
+      let payment = await this.thanhToanRepo.findOne({ where: { maDonHang } });
+
+      // Chủ động truy vấn trạng thái từ PayOS nếu đơn chưa được đánh dấu thanh toán thành công
+      const isUnpaid = !payment || payment.trangThai === 'CHO_THANH_TOAN' || payment.trangThai === 'PENDING';
+      const isPayOSMethod = ['PAYOS', 'VIETQR', 'CHUYEN_KHOAN'].includes(String(order.phuongThucThanhToan || '').toUpperCase()) ||
+                            ['PAYOS', 'VIETQR', 'CHUYEN_KHOAN'].includes(String(payment?.loaiThanhToan || '').toUpperCase());
+
+      if (isUnpaid && isPayOSMethod) {
+        try {
+          const payosInfo = await PayOSService.getPaymentLinkInformation(maDonHang);
+          if (payosInfo && (payosInfo.status === 'PAID' || (payosInfo.amountPaid > 0 && payosInfo.amountPaid >= Number(order.tongTien)))) {
+            console.log(`[PaymentController] [Info] Phát hiện thanh toán thành công từ PayOS cho đơn #${maDonHang}! Cập nhật hệ thống...`);
+
+            await AppDataSource.transaction(async (manager) => {
+              let p = await manager.findOne(ThanhToanModel, { where: { maDonHang } });
+              const finalAmount = Number(payosInfo.amountPaid || order.tongTien);
+              if (!p) {
+                p = manager.create(ThanhToanModel, {
+                  maDonHang,
+                  soTien: finalAmount,
+                  trangThai: 'THANH_TOAN_THANH_CONG',
+                  loaiThanhToan: order.phuongThucThanhToan || 'PAYOS',
+                  ngayThanhToan: new Date(),
+                  noiDung: `PayOS xác nhận thanh toán thành công cho đơn #${maDonHang}`,
+                });
+              } else {
+                p.trangThai = 'THANH_TOAN_THANH_CONG';
+                p.soTien = finalAmount;
+                p.ngayThanhToan = new Date();
+                p.noiDung = `PayOS xác nhận thanh toán thành công cho đơn #${maDonHang}`;
+              }
+              await manager.save(p);
+              payment = p;
+
+              // Khôi phục hoặc chuyển trạng thái đơn hàng sang CHO_XAC_NHAN
+              if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'UNPAID' || order.trangThai === 'DA_HUY') {
+                order.trangThai = 'CHO_XAC_NHAN';
+                order.lyDoHuy = null as any;
+                await manager.save(order);
+              }
+            });
+
+            // 1. Phát sự kiện realtime xác nhận thanh toán
+            RealtimeService.getInstance().emitPaymentConfirmed(
+              order.maQuan,
+              maDonHang,
+              payment!.soTien,
+              order.maKhachHang
+            );
+
+            // 2. Cập nhật trạng thái đơn hàng sang CHO_XAC_NHAN
+            RealtimeService.getInstance().emitOrderStatusChanged(
+              order.maQuan,
+              maDonHang,
+              'CHO_XAC_NHAN',
+              order.maKhachHang
+            );
+
+            // 3. Báo đơn mới cho quán chuẩn bị món
+            try {
+              const chiTietRepo = AppDataSource.getRepository(ChiTietDonHangModel);
+              const items = await chiTietRepo.find({ where: { maDonHang } });
+              RealtimeService.getInstance().emitOrderCreated(order.maQuan, maDonHang, {
+                maDonHang,
+                maKhachHang: order.maKhachHang,
+                tongTien: order.tongTien,
+                thoiGianHenNhan: order.thoiGianHenNhan,
+                itemsCount: items.length,
+                status: 'CHO_XAC_NHAN',
+              });
+
+              if (order.maQuan) {
+                await NotificationService.getInstance().sendNotification({
+                  recipientId: order.maQuan,
+                  recipientRole: 'restaurant',
+                  type: 'order:created',
+                  title: 'Đơn hàng mới đã thanh toán',
+                  body: `Đơn hàng mới #DH-${maDonHang} (${items.length} món) đã được thanh toán thành công (${Number(payment!.soTien).toLocaleString('vi-VN')}đ). Mời quán chuẩn bị món!`,
+                  data: { orderId: maDonHang, maQuan: order.maQuan, status: 'CHO_XAC_NHAN' },
+                });
+              }
+            } catch (_) {}
+
+            // 4. Thông báo cho khách hàng
+            if (order.maKhachHang) {
+              try {
+                await NotificationService.getInstance().sendNotification({
+                  recipientId: order.maKhachHang,
+                  recipientRole: 'user',
+                  type: 'payment:confirmed',
+                  title: 'Thanh toán thành công',
+                  body: `Đơn hàng #DH-${maDonHang} đã được xác nhận thanh toán thành công (${Number(payment!.soTien).toLocaleString('vi-VN')}đ). Quán đang tiếp nhận đơn.`,
+                  data: { orderId: maDonHang, maQuan: order.maQuan },
+                });
+              } catch (_) {}
+            }
+          }
+        } catch (syncErr: any) {
+          console.error(`[PaymentController] [Warn] Lỗi kiểm tra PayOS chủ động cho đơn #${maDonHang}:`, syncErr.message);
+        }
+      }
 
       return res.status(200).json({
         status: 'success',
@@ -273,8 +376,9 @@ export class PaymentController {
 
         if (isSuccess) {
           // Transition order from CHO_THANH_TOAN to CHO_XAC_NHAN (Ready for store to accept & prepare)
-          if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'UNPAID') {
+          if (order.trangThai === 'CHO_THANH_TOAN' || order.trangThai === 'UNPAID' || order.trangThai === 'DA_HUY') {
             order.trangThai = 'CHO_XAC_NHAN';
+            order.lyDoHuy = null as any;
             await manager.save(order);
           }
         } else {
@@ -301,7 +405,7 @@ export class PaymentController {
 
           // 2. NOW emit order:created to restaurant because payment is verified!
           try {
-            const chiTietRepo = AppDataSource.getRepository((await import('../models/chi_tiet_don_hang_model')).ChiTietDonHangModel);
+            const chiTietRepo = AppDataSource.getRepository(ChiTietDonHangModel);
             const items = await chiTietRepo.find({ where: { maDonHang: targetOrderId } });
 
             RealtimeService.getInstance().emitOrderCreated(result.order.maQuan, targetOrderId, {

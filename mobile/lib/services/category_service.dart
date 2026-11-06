@@ -129,7 +129,7 @@ class CategoryService {
 
   static Future<List<dynamic>> fetchRestaurantsAlongRoute(
     List<LatLng> points, {
-    int maxDistanceMeters = 2500,
+    int maxDistanceMeters = 800,
     String? keyword,
   }) async {
     try {

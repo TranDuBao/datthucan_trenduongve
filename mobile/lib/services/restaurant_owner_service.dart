@@ -195,4 +195,86 @@ class RestaurantOwnerService {
     }
     return {};
   }
+
+  // ── Quản lý Thực đơn (Menu CRUD) ─────────────────────────────────────────
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      final res = await http.get(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/categories'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        final data = body['data'];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+      }
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] getCategories error: $e');
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getMenu() async {
+    try {
+      final res = await http.get(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/menu'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        final data = body['data'];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        } else if (data is Map && data['items'] is List) {
+          return List<Map<String, dynamic>>.from(data['items']);
+        }
+      }
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] getMenu error: $e');
+    }
+    return [];
+  }
+
+  Future<bool> createFoodItem(Map<String, dynamic> data) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/menu'),
+        headers: _headers,
+        body: json.encode(data),
+      ).timeout(const Duration(seconds: 10));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] createFoodItem error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateFoodItem(int foodId, Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/menu/$foodId'),
+        headers: _headers,
+        body: json.encode(data),
+      ).timeout(const Duration(seconds: 10));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] updateFoodItem error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteFoodItem(int foodId) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/menu/$foodId'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] deleteFoodItem error: $e');
+      return false;
+    }
+  }
 }

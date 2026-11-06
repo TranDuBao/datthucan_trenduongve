@@ -15,14 +15,14 @@ export const getSocket = (): Socket | null => {
     return null;
   }
 
-  if (!socket || !socket.connected) {
+  if (!socket) {
     socket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1500,
     });
 
     socket.on('connect', () => {
@@ -36,6 +36,8 @@ export const getSocket = (): Socket | null => {
     socket.on('disconnect', (reason) => {
       console.log('[SocketClient] [Info] Web Socket disconnected:', reason);
     });
+  } else if (!socket.connected) {
+    socket.connect();
   }
 
   return socket;
@@ -64,6 +66,19 @@ export const joinAdminRoom = () => {
 export const leaveAdminRoom = () => {
   if (socket) {
     socket.emit('room:leave', { roomType: 'admin' });
+  }
+};
+
+export const joinTicketRoom = (ticketId: number) => {
+  const s = getSocket();
+  if (s && ticketId) {
+    s.emit('room:join', { roomType: 'ticket', id: ticketId });
+  }
+};
+
+export const leaveTicketRoom = (ticketId: number) => {
+  if (socket && ticketId) {
+    socket.emit('room:leave', { roomType: 'ticket', id: ticketId });
   }
 };
 

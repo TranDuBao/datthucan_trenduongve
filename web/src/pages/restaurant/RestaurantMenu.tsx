@@ -8,6 +8,7 @@ import { AnimatedCounter } from '../../components/AnimatedCounter';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../utils/imageUtils';
 import { suggestCategoryForDish, AISuggestionResult } from '../../utils/aiCategorySuggester';
 import { getSocket } from '../../api/socketClient';
+import { DishTagsManager } from '../../components/DishTagsManager';
 
 export const RestaurantMenu: React.FC = () => {
   const [foods, setFoods] = useState<any[]>([]);
@@ -77,13 +78,24 @@ export const RestaurantMenu: React.FC = () => {
     setNotifyModal({ isOpen: true, type, title, message });
   };
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    tenMonAn: string;
+    maDanhMuc: string;
+    giaMonAn: string;
+    soLuongMon: string;
+    trangThaiMon: string;
+    img: string;
+    moTa: string;
+    dacTinh: string[];
+  }>({
     tenMonAn: '',
     maDanhMuc: '',
     giaMonAn: '',
     soLuongMon: '100',
     trangThaiMon: 'DANG_BAN',
     img: '',
+    moTa: '',
+    dacTinh: ['~10 phút', '180 kcal'],
   });
 
   const fetchData = () => {
@@ -126,22 +138,52 @@ export const RestaurantMenu: React.FC = () => {
         }
       };
 
+      const handleMenuUpdated = () => {
+        fetchData();
+      };
+
       socket.on('rating:updated', handleRatingUpdated);
+      socket.on('menu:updated', handleMenuUpdated);
       return () => {
         socket.off('rating:updated', handleRatingUpdated);
+        socket.off('menu:updated', handleMenuUpdated);
       };
     }
   }, []);
 
+  const parseTraits = (raw: any): string[] => {
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string' && raw.trim()) {
+      try {
+        const p = JSON.parse(raw);
+        if (Array.isArray(p)) return p;
+        return raw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } catch {
+        return raw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  };
+
   const handleOpenAdd = () => {
     setEditingFood(null);
     const defaultCat = categories.length > 0 ? String(categories[0].maDanhMuc) : '';
-    setForm({ tenMonAn: '', maDanhMuc: defaultCat, giaMonAn: '', soLuongMon: '100', trangThaiMon: 'DANG_BAN', img: '' });
+    setForm({
+      tenMonAn: '',
+      maDanhMuc: defaultCat,
+      giaMonAn: '',
+      soLuongMon: '100',
+      trangThaiMon: 'DANG_BAN',
+      img: '',
+      moTa: '',
+      dacTinh: ['~10 phút', '180 kcal'],
+    });
     setModalOpen(true);
   };
 
   const handleOpenEdit = (food: any) => {
     setEditingFood(food);
+    const parsedTags = parseTraits(food.dacTinh || food.dactinh);
     setForm({
       tenMonAn: food.tenMonAn || '',
       maDanhMuc: food.maDanhMuc ? String(food.maDanhMuc) : '',
@@ -149,6 +191,8 @@ export const RestaurantMenu: React.FC = () => {
       soLuongMon: String(food.soLuongMon ?? 100),
       trangThaiMon: food.trangThaiMon || ((Number(food.soLuongMon) > 0) ? 'DANG_BAN' : 'HET_HANG'),
       img: food.img || '',
+      moTa: food.moTa || food.mota || food.description || '',
+      dacTinh: parsedTags.length > 0 ? parsedTags : ['~10 phút', '180 kcal'],
     });
     setModalOpen(true);
   };
@@ -213,6 +257,8 @@ export const RestaurantMenu: React.FC = () => {
         soLuongMon: Number(form.soLuongMon),
         trangThaiMon: form.trangThaiMon,
         img: form.img,
+        moTa: form.moTa.trim(),
+        dacTinh: JSON.stringify(form.dacTinh),
       };
 
       if (editingFood) {
@@ -395,17 +441,50 @@ export const RestaurantMenu: React.FC = () => {
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 700, color: outOfStock ? '#9ca3af' : '#0f172a', textDecoration: outOfStock ? 'line-through' : 'none' }}>
-                          {f.tenMonAn}
-                        </span>
-                        {outOfStock && (
-                          <span style={{
-                            fontSize: '10px', fontWeight: 700, color: '#ef4444',
-                            background: '#fef2f2', border: '1px solid #fecaca',
-                            borderRadius: '6px', padding: '2px 7px', whiteSpace: 'nowrap',
-                          }}>Hết món</span>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 700, color: outOfStock ? '#9ca3af' : '#0f172a', textDecoration: outOfStock ? 'line-through' : 'none' }}>
+                            {f.tenMonAn}
+                          </span>
+                          {outOfStock && (
+                            <span style={{
+                              fontSize: '10px', fontWeight: 700, color: '#ef4444',
+                              background: '#fef2f2', border: '1px solid #fecaca',
+                              borderRadius: '6px', padding: '2px 7px', whiteSpace: 'nowrap',
+                            }}>Hết món</span>
+                          )}
+                        </div>
+                        {(f.moTa || f.mota) && (
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.moTa || f.mota}>
+                            {f.moTa || f.mota}
+                          </div>
                         )}
+                        {(() => {
+                          const tags = parseTraits(f.dacTinh || f.dactinh);
+                          if (tags.length === 0) return null;
+                          return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                              {tags.slice(0, 3).map((t: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    fontSize: '10px',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#f1f5f9',
+                                    color: '#475569',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                              {tags.length > 3 && (
+                                <span style={{ fontSize: '10px', color: '#94a3b8' }}>+{tags.length - 3}</span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </td>
                     <td style={{ fontWeight: 700, color: outOfStock ? '#9ca3af' : '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
@@ -645,6 +724,22 @@ export const RestaurantMenu: React.FC = () => {
             <label className="form-label">Số Lượng Phục Vụ Hôm Nay</label>
             <input type="number" className="form-control" value={form.soLuongMon} onChange={(e) => setForm({ ...form, soLuongMon: e.target.value })} required />
           </div>
+
+          <div className="form-group">
+            <label className="form-label">Chi Tiết / Mô Tả Món Ăn</label>
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="Mô tả thành phần, hương vị đặc trưng, nguyên liệu..."
+              value={form.moTa}
+              onChange={(e) => setForm({ ...form, moTa: e.target.value })}
+            />
+          </div>
+
+          <DishTagsManager
+            tags={form.dacTinh}
+            onChange={(newTags) => setForm({ ...form, dacTinh: newTags })}
+          />
 
           <div className="form-group">
             <label className="form-label">Trạng Thái Kinh Doanh</label>

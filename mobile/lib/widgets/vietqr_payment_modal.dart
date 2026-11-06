@@ -189,17 +189,20 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
         final status = data?['trangThaiThanhToan'];
         final orderStatus = data?['trangThaiDonHang'] ?? data?['orderStatus'];
 
-        if (orderStatus == 'DA_HUY' || orderStatus == 'CANCELLED') {
-          _handleOrderCancelled();
-          return;
-        }
-
+        // Ưu tiên kiểm tra thanh toán thành công trước
         if (status == 'THANH_TOAN_THANH_CONG' ||
             status == 'PAID' ||
             status == 'DA_THANH_TOAN' ||
             orderStatus == 'CHO_XAC_NHAN' ||
-            orderStatus == 'DA_XAC_NHAN') {
+            orderStatus == 'DA_XAC_NHAN' ||
+            orderStatus == 'DANG_CHUAN_BI') {
           _handlePaymentSuccess(data is Map ? Map<String, dynamic>.from(data) : null);
+          return;
+        }
+
+        if (orderStatus == 'DA_HUY' || orderStatus == 'CANCELLED') {
+          _handleOrderCancelled();
+          return;
         }
       }
     } catch (_) {}
@@ -241,6 +244,10 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
   /// Hỏi xác nhận hủy đơn khi người dùng muốn đóng modal mà chưa thanh toán
   Future<void> _handleCancelOrder() async {
     if (_isSuccess || _isCancelling) return;
+
+    // Kiểm tra nhanh với PayOS xem tiền đã vào chưa trước khi hỏi hủy
+    await _checkPaymentStatusSilently();
+    if (_isSuccess || !mounted) return;
 
     final formattedAmount = totalAmount.toInt().toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -437,6 +444,10 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
     );
     if (confirmed != true || !mounted) return;
 
+    // Kiểm tra thêm 1 lần phòng trường hợp khách vừa chuyển tiền xong
+    await _checkPaymentStatusSilently();
+    if (_isSuccess || !mounted) return;
+
     setState(() => _isCancelling = true);
     _pollingTimer?.cancel();
 
@@ -449,9 +460,48 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           'order:status_changed', _onSocketOrderStatusChanged);
     } catch (_) {}
 
+    // Hiển thị dialog đang hủy đơn để ngăn thao tác trùng
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Color(0xFFFC6011), strokeWidth: 3),
+                SizedBox(height: 14),
+                Text('Đang xử lý hủy đơn...', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
     try {
-      await OrderService.cancelOrder(orderId);
+      var res = await OrderService.cancelOrder(orderId, reason: 'Khách hủy thanh toán VietQR');
+      final msg = res['message']?.toString() ?? '';
+      if (msg.contains('thanh toán thành công') || msg.contains('chuyển khoản thành công')) {
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context); // Đóng loading dialog
+        }
+        _isCancelling = false;
+        _handlePaymentSuccess();
+        return;
+      }
+      if (res['success'] != true) {
+        // Thử lại 1 lần nếu gặp lỗi kết nối chập chờn
+        res = await OrderService.cancelOrder(orderId, reason: 'Khách hủy thanh toán VietQR');
+      }
     } catch (_) {}
+
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context); // Đóng loading dialog
+    }
 
     try {
       if (mounted) {
@@ -460,7 +510,7 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
     } catch (_) {}
 
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context); // Đóng VietQRPaymentModal
       OrderCancelledModal.show(context: context, orderId: orderId);
     }
   }

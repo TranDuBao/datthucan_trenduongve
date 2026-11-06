@@ -11,6 +11,8 @@ import '../services/places_service.dart';
 import '../services/directions_service.dart';
 import '../services/category_service.dart';
 import '../config/api_config.dart';
+import '../services/navigation_progress_service.dart';
+import '../widgets/navigation_arrival_modals.dart';
 
 enum MapState { idle, searchingOrigin, searchingDestination, loadingRoute, showingRoute }
 enum FoodRouteOption { takeaway, preOrder, dineIn }
@@ -18,6 +20,89 @@ enum FoodRouteOption { takeaway, preOrder, dineIn }
 class MapProvider extends ChangeNotifier {
   final PlacesService _placesService = PlacesService();
   final DirectionsService _directionsService = DirectionsService();
+  final NavigationProgressService _navService = NavigationProgressService();
+
+  NavigationProgressService get navService => _navService;
+  BuildContext? navigationContext;
+
+  ValueNotifier<List<LatLng>> get remainingLeg1 => _navService.remainingLeg1;
+  ValueNotifier<List<LatLng>> get remainingLeg2 => _navService.remainingLeg2;
+  bool get isNavigating => _navService.isNavigating;
+
+  MapProvider() {
+    _navService.onArrivedAtStore = () {
+      _onArrivedAtStore();
+    };
+    _navService.onArrivedAtDestination = () {
+      _onArrivedAtDestination();
+    };
+    _navService.currentUserPosition.addListener(() {
+      final pos = _navService.currentUserPosition.value;
+      if (pos != null &&
+          pos.latitude >= 8.0 && pos.latitude <= 24.0 &&
+          pos.longitude >= 102.0 && pos.longitude <= 112.0) {
+        _currentPosition = pos;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _onArrivedAtStore() {
+    _isOrderPickedUp = false;
+    notifyListeners();
+
+    if (navigationContext != null) {
+      final storeName = _activeStopoverOrder?['tenQuan'] ?? _selectedStopoverStore?['tenQuan'] ?? 'Quán ăn';
+      final orderCode = _activeStopoverOrder?['maDonHang']?.toString() ?? _activeStopoverOrder?['orderId']?.toString();
+      StoreArrivalModal.show(
+        context: navigationContext!,
+        storeName: storeName,
+        orderCode: orderCode,
+        onConfirmPickedUp: () {
+          confirmPickedUpFood();
+        },
+      );
+    }
+  }
+
+  void _onArrivedAtDestination() {
+    _navService.stopNavigation();
+    notifyListeners();
+
+    if (navigationContext != null) {
+      RouteCompletedModal.show(
+        context: navigationContext!,
+        onFinish: () {
+          clearAll();
+        },
+      );
+    }
+  }
+
+  void _startNavService() {
+    if (_stopoverRoute != null && _stopoverRoute!.legs.length >= 2) {
+      _navService.startNavigation(
+        leg1Points: _stopoverRoute!.legs[0].polylinePoints,
+        leg2Points: _stopoverRoute!.legs[1].polylinePoints,
+        storeLatLng: activeStopoverLatLng,
+        destinationLatLng: _destinationPlace?.latLng,
+        initialUserPosition: _currentPosition,
+      );
+    } else if (_stopoverRoute != null && _stopoverRoute!.simplifiedPolylinePoints.isNotEmpty) {
+      _navService.startNavigation(
+        leg1Points: _stopoverRoute!.simplifiedPolylinePoints,
+        storeLatLng: activeStopoverLatLng,
+        destinationLatLng: _destinationPlace?.latLng,
+        initialUserPosition: _currentPosition,
+      );
+    } else if (_originalRoute != null && _originalRoute!.simplifiedPolylinePoints.isNotEmpty) {
+      _navService.startNavigation(
+        leg1Points: _originalRoute!.simplifiedPolylinePoints,
+        destinationLatLng: _destinationPlace?.latLng,
+        initialUserPosition: _currentPosition,
+      );
+    }
+  }
 
   // ── Food Route Option (Đặt thức ăn trên đường về) ─────────────────────────
   FoodRouteOption _foodRouteOption = FoodRouteOption.takeaway;
@@ -31,9 +116,9 @@ class MapProvider extends ChangeNotifier {
   int get travelMinutes {
     if (_currentRoute != null && _currentRoute!.totalDurationSeconds > 0) {
       final mins = (_currentRoute!.totalDurationSeconds / 60).round();
-      return mins > 0 ? mins : 12;
+      return mins > 0 ? mins : 1;
     }
-    return 12;
+    return 0;
   }
 
   int get prepMinutes {
@@ -41,7 +126,7 @@ class MapProvider extends ChangeNotifier {
       case FoodRouteOption.takeaway:
         return 10;
       case FoodRouteOption.preOrder:
-        return 15;
+        return 45;
       case FoodRouteOption.dineIn:
         return 20;
     }
@@ -102,7 +187,12 @@ class MapProvider extends ChangeNotifier {
 
   // ── Location ──────────────────────────────────────────────────────────────
   LatLng _currentPosition = const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
-  LatLng get currentPosition => _currentPosition;
+  LatLng get currentPosition => validCurrentPosition;
+  LatLng get validCurrentPosition =>
+      (_currentPosition.latitude >= 8.0 && _currentPosition.latitude <= 24.0 &&
+       _currentPosition.longitude >= 102.0 && _currentPosition.longitude <= 112.0)
+          ? _currentPosition
+          : const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
 
   // ── Map ready state ───────────────────────────────────────────────────────
   bool _mapReady = false;
@@ -175,10 +265,59 @@ class MapProvider extends ChangeNotifier {
     return null;
   }
 
-  void setActiveStopoverOrder(Map<String, dynamic>? order) {
+  Future<void> setActiveStopoverOrder(Map<String, dynamic>? order) async {
     _activeStopoverOrder = order;
     _isOrderPickedUp = false;
+    _state = MapState.showingRoute;
+    _showRouteDetails = true;
+    _foodKeyword = '';
+    foodKeywordController.clear();
+    _routeRestaurants = [];
+    _isSearchingFood = false;
     notifyListeners();
+
+    if (order != null) {
+      final storeLat = (order['lat'] as num?)?.toDouble();
+      final storeLng = (order['lng'] as num?)?.toDouble();
+
+      final origPos = validCurrentPosition;
+      if (_originPlace == null ||
+          _originPlace!.latLng.latitude < 8.0 || _originPlace!.latLng.latitude > 24.0 ||
+          _originPlace!.latLng.longitude < 102.0 || _originPlace!.latLng.longitude > 112.0) {
+        _originPlace = PlaceModel(
+          id: 'gps_origin',
+          name: currentLocationText,
+          address: currentLocationText,
+          latLng: origPos,
+        );
+        originController.text = _originPlace!.name;
+      }
+
+      // Nếu chưa có stopoverRoute với 2 legs, tự động tính lộ trình ghé quán
+      if (storeLat != null && storeLng != null) {
+        final storePos = LatLng(storeLat, storeLng);
+        if (_stopoverRoute == null || _stopoverRoute!.legs.length < 2) {
+          final orig = _originPlace?.latLng ?? _currentPosition;
+          final dest = _destinationPlace?.latLng ?? storePos;
+          final detour = await _directionsService.getDirections(
+            origin: orig,
+            destination: dest,
+            stopover: storePos,
+            mode: _travelMode,
+          );
+          if (detour != null) {
+            _stopoverRoute = detour;
+            _fitBoundsToRoute(detour.simplifiedPolylinePoints);
+            notifyListeners();
+          }
+        } else {
+          _fitBoundsToRoute(_stopoverRoute!.simplifiedPolylinePoints);
+        }
+      }
+      _startNavService();
+    } else {
+      _navService.stopNavigation();
+    }
   }
 
   void clearActiveStopoverOrder() {
@@ -197,36 +336,53 @@ class MapProvider extends ChangeNotifier {
   /// - Nếu có điểm đích B tiếp theo: Chuyển sang chặng Quán -> B
   /// - Nếu đích đến chính là quán ăn: Dọn sạch lộ trình (clearAll) để tránh hiện thẻ "Xác nhận lộ trình ghé lấy"
   Future<void> finishStopoverOrder() async {
+    _navService.manualConfirmPickup();
+    _isOrderPickedUp = true;
+
+    // 1. Trả bộ lọc tìm kiếm món về ban đầu và đóng thẻ chi tiết lộ trình
+    _foodKeyword = '';
+    foodKeywordController.clear();
+    _routeRestaurants = [];
+    _isSearchingFood = false;
+    _selectedStopoverStore = null;
+    _selectedStopoverFood = null;
+    _showRouteDetails = false;
+
     final storeLocation = activeStopoverLatLng;
-    final storeName = _activeStopoverOrder?['tenQuan'] ?? 'Quán ăn';
-    final storeAddress = _activeStopoverOrder?['diaChi'] ?? '';
     final dest = _destinationPlace;
 
-    _isOrderPickedUp = false;
-    clearActiveStopoverOrder();
-    clearStopover();
-
-    // Nếu người dùng có điểm đến đích khác với quán (A -> Q -> B):
+    // Kiểm tra xem có chặng 2 tới điểm đến B không (đích đến khác vị trí quán)
+    bool hasNextDestination = false;
     if (dest != null && storeLocation != null) {
-      final bool isDestStore = (dest.latLng.latitude - storeLocation.latitude).abs() < 0.0001 &&
-          (dest.latLng.longitude - storeLocation.longitude).abs() < 0.0001;
-
-      if (!isDestStore) {
-        // Chuyển điểm xuất phát thành Quán ăn vừa lấy món -> Dẫn đường tiếp đến B
-        _originPlace = PlaceModel(
-          id: 'pickup_done_loc',
-          name: storeName,
-          address: storeAddress,
-          latLng: storeLocation,
-        );
-        originController.text = storeName;
-        await fetchRoute();
-        return;
+      final double distDiff = (dest.latLng.latitude - storeLocation.latitude).abs() +
+          (dest.latLng.longitude - storeLocation.longitude).abs();
+      if (distDiff >= 0.0005) {
+        hasNextDestination = true;
       }
+    } else if (dest != null && storeLocation == null) {
+      hasNextDestination = true;
     }
 
-    // Nếu điểm đến chính là quán ăn: Dọn sạch hoàn toàn lộ trình để về màn hình chính bình thường
-    clearAll();
+    if (hasNextDestination && dest != null) {
+      debugPrint('[MapProvider] [Info] Đã nhận món tại quán! Tiếp tục dẫn đường chặng 2 tới ${dest.name}');
+      if (_activeStopoverOrder != null) {
+        _activeStopoverOrder = Map<String, dynamic>.from(_activeStopoverOrder!)
+          ..['trangThai'] = 'ĐÃ LẤY MÓN'
+          ..['isPickedUp'] = true;
+      }
+
+      final remainingPts = _navService.remainingLeg2.value;
+      if (remainingPts.length >= 2) {
+        _fitBoundsToRoute(remainingPts);
+      } else if (_stopoverRoute != null && _stopoverRoute!.legs.length >= 2) {
+        _fitBoundsToRoute(_stopoverRoute!.legs[1].polylinePoints);
+      }
+      notifyListeners();
+    } else {
+      // Đích đến chính là quán ăn: hoàn thành toàn bộ lộ trình
+      debugPrint('[MapProvider] [Info] Đã đến quán và nhận món, hoàn tất lộ trình!');
+      clearAll();
+    }
   }
 
   /// Giữ lại confirmPickedUpFood để tương thích ngược
@@ -253,12 +409,15 @@ class MapProvider extends ChangeNotifier {
       'thoiGianHenNhan': pickupTime ?? 'Ghé lấy ngay',
     });
 
-    if (_originPlace == null) {
+    final origPos = validCurrentPosition;
+    if (_originPlace == null ||
+        _originPlace!.latLng.latitude < 8.0 || _originPlace!.latLng.latitude > 24.0 ||
+        _originPlace!.latLng.longitude < 102.0 || _originPlace!.latLng.longitude > 112.0) {
       _originPlace = PlaceModel(
         id: 'gps_origin',
         name: currentLocationText,
         address: currentLocationText,
-        latLng: _currentPosition,
+        latLng: origPos,
       );
       originController.text = _originPlace!.name;
     }
@@ -282,7 +441,43 @@ class MapProvider extends ChangeNotifier {
   }
 
   List<dynamic> _routeRestaurants = [];
-  List<dynamic> get routeRestaurants => _routeRestaurants;
+  List<dynamic> get routeRestaurants {
+    if (_routeRestaurants.isEmpty) return [];
+
+    switch (_foodRouteOption) {
+      case FoodRouteOption.takeaway:
+        return _routeRestaurants.where((r) {
+          final tienIch = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
+          final hasTakeaway = r['hasTakeaway'] == true ||
+              r['hasTakeaway'] == null ||
+              tienIch.contains('take-away') ||
+              tienIch.contains('mang về') ||
+              tienIch.contains('mang ve');
+          return hasTakeaway;
+        }).toList();
+
+      case FoodRouteOption.preOrder:
+        return _routeRestaurants.where((r) {
+          final coDatTruoc = r['coChoDatTruoc'] == true ||
+              r['cochodattruoc'] == true ||
+              r['hasPreOrder'] == true;
+          return coDatTruoc;
+        }).toList();
+
+      case FoodRouteOption.dineIn:
+        return _routeRestaurants.where((r) {
+          final tienIch = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
+          final hasDineIn = r['hasDineIn'] == true ||
+              r['coChoNgoi'] == true ||
+              tienIch.contains('chỗ ngồi') ||
+              tienIch.contains('cho ngoi') ||
+              tienIch.contains('tại chỗ') ||
+              tienIch.contains('tai cho') ||
+              tienIch.contains('dine-in');
+          return hasDineIn;
+        }).toList();
+    }
+  }
 
   TravelMode _travelMode = TravelMode.car;
   TravelMode get travelMode => _travelMode;
@@ -308,9 +503,7 @@ class MapProvider extends ChangeNotifier {
 
   Timer? _debounceTimer;
 
-  // ─────────────────────────────────────────────────────────────────────────
   // Init
-  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
     await _requestLocationPermission();
@@ -339,42 +532,21 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Lấy vị trí thông qua địa chỉ IP (rất hữu ích khi chạy trên emulator hoặc không có GPS)
+  /// Lấy vị trí thông qua địa chỉ IP (rất hữu ích khi chạy trên emulator)
   Future<LatLng?> _getLocationByIP() async {
-    try {
-      final response = await http.get(Uri.parse('https://ipapi.co/json/')).timeout(const Duration(seconds: 4));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-        final double? lat = (data['latitude'] as num?)?.toDouble();
-        final double? lon = (data['longitude'] as num?)?.toDouble();
-        if (lat != null && lon != null) {
-          debugPrint('[MapProvider] [Info] Lấy vị trí thành công qua IP (ipapi.co): $lat, $lon');
-          return LatLng(lat, lon);
+    for (final url in ['https://ipapi.co/json/', 'https://ipinfo.io/json']) {
+      try {
+        final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          final data = json.decode(utf8.decode(res.bodyBytes));
+          final lat = (data['latitude'] as num?)?.toDouble() ??
+              (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[0]) : null);
+          final lon = (data['longitude'] as num?)?.toDouble() ??
+              (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[1]) : null);
+          if (lat != null && lon != null) return LatLng(lat, lon);
         }
-      }
-    } catch (e) {
-      debugPrint('[MapProvider] [Warn] Thử lấy vị trí qua IP (ipapi.co) thất bại: $e');
+      } catch (_) {}
     }
-
-    try {
-      final response = await http.get(Uri.parse('https://ipinfo.io/json')).timeout(const Duration(seconds: 4));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-        final String? loc = data['loc']?.toString();
-        if (loc != null && loc.contains(',')) {
-          final parts = loc.split(',');
-          final double? lat = double.tryParse(parts[0]);
-          final double? lon = double.tryParse(parts[1]);
-          if (lat != null && lon != null) {
-            debugPrint('[MapProvider] [Info] Lấy vị trí thành công qua IP (ipinfo.io): $lat, $lon');
-            return LatLng(lat, lon);
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('[MapProvider] [Warn] Thử lấy vị trí qua IP (ipinfo.io) thất bại: $e');
-    }
-
     return null;
   }
 
@@ -393,17 +565,17 @@ class MapProvider extends ChangeNotifier {
     try {
       debugPrint('[MapProvider] [Info] Đang thử lấy vị trí bằng GPS của thiết bị...');
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 5),
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: const Duration(seconds: 2),
       );
 
       final gpsLatLng = LatLng(position.latitude, position.longitude);
+      final bool inVietnam = gpsLatLng.latitude >= 8.0 && gpsLatLng.latitude <= 24.0 &&
+                             gpsLatLng.longitude >= 102.0 && gpsLatLng.longitude <= 112.0;
 
-      final double latDiff = (gpsLatLng.latitude - 37.422).abs();
-      final double lonDiff = (gpsLatLng.longitude - (-122.084)).abs();
-      if (latDiff < 0.01 && lonDiff < 0.01) {
+      if (!inVietnam) {
         isMockLocation = true;
-        debugPrint('[MapProvider] [Info] Phát hiện tọa độ máy ảo mặc định (Mỹ). Sẽ dùng IP để chuyển về Việt Nam.');
+        debugPrint('[MapProvider] [Info] Tọa độ GPS ngoài lãnh thổ VN (${gpsLatLng.latitude}, ${gpsLatLng.longitude}). Sẽ dùng tọa độ mặc định TP.HCM.');
       } else {
         detectedPosition = gpsLatLng;
         debugPrint('[MapProvider] [Info] Lấy vị trí GPS thực tế thành công: ${detectedPosition.latitude}, ${detectedPosition.longitude}');
@@ -414,10 +586,10 @@ class MapProvider extends ChangeNotifier {
 
     if (detectedPosition == null || isMockLocation) {
       final ipPos = await _getLocationByIP();
-      if (ipPos != null) {
+      if (ipPos != null && ipPos.latitude >= 8.0 && ipPos.latitude <= 24.0 &&
+          ipPos.longitude >= 102.0 && ipPos.longitude <= 112.0) {
         detectedPosition = ipPos;
       } else {
-        debugPrint('[MapProvider] [Info] Đang dùng máy ảo hoặc chưa bật GPS. Mặc định chọn Trần Quý Cáp, Bình Thạnh (10.8038, 106.6975).');
         detectedPosition = const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
       }
     }
@@ -436,9 +608,7 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   // Search / Autocomplete
-  // ─────────────────────────────────────────────────────────────────────────
 
   void onSearchChanged(String query, {required bool isOrigin}) {
     _debounceTimer?.cancel();
@@ -501,9 +671,7 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   // Route
-  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> fetchRoute() async {
     if (_originPlace == null || _destinationPlace == null) return;
@@ -589,6 +757,7 @@ class MapProvider extends ChangeNotifier {
       final kw = _foodKeyword.trim();
       _routeRestaurants = await CategoryService.fetchRestaurantsAlongRoute(
         route.simplifiedPolylinePoints,
+        maxDistanceMeters: 800,
         keyword: kw.isNotEmpty ? kw : null,
       );
     } catch (_) {
@@ -647,6 +816,7 @@ class MapProvider extends ChangeNotifier {
   /// - Xóa đơn hàng ghé lấy (_activeStopoverOrder = null, _isOrderPickedUp = false)
   /// - Khôi phục lại tuyến đường thẳng ban đầu A -> B (_currentRoute = _originalRoute)
   void cancelStopoverOrder() {
+    _navService.stopNavigation();
     _stopoverRoute = null;
     _selectedStopoverStore = null;
     _selectedStopoverFood = null;
@@ -660,21 +830,9 @@ class MapProvider extends ChangeNotifier {
   }
 
   @visibleForTesting
-  void setStopoverRouteForTesting({
-    RouteModel? original,
-    RouteModel? stopover,
-    Map<String, dynamic>? store,
-    Map<String, dynamic>? food,
-    Map<String, dynamic>? order,
-  }) {
-    if (original != null) {
-      _originalRoute = original;
-      _currentRoute = original;
-    }
-    _stopoverRoute = stopover;
-    _selectedStopoverStore = store;
-    _selectedStopoverFood = food;
-    _activeStopoverOrder = order;
+  void setStopoverRouteForTesting({RouteModel? original, RouteModel? stopover, Map<String, dynamic>? store, Map<String, dynamic>? food, Map<String, dynamic>? order}) {
+    if (original != null) { _originalRoute = original; _currentRoute = original; }
+    _stopoverRoute = stopover; _selectedStopoverStore = store; _selectedStopoverFood = food; _activeStopoverOrder = order;
   }
 
   void changeTravelMode(TravelMode mode) {
@@ -687,19 +845,22 @@ class MapProvider extends ChangeNotifier {
 
   void _fitBoundsToRoute(List<LatLng> points) {
     if (points.isEmpty || !_mapReady) return;
+    final validPoints = points.where((p) =>
+      p.latitude != 0.0 && p.longitude != 0.0 && p.latitude > 5.0 && p.latitude < 25.0 && p.longitude > 100.0 && p.longitude < 115.0
+    ).toList();
+    if (validPoints.isEmpty) { _moveCamera(_currentPosition, zoom: 16); return; }
     try {
-      mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: LatLngBounds.fromPoints(points),
-          padding: const EdgeInsets.all(60.0),
-        ),
-      );
-    } catch (_) {}
+      mapController.fitCamera(CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(validPoints),
+        padding: const EdgeInsets.all(60.0),
+        maxZoom: 17, minZoom: 12,
+      ));
+    } catch (_) {
+      _moveCamera(_currentPosition, zoom: 16);
+    }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   // Map tap — đặt điểm trực tiếp
-  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> onMapTapped(LatLng position) async {
     if (_originPlace == null) {
@@ -727,22 +888,18 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
   // Helpers
-  // ─────────────────────────────────────────────────────────────────────────
 
   void _moveCamera(LatLng position, {double zoom = 14}) {
-    if (!_mapReady) {
-      _pendingMoveTarget = position;
-      _pendingMoveZoom = zoom;
-      return;
-    }
-    try {
-      mapController.move(position, zoom);
-    } catch (_) {}
+    final safePos = (position.latitude < 8.0 || position.latitude > 24.0 || position.longitude < 102.0 || position.longitude > 112.0)
+        ? const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng)
+        : position;
+    if (!_mapReady) { _pendingMoveTarget = safePos; _pendingMoveZoom = zoom; return; }
+    try { mapController.move(safePos, zoom); } catch (_) {}
   }
 
   void clearAll() {
+    _navService.stopNavigation();
     _originPlace = null;
     _destinationPlace = null;
     _currentRoute = null;
@@ -761,6 +918,19 @@ class MapProvider extends ChangeNotifier {
     originController.clear();
     destinationController.clear();
     foodKeywordController.clear();
+
+    final safePos = validCurrentPosition;
+    _currentPosition = safePos;
+    _originPlace = PlaceModel(
+      id: 'current_loc',
+      name: currentLocationText,
+      address: currentLocationText,
+      latLng: safePos,
+    );
+    originController.text = _originPlace!.name;
+
+    // Đưa camera về vị trí hiện tại ở zoom 16, tuyệt đối không bao giờ ra nước ngoài hay văng ra thế giới
+    _moveCamera(safePos, zoom: 16);
     notifyListeners();
   }
 
@@ -811,6 +981,7 @@ class MapProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _navService.dispose();
     _debounceTimer?.cancel();
     _foodSearchDebounce?.cancel();
     _errorDismissTimer?.cancel();

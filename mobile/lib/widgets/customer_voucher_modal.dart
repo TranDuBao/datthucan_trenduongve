@@ -22,19 +22,21 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
   bool _validating = false;
   String? _error;
   List<dynamic> _availableVouchers = [];
+  late void Function(dynamic) _voucherListener;
 
   @override
   void initState() {
     super.initState();
     _fetchStoreVouchers();
-    locator<SocketService>().listenToVoucherUpdates((_) {
+    _voucherListener = (_) {
       if (mounted) _fetchStoreVouchers();
-    });
+    };
+    locator<SocketService>().listenToVoucherUpdates(_voucherListener);
   }
 
   @override
   void dispose() {
-    locator<SocketService>().offVoucherUpdates();
+    locator<SocketService>().offVoucherUpdates(_voucherListener);
     _codeController.dispose();
     super.dispose();
   }

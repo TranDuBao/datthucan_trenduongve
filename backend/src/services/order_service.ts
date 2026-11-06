@@ -1,4 +1,4 @@
-import { In } from 'typeorm';
+import { In, LessThan } from 'typeorm';
 import { AppDataSource } from '../config/database';
 import { DonHangModel } from '../models/don_hang_model';
 import { ChiTietDonHangModel } from '../models/chi_tiet_don_hang_model';
@@ -379,6 +379,28 @@ export class OrderService {
 
   async getMyOrders(maKhachHang: number) {
     if (!maKhachHang || isNaN(maKhachHang)) return [];
+
+    // Tự động hủy đơn hàng chờ thanh toán quá hạn 15 phút (tránh treo đơn rác)
+    try {
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const expiredUnpaidOrders = await this.donHangRepo.find({
+        where: {
+          maKhachHang,
+          trangThai: In(['CHO_THANH_TOAN', 'UNPAID', 'chờ thanh toán']),
+          thoiGianDat: LessThan(fifteenMinutesAgo),
+        },
+      });
+
+      for (const expOrder of expiredUnpaidOrders) {
+        expOrder.trangThai = 'DA_HUY';
+        expOrder.lyDoHuy = 'Hết thời gian chờ thanh toán (Quá 15 phút)';
+        await this.donHangRepo.save(expOrder);
+        await this.rollbackInventoryAndVoucher(expOrder.maDonHang);
+      }
+    } catch (e) {
+      console.warn('[OrderService] Auto-cancel expired orders warning:', e);
+    }
+
 
     const orders = await this.donHangRepo.find({
       where: { maKhachHang },

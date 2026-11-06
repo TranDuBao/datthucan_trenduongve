@@ -70,7 +70,7 @@ class RestaurantVouchersProvider with ChangeNotifier {
     _orderCreatedCallback = (data) => _handleRealtimeUpdate(data);
     _reconnectCallback = () {
       debugPrint('[RestaurantVouchersProvider] [Info] Reconnected -> refetching vouchers');
-      fetchVouchers();
+      fetchVouchers(showLoading: false);
     };
 
     _socketService.subscribe('voucher:updated', _voucherUpdatedCallback!);
@@ -78,10 +78,12 @@ class RestaurantVouchersProvider with ChangeNotifier {
     _socketService.onReconnect(_reconnectCallback!);
   }
 
-  Future<void> fetchVouchers() async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
+  Future<void> fetchVouchers({bool showLoading = true}) async {
+    if (showLoading) {
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+    }
 
     try {
       final res = await _service.getVouchers();
@@ -104,8 +106,26 @@ class RestaurantVouchersProvider with ChangeNotifier {
   }
 
   void _handleRealtimeUpdate(dynamic data) {
-    debugPrint('[RestaurantVouchersProvider] [Info] Realtime voucher event received');
-    fetchVouchers();
+    debugPrint('[RestaurantVouchersProvider] [Info] Realtime voucher event received: $data');
+    if (data is Map) {
+      final vId = data['maVoucher'] ?? data['data']?['maVoucher'];
+      final status = data['status'] ?? data['data']?['status'];
+      final computed = data['computedStatus'] ?? data['data']?['computedStatus'];
+      final action = data['action'] ?? data['data']?['action'];
+
+      if (vId != null && status != null) {
+        final index = _vouchers.indexWhere((v) => (v['maVoucher'] ?? v['id']) == vId);
+        if (index != -1) {
+          _vouchers[index]['trangThai'] = status;
+          _vouchers[index]['computedStatus'] = computed ?? status;
+          notifyListeners();
+        }
+      } else if (action == 'DELETED' && vId != null) {
+        _vouchers.removeWhere((v) => (v['maVoucher'] ?? v['id']) == vId);
+        notifyListeners();
+      }
+    }
+    fetchVouchers(showLoading: false);
   }
 
   // ── Optimistic Toggle Status ─────────────────────────────────────────────
@@ -146,7 +166,7 @@ class RestaurantVouchersProvider with ChangeNotifier {
       success = await _service.createVoucher(input);
     }
     if (success) {
-      fetchVouchers();
+      fetchVouchers(showLoading: false);
     }
     return success;
   }

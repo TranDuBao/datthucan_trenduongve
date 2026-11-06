@@ -85,5 +85,17 @@ export class CuaHangModel {
 
   @Column({ name: 'is_deleted', type: 'boolean', default: false })
   isDeleted: boolean;
+
+  @Column({ name: 'loaihinhphaply', length: 50, nullable: true })
+  loaiHinhPhapLy?: string | null;
+
+  @Column({ name: 'masothue', length: 50, nullable: true })
+  maSoThue?: string | null;
+
+  @Column({ name: 'sogiayphepkinhdoanh', length: 100, nullable: true })
+  soGiayPhepKinhDoanh?: string | null;
+
+  @Column({ name: 'sogiayattp', length: 100, nullable: true })
+  soGiayAttp?: string | null;
 }
 

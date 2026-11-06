@@ -199,10 +199,17 @@ export class VoucherService {
     });
 
     const saved = await this.voucherRepo.save(newVoucher);
-    RealtimeService.getInstance().emitVoucherUpdated(maQuan, { maVoucher: saved.maVoucher, action: 'CREATED' });
+    const computedStatus = this.computeVoucherStatus(saved);
+    RealtimeService.getInstance().emitVoucherUpdated(maQuan, {
+      maVoucher: saved.maVoucher,
+      status: saved.trangThai,
+      computedStatus,
+      action: 'CREATED',
+      voucher: saved,
+    });
     return {
       ...saved,
-      computedStatus: this.computeVoucherStatus(saved),
+      computedStatus,
     };
   }
 
@@ -272,10 +279,17 @@ export class VoucherService {
     }
 
     const updated = await this.voucherRepo.save(v);
-    RealtimeService.getInstance().emitVoucherUpdated(maQuan, { maVoucher: updated.maVoucher, action: 'UPDATED' });
+    const computedStatus = this.computeVoucherStatus(updated);
+    RealtimeService.getInstance().emitVoucherUpdated(maQuan, {
+      maVoucher: updated.maVoucher,
+      status: updated.trangThai,
+      computedStatus,
+      action: 'UPDATED',
+      voucher: updated,
+    });
     return {
       ...updated,
-      computedStatus: this.computeVoucherStatus(updated),
+      computedStatus,
     };
   }
 
@@ -293,10 +307,16 @@ export class VoucherService {
     }
 
     const saved = await this.voucherRepo.save(v);
-    RealtimeService.getInstance().emitVoucherUpdated(maQuan, { maVoucher: saved.maVoucher, status: saved.trangThai, action: 'STATUS_TOGGLED' });
+    const computed = this.computeVoucherStatus(saved);
+    RealtimeService.getInstance().emitVoucherUpdated(maQuan, {
+      maVoucher: saved.maVoucher,
+      status: saved.trangThai,
+      computedStatus: computed,
+      action: 'STATUS_TOGGLED',
+    });
     return {
       ...saved,
-      computedStatus: this.computeVoucherStatus(saved),
+      computedStatus: computed,
     };
   }
 
@@ -582,6 +602,12 @@ export class VoucherService {
 
     // Tăng số lượng đã lưu của Voucher
     await this.voucherRepo.increment({ maVoucher }, 'soLuongDaLuu', 1);
+    if (v.maQuan) {
+      RealtimeService.getInstance().emitVoucherUpdated(v.maQuan, {
+        maVoucher,
+        action: 'COLLECTED',
+      });
+    }
 
     return { collected: true, message: 'Lưu voucher vào ví thành công!' };
   }

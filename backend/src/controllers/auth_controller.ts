@@ -308,6 +308,24 @@ export class AuthController {
     }
   };
 
+  refreshProfile = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = Number(req.user?.sub);
+      if (!userId) {
+        return res.status(401).json({ statusCode: 401, status: '0', message: 'Bạn cần đăng nhập' });
+      }
+      const result = await this.authService.refreshProfileSession(userId);
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Làm mới phiên thành công',
+        payload: result,
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ statusCode: 500, status: '0', message: error.message || 'Lỗi server' });
+    }
+  };
   scanCCCD = async (req: Request, res: Response) => {
     try {
       const { image, frontImage, backImage, side } = req.body;

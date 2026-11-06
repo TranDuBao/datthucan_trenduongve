@@ -82,6 +82,43 @@ export class CustomerReservationController {
     }
   };
 
+  checkAvailability = async (req: Request, res: Response) => {
+    try {
+      const maQuan = Number(req.params.id);
+      const { thoiGianBatDau, soNguoi } = req.query;
+
+      if (!maQuan || isNaN(maQuan)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Mã nhà hàng không hợp lệ',
+        });
+      }
+
+      if (!thoiGianBatDau || typeof thoiGianBatDau !== 'string') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Vui lòng cung cấp thời gian bắt đầu',
+        });
+      }
+
+      const result = await this.reservationService.getReservationAvailability(
+        maQuan,
+        thoiGianBatDau,
+        soNguoi ? Number(soNguoi) : undefined
+      );
+
+      return res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.message || 'Lỗi kiểm tra bàn trống',
+      });
+    }
+  };
+
   cancelReservation = async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;

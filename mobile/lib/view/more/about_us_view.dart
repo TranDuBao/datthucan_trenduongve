@@ -1,9 +1,16 @@
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../common/locator.dart';
+import '../../common_widget/smart_network_image.dart';
+import '../../common_widget/social_brand_icon.dart';
 import '../../providers/language_provider.dart';
+import '../../services/socket_service.dart';
+import '../../services/system_info_service.dart';
+import '../../widgets/skeleton/about_us_skeleton.dart';
 import 'my_order_view.dart';
 
 class AboutUsView extends StatefulWidget {
@@ -14,10 +21,95 @@ class AboutUsView extends StatefulWidget {
 }
 
 class _AboutUsViewState extends State<AboutUsView> {
+  Map<String, dynamic>? _systemInfo;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSystemInfo();
+    locator<SocketService>().subscribe('about_us:updated', _onAboutUsUpdated);
+  }
+
+  @override
+  void dispose() {
+    locator<SocketService>().unsubscribe('about_us:updated', _onAboutUsUpdated);
+    super.dispose();
+  }
+
+  void _onAboutUsUpdated(dynamic _) {
+    _fetchSystemInfo();
+  }
+
+  Future<void> _fetchSystemInfo() async {
+    final data = await SystemInfoService.fetchAboutUs();
+    if (mounted) {
+      setState(() {
+        _systemInfo = data;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _launchExternal(String urlStr) async {
+    if (urlStr.isEmpty) return;
+    try {
+      final uri = Uri.parse(urlStr);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('[AboutUsView] Launch error: $e');
+    }
+  }
+
+  IconData _mapIconData(String? iconName) {
+    switch (iconName?.toLowerCase()) {
+      case 'navigation':
+        return Icons.navigation_outlined;
+      case 'flame':
+        return Icons.local_fire_department_outlined;
+      case 'shield':
+        return Icons.shield_outlined;
+      case 'store':
+        return Icons.storefront_outlined;
+      case 'leaf':
+      case 'eco':
+        return Icons.eco_outlined;
+      case 'clock':
+        return Icons.access_time_rounded;
+      case 'heart':
+        return Icons.favorite_border_rounded;
+      case 'award':
+        return Icons.military_tech_outlined;
+      default:
+        return Icons.stars_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lang = context.watch<LanguageProvider>();
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: TColor.bgOf(context),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: _buildHeader(context, lang, isDark),
+              ),
+              const Expanded(
+                child: AboutUsSkeleton(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
@@ -85,12 +177,6 @@ class _AboutUsViewState extends State<AboutUsView> {
               _buildCoreValuesGrid(isDark),
               const SizedBox(height: 20),
 
-              // Numbers / Impact Card (Dark Mode specific grid matching screenshot 1)
-              if (isDark) ...[
-                _buildImpressiveNumbersCard(isDark),
-                const SizedBox(height: 20),
-              ],
-
               // Contact & Social Connect Section
               _buildContactFooter(context, isDark),
               const SizedBox(height: 24),
@@ -112,9 +198,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isDark
-                              ? "Phiên bản cao cấp 3.2.0 (Dark Prestige)"
-                              : "Phiên bản 2.4.0 • Thiết kế vì sức khoẻ gia đình Việt",
+                          _systemInfo?['phienban']?.toString() ?? "Phiên bản 2.5.0 • FoodRoute Official",
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 11,
@@ -124,9 +208,9 @@ class _AboutUsViewState extends State<AboutUsView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "(C) 2025 Gourmet Kitchen Inc. Giữ toàn bộ bản quyền sở hữu trí tuệ.",
+                      _systemInfo?['banquyen']?.toString() ?? "© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.",
                       style: TextStyle(
-                        color: TColor.secondaryTextOf(context).withOpacity(0.6),
+                        color: TColor.secondaryTextOf(context).withValues(alpha: 0.6),
                         fontSize: 10,
                       ),
                     ),
@@ -199,8 +283,93 @@ class _AboutUsViewState extends State<AboutUsView> {
   }
 
   Widget _buildHeroCard(bool isDark) {
+    final badge = _systemInfo?['badge']?.toString() ?? "ẨM THỰC TRÊN LỘ TRÌNH";
+    final title = _systemInfo?['tieude']?.toString() ?? (isDark ? "Ẩm Thực Đỉnh Cao,\nTrọn Vẹn Từng Giây" : "Mang hương vị ấm áp đến từng bữa ăn của bạn");
+    final desc = _systemInfo?['mota']?.toString() ?? "Nền tảng tìm kiếm và đặt món thông minh dọc theo lộ trình di chuyển của bạn. Ghé lấy thức ăn tươi nóng mà không cần chờ đợi.";
+    final subBadge = _systemInfo?['sub_badge']?.toString() ?? "Hơn 500+ quán ngon trên mọi cung đường";
+    final heroImg = _systemInfo?['hinhanh']?.toString() ?? "";
+
+    Widget heroCardBody = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (heroImg.isNotEmpty) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SmartNetworkImage(
+              imageUrl: heroImg,
+              width: double.infinity,
+              height: 140,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? TColor.primary.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? TColor.primary.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.sparkles, size: 12, color: isDark ? TColor.primary : Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                badge,
+                style: TextStyle(
+                  color: isDark ? TColor.primary : Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isDark ? 22 : 21,
+            fontWeight: FontWeight.w800,
+            height: 1.25,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          desc,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: isDark ? 0.75 : 0.9),
+            fontSize: 13,
+            height: 1.4,
+          ),
+        ),
+        if (subBadge.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Icon(LucideIcons.award, size: 14, color: isDark ? TColor.primary : Colors.white),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  subBadge,
+                  style: TextStyle(
+                    color: isDark ? TColor.primary : Colors.white.withValues(alpha: 0.95),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+
     if (isDark) {
-      // Dark Prestige Card (Screenshot 1)
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
@@ -208,80 +377,20 @@ class _AboutUsViewState extends State<AboutUsView> {
           color: const Color(0xFF171B26),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: TColor.primary.withOpacity(0.2),
+            color: TColor.primary.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: TColor.primary.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: TColor.primary.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    "Câu chuyện thương hiệu",
-                    style: TextStyle(
-                      color: TColor.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
-                ),
-                children: [
-                  const TextSpan(
-                    text: "Ẩm Thực Đỉnh Cao,\n",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  TextSpan(
-                    text: "Trọn Vẹn Từng Giây",
-                    style: TextStyle(color: TColor.primary),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Chúng tôi không chỉ đem đến bữa ăn, mà trao gửi cả trải nghiệm tinh hoa ẩm thực phục vụ tận cửa nhà bạn.",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
+        child: heroCardBody,
       );
     } else {
-      // Light Orange Card (Screenshot 2)
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
@@ -294,113 +403,29 @@ class _AboutUsViewState extends State<AboutUsView> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: TColor.primary.withOpacity(0.3),
+              color: TColor.primary.withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.store, size: 12, color: Colors.white),
-                  SizedBox(width: 4),
-                  Text(
-                    "ẨM THỰC TỪ TRÁI TIM",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              "Mang hương vị ấm áp đến từng bữa ăn của bạn",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-                height: 1.25,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Chúng tôi tin rằng mỗi món ăn trao đi là một niềm vui sum vầy trọn vẹn, gửi gắm trọn vẹn tình cảm và sự tươi ngon nhất.",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                SizedBox(
-                  width: 64,
-                  height: 28,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 0,
-                        child: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Colors.white,
-                          child: Icon(LucideIcons.user, size: 12, color: TColor.primary),
-                        ),
-                      ),
-                      Positioned(
-                        left: 16,
-                        child: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Colors.white,
-                          child: Icon(LucideIcons.store, size: 12, color: TColor.primary),
-                        ),
-                      ),
-                      Positioned(
-                        left: 32,
-                        child: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Colors.white,
-                          child: Icon(LucideIcons.shoppingBag, size: 12, color: TColor.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  "Hơn 50+ đầu bếp chuyên nghiệp",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        child: heroCardBody,
       );
     }
   }
 
   Widget _buildStatsRow(bool isDark) {
+    final stat1Val = _systemInfo?['stat1_val']?.toString() ?? "500K+";
+    final stat1Label = _systemInfo?['stat1_label']?.toString() ?? "Lộ trình phục vụ";
+    final stat2Val = _systemInfo?['stat2_val']?.toString() ?? "4.9★";
+    final stat2Label = _systemInfo?['stat2_label']?.toString() ?? "Đánh giá cao";
+    final stat3Val = _systemInfo?['stat3_val']?.toString() ?? "99%";
+    final stat3Label = _systemInfo?['stat3_label']?.toString() ?? "Khách hài lòng";
+
     final stats = [
-      {"num": "500K+", "label": isDark ? "Bữa ăn đã phục vụ" : "Bữa ăn đã trao"},
-      {"num": "4.9", "label": isDark ? "Đánh giá hài lòng" : "Đánh giá cao"},
-      {"num": "98%", "label": isDark ? "Khách hài lòng" : "Khách hài lòng"},
+      {"num": stat1Val, "label": stat1Label},
+      {"num": stat2Val, "label": stat2Label},
+      {"num": stat3Val, "label": stat3Label},
     ];
 
     return Row(
@@ -415,7 +440,7 @@ class _AboutUsViewState extends State<AboutUsView> {
               border: Border.all(color: TColor.borderOf(context)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -458,7 +483,7 @@ class _AboutUsViewState extends State<AboutUsView> {
         border: Border.all(color: TColor.borderOf(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -473,7 +498,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: TColor.primary.withOpacity(0.15),
+                  color: TColor.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.explore_outlined, color: TColor.primary, size: 20),
@@ -483,7 +508,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "SỨ MỆNH & TÂM NHÌN",
+                    _systemInfo?['sumenh_tieude']?.toString() ?? "SỨ MỆNH & TÂM NHÌN",
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 14,
@@ -493,7 +518,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "Kiến tạo phong cách ẩm thực tương lai",
+                    _systemInfo?['sumenh_phude']?.toString() ?? "Kiến tạo phong cách ẩm thực di chuyển thông minh",
                     style: TextStyle(
                       color: TColor.secondaryTextOf(context),
                       fontSize: 11,
@@ -514,9 +539,9 @@ class _AboutUsViewState extends State<AboutUsView> {
               ),
             ),
             child: Text(
-              '"Định vị thành biểu tượng dịch vụ ẩm thực hiện đại hàng đầu qua việc kết hợp tinh túy nguyên liệu tuyển chọn, bàn tay bếp trưởng tài hoa và công nghệ giao nhận siêu tốc chuẩn xác."',
+              '"${_systemInfo?['sumenh_noidung']?.toString() ?? 'Định vị thành giải pháp kết nối ẩm thực lộ trình hàng đầu, giúp tối ưu hóa thời gian di chuyển hàng ngày của người dùng bằng công nghệ gợi ý món ngon thông minh, đặt trước tiện lợi và thanh toán an toàn.'}"',
               style: TextStyle(
-                color: TColor.primaryTextOf(context).withOpacity(0.9),
+                color: TColor.primaryTextOf(context).withValues(alpha: 0.9),
                 fontSize: 12,
                 height: 1.45,
                 fontStyle: FontStyle.italic,
@@ -529,44 +554,64 @@ class _AboutUsViewState extends State<AboutUsView> {
   }
 
   Widget _buildCoreValuesGrid(bool isDark) {
-    final values = [
-      {
-        "icon": Icons.eco_outlined,
-        "bg": const Color(0xFFE8F5E9),
-        "iconColor": const Color(0xFF2E7D32),
-        "title": isDark ? "Tươi Ngon Tuyệt Đối" : "Tươi sạch mỗi ngày",
-        "desc": isDark
-            ? "100% nguyên liệu canh tác hữu cơ được nhập mới trong ngày."
-            : "Tuyển chọn nghiêm ngặt từ nông trại đạt chuẩn VietGAP.",
-      },
-      {
-        "icon": Icons.bolt_outlined,
-        "bg": const Color(0xFFFFF3E0),
-        "iconColor": const Color(0xFFE65100),
-        "title": isDark ? "Giao Nhận Thần Tốc" : "Giao trong 30 phút",
-        "desc": isDark
-            ? "Nhiệt độ món ăn được bảo toàn hoàn hảo tối đa trong 25 phút."
-            : "Hộp giữ nhiệt chuyên dụng, món đến tay luôn nóng giòn.",
-      },
-      {
-        "icon": Icons.shield_outlined,
-        "bg": const Color(0xFFE3F2FD),
-        "iconColor": const Color(0xFF1565C0),
-        "title": isDark ? "An Toàn 5 Sao" : "Đầu bếp tâm huyết",
-        "desc": isDark
-            ? "Quy trình bếp khép kín tiêu chuẩn an toàn quốc tế nghiêm ngặt."
-            : "Chăm chút tỉ mỉ từng đĩa ăn bằng cả niềm đam mê ẩm thực.",
-      },
-      {
-        "icon": Icons.favorite_border_rounded,
-        "bg": const Color(0xFFFCE4EC),
-        "iconColor": const Color(0xFFC2185B),
-        "title": isDark ? "Tận Tâm Trọn Vẹn" : "Hỗ trợ 24/7",
-        "desc": isDark
-            ? "Luôn lắng nghe và chăm sóc từng khẩu vị cá nhân chu đáo nhất."
-            : "Luôn lắng nghe và hỗ trợ đổi trả tức thì nếu bạn chưa ưng ý.",
-      },
-    ];
+    final dynamic rawValues = _systemInfo?['giatricotloi'];
+    List<Map<String, dynamic>> values = [];
+
+    if (rawValues is List && rawValues.isNotEmpty) {
+      final colorList = [
+        {"bg": const Color(0xFFE8F5E9), "color": const Color(0xFF2E7D32)},
+        {"bg": const Color(0xFFFFF3E0), "color": const Color(0xFFE65100)},
+        {"bg": const Color(0xFFE3F2FD), "color": const Color(0xFF1565C0)},
+        {"bg": const Color(0xFFFCE4EC), "color": const Color(0xFFC2185B)},
+      ];
+
+      for (int i = 0; i < rawValues.length; i++) {
+        final valItem = rawValues[i];
+        if (valItem is Map) {
+          final c = colorList[i % colorList.length];
+          values.add({
+            "icon": _mapIconData(valItem['icon']?.toString()),
+            "bg": c["bg"]!,
+            "iconColor": c["color"]!,
+            "title": valItem['title']?.toString() ?? "Giá trị",
+            "desc": valItem['desc']?.toString() ?? "",
+          });
+        }
+      }
+    }
+
+    if (values.isEmpty) {
+      values = [
+        {
+          "icon": Icons.navigation_outlined,
+          "bg": const Color(0xFFFFF3E0),
+          "iconColor": const Color(0xFFE65100),
+          "title": "Tiện đường ghé lấy",
+          "desc": "Đặt món trước, ghé lấy ngay trên lộ trình di chuyển mà không mất thời gian.",
+        },
+        {
+          "icon": Icons.local_fire_department_outlined,
+          "bg": const Color(0xFFFBE9E7),
+          "iconColor": const Color(0xFFD84315),
+          "title": "Nóng hổi chuẩn giờ",
+          "desc": "Quán canh thời gian chuẩn bị để món ăn vừa hoàn thành đúng lúc bạn đến.",
+        },
+        {
+          "icon": Icons.shield_outlined,
+          "bg": const Color(0xFFE3F2FD),
+          "iconColor": const Color(0xFF1565C0),
+          "title": "Thanh toán an toàn",
+          "desc": "Tích hợp thanh toán tiện lợi qua VietQR, PayOS với độ bảo mật tuyệt đối.",
+        },
+        {
+          "icon": Icons.storefront_outlined,
+          "bg": const Color(0xFFE8F5E9),
+          "iconColor": const Color(0xFF2E7D32),
+          "title": "Quán ngon chọn lọc",
+          "desc": "Hệ thống nhà hàng, quán ăn dọc tuyến đường được chọn lọc kỹ lưỡng.",
+        },
+      ];
+    }
 
     return GridView.builder(
       shrinkWrap: true,
@@ -588,7 +633,7 @@ class _AboutUsViewState extends State<AboutUsView> {
             border: Border.all(color: TColor.borderOf(context)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -601,7 +646,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isDark ? TColor.primary.withOpacity(0.15) : (item["bg"] as Color),
+                  color: isDark ? TColor.primary.withValues(alpha: 0.15) : (item["bg"] as Color),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -637,84 +682,15 @@ class _AboutUsViewState extends State<AboutUsView> {
     );
   }
 
-  Widget _buildImpressiveNumbersCard(bool isDark) {
-    final numbers = [
-      {"val": "500K+", "sub": "Bữa ăn đã phục vụ"},
-      {"val": "4.9", "sub": "Đánh giá hài lòng"},
-      {"val": "25 phút", "sub": "Giao hàng bình quân"},
-      {"val": "120+", "sub": "Đầu bếp thượng hạng"},
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: TColor.cardOf(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: TColor.borderOf(context)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            "CON SỐ Ấn TƯỢNG ĐỒNG HÀNH CÙNG BẠN",
-            style: TextStyle(
-              color: TColor.primaryTextOf(context),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.7,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: numbers.length,
-            itemBuilder: (context, index) {
-              final item = numbers[index];
-              return Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF11141D) : const Color(0xFFF9F9FB),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: TColor.borderOf(context)),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      item["val"]!,
-                      style: TextStyle(
-                        color: TColor.primary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item["sub"]!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: TColor.secondaryTextOf(context),
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildContactFooter(BuildContext context, bool isDark) {
+    final hotline = _systemInfo?['hotline']?.toString() ?? "1900 6868";
+    final email = _systemInfo?['email']?.toString() ?? "support@foodroute.vn";
+    final address = _systemInfo?['diachi']?.toString() ?? "Khu Công Nghệ Cao, TP. Thủ Đức, TP. Hồ Chí Minh";
+    final facebook = _systemInfo?['facebook']?.toString() ?? "";
+    final instagram = _systemInfo?['instagram']?.toString() ?? "";
+    final telegram = _systemInfo?['telegram']?.toString() ?? "";
+    final gmail = _systemInfo?['gmail']?.toString() ?? "";
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -722,57 +698,123 @@ class _AboutUsViewState extends State<AboutUsView> {
         color: TColor.cardOf(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: TColor.borderOf(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Cần hỗ trợ trực tiếp?",
-                style: TextStyle(
-                  color: TColor.primaryTextOf(context),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Row(
+          // Hotline row (clickable)
+          InkWell(
+            onTap: () => _launchExternal("tel:${hotline.replaceAll(RegExp(r'\s+'), '')}"),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
                 children: [
-                  Icon(Icons.phone_in_talk_rounded, color: TColor.primary, size: 16),
-                  const SizedBox(width: 4),
+                  Icon(Icons.phone_rounded, color: TColor.primary, size: 16),
+                  const SizedBox(width: 10),
                   Text(
-                    "1900 8888",
+                    "Hotline: ",
+                    style: TextStyle(
+                      color: TColor.secondaryTextOf(context),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    hotline,
                     style: TextStyle(
                       color: TColor.primary,
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Email row (clickable)
+          InkWell(
+            onTap: () => _launchExternal("mailto:$email"),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.mail_outline_rounded, color: TColor.primary, size: 16),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      email,
+                      style: TextStyle(
+                        color: TColor.primaryTextOf(context),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Address row
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.location_on_outlined, color: TColor.primary, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    address,
+                    style: TextStyle(
+                      color: TColor.secondaryTextOf(context),
+                      fontSize: 12,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Divider(color: TColor.borderOf(context), height: 1),
           const SizedBox(height: 12),
+
+          // Social media & connect channels row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                "Mạng xã hội cộng đồng",
-                style: TextStyle(
-                  color: TColor.secondaryTextOf(context),
-                  fontSize: 12,
-                ),
+              _buildBrandCircleBtn(
+                tooltip: "Facebook",
+                bgColor: const Color(0xFF1877F2),
+                icon: Icons.facebook,
+                iconColor: Colors.white,
+                onTap: () => _launchExternal(facebook.isNotEmpty ? facebook : "https://facebook.com/foodroute.official"),
               ),
-              Row(
-                children: [
-                  _buildSocialBtn(LucideIcons.globe),
-                  const SizedBox(width: 8),
-                  _buildSocialBtn(LucideIcons.image),
-                  const SizedBox(width: 8),
-                  _buildSocialBtn(LucideIcons.mail),
-                ],
+              const SizedBox(width: 16),
+              _buildInstagramCircleBtn(
+                onTap: () => _launchExternal(instagram.isNotEmpty ? instagram : "https://instagram.com/foodroute.vn"),
+              ),
+              const SizedBox(width: 16),
+              _buildTelegramCircleBtn(
+                onTap: () => _launchExternal(telegram.isNotEmpty ? telegram : "https://t.me/foodroute_support"),
+              ),
+              const SizedBox(width: 16),
+              _buildGmailCircleBtn(
+                onTap: () => _launchExternal("mailto:${gmail.isNotEmpty ? gmail : 'support@foodroute.vn'}"),
               ),
             ],
           ),
@@ -781,16 +823,137 @@ class _AboutUsViewState extends State<AboutUsView> {
     );
   }
 
-  Widget _buildSocialBtn(IconData icon) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: TColor.borderOf(context).withOpacity(0.5),
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildBrandCircleBtn({
+    required String tooltip,
+    required Color bgColor,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: bgColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: bgColor.withValues(alpha: 0.35),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+        ),
       ),
-      child: Center(
-        child: Icon(icon, size: 16, color: TColor.primary),
+    );
+  }
+
+  Widget _buildInstagramCircleBtn({required VoidCallback onTap}) {
+    return Tooltip(
+      message: "Instagram",
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF09433), Color(0xFFE6683C), Color(0xFFDC2743), Color(0xFFCC2366), Color(0xFFBC1888)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFDC2743).withValues(alpha: 0.35),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: CustomPaint(
+              size: Size(20, 20),
+              painter: InstagramIconPainter(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTelegramCircleBtn({required VoidCallback onTap}) {
+    return Tooltip(
+      message: "Telegram",
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFF26A5E4),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF26A5E4).withValues(alpha: 0.35),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Transform.translate(
+              offset: const Offset(-1.0, 0.5),
+              child: const CustomPaint(
+                size: Size(20, 20),
+                painter: TelegramIconPainter(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGmailCircleBtn({required VoidCallback onTap}) {
+    return Tooltip(
+      message: "Gmail",
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: CustomPaint(
+              size: Size(21, 16.5),
+              painter: GmailIconPainter(),
+            ),
+          ),
+        ),
       ),
     );
   }

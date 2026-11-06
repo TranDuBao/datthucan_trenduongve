@@ -1,3 +1,4 @@
+import { StoreCategoryController } from '../controllers/store_category_controller';
 import { Router } from 'express';
 import { RestaurantMgmtController } from '../controllers/restaurant_mgmt_controller';
 import { VoucherController } from '../controllers/voucher_controller';
@@ -9,6 +10,7 @@ const router = Router();
 const controller = new RestaurantMgmtController();
 const voucherController = new VoucherController();
 const reservationController = new ReservationController();
+const storeCatController = new StoreCategoryController();
 
 // All Restaurant Management routes require Auth & CUAN_HANG Role (ADMIN is not allowed)
 router.use(authMiddleware as any);
@@ -25,6 +27,7 @@ router.get('/revenue', controller.getRevenueAnalytics as any);
 router.get('/orders', controller.getOrders as any);
 router.put('/orders/:id/status', controller.updateOrderStatus as any);
 
+router.get('/store-categories', storeCatController.getActive as any);
 router.get('/categories', controller.getCategories as any);
 router.post('/categories', controller.createCategory as any);
 router.get('/menu', controller.getMenu as any);

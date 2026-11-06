@@ -33,7 +33,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _fabScale = CurvedAnimation(parent: _fabAnimCtrl, curve: Curves.elasticOut);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MapProvider>().initialize();
+      final mapP = context.read<MapProvider>();
+      mapP.navigationContext = context;
+      mapP.initialize();
     });
   }
 
@@ -45,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    context.read<MapProvider>().navigationContext = context;
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1E),
       body: Stack(
@@ -61,7 +64,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Consumer<MapProvider>(
             builder: (context, provider, _) {
               final bool hasActiveOrder = provider.activeStopoverOrder != null;
-              final bool hideSearch = provider.isFocusMode || hasActiveOrder;
+              final bool isNavigating = provider.isNavigating;
+              final bool hideSearch = provider.isFocusMode || hasActiveOrder || isNavigating || provider.isOrderPickedUp;
 
               return AnimatedPositioned(
                 duration: const Duration(milliseconds: 350),
@@ -88,15 +92,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               );
             },
           ),
-          // ── Thanh chỉ dẫn gọn gàng ở đỉnh màn hình khi đang dẫn đường ghé quán ──
+          // ── Thanh chỉ dẫn gọn gàng ở đỉnh màn hình khi đang dẫn đường ghé quán hoặc tới điểm đến ──
           Consumer<MapProvider>(
             builder: (context, provider, _) {
               final order = provider.activeStopoverOrder;
-              if (order == null) return const SizedBox.shrink();
+              final bool isNavigating = provider.isNavigating;
+              if (order == null && !isNavigating) return const SizedBox.shrink();
 
-              final storeName = order['tenQuan'] ?? order['restaurantName'] ?? 'Quán ghé lấy';
-              final orderCode = order['maDonHang'] ?? order['id'] ?? '';
+              final storeName = order?['tenQuan'] ?? order?['restaurantName'] ?? 'Quán ghé lấy';
+              final orderCode = order?['maDonHang'] ?? order?['id'] ?? '';
               final bool isPickedUp = provider.isOrderPickedUp;
+              final destName = provider.destinationPlace?.name ?? 'Điểm đến';
 
               return Positioned(
                 top: 0,
@@ -132,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Expanded(
                           child: Text(
                             isPickedUp
-                                ? 'Đã lấy món tại: $storeName • Chúc bạn ngon miệng!'
+                                ? 'Đã lấy món tại $storeName • Tiếp tục đến $destName'
                                 : 'Đang dẫn đường ghé: $storeName${orderCode.toString().isNotEmpty ? ' (Đơn #$orderCode)' : ''}',
                             style: GoogleFonts.outfit(
                               color: Colors.white,
@@ -193,9 +199,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   Consumer<MapProvider>(
                     builder: (context, provider, _) {
-                      // Nếu có đơn đang ghé quán, chỉ hiện thẻ ghé quán, KHÔNG hiện chồng thêm thẻ tìm đường RouteInfoCard
-                      if (provider.activeStopoverOrder != null) {
+                      // Nếu có đơn đang ghé quán và chưa nhận món: hiện thẻ ghé quán
+                      if (provider.activeStopoverOrder != null && !provider.isOrderPickedUp) {
                         return const ActiveStopoverOrderCard();
+                      }
+                      // Nếu đã lấy món hoặc đang dẫn đường chặng 2 tới điểm đến: bỏ phần ở dưới đi theo yêu cầu người dùng
+                      if (provider.isOrderPickedUp || provider.isNavigating) {
+                        return const SizedBox.shrink();
                       }
                       return const RouteInfoCard();
                     },
@@ -734,7 +744,9 @@ class _OptimizedMapWidget extends StatelessWidget {
       mapController: provider.mapController,
       options: MapOptions(
         initialCenter: const LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng),
-        initialZoom: 14,
+        initialZoom: 15,
+        minZoom: 10,
+        maxZoom: 18.5,
         onMapReady: provider.onMapReady,
         onTap: (tapPosition, point) async {
           final hasRoute = provider.currentRoute != null;
@@ -760,65 +772,87 @@ class _OptimizedMapWidget extends StatelessWidget {
             debugPrint('[HomeScreen] [Warn] TileLayer load error: $error');
           },
         ),
-        Selector<MapProvider, ({RouteModel? originalRoute, RouteModel? stopoverRoute})>(
+        Selector<MapProvider, ({
+          RouteModel? originalRoute,
+          RouteModel? stopoverRoute,
+          bool isNavigating,
+          ValueNotifier<List<LatLng>> remainingLeg1,
+          ValueNotifier<List<LatLng>> remainingLeg2,
+        })>(
           selector: (_, p) => (
             originalRoute: p.originalRoute,
             stopoverRoute: p.stopoverRoute,
+            isNavigating: p.isNavigating,
+            remainingLeg1: p.remainingLeg1,
+            remainingLeg2: p.remainingLeg2,
           ),
           builder: (context, routes, _) {
             final original = routes.originalRoute;
             final stopover = routes.stopoverRoute;
             if (original == null && stopover == null) return const SizedBox.shrink();
 
-            return PolylineLayer(
-              polylines: [
-                // Tuyến đường gốc A -> B (nếu có lộ trình ghé quán, vẽ mờ làm đường cơ sở tham chiếu)
-                if (original != null && stopover != null && original.simplifiedPolylinePoints.length >= 2)
-                  Polyline(
-                    points: original.simplifiedPolylinePoints,
-                    strokeWidth: 4.0,
-                    color: const Color(0xFF60A5FA).withValues(alpha: 0.5),
-                    borderColor: Colors.white60,
-                    borderStrokeWidth: 1.0,
-                  )
-                else if (original != null && original.simplifiedPolylinePoints.length >= 2)
-                  Polyline(
-                    points: original.simplifiedPolylinePoints,
-                    strokeWidth: 5.5,
-                    color: const Color(0xFF2563EB),
-                    borderColor: const Color(0xFF93C5FD),
-                    borderStrokeWidth: 1.2,
-                  ),
-                // Tuyến đường ghé quán A -> Q -> B: Phân biệt 2 chặng rõ ràng
-                if (stopover != null &&
-                    stopover.legs.length >= 2 &&
-                    stopover.legs[0].polylinePoints.length >= 2 &&
-                    stopover.legs[1].polylinePoints.length >= 2) ...[
-                  // Chặng 1: Hiện tại -> Quán ăn lấy món (Màu cam nổi bật)
-                  Polyline(
-                    points: stopover.legs[0].polylinePoints,
-                    strokeWidth: 6.0,
-                    color: const Color(0xFFFC6011),
-                    borderColor: const Color(0xFFFF9E80),
-                    borderStrokeWidth: 1.5,
-                  ),
-                  // Chặng 2: Quán ăn -> Điểm đến đích (Màu xanh ngọc)
-                  Polyline(
-                    points: stopover.legs[1].polylinePoints,
-                    strokeWidth: 5.5,
-                    color: const Color(0xFF059669),
-                    borderColor: const Color(0xFF6EE7B7),
-                    borderStrokeWidth: 1.5,
-                  ),
-                ] else if (stopover != null && stopover.simplifiedPolylinePoints.length >= 2)
-                  Polyline(
-                    points: stopover.simplifiedPolylinePoints,
-                    strokeWidth: 5.5,
-                    color: const Color(0xFFFC6011),
-                    borderColor: const Color(0xFFFF9E80),
-                    borderStrokeWidth: 1.5,
-                  ),
-              ],
+            return ValueListenableBuilder<List<LatLng>>(
+              valueListenable: routes.remainingLeg1,
+              builder: (context, leg1Pts, _) {
+                return ValueListenableBuilder<List<LatLng>>(
+                  valueListenable: routes.remainingLeg2,
+                  builder: (context, leg2Pts, _) {
+                    final isNav = routes.isNavigating;
+                    final ptsLeg1 = isNav
+                        ? leg1Pts
+                        : (stopover?.legs.isNotEmpty == true
+                            ? stopover!.legs[0].polylinePoints
+                            : (stopover?.simplifiedPolylinePoints ?? []));
+                    final ptsLeg2 = isNav
+                        ? leg2Pts
+                        : (stopover != null && stopover.legs.length >= 2
+                            ? stopover.legs[1].polylinePoints
+                            : <LatLng>[]);
+
+                    return PolylineLayer(
+                      polylines: [
+                        // Tuyến đường gốc A -> B (nếu có lộ trình ghé quán, vẽ mờ làm đường cơ sở tham chiếu)
+                        if (original != null && stopover != null && original.simplifiedPolylinePoints.length >= 2)
+                          Polyline(
+                            points: original.simplifiedPolylinePoints,
+                            strokeWidth: 4.0,
+                            color: const Color(0xFF60A5FA).withValues(alpha: 0.35),
+                            borderColor: Colors.white38,
+                            borderStrokeWidth: 1.0,
+                          )
+                        else if (original != null && original.simplifiedPolylinePoints.length >= 2 && !isNav)
+                          Polyline(
+                            points: original.simplifiedPolylinePoints,
+                            strokeWidth: 5.5,
+                            color: const Color(0xFF2563EB),
+                            borderColor: const Color(0xFF93C5FD),
+                            borderStrokeWidth: 1.2,
+                          ),
+
+                        // Chặng 1: Hiện tại -> Quán ăn lấy món (Màu cam thương hiệu nổi bật, xóa dần khi xe đi qua)
+                        if (ptsLeg1.length >= 2)
+                          Polyline(
+                            points: ptsLeg1,
+                            strokeWidth: 6.0,
+                            color: const Color(0xFFFC6011),
+                            borderColor: const Color(0xFFFF9E80),
+                            borderStrokeWidth: 1.5,
+                          ),
+
+                        // Chặng 2: Quán ăn -> Điểm đến đích (Màu xanh ngọc, xóa dần khi xe đi qua)
+                        if (ptsLeg2.length >= 2)
+                          Polyline(
+                            points: ptsLeg2,
+                            strokeWidth: 5.5,
+                            color: const Color(0xFF059669),
+                            borderColor: const Color(0xFF6EE7B7),
+                            borderStrokeWidth: 1.5,
+                          ),
+                      ],
+                    );
+                  },
+                );
+              },
             );
           },
         ),

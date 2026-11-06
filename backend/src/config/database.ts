@@ -23,6 +23,16 @@ import { DatBanModel } from '../models/dat_ban_model';
 import { NotificationModel } from '../models/notification_model';
 import { BannerModel } from '../models/banner_model';
 import { HoanTienModel } from '../models/hoan_tien_model';
+import { LoaiHinhQuanModel } from '../models/loai_hinh_quan_model';
+import { ThongTinHeThongModel } from '../models/thong_tin_he_thong_model';
+import { DonDangKyCuaHangModel } from '../models/don_dang_ky_cua_hang_model';
+import { DieuKhoanChinhSachModel } from '../models/dieu_khoan_chinh_sach_model';
+import { SupportConfigModel } from '../models/support_config_model';
+import { SupportFaqGroupModel } from '../models/support_faq_group_model';
+import { SupportFaqModel } from '../models/support_faq_model';
+import { SupportFeedbackModel } from '../models/support_feedback_model';
+import { SupportTicketModel } from '../models/support_ticket_model';
+import { SupportTicketMessageModel } from '../models/support_ticket_message_model';
 
 dotenv.config();
 
@@ -57,6 +67,16 @@ export const AppDataSource = new DataSource({
     NotificationModel,
     BannerModel,
     HoanTienModel,
+    LoaiHinhQuanModel,
+    ThongTinHeThongModel,
+    DonDangKyCuaHangModel,
+    DieuKhoanChinhSachModel,
+    SupportConfigModel,
+    SupportFaqGroupModel,
+    SupportFaqModel,
+    SupportFeedbackModel,
+    SupportTicketModel,
+    SupportTicketMessageModel,
   ],
   migrations: [__dirname + '/../migrations/*.ts'],
   // CRITICAL DB SAFETY RULE: Never drop or synchronize schema automatically!
@@ -124,6 +144,71 @@ export const connectDatabase = async () => {
     await AppDataSource.query(`CREATE INDEX IF NOT EXISTS idx_nhatky_target ON nhatkyhoatdong(doituong, madoituong);`).catch(() => {});
 
     
+    
+    // Store Registration Table
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS dondangkycuahang (
+        madon SERIAL PRIMARY KEY,
+        mataikhoan INT NOT NULL REFERENCES taikhoan(mataikhoan) ON DELETE CASCADE,
+        tenquan VARCHAR(150) NOT NULL,
+        danhmuc VARCHAR(100) NULL,
+        diachi TEXT NOT NULL,
+        lat DOUBLE PRECISION NULL,
+        lng DOUBLE PRECISION NULL,
+        sdt VARCHAR(20) NOT NULL,
+        hotenchuquan VARCHAR(150) NULL,
+        ngaysinhchuquan DATE NULL,
+        socccd VARCHAR(20) NOT NULL,
+        diachithuongtru TEXT NULL,
+        tennganhang VARCHAR(100) NOT NULL,
+        sotaikhoannganhang VARCHAR(50) NOT NULL,
+        tenchutaikhoan VARCHAR(100) NOT NULL,
+        trangthai VARCHAR(30) DEFAULT 'CHO_DUYET',
+        lydotuchoi TEXT NULL,
+        ngaytao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ngayduyet TIMESTAMP NULL,
+        nguoiduyet INT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_dondangky_mataikhoan ON dondangkycuahang(mataikhoan);
+      CREATE INDEX IF NOT EXISTS idx_dondangky_trangthai ON dondangkycuahang(trangthai);
+    `).catch(() => {});
+
+    // Table for Legal Documents & Policies (Terms of Service, Privacy Policy)
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS dieu_khoan_chinh_sach (
+        maphienban SERIAL PRIMARY KEY,
+        loaitailieu VARCHAR(50) NOT NULL,
+        sophienban VARCHAR(20) NOT NULL,
+        tieude VARCHAR(255) NOT NULL,
+        noidung TEXT NOT NULL,
+        trangthai VARCHAR(30) DEFAULT 'NHAP',
+        ngayhieuluc TIMESTAMP NULL,
+        mataikhoantao INT NULL REFERENCES taikhoan(mataikhoan) ON DELETE SET NULL,
+        ngaytao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        mataikhoancapnhat INT NULL,
+        ngaycapnhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_tailieu ON dieu_khoan_chinh_sach(loaitailieu) WHERE trangthai = 'DANG_HIEU_LUC';
+      CREATE INDEX IF NOT EXISTS idx_tailieu_loai_trangthai ON dieu_khoan_chinh_sach(loaitailieu, trangthai);
+    `).catch(() => {});
+
+    // Add legal & proof of consent columns to dondangkycuahang
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS loaihinhphaply VARCHAR(50) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS masothue VARCHAR(50) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS sogiayphepkinhdoanh VARCHAR(100) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS sogiayattp VARCHAR(100) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS maphienbandieukhoan INT NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS maphienbanchinhsach INT NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS thoigiandongy TIMESTAMP NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS dongydieukhoan BOOLEAN DEFAULT FALSE;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE dondangkycuahang ADD COLUMN IF NOT EXISTS dongychinhsachdulieu BOOLEAN DEFAULT FALSE;`).catch(() => {});
+
+    // Add legal fields to cuahang
+    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS loaihinhphaply VARCHAR(50) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS masothue VARCHAR(50) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS sogiayphepkinhdoanh VARCHAR(100) NULL;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS sogiayattp VARCHAR(100) NULL;`).catch(() => {});
+
     // Auto add customer & store owner fields
     await AppDataSource.query(`ALTER TABLE khachhang ADD COLUMN IF NOT EXISTS ngaysinh DATE NULL;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS hotenchuquan VARCHAR(100) NULL;`).catch(() => {});
@@ -266,6 +351,160 @@ export const connectDatabase = async () => {
       ON notifications(recipient_id, is_read, created_at DESC);
     `).catch(() => {});
     await AppDataSource.query(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS lydohuy TEXT NULL;`).catch(() => {});
+
+    // Support System Safe Migrations (Giai đoạn A)
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_cau_hinh (
+        id INT PRIMARY KEY DEFAULT 1,
+        hotline VARCHAR(50) DEFAULT '1900 6868',
+        gio_lam_viec VARCHAR(150) DEFAULT '08:00 - 22:00 hàng ngày (T2 - CN)',
+        email_ho_tro VARCHAR(100) DEFAULT 'support@foodroute.vn',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+    await AppDataSource.query(`
+      INSERT INTO ho_tro_cau_hinh (id, hotline, gio_lam_viec, email_ho_tro)
+      VALUES (1, '1900 6868', '08:00 - 22:00 hàng ngày (T2 - CN)', 'support@foodroute.vn')
+      ON CONFLICT (id) DO NOTHING;
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_faq_nhom (
+        ma_nhom SERIAL PRIMARY KEY,
+        ten_nhom VARCHAR(150) NOT NULL,
+        thu_tu INT DEFAULT 1,
+        kich_hoat BOOLEAN DEFAULT TRUE,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_faq_cau_hoi (
+        ma_faq SERIAL PRIMARY KEY,
+        ma_nhom INT NOT NULL REFERENCES ho_tro_faq_nhom(ma_nhom) ON DELETE CASCADE,
+        cau_hoi TEXT NOT NULL,
+        cau_tra_loi TEXT NOT NULL,
+        thu_tu INT DEFAULT 1,
+        kich_hoat BOOLEAN DEFAULT TRUE,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_gop_y (
+        ma_gop_y SERIAL PRIMARY KEY,
+        ma_tai_khoan INT NULL REFERENCES taikhoan(mataikhoan) ON DELETE SET NULL,
+        ho_ten VARCHAR(150) NULL,
+        sdt VARCHAR(20) NULL,
+        loai_gop_y VARCHAR(50) DEFAULT 'TINH_NANG',
+        noi_dung TEXT NOT NULL,
+        danh_gia_sao SMALLINT NULL,
+        danh_sach_anh JSONB NULL,
+        trang_thai VARCHAR(30) DEFAULT 'CHUA_XEM',
+        ghi_chu_admin TEXT NULL,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_phieu (
+        ma_phieu SERIAL PRIMARY KEY,
+        ma_tai_khoan INT NOT NULL REFERENCES taikhoan(mataikhoan) ON DELETE CASCADE,
+        tieu_de VARCHAR(255) NULL,
+        loai_su_co VARCHAR(50) NOT NULL,
+        mo_ta TEXT NOT NULL,
+        ma_don_hang INT NULL REFERENCES donhang(madonhang) ON DELETE SET NULL,
+        danh_sach_anh JSONB DEFAULT '[]',
+        trang_thai VARCHAR(30) DEFAULT 'MOI',
+        so_tin_chua_doc_admin INT DEFAULT 0,
+        so_tin_chua_doc_user INT DEFAULT 0,
+        tin_nhan_cuoi TEXT NULL,
+        thoi_gian_tin_cuoi TIMESTAMP NULL,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS ho_tro_tin_nhan (
+        ma_tin_nhan SERIAL PRIMARY KEY,
+        ma_phieu INT NOT NULL REFERENCES ho_tro_phieu(ma_phieu) ON DELETE CASCADE,
+        ma_tai_khoan_gui INT NOT NULL REFERENCES taikhoan(mataikhoan) ON DELETE CASCADE,
+        vai_tro_gui VARCHAR(20) DEFAULT 'USER',
+        noi_dung TEXT NOT NULL,
+        danh_sach_anh JSONB DEFAULT '[]',
+        da_xem BOOLEAN DEFAULT FALSE,
+        thoi_gian_xem TIMESTAMP NULL,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch(() => {});
+
+    // Seed default FAQ groups & questions if empty
+    try {
+      const existingGroups = await AppDataSource.query(`SELECT COUNT(*) as count FROM ho_tro_faq_nhom`);
+      if (existingGroups[0] && Number(existingGroups[0].count) === 0) {
+        const g1 = await AppDataSource.query(
+          `INSERT INTO ho_tro_faq_nhom (ten_nhom, thu_tu, kich_hoat) VALUES ($1, $2, $3) RETURNING ma_nhom`,
+          ['Đơn hàng & Tiện đường ghé lấy', 1, true]
+        );
+        const g2 = await AppDataSource.query(
+          `INSERT INTO ho_tro_faq_nhom (ten_nhom, thu_tu, kich_hoat) VALUES ($1, $2, $3) RETURNING ma_nhom`,
+          ['Thanh toán & Hoàn tiền', 2, true]
+        );
+        const g3 = await AppDataSource.query(
+          `INSERT INTO ho_tro_faq_nhom (ten_nhom, thu_tu, kich_hoat) VALUES ($1, $2, $3) RETURNING ma_nhom`,
+          ['Đăng ký Cửa hàng & Đối tác', 3, true]
+        );
+
+        if (g1[0]?.ma_nhom) {
+          await AppDataSource.query(
+            `INSERT INTO ho_tro_faq_cau_hoi (ma_nhom, cau_hoi, cau_tra_loi, thu_tu, kich_hoat)
+             VALUES ($1, $2, $3, $4, $5), ($1, $6, $7, $8, $5)`,
+            [
+              g1[0].ma_nhom,
+              'Làm sao để đặt món trên lộ trình di chuyển?',
+              'Bạn chỉ cần mở bản đồ lộ trình, chọn điểm xuất phát và điểm đến. Food Route sẽ đề xuất các quán ăn ngon nằm ngay trên cung đường để bạn ghé lấy tiện lợi nhất mà không phải đi đường vòng.',
+              1,
+              true,
+              'Tôi có thể hẹn giờ đến lấy món không?',
+              'Có, trong bước xác nhận đơn hàng bạn có thể chọn thời gian dự kiến ghé lấy (ví dụ 15 phút, 30 phút nữa). Quán ăn sẽ chuẩn bị nóng hổi đúng giờ bạn đến.',
+              2,
+            ]
+          );
+        }
+
+        if (g2[0]?.ma_nhom) {
+          await AppDataSource.query(
+            `INSERT INTO ho_tro_faq_cau_hoi (ma_nhom, cau_hoi, cau_tra_loi, thu_tu, kich_hoat)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              g2[0].ma_nhom,
+              'Chính sách hoàn tiền khi quán hủy đơn như thế nào?',
+              'Nếu đơn hàng thanh toán online bị quán từ chối hoặc hủy, hệ thống sẽ tự động hoàn tiền về tài khoản ngân hàng hoặc phương thức thanh toán ban đầu của bạn trong vòng vài phút.',
+              1,
+              true,
+            ]
+          );
+        }
+
+        if (g3[0]?.ma_nhom) {
+          await AppDataSource.query(
+            `INSERT INTO ho_tro_faq_cau_hoi (ma_nhom, cau_hoi, cau_tra_loi, thu_tu, kich_hoat)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              g3[0].ma_nhom,
+              'Thời gian xét duyệt hồ sơ mở cửa hàng mất bao lâu?',
+              'Đội ngũ Admin Food Route tiếp nhận và xử lý hồ sơ đăng ký trong vòng 24 giờ làm việc. Bạn sẽ nhận được thông báo ngay khi hồ sơ được duyệt.',
+              1,
+              true,
+            ]
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('[Database] Seed FAQ warn:', e);
+    }
 
     await ensureAdminUserExists();
     // Auto-sanitization disabled to protect production/user data integrity

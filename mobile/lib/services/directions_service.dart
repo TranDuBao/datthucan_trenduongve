@@ -22,23 +22,30 @@ class DirectionsService {
 
   /// Tính đường đi theo đường thực tế sử dụng TomTom Routing API (với fallback tự động sang OSRM).
   /// Hỗ trợ điểm dừng ghé quán qua tham số [stopover] (A -> Q -> B).
+  bool _isInVietnam(LatLng p) =>
+      p.latitude >= 8.0 && p.latitude <= 24.0 && p.longitude >= 102.0 && p.longitude <= 112.0;
+
   Future<RouteModel?> getDirections({
     required LatLng origin,
     required LatLng destination,
     LatLng? stopover,
     TravelMode mode = TravelMode.car,
   }) async {
+    const defaultPos = LatLng(ApiConfig.defaultLat, ApiConfig.defaultLng);
+    final safeOrigin = _isInVietnam(origin) ? origin : defaultPos;
+    final safeDestination = _isInVietnam(destination) ? destination : defaultPos;
+    final safeStopover = (stopover != null && _isInVietnam(stopover)) ? stopover : null;
     final apiKey = ApiConfig.tomTomApiKey;
 
     // 1. Thử qua TomTom Routing API nếu đã cấu hình API key
     if (apiKey.isNotEmpty && apiKey != 'YOUR_TOMTOM_API_KEY_HERE') {
       final String waypoints;
-      if (stopover != null) {
+      if (safeStopover != null) {
         waypoints =
-            '${origin.latitude},${origin.longitude}:${stopover.latitude},${stopover.longitude}:${destination.latitude},${destination.longitude}';
+            '${safeOrigin.latitude},${safeOrigin.longitude}:${safeStopover.latitude},${safeStopover.longitude}:${safeDestination.latitude},${safeDestination.longitude}';
       } else {
         waypoints =
-            '${origin.latitude},${origin.longitude}:${destination.latitude},${destination.longitude}';
+            '${safeOrigin.latitude},${safeOrigin.longitude}:${safeDestination.latitude},${safeDestination.longitude}';
       }
 
       final travelMode = _travelModeString(mode);
@@ -73,9 +80,9 @@ class DirectionsService {
 
     // 2. Fallback sang OSRM (Open Source Routing Machine) nếu TomTom lỗi hoặc hết hạn mức
     return _getDirectionsOSRM(
-      origin: origin,
-      destination: destination,
-      stopover: stopover,
+      origin: safeOrigin,
+      destination: safeDestination,
+      stopover: safeStopover,
     );
   }
 

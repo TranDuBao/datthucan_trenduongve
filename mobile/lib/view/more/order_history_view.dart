@@ -116,7 +116,10 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
 
   // ───────────────────────── Filtered lists ─────────────────────────────────
   List<OrderServiceModel> get _activeOrders =>
-      ordersList.where((o) => !isCompletedOrder(o.status) && !isCancelledOrder(o.status)).toList();
+      ordersList.where((o) => !isCompletedOrder(o.status) && !isCancelledOrder(o.status) && !isUnpaidOrder(o.status)).toList();
+
+  List<OrderServiceModel> get _unpaidOrders =>
+      ordersList.where((o) => isUnpaidOrder(o.status)).toList();
 
   List<OrderServiceModel> get _completedOrders =>
       ordersList.where((o) => isCompletedOrder(o.status)).toList();
@@ -340,6 +343,25 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Unpaid section (Chờ thanh toán)
+                                if ((selectedTabIndex == 0 || selectedTabIndex == 1) && _unpaidOrders.isNotEmpty) ...[
+                                  OrderSectionHeader(
+                                    title: 'CHỜ THANH TOÁN (${_unpaidOrders.length} ĐƠN)',
+                                    subtitle: 'Quán chưa nhận đơn',
+                                    iconDot: true,
+                                    isDark: isDark,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ..._unpaidOrders.map((order) => UnpaidOrderCard(
+                                        order: order,
+                                        isDark: isDark,
+                                        onCancel: () => _handleCancelOrder(order),
+                                        onShowDetail: () => _openDetailSheet(order, isDark),
+                                        onNavigateToItem: _navigateToItemDetails,
+                                      )),
+                                  const SizedBox(height: 24),
+                                ],
+
                                 // Active section
                                 if (selectedTabIndex == 0 || selectedTabIndex == 1) ...[
                                   if (_activeOrders.isNotEmpty) ...[

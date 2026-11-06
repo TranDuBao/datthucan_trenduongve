@@ -15,8 +15,12 @@ import uploadRoutes from './routes/upload_routes';
 import reviewRoutes from './routes/review_routes';
 import notificationRoutes from './routes/notification_routes';
 import refundRoutes from './routes/refund_routes';
+import storeRegistrationRoutes from './routes/store_registration_routes';
+import legalDocumentRoutes from './routes/legal_document_routes';
+import supportRoutes from './routes/support_routes';
 
 import { RestaurantController } from './controllers/restaurant_controller';
+import { SystemInfoController } from './controllers/system_info_controller';
 import { AdminBannerService } from './services/admin/admin_banner_service';
 import { createRateLimiter } from './middlewares/rate_limiter_middleware';
 
@@ -28,6 +32,7 @@ app.set('trust proxy', trustProxyHops);
 
 const restaurantController = new RestaurantController();
 const adminBannerService = new AdminBannerService();
+const systemInfoController = new SystemInfoController();
 
 // Configured CORS Origin (P3-02 Fix)
 const allowedOrigins = process.env.CLIENT_ORIGIN
@@ -85,6 +90,7 @@ if (fs.existsSync(fallbackUploadsDir)) {
 // Routes Layer
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/restaurants', restaurantRoutes);
+app.get('/api/v1/system/about-us', systemInfoController.getAboutUs as any);
 app.get('/api/v1/categories', restaurantController.getCategories);
 app.get('/api/v1/banners', async (_req, res) => {
   try {
@@ -105,6 +111,12 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1', reviewRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/refunds', refundRoutes);
+app.use('/api/v1', storeRegistrationRoutes);
+app.use('/api', storeRegistrationRoutes);
+app.use('/api/v1', legalDocumentRoutes);
+app.use('/api', legalDocumentRoutes);
+app.use('/api/v1', supportRoutes);
+app.use('/api', supportRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

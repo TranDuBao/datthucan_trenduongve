@@ -476,13 +476,15 @@ class _CheckoutViewState extends State<CheckoutView> {
     void showNext() => _showOrderResults(remaining);
 
     void showSuccessModal([Map<String, dynamic>? updatedData]) async {
+      final store = context.read<MapProvider>().selectedStopoverStore;
       final finalOrderData = {
+        if (store != null) ...store,
         ...orderData,
         if (updatedData != null) ...updatedData,
       };
 
       try {
-        context.read<MapProvider>().setActiveStopoverOrder(finalOrderData);
+        await context.read<MapProvider>().setActiveStopoverOrder(finalOrderData);
       } catch (_) {}
 
       final action = await PaymentSuccessModal.show(
@@ -497,19 +499,20 @@ class _CheckoutViewState extends State<CheckoutView> {
         return;
       }
 
+      final mainTabState = context.findAncestorStateOfType<MainTabViewState>();
       if (action == PaymentSuccessAction.viewOrder) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
-          (route) => false,
-        );
-        Navigator.of(context).push(
+        if (Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+        }
+        mainTabState?.changeTab(2, popToRoot: true);
+        Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(builder: (_) => const OrderHistoryView()),
         );
       } else {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainTabView(initialTab: 2)),
-          (route) => false,
-        );
+        if (Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+        }
+        mainTabState?.changeTab(2, popToRoot: true);
       }
     }
 

@@ -13,6 +13,25 @@ export interface PayOSPaymentLinkResult {
   qrCode?: string;
 }
 
+export interface PayOSPaymentInfo {
+  id: string;
+  orderCode: number;
+  amount: number;
+  amountPaid: number;
+  amountRemaining: number;
+  status: 'PENDING' | 'PROCESSING' | 'PAID' | 'CANCELLED';
+  createdAt: string;
+  transactions?: Array<{
+    accountNumber: string;
+    amount: number;
+    description: string;
+    reference: string;
+    transactionDateTime: string;
+  }>;
+  canceledAt?: string;
+  cancellationReason?: string;
+}
+
 export class PayOSService {
   private static clientId = process.env.PAYOS_CLIENT_ID || '';
   private static apiKey = process.env.PAYOS_API_KEY || '';
@@ -104,6 +123,68 @@ export class PayOSService {
         req.end();
       } catch (err) {
         console.error(`[PayOSService] [Error] Unexpected exception:`, err);
+        resolve(null);
+      }
+    });
+  }
+
+  /**
+   * Chủ động truy vấn trạng thái đơn thanh toán trực tiếp từ cổng PayOS
+   * Giúp hệ thống cập nhật tức thì ngay cả khi Webhook bị chặn / chậm / localhost dev
+   */
+  static async getPaymentLinkInformation(orderCode: number): Promise<PayOSPaymentInfo | null> {
+    const clientId = process.env.PAYOS_CLIENT_ID || this.clientId;
+    const apiKey = process.env.PAYOS_API_KEY || this.apiKey;
+
+    if (!clientId || !apiKey) {
+      console.warn('[PayOSService] Thiếu PAYOS_CLIENT_ID hoặc PAYOS_API_KEY để kiểm tra thông tin thanh toán');
+      return null;
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const req = https.request(
+          `https://api-merchant.payos.vn/v2/payment-requests/${orderCode}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-client-id': clientId,
+              'x-api-key': apiKey,
+            },
+            timeout: 8000,
+          },
+          (res) => {
+            let body = '';
+            res.on('data', (chunk) => (body += chunk));
+            res.on('end', () => {
+              try {
+                const json = JSON.parse(body);
+                if (json.code === '00' && json.data) {
+                  resolve(json.data as PayOSPaymentInfo);
+                } else {
+                  resolve(null);
+                }
+              } catch {
+                resolve(null);
+              }
+            });
+          }
+        );
+
+        req.on('error', (err) => {
+          console.error(`[PayOSService] [Error] getPaymentLinkInformation error:`, err.message);
+          resolve(null);
+        });
+
+        req.on('timeout', () => {
+          req.destroy();
+          resolve(null);
+        });
+
+        req.end();
+      } catch (err) {
+        console.error(`[PayOSService] [Error] Unexpected error in getPaymentLinkInformation:`, err);
         resolve(null);
       }
     });

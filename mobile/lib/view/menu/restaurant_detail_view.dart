@@ -15,6 +15,8 @@ import '../../common_widget/smart_network_image.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
 import 'item_details_view.dart';
+import '../reservation/reservation_booking_view.dart';
+
 import '../../widgets/single_restaurant_warning_modal.dart';
 
 class RestaurantDetailView extends StatefulWidget {
@@ -37,6 +39,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
   List<VoucherModel> storeVouchers = [];
   bool isLoadingVouchers = true;
   Set<int> collectedVoucherIds = {};
+  late void Function(dynamic) _voucherListener;
 
   @override
   void initState() {
@@ -55,21 +58,43 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     currentRatingCount = int.tryParse(rawCount.toString()) ?? 0;
     currentRate = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
 
+    final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
+    final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
+    locator<SocketService>().joinRestaurantRoom(resId);
+    locator<SocketService>().listenToMenuUpdates(_onMenuUpdated);
+
     _loadMenuData();
-    locator<SocketService>().listenToVoucherUpdates((_) {
+    _voucherListener = (_) {
       if (mounted) {
-        final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
-        final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
         VoucherService.fetchVouchers(maQuan: resId).then((vouchers) {
           if (mounted) setState(() => storeVouchers = vouchers);
         });
       }
-    });
+    };
+    locator<SocketService>().listenToVoucherUpdates(_voucherListener);
+  }
+
+  void _onMenuUpdated(dynamic data) {
+    if (!mounted) return;
+    try {
+      final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
+      final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
+      final int? updatedStoreId = int.tryParse(data?['maQuan']?.toString() ?? '');
+      if (updatedStoreId == null || updatedStoreId == resId) {
+        _loadMenuData();
+      }
+    } catch (e) {
+      debugPrint('[RestaurantDetail] _onMenuUpdated error: $e');
+    }
   }
 
   @override
   void dispose() {
-    locator<SocketService>().offVoucherUpdates();
+    final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
+    final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
+    locator<SocketService>().leaveRestaurantRoom(resId);
+    locator<SocketService>().offMenuUpdates(_onMenuUpdated);
+    locator<SocketService>().offVoucherUpdates(_voucherListener);
     super.dispose();
   }
 
@@ -531,6 +556,39 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Nút Đặt bàn tại quán (Dine-in)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 6),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReservationBookingView(
+                                  restaurantObj: widget.restaurantObj,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.table_restaurant_rounded, color: Color(0xFF10B981), size: 18),
+                          label: const Text(
+                            "Đặt bàn tại quán (Dine-in)",
+                            style: TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.08),
+                            side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),

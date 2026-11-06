@@ -64,7 +64,7 @@ export class RestaurantController {
         });
       }
 
-      const maxDistanceMeters = Number(maxDistance) || 2500;
+      const maxDistanceMeters = Number(maxDistance) || 800;
       const searchKeyword = (keyword || foodKeyword || req.query.keyword || req.query.foodKeyword || '').toString().trim();
       const restaurants = await this.restaurantService.getRestaurantsAlongRoute(pts, maxDistanceMeters, searchKeyword);
 

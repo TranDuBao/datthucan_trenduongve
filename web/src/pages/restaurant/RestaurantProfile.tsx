@@ -41,6 +41,7 @@ const DEFAULT_HOURS = {
 
 export const RestaurantProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
+  const [storeCategories, setStoreCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [ocrNotice, setOcrNotice] = useState<string | null>(null);
@@ -91,6 +92,8 @@ export const RestaurantProfile: React.FC = () => {
 
   useEffect(() => {
     fetchVietQRBanks().then((data) => setBanks(data));
+
+    apiFetch<any>('/restaurant/store-categories').then((res) => { if (res.data) setStoreCategories(res.data); }).catch(() => {});
 
     apiFetch<any>('/restaurant/profile')
       .then((res) => {
@@ -309,11 +312,14 @@ export const RestaurantProfile: React.FC = () => {
             <div className="form-group">
               <label className="form-label">Danh Mục / Loại Hình Quán</label>
               <select className="form-control" value={form.danhMuc} onChange={(e) => setForm({ ...form, danhMuc: e.target.value })}>
-                <option value="Đồ ăn">Đồ ăn chính (Cơm, Bún, Phở)</option>
-                <option value="Thức uống">Thức uống & Cà phê</option>
-                <option value="Ăn vặt">Ăn vặt & Tráng miệng</option>
-                <option value="Bánh mì & Fastfood">Bánh mì & Fastfood</option>
-                <option value="Lẩu & Nướng">Lẩu & Nướng</option>
+                {storeCategories.map((c: any) => (
+                  <option key={c.maLoai} value={c.tenLoai}>
+                    {c.tenLoai}
+                  </option>
+                ))}
+                {form.danhMuc && !storeCategories.some((c: any) => c.tenLoai === form.danhMuc) && (
+                  <option value={form.danhMuc}>{form.danhMuc}</option>
+                )}
               </select>
             </div>
 

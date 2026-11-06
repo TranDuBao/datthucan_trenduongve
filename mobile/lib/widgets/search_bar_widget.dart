@@ -435,7 +435,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
             provider: provider,
             option: FoodRouteOption.takeaway,
             label: 'Ghé mua',
-            subtext: '${provider.travelMinutes}p di chuyển',
+            subtext: provider.travelMinutes > 0
+                ? '${provider.travelMinutes}p di chuyển'
+                : 'Ghé lấy nhanh',
             icon: Icons.shopping_bag_rounded,
           ),
           const SizedBox(width: 8),
@@ -443,7 +445,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
             provider: provider,
             option: FoodRouteOption.preOrder,
             label: 'Đặt trước',
-            subtext: 'Chuẩn bị ~15p',
+            subtext: 'Chuẩn bị ~45p',
             icon: Icons.access_time_filled_rounded,
           ),
           const SizedBox(width: 8),

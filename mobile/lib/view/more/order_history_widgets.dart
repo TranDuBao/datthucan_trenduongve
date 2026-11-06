@@ -541,3 +541,6 @@ bool isCompletedOrder(String status) =>
 
 bool isCancelledOrder(String status) =>
     OrderProgressStepper.isCancelledStatus(status);
+
+bool isUnpaidOrder(String status) =>
+    OrderProgressStepper.isUnpaidStatus(status);

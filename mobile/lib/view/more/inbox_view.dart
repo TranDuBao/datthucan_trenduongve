@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/voucher_service.dart';
+import '../../services/socket_service.dart';
+import '../../common/locator.dart';
 import 'my_order_view.dart';
+import '../../widgets/skeleton/voucher_skeleton.dart';
 
 class InboxView extends StatefulWidget {
   const InboxView({super.key});
@@ -19,15 +22,43 @@ class _InboxViewState extends State<InboxView> {
   bool isLoading = true;
   List<VoucherModel> voucherList = [];
   List<VoucherModel> savedVoucherList = [];
+  late void Function(dynamic) _voucherListener;
+  late VoidCallback _reconnectListener;
 
   @override
   void initState() {
     super.initState();
-    _loadVouchersFromDatabase();
+    _loadVouchersFromDatabase(showLoading: true);
+
+    _voucherListener = (data) {
+      debugPrint('[InboxView] [Info] Realtime voucher event received: $data');
+      if (mounted) {
+        _loadVouchersFromDatabase(showLoading: false);
+      }
+    };
+
+    _reconnectListener = () {
+      debugPrint('[InboxView] [Info] Socket reconnected, syncing vouchers...');
+      if (mounted) {
+        _loadVouchersFromDatabase(showLoading: false);
+      }
+    };
+
+    locator<SocketService>().listenToVoucherUpdates(_voucherListener);
+    locator<SocketService>().onReconnect(_reconnectListener);
   }
 
-  Future<void> _loadVouchersFromDatabase() async {
-    setState(() => isLoading = true);
+  @override
+  void dispose() {
+    locator<SocketService>().offVoucherUpdates(_voucherListener);
+    locator<SocketService>().offReconnect(_reconnectListener);
+    super.dispose();
+  }
+
+  Future<void> _loadVouchersFromDatabase({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() => isLoading = true);
+    }
     final results = await Future.wait([
       VoucherService.fetchVouchers(),
       VoucherService.fetchMyCollectedVouchers(),
@@ -36,7 +67,7 @@ class _InboxViewState extends State<InboxView> {
       setState(() {
         voucherList = results[0];
         savedVoucherList = results[1];
-        isLoading = false;
+        if (showLoading) isLoading = false;
       });
     }
   }
@@ -101,9 +132,7 @@ class _InboxViewState extends State<InboxView> {
             // Scrollable List of Vouchers
             Expanded(
               child: isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(color: TColor.primary),
-                    )
+                  ? const VoucherSkeletonList(itemCount: 4)
                   : _filteredVouchers.isEmpty
                       ? Center(
                           child: Column(

@@ -497,13 +497,24 @@ export class RestaurantMgmtService {
       status = 'HET_HANG';
     }
 
+const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
+    const traits = data.dacTinh ?? (data as any).dactinh;
+    const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
     const food = this.foodRepo.create({
       ...data,
+      ...(desc !== undefined ? { moTa: desc } : {}),
+      ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       soLuongMon: qty,
       trangThaiMon: status,
       maQuan,
     });
-    return await this.foodRepo.save(food);
+    const saved = await this.foodRepo.save(food);
+    try {
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'CREATE', saved);
+    } catch (e) {
+      console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
+    }
+    return saved;
   }
 
   async updateFoodItem(maQuan: number, maMonAn: number, data: Partial<MonAnModel>) {
@@ -520,11 +531,22 @@ export class RestaurantMgmtService {
       nextStatus = 'DANG_BAN';
     }
 
+    const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
+    const traits = data.dacTinh ?? (data as any).dactinh;
+    const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
     Object.assign(food, data, {
+      ...(desc !== undefined ? { moTa: desc } : {}),
+      ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       soLuongMon: nextQty,
       trangThaiMon: nextStatus,
     });
-    return await this.foodRepo.save(food);
+    const saved = await this.foodRepo.save(food);
+    try {
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'UPDATE', saved);
+    } catch (e) {
+      console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
+    }
+    return saved;
   }
 
   async deleteFoodItem(maQuan: number, maMonAn: number) {
@@ -532,10 +554,16 @@ export class RestaurantMgmtService {
     if (!food) {
       throw new Error('Món ăn không tồn tại hoặc không thuộc quyền quản lý của quán!');
     }
+    const foodId = food.maMonAn;
     const foodImg = food.img;
     const result = await this.foodRepo.remove(food);
     if (foodImg) {
       deleteUploadFile(foodImg);
+    }
+    try {
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'DELETE', { maMonAn: foodId, maQuan });
+    } catch (e) {
+      console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
     }
     return result;
   }

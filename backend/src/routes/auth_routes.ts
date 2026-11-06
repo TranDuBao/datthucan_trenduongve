@@ -17,6 +17,8 @@ router.post('/logout', authController.logout);
 router.post('/refresh', authLimiter as any, authController.refreshToken);
 router.post('/refresh-token', authLimiter as any, authController.refreshToken);
 router.get('/me', authMiddleware as any, authController.getProfile);
+router.get('/refresh-profile', authMiddleware as any, authController.refreshProfile);
+router.post('/refresh-profile', authMiddleware as any, authController.refreshProfile);
 router.post('/me', authMiddleware as any, authController.getProfile);
 router.post('/update_profile', authMiddleware as any, authController.updateProfile);
 router.put('/update_profile', authMiddleware as any, authController.updateProfile);

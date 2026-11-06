@@ -194,7 +194,9 @@ export const NotificationBell: React.FC = () => {
 
     // Deep routing based on payload
     const isAdmin = user?.role === 'ADMIN';
-    if (item.data?.orderId) {
+    if (item.type?.includes('store_registration') || item.data?.maDon) {
+      navigate('/admin/store-registrations');
+    } else if (item.data?.orderId) {
       navigate(isAdmin ? '/admin/orders' : '/restaurant/orders');
     } else if (item.data?.reservationId) {
       navigate('/restaurant/reservations');

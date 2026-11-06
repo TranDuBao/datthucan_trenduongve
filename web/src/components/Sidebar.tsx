@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
+  ClipboardCheck,
   Users,
   Store,
   FolderTree,
@@ -15,6 +16,10 @@ import {
   ShieldAlert,
   CalendarDays,
   Star,
+  Info,
+  Layers,
+  FileText,
+  Headphones,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,11 +30,16 @@ export const Sidebar: React.FC = () => {
   const adminNav = [
     { title: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { title: 'Người Dùng', path: '/admin/users', icon: Users },
+    { title: 'Duyệt Đăng Ký Quán', path: '/admin/store-registrations', icon: ClipboardCheck },
     { title: 'Nhà Hàng', path: '/admin/restaurants', icon: Store },
+    { title: 'Loại Hình Quán', path: '/admin/store-categories', icon: Layers },
     { title: 'Thực Đơn Tuyển Chọn', path: '/admin/categories', icon: FolderTree },
     { title: 'Quản Lý Banner', path: '/admin/banners', icon: Sliders },
     { title: 'Đơn Hàng', path: '/admin/orders', icon: ShoppingBag },
     { title: 'Đánh Giá & Kiểm Duyệt', path: '/admin/reviews', icon: Star },
+    { title: 'Về Chúng Tôi', path: '/admin/about-us', icon: Info },
+    { title: 'Điều Khoản & Chính Sách', path: '/admin/legal-documents', icon: FileText },
+    { title: 'Hỗ Trợ', path: '/admin/support', icon: Headphones },
     { title: 'Nhật Ký', path: '/admin/logs', icon: ShieldAlert },
   ];
 

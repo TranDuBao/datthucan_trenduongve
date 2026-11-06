@@ -112,6 +112,18 @@ export class AuthService {
     return await this.generateTokens(account.taiKhoan, account.khachHang);
   }
 
+  public async refreshProfileSession(userId: number): Promise<AuthTokens> {
+    const account = await this.userService.findById(userId);
+    if (!account || !account.taiKhoan) {
+      throw new Error('Tài khoản không tồn tại');
+    }
+    const tk = account.taiKhoan;
+    if (tk.trangThai === 'KHOA_VINH_VIEN' || tk.trangThai === 'KHOA_TAM_THOI' || tk.trangThai === 'DA_XOA') {
+      throw new Error('Tài khoản hiện đang bị khóa hoặc ngưng hoạt động');
+    }
+    return await this.generateTokens(account.taiKhoan, account.khachHang);
+  }
+
   async loginWithGoogle(idToken: string): Promise<AuthTokens> {
     if (!idToken || typeof idToken !== 'string' || !idToken.trim()) {
       throw new Error('Google ID Token không được để trống');

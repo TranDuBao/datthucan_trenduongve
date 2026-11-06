@@ -7,6 +7,7 @@ import '../view/main_tabview/main_tabview.dart';
 import '../view/more/order_history_view.dart';
 
 enum PaymentSuccessAction {
+  viewNavigation,
   viewOrder,
   continueShopping,
 }
@@ -111,6 +112,10 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _navigateToNavigation() {
+    Navigator.of(context, rootNavigator: true).pop(PaymentSuccessAction.viewNavigation);
   }
 
   void _navigateToOrder() {
@@ -265,8 +270,8 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                       SizedBox(
                         width: double.infinity,
                         height: 48,
-                        child: ElevatedButton(
-                          onPressed: _navigateToOrder,
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToNavigation,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: TColor.primary,
                             foregroundColor: Colors.white,
@@ -279,17 +284,19 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: const Text("Xem đơn hàng"),
+                          icon: const Icon(Icons.navigation_rounded, size: 18),
+                          label: const Text("Xem đường đi đến quán"),
                         ),
                       ),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
                         height: 44,
-                        child: TextButton(
-                          onPressed: _navigateToHome,
-                          style: TextButton.styleFrom(
-                            foregroundColor: TColor.secondaryTextOf(context),
+                        child: OutlinedButton(
+                          onPressed: _navigateToOrder,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: TColor.primaryTextOf(context),
+                            side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -298,7 +305,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          child: const Text("Tiếp tục mua sắm"),
+                          child: const Text("Xem chi tiết đơn hàng"),
                         ),
                       ),
                     ],

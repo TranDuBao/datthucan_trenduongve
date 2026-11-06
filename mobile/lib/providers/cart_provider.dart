@@ -1,6 +1,8 @@
 import '../services/category_service.dart';
 import 'package:flutter/material.dart';
 import '../services/order_service.dart';
+import '../common/locator.dart';
+import '../services/socket_service.dart';
 
 class RestaurantMeta {
   final int id;
@@ -11,6 +13,29 @@ class RestaurantMeta {
 
 class CartProvider extends ChangeNotifier {
   final List<CartItemModel> _items = [];
+
+  CartProvider() {
+    locator<SocketService>().listenToVoucherUpdates(_onVoucherUpdated);
+  }
+
+  void _onVoucherUpdated(dynamic data) {
+    if (data is Map && _appliedVoucherId != null) {
+      final vId = data['maVoucher'] ?? data['data']?['maVoucher'];
+      final status = data['status'] ?? data['data']?['status'];
+      final action = data['action'] ?? data['data']?['action'];
+      if (vId == _appliedVoucherId) {
+        if (status == 'TAM_TAT' || action == 'DELETED') {
+          removeVoucher();
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    locator<SocketService>().offVoucherUpdates(_onVoucherUpdated);
+    super.dispose();
+  }
   // Lưu thông tin tên/địa chỉ của từng quán đang có món trong giỏ
   final Map<int, RestaurantMeta> _restaurantMetas = {};
 

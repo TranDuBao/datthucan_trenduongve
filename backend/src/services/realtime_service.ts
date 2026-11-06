@@ -7,6 +7,7 @@ import { CuaHangModel } from '../models/cua_hang_model';
 import { DonHangModel } from '../models/don_hang_model';
 import { DatBanModel } from '../models/dat_ban_model';
 import { KhachHangModel } from '../models/khach_hang_model';
+import { SupportTicketModel } from '../models/support_ticket_model';
 import { TokenBlacklistService } from './token_blacklist_service';
 
 dotenv.config();
@@ -24,6 +25,7 @@ export const REALTIME_EVENTS = {
   REVIEW_CREATED: 'review:created',
   REVIEW_UPDATED: 'review:updated',
   REVIEW_VISIBILITY_CHANGED: 'review:visibility_changed',
+  MENU_UPDATED: 'menu:updated',
 } as const;
 
 export interface RealtimeUserPayload {
@@ -95,6 +97,7 @@ export class RealtimeService {
       const userSub = Number(user.sub);
       // Auto join personal account room by account ID (maTaiKhoan)
       socket.join(`account:${userSub}`);
+      socket.join(`user:${userSub}`);
 
       // Auto join customer room by customer ID (maKhachHang)
       try {
@@ -112,6 +115,7 @@ export class RealtimeService {
       if (role === 'ADMIN') {
         socket.join('admin');
         socket.join(`admin:${userSub}`);
+        socket.join('support:admin');
       }
 
       // Auto join restaurant room if user is a store owner
@@ -182,6 +186,17 @@ export class RealtimeService {
                   const kh = await AppDataSource.getRepository(KhachHangModel).findOne({ where: { maTaiKhoan: subId } });
                   if (kh && kh.maKhachHang === resv.maKhachHang) socket.join(`reservation:${roomId}`);
                 }
+              }
+            }
+          } else if (data.roomType === 'ticket') {
+            if (userRole === 'ADMIN') {
+              socket.join(`ticket:${roomId}`);
+            } else {
+              const ticket = await AppDataSource.getRepository(SupportTicketModel).findOne({ where: { maPhieu: roomId } });
+              if (ticket && ticket.maTaiKhoan === subId) {
+                socket.join(`ticket:${roomId}`);
+              } else {
+                console.warn(`[RealtimeService] [Security] User #${subId} unauthorized to join ticket:${roomId}`);
               }
             }
           }
@@ -354,9 +369,14 @@ export class RealtimeService {
       const payload = {
         maQuan,
         updatedAt: new Date().toISOString(),
+        ...data,
         data,
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.VOUCHER_UPDATED, payload);
+      this.io.to(`restaurant_public:${maQuan}`).emit(REALTIME_EVENTS.VOUCHER_UPDATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.VOUCHER_UPDATED, payload);
+      this.io.emit(REALTIME_EVENTS.VOUCHER_UPDATED, payload);
+      console.log(`[RealtimeService] [Info] Broadcasted voucher:updated for store #${maQuan}, action: ${data?.action}`);
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (voucher:updated):', e);
     }
@@ -414,6 +434,25 @@ export class RealtimeService {
       });
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (about_us:updated):', e);
+    }
+  }
+
+  public emitMenuUpdated(maQuan: number, action: 'CREATE' | 'UPDATE' | 'DELETE', food: any) {
+    if (!this.io) return;
+    try {
+      const payload = {
+        maQuan,
+        action,
+        food,
+        updatedAt: new Date().toISOString(),
+      };
+      this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.MENU_UPDATED, payload);
+      this.io.to(`restaurant_public:${maQuan}`).emit(REALTIME_EVENTS.MENU_UPDATED, payload);
+      this.io.emit(REALTIME_EVENTS.MENU_UPDATED, payload);
+      this.io.emit('dish:updated', payload);
+      console.log(`[RealtimeService] [Info] Emitted menu:updated for store #${maQuan}, dish #${food?.maMonAn} (${action})`);
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (menu:updated):', e);
     }
   }
 }

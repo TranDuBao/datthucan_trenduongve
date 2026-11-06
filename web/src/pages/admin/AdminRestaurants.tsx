@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../../api/apiClient';
-import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed, Info } from 'lucide-react';
+import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed, Info, Layers, Tag } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { NotificationModal } from '../../components/NotificationModal';
@@ -12,6 +12,7 @@ import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../
 import { VIETNAM_BANKS } from './users/UserFormModal';
 import { RestaurantDetailView } from './restaurants/RestaurantDetailView';
 import { AdminCategories } from './AdminCategories';
+import { AdminStoreCategories } from './AdminStoreCategories';
 import { UnderlineTabs, TabItem } from '../../components/UnderlineTabs';
 
 export const AdminRestaurants: React.FC = () => {
@@ -27,11 +28,15 @@ export const AdminRestaurants: React.FC = () => {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
   const [merchantUsers, setMerchantUsers] = useState<any[]>([]);
 
-  // Sub-tabs navigation: Danh Sách Nhà Hàng & Quản Lý Danh Mục Món
+  // Sub-tabs navigation: Danh Sách Nhà Hàng, Loại Hình Quán & Quản Lý Danh Mục Món
+  type TabKey = 'stores' | 'store-types' | 'categories';
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = (searchParams.get('tab') as 'stores' | 'categories') || 'stores';
+  const currentTab = (searchParams.get('tab') as TabKey) || 'stores';
 
-  const handleTabChange = (key: 'stores' | 'categories') => {
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [storeCategories, setStoreCategories] = useState<any[]>([]);
+
+  const handleTabChange = (key: TabKey) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (key === 'stores') {
@@ -46,8 +51,16 @@ export const AdminRestaurants: React.FC = () => {
   const isDeletedStore = (s: any) =>
     Boolean(s.isDeleted) || ['ĐÃ XÓA', 'DA_XOA', 'DELETED'].includes((s.trangThai || '').toUpperCase());
 
-  const activeStores = (data.items || []).filter((s: any) => !isDeletedStore(s));
-  const deletedStores = (data.items || []).filter((s: any) => isDeletedStore(s));
+  const byCategoryStores = (data.items || []).filter((s: any) => {
+    if (categoryFilter === 'ALL') return true;
+    if (!s.danhMuc) return false;
+    const dm = s.danhMuc.trim().toLowerCase();
+    const cf = categoryFilter.trim().toLowerCase();
+    return dm === cf || dm.includes(cf) || cf.includes(dm);
+  });
+
+  const activeStores = byCategoryStores.filter((s: any) => !isDeletedStore(s));
+  const deletedStores = byCategoryStores.filter((s: any) => isDeletedStore(s));
 
   const filteredStores =
     statusFilter === 'ACTIVE'
@@ -100,6 +113,7 @@ export const AdminRestaurants: React.FC = () => {
   const [form, setForm] = useState({
     tenQuan: '',
     diaChi: '',
+    danhMuc: '',
     sdt: '',
     img: '',
     trangThai: 'mở cửa',
@@ -125,6 +139,10 @@ export const AdminRestaurants: React.FC = () => {
     apiFetch<any>('/admin/users?roleFilter=CUAN_HANG&limit=1000')
       .then((res) => setMerchantUsers(res.data?.items || res.items || []))
       .catch(() => {});
+
+    apiFetch<any>('/admin/store-categories')
+      .then((res) => setStoreCategories(res.data || []))
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -136,6 +154,7 @@ export const AdminRestaurants: React.FC = () => {
     setForm({
       tenQuan: '',
       diaChi: '',
+      danhMuc: storeCategories[0]?.tenLoai || '',
       sdt: '',
       img: '',
       trangThai: 'mở cửa',
@@ -158,6 +177,7 @@ export const AdminRestaurants: React.FC = () => {
     setForm({
       tenQuan: s.tenQuan || '',
       diaChi: s.diaChi || '',
+      danhMuc: s.danhMuc || '',
       sdt: s.sdt || '',
       img: s.img || '',
       trangThai: s.trangThai || 'mở cửa',
@@ -213,14 +233,15 @@ export const AdminRestaurants: React.FC = () => {
     );
   }
 
-  const tabs: TabItem<'stores' | 'categories'>[] = [
+  const tabs: TabItem<TabKey>[] = [
     { key: 'stores', label: 'Danh Sách Nhà Hàng', icon: <Store size={18} />, count: activeStores.length },
+    { key: 'store-types', label: 'Loại Hình Quán Ăn', icon: <Layers size={18} />, count: storeCategories.length },
     { key: 'categories', label: 'Quản Lý Danh Mục Món', icon: <UtensilsCrossed size={18} /> },
   ];
 
   return (
     <div>
-      <UnderlineTabs<'stores' | 'categories'>
+      <UnderlineTabs<TabKey>
         tabs={tabs}
         activeTab={currentTab}
         onChange={handleTabChange}
@@ -228,6 +249,13 @@ export const AdminRestaurants: React.FC = () => {
 
       {currentTab === 'categories' ? (
         <AdminCategories />
+      ) : currentTab === 'store-types' ? (
+        <AdminStoreCategories
+          onSelectCategoryFilter={(catName) => {
+            setCategoryFilter(catName);
+            handleTabChange('stores');
+          }}
+        />
       ) : (
         <>
           <div className="page-header">
@@ -242,7 +270,7 @@ export const AdminRestaurants: React.FC = () => {
 
       <div className="card-table">
         <div className="table-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div className="search-input-group" style={{ flex: 1, minWidth: '260px' }}>
+          <div className="search-input-group" style={{ flex: 1, minWidth: '240px' }}>
             <Search size={16} />
             <input
               type="text"
@@ -250,6 +278,40 @@ export const AdminRestaurants: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={15} color="#64748b" />
+            <select
+              className="form-control"
+              style={{ minWidth: '190px', padding: '6px 12px', fontSize: '13px', borderRadius: '10px' }}
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="ALL">-- Tất Cả Loại Hình Quán --</option>
+              {storeCategories.map((c: any) => (
+                <option key={c.maLoai} value={c.tenLoai}>
+                  {c.tenLoai} ({c.soLuongQuan || 0})
+                </option>
+              ))}
+            </select>
+            {categoryFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('ALL')}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  fontSize: '11px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                }}
+              >
+                Xóa lọc
+              </button>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
@@ -323,6 +385,7 @@ export const AdminRestaurants: React.FC = () => {
                 <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
                 <th>Hình Ảnh</th>
                 <th>Tên Nhà Hàng</th>
+                <th>Loại Hình Quán</th>
                 <th>Địa Chỉ</th>
                 <th>Số Điện Thoại</th>
                 <th>Trạng Thái</th>
@@ -362,6 +425,23 @@ export const AdminRestaurants: React.FC = () => {
                     </td>
                     <td style={{ fontWeight: 700, color: deleted ? '#64748b' : '#0f172a', textDecoration: deleted ? 'line-through' : 'none' }}>
                       {s.tenQuan}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          background: '#fff3e8',
+                          color: '#c2410c',
+                          border: '1px solid #fed7aa',
+                          whiteSpace: 'nowrap',
+                          display: 'inline-block',
+                        }}
+                      >
+                        {s.danhMuc || 'Chưa phân loại'}
+                      </span>
                     </td>
                     <td style={{ maxWidth: '240px', color: deleted ? '#94a3b8' : '#475569' }}>{s.diaChi}</td>
                     <td style={{ color: deleted ? '#94a3b8' : '#475569' }}>{s.sdt || 'Chưa có'}</td>
@@ -451,9 +531,29 @@ export const AdminRestaurants: React.FC = () => {
           />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
+              <label className="form-label">Loại Hình / Danh Mục Quán</label>
+              <select
+                className="form-control"
+                value={form.danhMuc}
+                onChange={(e) => setForm({ ...form, danhMuc: e.target.value })}
+              >
+                <option value="">-- Chưa chọn loại hình --</option>
+                {storeCategories.map((sc: any) => (
+                  <option key={sc.maLoai} value={sc.tenLoai}>
+                    {sc.tenLoai}
+                  </option>
+                ))}
+                {form.danhMuc && !storeCategories.some((sc: any) => sc.tenLoai === form.danhMuc) && (
+                  <option value={form.danhMuc}>{form.danhMuc}</option>
+                )}
+              </select>
+            </div>
+            <div className="form-group">
               <label className="form-label">Số Điện Thoại</label>
               <input type="text" className="form-control" value={form.sdt} onChange={(e) => setForm({ ...form, sdt: e.target.value })} />
             </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label">Tài Khoản Quản Lý (Mã Tài Khoản)</label>
               <input

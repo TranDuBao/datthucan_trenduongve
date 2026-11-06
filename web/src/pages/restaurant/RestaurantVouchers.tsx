@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { apiFetch } from '../../api/apiClient';
-import { getSocket } from '../../api/socketClient';
+import { getSocket, joinRestaurantRoom } from '../../api/socketClient';
 import { MetricCard } from '../../components/MetricCard';
 import {
   Ticket,
@@ -56,30 +56,41 @@ export const RestaurantVouchers: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const fetchVouchers = async (showLoadingState = true) => {
+  const statusFilterRef = useRef(statusFilter);
+  statusFilterRef.current = statusFilter;
+  const searchQueryRef = useRef(searchQuery);
+  searchQueryRef.current = searchQuery;
+
+  const fetchVouchers = useCallback(async (showLoadingState = true) => {
     if (showLoadingState) setLoading(true);
     setError(null);
     let endpoint = '/restaurant/vouchers';
     const params: string[] = [];
-    if (statusFilter && statusFilter !== 'ALL') params.push(`status=${statusFilter}`);
-    if (searchQuery.trim()) params.push(`search=${encodeURIComponent(searchQuery.trim())}`);
+    const curStatus = statusFilterRef.current;
+    const curSearch = searchQueryRef.current;
+    if (curStatus && curStatus !== 'ALL') params.push(`status=${curStatus}`);
+    if (curSearch.trim()) params.push(`search=${encodeURIComponent(curSearch.trim())}`);
     if (params.length > 0) endpoint += `?${params.join('&')}`;
 
     try {
       const res = await apiFetch<any>(endpoint);
       if (res.data) {
         setData(res.data);
+        const storeId = res.data.vouchers?.[0]?.maQuan;
+        if (storeId) {
+          joinRestaurantRoom(storeId);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Không thể lấy danh sách voucher');
     } finally {
       if (showLoadingState) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchVouchers(true);
-  }, [statusFilter]);
+  }, [statusFilter, fetchVouchers]);
 
   // Realtime Socket listener for voucher usage and order events
   useEffect(() => {
@@ -87,6 +98,23 @@ export const RestaurantVouchers: React.FC = () => {
     if (socket) {
       const handleRealtimeUpdate = (payload: any) => {
         console.log('[RestaurantVouchers] [Info] Realtime voucher update received:', payload);
+        if (payload?.maVoucher && payload?.status) {
+          setData((prev: any) => {
+            if (!prev || !prev.vouchers) return prev;
+            return {
+              ...prev,
+              vouchers: prev.vouchers.map((item: any) =>
+                item.maVoucher === payload.maVoucher
+                  ? {
+                      ...item,
+                      trangThai: payload.status,
+                      computedStatus: payload.computedStatus || payload.status,
+                    }
+                  : item
+              ),
+            };
+          });
+        }
         fetchVouchers(false);
       };
 
@@ -107,7 +135,7 @@ export const RestaurantVouchers: React.FC = () => {
         socket.off('connect', handleReconnect);
       };
     }
-  }, [statusFilter, searchQuery]);
+  }, [fetchVouchers]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,16 +307,30 @@ export const RestaurantVouchers: React.FC = () => {
   };
 
   const handleToggleStatus = async (v: any) => {
+    const targetStatus = v.trangThai === 'HOAT_DONG' ? 'TAM_TAT' : 'HOAT_DONG';
+    // Optimistic UI update
+    setData((prev: any) => {
+      if (!prev || !prev.vouchers) return prev;
+      return {
+        ...prev,
+        vouchers: prev.vouchers.map((item: any) =>
+          item.maVoucher === v.maVoucher
+            ? { ...item, trangThai: targetStatus, computedStatus: targetStatus }
+            : item
+        ),
+      };
+    });
+
     try {
-      const targetStatus = v.trangThai === 'HOAT_DONG' ? 'TAM_TAT' : 'HOAT_DONG';
       await apiFetch(`/restaurant/vouchers/${v.maVoucher}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ trangThai: targetStatus }),
       });
       showToast(`Đã ${targetStatus === 'HOAT_DONG' ? 'bật' : 'tạm tắt'} voucher ${v.maCode}`);
-      fetchVouchers();
+      fetchVouchers(false);
     } catch (err: any) {
       showToast(err.message || 'Không thể đổi trạng thái voucher', 'error');
+      fetchVouchers(false);
     }
   };
 

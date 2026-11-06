@@ -680,6 +680,118 @@ export class ReservationService {
     return await this.updateReservationStatus(reservation.maQuan, maDatBan, 'DA_HUY', 'Khách hàng tự hủy');
   }
 
+
+  async getReservationAvailability(maQuan: number, thoiGianBatDauStr: string, soNguoi?: number) {
+    const numGuests = Math.max(1, Number(soNguoi) || 2);
+    if (isNaN(numGuests) || numGuests < 1 || numGuests > 50) {
+      throw new Error('Số lượng khách không hợp lệ (1 - 50 người)');
+    }
+
+    const start = new Date(thoiGianBatDauStr);
+    if (isNaN(start.getTime())) {
+      throw new Error('Thời gian hẹn không hợp lệ');
+    }
+
+    const now = new Date();
+    if (start.getTime() < now.getTime() - 5 * 60 * 1000) {
+      throw new Error('Thời gian hẹn phải ở trong tương lai');
+    }
+
+    const end = new Date(start.getTime() + 90 * 60 * 1000);
+
+    const store = await this.cuaHangRepo.findOne({ where: { maQuan } });
+    if (!store || store.isDeleted || ['ĐÃ XÓA', 'DA_XOA', 'DELETED'].includes((store.trangThai || '').toUpperCase())) {
+      throw new Error('Nhà hàng không tồn tại');
+    }
+
+    const st = String(store.trangThai || '').toLowerCase().trim();
+    if (st === 'ngưng kinh doanh' || st === 'đóng cửa') {
+      return {
+        maQuan,
+        canBook: false,
+        isOpen: false,
+        message: `Cửa hàng "${store.tenQuan}" hiện đang tạm ngưng nhận lịch đặt bàn!`,
+        availableTables: [],
+        totalAvailable: 0,
+      };
+    }
+
+    if (store.coChoDatTruoc === false) {
+      return {
+        maQuan,
+        canBook: false,
+        isOpen: true,
+        message: `Cửa hàng "${store.tenQuan}" hiện không hỗ trợ dịch vụ đặt bàn trước!`,
+        availableTables: [],
+        totalAvailable: 0,
+      };
+    }
+
+    try {
+      await this.validateOperatingHours(maQuan, start, end);
+    } catch (err: any) {
+      return {
+        maQuan,
+        canBook: false,
+        isOpen: false,
+        message: err.message,
+        availableTables: [],
+        totalAvailable: 0,
+      };
+    }
+
+    const candidateTables = await this.banRepo.find({
+      where: { maQuan },
+      order: { sucChua: 'ASC' },
+    });
+
+    if (candidateTables.length === 0) {
+      return {
+        maQuan,
+        canBook: false,
+        isOpen: true,
+        hasTables: false,
+        message: 'Quán hiện chưa cấu hình danh sách bàn phục vụ tại chỗ. Vui lòng liên hệ trực tiếp quán!',
+        availableTables: [],
+        totalAvailable: 0,
+      };
+    }
+
+    const availableTables: any[] = [];
+    for (const tbl of candidateTables) {
+      if (tbl.trangThai === 'TAM_NGUNG') continue;
+      if (Number(tbl.sucChua || 0) < numGuests) continue;
+
+      try {
+        await this.checkTableOverlap(maQuan, tbl.maBan, start, end);
+        availableTables.push({
+          maBan: tbl.maBan,
+          tenBan: tbl.tenBan,
+          sucChua: tbl.sucChua,
+        });
+      } catch (_) {
+        // Table overlaps with existing booking
+      }
+    }
+
+    const canBook = availableTables.length > 0;
+
+    return {
+      maQuan,
+      canBook,
+      isOpen: true,
+      hasTables: true,
+      message: canBook
+        ? 'Có thể đặt bàn.'
+        : 'Nhà hàng hiện không còn bàn trống phù hợp với thời gian này. Vui lòng chọn khung giờ khác!',
+      thoiGianBatDau: start.toISOString(),
+      thoiGianKetThuc: end.toISOString(),
+      soNguoi: numGuests,
+      availableTables,
+      totalAvailable: availableTables.length,
+    };
+  }
+
   // ── QUẢN LÝ BÀN PHỤC VỤ (TABLE MANAGEMENT) ──────────────────────────────────
   async getTables(maQuan: number) {
     return await this.banRepo.find({

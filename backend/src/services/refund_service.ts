@@ -8,6 +8,7 @@ import { CuaHangModel } from '../models/cua_hang_model';
 import { RealtimeService } from './realtime_service';
 import { NotificationService } from './notification_service';
 import { OrderService, normalizeOrderStatus } from './order_service';
+import { PayOSService } from './payos_service';
 
 export interface CancelAndRefundParams {
   maDonHang: number;
@@ -108,8 +109,52 @@ export class RefundService {
       }
 
       // Kiểm tra thanh toán thực tế trong CSDL
-      const payment = await manager.findOne(ThanhToanModel, { where: { maDonHang } });
-      const isPaid = payment && payment.trangThai === 'THANH_TOAN_THANH_CONG';
+      let payment = await manager.findOne(ThanhToanModel, { where: { maDonHang } });
+      let isPaid = payment && payment.trangThai === 'THANH_TOAN_THANH_CONG';
+
+      // Nếu trong DB chưa đánh dấu thanh toán thành công, kiểm tra trực tiếp PayOS trước khi hủy!
+      if (!isPaid && ['PAYOS', 'VIETQR', 'CHUYEN_KHOAN'].includes(String(lockedOrder.phuongThucThanhToan || '').toUpperCase())) {
+        try {
+          const payosInfo = await PayOSService.getPaymentLinkInformation(maDonHang);
+          if (payosInfo && (payosInfo.status === 'PAID' || (payosInfo.amountPaid > 0 && payosInfo.amountPaid >= Number(lockedOrder.tongTien)))) {
+            const finalAmount = Number(payosInfo.amountPaid || lockedOrder.tongTien);
+            if (!payment) {
+              payment = manager.create(ThanhToanModel, {
+                maDonHang,
+                soTien: finalAmount,
+                trangThai: 'THANH_TOAN_THANH_CONG',
+                loaiThanhToan: lockedOrder.phuongThucThanhToan || 'PAYOS',
+                ngayThanhToan: new Date(),
+                noiDung: `PayOS xác nhận thanh toán thành công cho đơn #${maDonHang}`,
+              });
+            } else {
+              payment.trangThai = 'THANH_TOAN_THANH_CONG';
+              payment.soTien = finalAmount;
+              payment.ngayThanhToan = new Date();
+              payment.noiDung = `PayOS xác nhận thanh toán thành công cho đơn #${maDonHang}`;
+            }
+            await manager.save(payment);
+            isPaid = true;
+
+            // Nếu lý do bấm hủy là vì đang ở modal VietQR chờ lâu:
+            // Bảo vệ quyền lợi: KHÔNG hủy đơn, tự động chuyển đơn sang CHO_XAC_NHAN để quán chế biến!
+            if (requesterRole === 'user' && cancellationReason.includes('Khách hủy thanh toán VietQR')) {
+              lockedOrder.trangThai = 'CHO_XAC_NHAN';
+              lockedOrder.lyDoHuy = null as any;
+              await manager.save(lockedOrder);
+
+              RealtimeService.getInstance().emitPaymentConfirmed(lockedOrder.maQuan, maDonHang, payment.soTien, lockedOrder.maKhachHang);
+              RealtimeService.getInstance().emitOrderStatusChanged(lockedOrder.maQuan, maDonHang, 'CHO_XAC_NHAN', lockedOrder.maKhachHang);
+
+              throw new Error(`Đơn hàng #${maDonHang} đã được chuyển khoản thành công (${finalAmount.toLocaleString('vi-VN')}đ)! Hệ thống đã xác nhận thanh toán và gửi đơn cho nhà hàng tiếp nhận.`);
+            }
+          }
+        } catch (payosCheckErr: any) {
+          if (payosCheckErr.message && payosCheckErr.message.includes('đã được chuyển khoản thành công')) {
+            throw payosCheckErr;
+          }
+        }
+      }
 
       let refundRecord: HoanTienModel | null = null;
 
@@ -125,7 +170,7 @@ export class RefundService {
         }
 
         // Lấy số tiền hoàn CHÍNH XÁC từ Database, không lấy từ client!
-        const refundAmount = Number(payment.soTien);
+        const refundAmount = Number(payment!.soTien);
         if (isNaN(refundAmount) || refundAmount <= 0) {
           throw new Error('Số tiền thanh toán không hợp lệ để hoàn tiền');
         }
@@ -133,14 +178,14 @@ export class RefundService {
         // Tạo bản ghi Hoàn tiền với trạng thái CHỜ XỬ LÝ / CẦN ĐỐI SOÁT
         refundRecord = manager.create(HoanTienModel, {
           maDonHang,
-          maThanhToan: payment.maThanhToan,
+          maThanhToan: payment!.maThanhToan,
           soTienHoan: refundAmount,
           lyDoHoan: cancellationReason,
           nguoiYeuCau: requesterRole === 'user' ? 'KHACH_HANG' : (requesterRole === 'restaurant' ? 'CUA_HANG' : 'ADMIN'),
           trangThaiHoanTien: RefundStatus.REVIEW_REQUIRED, // Chờ đối soát và chi trả qua ngân hàng
           phuongThucHoan: 'PAYOS_PAYOUT',
-          nganHangNhan: bankInfo?.bankName || payment.taiKhoanThanhToan || null,
-          soTaiKhoanNhan: bankInfo?.accountNumber || payment.taiKhoanThanhToan || null,
+          nganHangNhan: bankInfo?.bankName || payment!.taiKhoanThanhToan || null,
+          soTaiKhoanNhan: bankInfo?.accountNumber || payment!.taiKhoanThanhToan || null,
           tenChuTaiKhoanNhan: bankInfo?.accountName || null,
           ghiChu: `Tạo yêu cầu hoàn tiền tự động khi đơn #${maDonHang} bị hủy`,
         });
@@ -148,8 +193,8 @@ export class RefundService {
         await manager.save(refundRecord);
 
         // Đổi trạng thái thanh toán thành CHO_HOAN_TIEN
-        payment.trangThai = 'CHO_HOAN_TIEN';
-        await manager.save(payment);
+        payment!.trangThai = 'CHO_HOAN_TIEN';
+        await manager.save(payment!);
       }
 
       // 6. Cập nhật trạng thái đơn hàng thành DA_HUY
@@ -160,59 +205,29 @@ export class RefundService {
       return { order: lockedOrder, payment, refund: refundRecord, isPaid };
     });
 
-    // 7. Rollback số lượng món và voucher (ngoài transaction chính để tránh lock kéo dài)
+    // 7. Hoàn trả số lượng tồn kho món ăn và mã giảm giá đã dùng
     try {
       await new OrderService().rollbackInventoryAndVoucher(maDonHang);
-    } catch (e) {
-      console.error('[RefundService] Error rolling back stock/voucher:', e);
+    } catch (rbErr) {
+      console.error('[RefundService] Error rolling back inventory/voucher:', rbErr);
     }
 
-    // 8. Thông báo Realtime qua Socket và Push Notification
+    // 8. Phát thông báo Realtime & Push Notification
     try {
-      const store = result.order.maQuan ? await storeRepo.findOne({ where: { maQuan: result.order.maQuan } }) : null;
+      // Bắn socket cho các bên liên quan
+      RealtimeService.getInstance().emitOrderStatusChanged(
+        result.order.maQuan,
+        maDonHang,
+        'DA_HUY',
+        result.order.maKhachHang
+      );
+
+      const store = await storeRepo.findOne({ where: { maQuan: result.order.maQuan } });
       const tenQuan = store?.tenQuan || 'Cửa hàng';
+      const amountStr = `${Number(result.order.tongTien).toLocaleString('vi-VN')}đ`;
 
-      // Socket Order status changed: Chỉ báo cho quán nếu đơn này đã được thanh toán (quán đã tiếp nhận)
-      if (result.isPaid && result.order.maQuan) {
-        RealtimeService.getInstance().emitOrderStatusChanged(
-          result.order.maQuan,
-          maDonHang,
-          'DA_HUY',
-          result.order.maKhachHang
-        );
-      } else {
-        // Đơn chưa thanh toán mà hủy: Chỉ gửi cho khách hàng và room đơn hàng, KHÔNG gửi cho web/app quán
-        const io = RealtimeService.getInstance().getIO();
-        const cancelPayload = {
-          id: maDonHang,
-          orderId: maDonHang,
-          maDonHang: maDonHang,
-          status: 'DA_HUY',
-          trangThai: 'DA_HUY',
-          updatedAt: new Date().toISOString(),
-        };
-        io?.to(`order:${maDonHang}`).emit('order:status_changed', cancelPayload);
-        if (result.order.maKhachHang) {
-          io?.to(`customer:${result.order.maKhachHang}`).emit('order:status_changed', cancelPayload);
-        }
-      }
-
-      // Socket Refund event nếu có hoàn tiền
-      if (result.refund) {
-        RealtimeService.getInstance().getIO()?.emit('refund:created', {
-          maHoanTien: result.refund.maHoanTien,
-          maDonHang: result.refund.maDonHang,
-          soTienHoan: result.refund.soTienHoan,
-          trangThai: result.refund.trangThaiHoanTien,
-          nguoiYeuCau: result.refund.nguoiYeuCau,
-        });
-      }
-
-      // Gửi Notification
-      const amountStr = result.refund ? `${Number(result.refund.soTienHoan).toLocaleString('vi-VN')}đ` : '';
-
-      // Khách hủy đơn: Chỉ thông báo quán NẾU đơn đã thanh toán (quán đã có đơn cần làm)
-      if (requesterRole === 'user' && result.order.maQuan && result.isPaid) {
+      if (requesterRole === 'user') {
+        // Khách hủy -> Thông báo quán
         await NotificationService.getInstance().sendNotification({
           recipientId: result.order.maQuan,
           recipientRole: 'restaurant',

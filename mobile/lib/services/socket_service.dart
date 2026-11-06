@@ -151,6 +151,11 @@ class SocketService {
     subscribe('rating:updated', onRatingUpdate);
   }
 
+  void listenToMenuUpdates(void Function(dynamic data) onMenuUpdate) {
+    subscribe('menu:updated', onMenuUpdate);
+    subscribe('dish:updated', onMenuUpdate);
+  }
+
   void offNotifications([void Function(dynamic data)? listener]) {
     unsubscribe('notification:new', listener);
   }
@@ -176,6 +181,11 @@ class SocketService {
 
   void offRatingUpdates([void Function(dynamic data)? listener]) {
     unsubscribe('rating:updated', listener);
+  }
+
+  void offMenuUpdates([void Function(dynamic data)? listener]) {
+    unsubscribe('menu:updated', listener);
+    unsubscribe('dish:updated', listener);
   }
 
   void joinRestaurantRoom(int maQuan) {
@@ -211,6 +221,24 @@ class SocketService {
   void leaveReservationRoom(int reservationId) {
     if (isConnected && reservationId > 0) {
       _socket?.emit('room:leave', {'roomType': 'reservation', 'id': reservationId});
+    }
+  }
+
+  void emit(String event, [dynamic data]) {
+    if (isConnected) {
+      _socket?.emit(event, data);
+    }
+  }
+
+  void joinTicketRoom(int ticketId) {
+    if (isConnected && ticketId > 0) {
+      _socket?.emit('room:join', {'roomType': 'ticket', 'id': ticketId});
+    }
+  }
+
+  void leaveTicketRoom(int ticketId) {
+    if (isConnected && ticketId > 0) {
+      _socket?.emit('room:leave', {'roomType': 'ticket', 'id': ticketId});
     }
   }
 

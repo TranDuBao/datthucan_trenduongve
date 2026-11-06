@@ -230,7 +230,9 @@ class _RouteCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'GHÉ LẤY',
+                provider.foodRouteOption == FoodRouteOption.dineIn
+                    ? 'ĂN TẠI QUÁN'
+                    : (provider.foodRouteOption == FoodRouteOption.preOrder ? 'ĐẶT TRƯỚC' : 'GHÉ LẤY'),
                 style: GoogleFonts.outfit(
                   color: const Color(0xFF8E8E93),
                   fontSize: 9,
@@ -352,7 +354,11 @@ class _RouteCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Xác nhận lộ trình ghé lấy',
+                provider.foodRouteOption == FoodRouteOption.dineIn
+                    ? 'Xác nhận lộ trình ăn tại quán'
+                    : (provider.foodRouteOption == FoodRouteOption.preOrder
+                        ? 'Xác nhận lộ trình đặt trước'
+                        : 'Xác nhận lộ trình ghé lấy'),
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 15,

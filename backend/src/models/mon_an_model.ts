@@ -31,4 +31,10 @@ export class MonAnModel {
 
   @Column({ name: 'trangthaimon', length: 30, default: 'DANG_BAN', nullable: true })
   trangThaiMon?: string;
+
+  @Column({ name: 'mota', type: 'text', nullable: true })
+  moTa?: string;
+
+  @Column({ name: 'dactinh', type: 'text', nullable: true })
+  dacTinh?: string;
 }

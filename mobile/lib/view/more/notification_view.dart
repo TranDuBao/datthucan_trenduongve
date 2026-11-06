@@ -10,6 +10,7 @@ import '../menu/menu_view.dart';
 import '../main_tabview/main_tabview.dart';
 import 'my_order_view.dart';
 import 'order_history_view.dart';
+import '../../widgets/skeleton/notification_skeleton.dart';
 
 class NotificationsView extends StatefulWidget {
   const NotificationsView({super.key});
@@ -115,7 +116,7 @@ class _NotificationsViewState extends State<NotificationsView> {
             // Notification Groups / Cards List
             Expanded(
               child: isLoading
-                  ? Center(child: CircularProgressIndicator(color: TColor.primary))
+                  ? const NotificationSkeletonList(itemCount: 4)
                   : _filteredNotifications.isEmpty
                       ? Center(
                           child: Column(

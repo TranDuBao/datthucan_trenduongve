@@ -113,6 +113,13 @@ class SVKey {
   static String svRestaurantMenu(int id) => '${mainUrl}/api/v1/restaurants/$id/menu';
   static String get svOrders => '${mainUrl}/api/v1/orders';
   static String get svVerifyPayment => '${mainUrl}/api/v1/payments/verify';
+  static String get svReservations => '${mainUrl}/api/v1/reservations';
+  static const String restaurantWebPortalUrl = 'http://localhost:5173/restaurant';
+  static String get svStoreRegistration => '${mainUrl}/api/v1/store-registrations';
+  static String get svStoreRegistrationMyStatus => '${mainUrl}/api/v1/store-registrations/my-status';
+  static String get svActiveLegalDocuments => '${mainUrl}/api/v1/legal-documents/active';
+  static String get svRefreshProfile => '${baseUrl}refresh-profile';
+  static String svRestaurantAvailability(int id) => '${mainUrl}/api/v1/restaurants/$id/reservations/availability';
 
   static String formatImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) return '';

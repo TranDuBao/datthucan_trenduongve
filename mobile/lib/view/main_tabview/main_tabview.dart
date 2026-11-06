@@ -169,9 +169,9 @@ class MainTabViewState extends State<MainTabView> {
                           ),
                           InkWell(
                             onTap: () {
-                              Navigator.pushReplacement(
-                                context,
+                              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                                 MaterialPageRoute(builder: (context) => const RestaurantOwnerMainView()),
+                                (route) => false,
                               );
                             },
                             child: Container(

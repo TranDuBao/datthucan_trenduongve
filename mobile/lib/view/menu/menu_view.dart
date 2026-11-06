@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ import '../../widgets/menu/menu_categories_section_widget.dart';
 import '../../models/banner_item_model.dart';
 import '../../services/banner_service.dart';
 import '../../widgets/menu/menu_banner_carousel.dart';
+import 'flash_sale_all_view.dart';
 
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
@@ -32,6 +34,7 @@ class _MenuViewState extends State<MenuView> {
   bool isLoading = true;
   List<CategoryModel> categoryList = [];
   List<dynamic> flashSaleItems = [];
+  List<dynamic> allFlashSaleFoods = [];
   List<dynamic> routePickupFoods = [];
   List<dynamic> allFoodsList = [];
   List<BannerItemModel> _bannersList = [];
@@ -41,12 +44,41 @@ class _MenuViewState extends State<MenuView> {
 
   Timer? _flashSaleTimer;
   int _flashSaleSeconds = 0;
+  int? _lastCycleIndex;
 
   void _updateRemainingTime() {
-    final now = DateTime.now();
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    final diff = endOfDay.difference(now).inSeconds;
-    _flashSaleSeconds = diff > 0 ? diff : 0;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    const fiveHoursMs = 5 * 3600 * 1000;
+    final cycleIndex = nowMs ~/ fiveHoursMs;
+    final remainingMs = fiveHoursMs - (nowMs % fiveHoursMs);
+    _flashSaleSeconds = remainingMs ~/ 1000;
+
+    if (_lastCycleIndex != null && _lastCycleIndex != cycleIndex) {
+      _lastCycleIndex = cycleIndex;
+      _reloadFlashSaleItems(cycleIndex);
+    } else {
+      _lastCycleIndex ??= cycleIndex;
+    }
+  }
+
+  void _reloadFlashSaleItems(int cycleIndex) {
+    if (allFoodsList.isEmpty) return;
+    final available = allFoodsList.where((f) {
+      final isSoldOut = _isSoldOutItem(f is Map ? f : {});
+      return !isSoldOut;
+    }).toList();
+
+    final listToPick = available.isNotEmpty ? available : allFoodsList;
+    final rnd = math.Random(cycleIndex);
+    final shuffled = List<dynamic>.from(listToPick)..shuffle(rnd);
+    final picked20 = shuffled.take(20).toList();
+
+    if (mounted) {
+      setState(() {
+        allFlashSaleFoods = picked20;
+        flashSaleItems = picked20.take(6).toList();
+      });
+    }
   }
 
   void _startFlashSaleTimer() {
@@ -351,11 +383,15 @@ class _MenuViewState extends State<MenuView> {
         setState(() {
           allFoodsList = foods.toList();
           categoryList = enrichedCats;
-          flashSaleItems = foods.take(6).toList();
           routePickupFoods = foods.toList();
           _bannersList = banners;
           isLoading = false;
         });
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        const fiveHoursMs = 5 * 3600 * 1000;
+        final cycleIndex = nowMs ~/ fiveHoursMs;
+        _lastCycleIndex = cycleIndex;
+        _reloadFlashSaleItems(cycleIndex);
       }
     } catch (e) {
       if (mounted) {
@@ -372,6 +408,48 @@ class _MenuViewState extends State<MenuView> {
     } else {
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const MainTabView(initialTab: 2)), (route) => false);
     }
+  }
+
+  String _formatPickupSubtitle(double uLat, double uLng) {
+    if (routePickupFoods.isEmpty) {
+      return "Tiện đường ghé lấy món nóng hổi ngay trên lộ trình";
+    }
+
+    double minDistance = double.infinity;
+    int minPrep = 5;
+
+    for (final item in routePickupFoods) {
+      if (item is Map) {
+        final sLat = (item["lat"] as num?)?.toDouble();
+        final sLng = (item["lng"] as num?)?.toDouble();
+        if (sLat != null && sLng != null && sLat != 0 && sLng != 0) {
+          const p = 0.017453292519943295;
+          final a = 0.5 - math.cos((sLat - uLat) * p) / 2 +
+              math.cos(uLat * p) * math.cos(sLat * p) *
+                  (1 - math.cos((sLng - uLng) * p)) / 2;
+          final meters = 12742 * math.asin(math.sqrt(a)) * 1000;
+          if (meters < minDistance) {
+            minDistance = meters;
+            final rawPrep = item["thoiGianChuanBi"] ?? item["prepTime"];
+            if (rawPrep != null) {
+              final parsed = int.tryParse(rawPrep.toString());
+              if (parsed != null && parsed > 0) minPrep = parsed;
+            }
+          }
+        }
+      }
+    }
+
+    String distText;
+    if (minDistance.isInfinite || minDistance < 100) {
+      distText = "Cách bạn từ 150m";
+    } else if (minDistance < 1000) {
+      distText = "Cách bạn từ ${minDistance.round()}m";
+    } else {
+      distText = "Cách bạn từ ${(minDistance / 1000).toStringAsFixed(1)}km";
+    }
+
+    return "$distText • Chuẩn bị nhanh từ ${minPrep}p";
   }
 
   @override
@@ -635,6 +713,16 @@ class _MenuViewState extends State<MenuView> {
                   hours: _flashSaleHours,
                   minutes: _flashSaleMinutes,
                   seconds: _flashSaleSecs,
+                  onViewAll: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FlashSaleAllView(
+                          flashSaleItems: allFlashSaleFoods,
+                        ),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),
@@ -667,7 +755,7 @@ class _MenuViewState extends State<MenuView> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              "Cách bạn dưới 800m • Làm nóng trong 5 phút",
+                              _formatPickupSubtitle(userLat, userLng),
                               style: TextStyle(
                                 color: TColor.secondaryTextOf(context),
                                 fontSize: 11,

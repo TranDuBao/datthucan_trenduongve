@@ -1,4 +1,5 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
@@ -8,10 +9,11 @@ import '../../services/category_service.dart';
 import '../../services/order_service.dart';
 import '../../services/review_service.dart';
 import '../../widgets/custom_toast.dart';
-import '../../widgets/skeleton/skeleton_box.dart';
 import '../../widgets/dish_reviews_section.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
+import '../../common/locator.dart';
+import '../../services/socket_service.dart';
 
 class ItemDetailsView extends StatefulWidget {
   final Map itemObj;
@@ -39,6 +41,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
   List<Map<String, dynamic>> toppingOptions = [];
 
   final TextEditingController noteController = TextEditingController();
+  int? _attachedStoreId;
 
   @override
   void initState() {
@@ -54,6 +57,61 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     _initCustomizationOptions();
     _loadDishReviewsAndStats();
     _loadDishLiveDetails();
+
+    _setupRealtimeSync();
+  }
+
+  void _setupRealtimeSync() {
+    final rawResId = itemData["maQuan"] ?? itemData["restaurantId"];
+    _attachedStoreId = int.tryParse(rawResId?.toString() ?? '');
+    if (_attachedStoreId != null && _attachedStoreId! > 0) {
+      locator<SocketService>().joinRestaurantRoom(_attachedStoreId!);
+    }
+    locator<SocketService>().listenToMenuUpdates(_onMenuUpdated);
+  }
+
+  void _onMenuUpdated(dynamic data) {
+    if (!mounted || data == null) return;
+    try {
+      final food = data['food'];
+      final currentDishId = int.tryParse((itemData["maMonAn"] ?? itemData["id"] ?? itemData["foodId"] ?? '').toString());
+      final currentResId = int.tryParse((itemData["maQuan"] ?? itemData["restaurantId"] ?? '').toString());
+      final updatedResId = int.tryParse(data['maQuan']?.toString() ?? '');
+
+      if (food is Map) {
+        final updatedDishId = int.tryParse((food['maMonAn'] ?? food['id'] ?? '').toString());
+        if (currentDishId != null && updatedDishId != null && currentDishId == updatedDishId) {
+          setState(() {
+            itemData.addAll(Map<String, dynamic>.from(food));
+            if (food['moTa'] != null) itemData['moTa'] = food['moTa'];
+            if (food['mota'] != null) itemData['mota'] = food['mota'];
+            if (food['dacTinh'] != null) itemData['dacTinh'] = food['dacTinh'];
+            if (food['dactinh'] != null) itemData['dactinh'] = food['dactinh'];
+            if (food['giaMonAn'] != null) {
+              basePrice = double.tryParse(food['giaMonAn'].toString()) ?? basePrice;
+            }
+            _initCustomizationOptions();
+          });
+          return;
+        }
+      }
+
+      if (currentResId != null && (updatedResId == null || updatedResId == currentResId)) {
+        _loadDishLiveDetails();
+      }
+    } catch (e) {
+      debugPrint('[ItemDetails] _onMenuUpdated error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_attachedStoreId != null && _attachedStoreId! > 0) {
+      locator<SocketService>().leaveRestaurantRoom(_attachedStoreId!);
+    }
+    locator<SocketService>().offMenuUpdates(_onMenuUpdated);
+    noteController.dispose();
+    super.dispose();
   }
 
   void _initCustomizationOptions() {
@@ -100,6 +158,57 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
         name.contains("tart") ||
         name.contains("donut") ||
         name.contains("mousse");
+  }
+
+  IconData _getIconForTag(String tag) {
+    final lower = tag.toLowerCase();
+    if (lower.contains('phút') || lower.contains('min') || lower.contains('chế biến') || lower.contains('nấu')) {
+      return Icons.access_time_rounded;
+    }
+    if (lower.contains('kcal') || lower.contains('calo') || lower.contains('protein') || lower.contains('năng lượng')) {
+      return Icons.local_fire_department_rounded;
+    }
+    if (lower.contains('đá') || lower.contains('lạnh') || lower.contains('nóng') || lower.contains('ice') || lower.contains('cold')) {
+      return LucideIcons.snowflake;
+    }
+    if (lower.contains('bánh') || lower.contains('ngọt') || lower.contains('tráng miệng')) {
+      return Icons.cake_rounded;
+    }
+    if (lower.contains('tươi') || lower.contains('sạch') || lower.contains('chay') || lower.contains('clean') || lower.contains('rau')) {
+      return Icons.eco_rounded;
+    }
+    if (lower.contains('thịt') || lower.contains('bò') || lower.contains('gà') || lower.contains('hải sản') || lower.contains('xương')) {
+      return Icons.restaurant_rounded;
+    }
+    return Icons.check_circle_outline_rounded;
+  }
+
+  List<Map<String, dynamic>> _getBadges(Map<String, dynamic> item, String foodName) {
+    final rawTraits = item['dacTinh'] ?? item['dactinh'] ?? item['traits'] ?? item['tags'];
+    List<String> parsed = [];
+    if (rawTraits is List) {
+      parsed = rawTraits.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } else if (rawTraits is String && rawTraits.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawTraits);
+        if (decoded is List) {
+          parsed = decoded.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        } else {
+          parsed = rawTraits.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        }
+      } catch (_) {
+        parsed = rawTraits.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      }
+    }
+
+    if (parsed.isNotEmpty) {
+      return parsed.map((t) => {
+        'icon': _getIconForTag(t),
+        'text': t,
+      }).toList();
+    }
+
+    return _getCategoryBadges(foodName);
   }
 
   List<Map<String, dynamic>> _getCategoryBadges(String foodName) {
@@ -210,12 +319,6 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     }
   }
 
-  @override
-  void dispose() {
-    noteController.dispose();
-    super.dispose();
-  }
-
   double get calculatedUnitPrice {
     double price = basePrice;
     if (sizeOptions.isNotEmpty && selectedOptionIndex >= 0 && selectedOptionIndex < sizeOptions.length) {
@@ -289,8 +392,11 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
 
     final foodName = itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn lộ trình";
     final imgUrl = itemData["image"] ?? itemData["img"] ?? itemData["hinhAnh"] ?? "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500";
-    final foodDesc = itemData["description"] ?? itemData["moTa"] ?? "Món ăn được chế biến tươi nóng từ nguồn nguyên liệu sạch chuẩn vệ sinh an toàn thực phẩm. Đặt trước để ghé lấy nóng hổi không chờ đợi.";
-    final badges = _getCategoryBadges(foodName);
+    final rawDesc = itemData["moTa"] ?? itemData["mota"] ?? itemData["description"];
+    final foodDesc = (rawDesc != null && rawDesc.toString().trim().isNotEmpty)
+        ? rawDesc.toString().trim()
+        : "Món ăn được chế biến tươi nóng từ nguồn nguyên liệu sạch chuẩn vệ sinh an toàn thực phẩm. Đặt trước để ghé lấy nóng hổi không chờ đợi.";
+    final badges = _getBadges(itemData, foodName);
 
     final bool hasExplicitStock = itemData.containsKey("soLuongMon") || itemData.containsKey("quantity");
     final int stockQty = hasExplicitStock

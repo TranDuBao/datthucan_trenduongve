@@ -244,6 +244,10 @@ export class RestaurantService {
             lat: res?.lat ? Number(res.lat) : 10.762622,
             lng: res?.lng ? Number(res.lng) : 106.682029,
             tenQuan: res?.tenQuan || '',
+            moTa: i.moTa || '',
+            mota: i.moTa || '',
+            dacTinh: i.dacTinh || '',
+            dactinh: i.dacTinh || '',
           };
         }),
       };
@@ -256,7 +260,7 @@ export class RestaurantService {
    */
   async getRestaurantsAlongRoute(
     routePoints: { lat: number; lng: number }[],
-    maxDistanceMeters: number = 1000,
+    maxDistanceMeters: number = 800,
     keyword?: string
   ) {
     if (!routePoints || routePoints.length === 0) {
@@ -363,6 +367,10 @@ function removeVietnameseTones(str: string): string {
               soLuotDanhGia: Number(f.soLuotDanhGia || 0),
               chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
               trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+              moTa: f.moTa || '',
+              mota: f.moTa || '',
+              dacTinh: f.dacTinh || '',
+              dactinh: f.dacTinh || '',
             });
             matchingFoodsMap.set(f.maQuan, list);
           }
@@ -403,6 +411,10 @@ function removeVietnameseTones(str: string): string {
               soLuotDanhGia: Number(f.soLuotDanhGia || 0),
               chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
               trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+              moTa: f.moTa || '',
+              mota: f.moTa || '',
+              dacTinh: f.dacTinh || '',
+              dactinh: f.dacTinh || '',
             });
             matchingFoodsMap.set(f.maQuan, list);
           }
@@ -475,6 +487,17 @@ function removeVietnameseTones(str: string): string {
       return sLat >= bMinLat && sLat <= bMaxLat && sLng >= bMinLng && sLng <= bMaxLng;
     });
 
+    let tableStoreIds = new Set<number>();
+    try {
+      const storesWithTables = await this.cuaHangRepo.manager
+        .createQueryBuilder()
+        .select('DISTINCT b.maQuan', 'maQuan')
+        .from('ban', 'b')
+        .where("b.trangThai != 'TAM_NGUNG'")
+        .getRawMany();
+      tableStoreIds = new Set(storesWithTables.map((r: any) => Number(r.maQuan)));
+    } catch (_) {}
+
     const matchedStores: any[] = [];
 
     for (const store of candidateStores) {
@@ -503,8 +526,22 @@ function removeVietnameseTones(str: string): string {
 
       if (minDistance <= maxDistanceMeters) {
         const matchedFoods = matchingFoodsMap.get(store.maQuan) || [];
+        const tienIchStr = String(store.tienIch || (store as any).tienich || '').toLowerCase();
+        const hasDineIn = tableStoreIds.has(Number(store.maQuan)) ||
+                          tienIchStr.includes('chỗ ngồi') ||
+                          tienIchStr.includes('cho ngoi') ||
+                          tienIchStr.includes('tại chỗ') ||
+                          tienIchStr.includes('tai cho') ||
+                          tienIchStr.includes('dine-in');
+        const hasPreOrder = store.coChoDatTruoc !== false;
+        const hasTakeaway = !tienIchStr.includes('no-takeaway');
+
         matchedStores.push({
           ...store,
+          hasDineIn,
+          hasPreOrder,
+          hasTakeaway,
+          coChoNgoi: hasDineIn,
           distanceFromRouteMeters: Math.round(minDistance),
           thoiGianChuanBi: store.thoiGianChuanBi || 20,
           matchedFoods,
@@ -579,6 +616,11 @@ function removeVietnameseTones(str: string): string {
         lng: store?.lng ? Number(store.lng) : 106.682029,
         tenQuan: store?.tenQuan || '',
         diaChi: store?.diaChi || '',
+        thoiGianChuanBi: store?.thoiGianChuanBi ? Number(store.thoiGianChuanBi) : 5,
+        moTa: i.moTa || '',
+        mota: i.moTa || '',
+        dacTinh: i.dacTinh || '',
+        dactinh: i.dacTinh || '',
       };
     });
   }

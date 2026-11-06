@@ -15,6 +15,11 @@ import { AdminBanners } from './pages/admin/AdminBanners';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminActivityLogs } from './pages/admin/AdminActivityLogs';
 import { AdminReviews } from './pages/admin/AdminReviews';
+import { AdminAboutUs } from './pages/admin/AdminAboutUs';
+import { AdminStoreCategories } from './pages/admin/AdminStoreCategories';
+import { AdminStoreRegistrations } from './pages/admin/AdminStoreRegistrations';
+import { AdminLegalDocuments } from './pages/admin/AdminLegalDocuments';
+import { AdminSupport } from './pages/admin/AdminSupport';
 
 // Restaurant Pages
 import { RestaurantDashboard } from './pages/restaurant/RestaurantDashboard';
@@ -84,6 +89,11 @@ export const App: React.FC = () => {
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/admin/logs" element={<AdminActivityLogs />} />
+            <Route path="/admin/about-us" element={<AdminAboutUs />} />
+            <Route path="/admin/store-categories" element={<AdminStoreCategories />} />
+            <Route path="/admin/store-registrations" element={<AdminStoreRegistrations />} />
+            <Route path="/admin/legal-documents" element={<AdminLegalDocuments />} />
+            <Route path="/admin/support" element={<AdminSupport />} />
           </Route>
 
           {/* Restaurant Routes - only CUAN_HANG (ADMIN is forbidden) */}

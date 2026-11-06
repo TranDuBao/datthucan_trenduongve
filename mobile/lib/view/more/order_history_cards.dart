@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../common/globs.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../services/order_service.dart';
 import '../../view/main_tabview/main_tabview.dart';
 import '../../widgets/order_progress_stepper.dart';
 import 'order_history_widgets.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Shared Helper: Food Thumbnail + Name + Store
-// ─────────────────────────────────────────────────────────────────────────────
 Widget _buildFoodThumbnailRow({
   required dynamic firstItem,
   required int qty,
@@ -118,9 +115,7 @@ Widget _buildFoodThumbnailRow({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Active Order Card (Đang chuẩn bị / chờ lấy)
-// ─────────────────────────────────────────────────────────────────────────────
 class ActiveOrderCard extends StatelessWidget {
   final OrderServiceModel order;
   final bool isDark;
@@ -271,7 +266,7 @@ class ActiveOrderCard extends StatelessWidget {
                     height: 6,
                     decoration: const BoxDecoration(color: Color(0xFFFC6011), shape: BoxShape.circle),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 10),
                   Text(
                     stepTitle,
                     style: const TextStyle(
@@ -331,33 +326,9 @@ class ActiveOrderCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 10),
               ],
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: OutlinedButton.icon(
-                    onPressed: () => onNavigateToItem(
-                      order.items.isNotEmpty ? order.items[0] : null,
-                      order,
-                    ),
-                    icon: const Icon(Icons.arrow_outward_rounded, color: Color(0xFFFC6011), size: 14),
-                    label: const Text(
-                      'Đi đến sản phẩm',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Color(0xFFFC6011), fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      backgroundColor: const Color(0xFFFFF4EE),
-                      side: const BorderSide(color: Color(0xFFFFE5D6)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
+
               Expanded(
                 child: SizedBox(
                   height: 38,
@@ -384,9 +355,7 @@ class ActiveOrderCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Completed Order Card (Đã lấy hàng)
-// ─────────────────────────────────────────────────────────────────────────────
 class CompletedOrderCard extends StatelessWidget {
   final OrderServiceModel order;
   final bool isDark;
@@ -454,7 +423,7 @@ class CompletedOrderCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 10),
                     if (order.createdAt.isNotEmpty)
                       Flexible(
                         child: Text(
@@ -470,7 +439,7 @@ class CompletedOrderCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -482,7 +451,7 @@ class CompletedOrderCard extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
@@ -550,32 +519,8 @@ class CompletedOrderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: OutlinedButton.icon(
-                    onPressed: () => onNavigateToItem(
-                      order.items.isNotEmpty ? order.items[0] : null,
-                      order,
-                    ),
-                    icon: const Icon(Icons.arrow_outward_rounded, color: Color(0xFFFC6011), size: 14),
-                    label: const Text(
-                      'Đi đến sản phẩm',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Color(0xFFFC6011), fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      backgroundColor: const Color(0xFFFFF4EE),
-                      side: const BorderSide(color: Color(0xFFFFE5D6)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
+
               Expanded(
                 child: SizedBox(
                   height: 38,
@@ -602,9 +547,7 @@ class CompletedOrderCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Cancelled Order Card (Đã hủy)
-// ─────────────────────────────────────────────────────────────────────────────
 class CancelledOrderCard extends StatelessWidget {
   final OrderServiceModel order;
   final bool isDark;
@@ -681,7 +624,7 @@ class CancelledOrderCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 10),
                     if (order.createdAt.isNotEmpty)
                       Flexible(
                         child: Text(
@@ -697,7 +640,7 @@ class CancelledOrderCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -709,7 +652,7 @@ class CancelledOrderCard extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
@@ -767,7 +710,7 @@ class CancelledOrderCard extends StatelessWidget {
                         ? const Color(0xFF027A48)
                         : const Color(0xFFB54708),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       order.refundStatus == 'HOAN_TIEN_THANH_CONG'
@@ -816,32 +759,8 @@ class CancelledOrderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: OutlinedButton.icon(
-                    onPressed: () => onNavigateToItem(
-                      order.items.isNotEmpty ? order.items[0] : null,
-                      order,
-                    ),
-                    icon: const Icon(Icons.arrow_outward_rounded, color: Color(0xFFFC6011), size: 14),
-                    label: const Text(
-                      'Đi đến sản phẩm',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Color(0xFFFC6011), fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      backgroundColor: const Color(0xFFFFF4EE),
-                      side: const BorderSide(color: Color(0xFFFFE5D6)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
+
               Expanded(
                 child: SizedBox(
                   height: 38,
@@ -856,6 +775,209 @@ class CancelledOrderCard extends StatelessWidget {
                     child: const Text(
                       'Đặt lại',
                       style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Unpaid Order Card (Chờ thanh toán QR - Quán chưa tiếp nhận)
+class UnpaidOrderCard extends StatelessWidget {
+  final OrderServiceModel order;
+  final bool isDark;
+  final VoidCallback onCancel;
+  final VoidCallback onShowDetail;
+  final void Function(dynamic item, OrderServiceModel order) onNavigateToItem;
+
+  const UnpaidOrderCard({
+    super.key,
+    required this.order,
+    required this.isDark,
+    required this.onCancel,
+    required this.onShowDetail,
+    required this.onNavigateToItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedTotal = formatOrderTotal(order.totalAmount);
+    final (:qty, :summary) = buildFoodSummary(order.items);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B1E28) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withOpacity(0.4),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '#DH${order.orderId}',
+                      style: const TextStyle(
+                        color: Color(0xFFD97706),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (order.createdAt.isNotEmpty)
+                    Text(
+                      order.createdAt.length > 16 ? order.createdAt.substring(0, 16) : order.createdAt,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF707688) : const Color(0xFF98A2B3),
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    'Tổng tiền ',
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF707688) : const Color(0xFF98A2B3),
+                      fontSize: 11,
+                    ),
+                  ),
+                  Text(
+                    formattedTotal,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF101828),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          _buildFoodThumbnailRow(
+            firstItem: order.items.isNotEmpty ? order.items[0] : null,
+            qty: qty,
+            summary: summary,
+            restaurantName: order.restaurantName,
+            isDark: isDark,
+            onTap: () => onNavigateToItem(
+              order.items.isNotEmpty ? order.items[0] : null,
+              order,
+            ),
+            trailingBadge: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Chưa thanh toán',
+                style: TextStyle(color: Color(0xFFD97706), fontSize: 11, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Unpaid Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.25)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.pending_actions_rounded, color: Color(0xFFD97706), size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Đơn hàng chưa thanh toán VietQR • Quán chưa nhận đơn',
+                    style: TextStyle(
+                      color: Color(0xFFB45309),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Actions Row
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: OutlinedButton.icon(
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFFD92D20), size: 14),
+                    label: const Text(
+                      'Hủy đơn',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Color(0xFFD92D20), fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      backgroundColor: const Color(0xFFFEE4E2).withOpacity(0.3),
+                      side: const BorderSide(color: Color(0xFFFDA29B)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: ElevatedButton(
+                    onPressed: onShowDetail,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      backgroundColor: const Color(0xFFFC6011),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text(
+                      'Xem chi tiết',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),

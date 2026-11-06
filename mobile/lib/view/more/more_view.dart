@@ -16,8 +16,17 @@ import 'my_order_view.dart';
 import 'order_history_view.dart';
 import 'notification_view.dart';
 import 'payment_details_view.dart';
+import '../reservation/reservation_list_view.dart';
+
+import '../../common/locator.dart';
+import '../../services/socket_service.dart';
+import '../../services/store_registration_service.dart';
+import 'store_registration_view.dart';
+import 'support/support_center_view.dart';
+import 'widgets/store_approval_celebration_dialog.dart';
 import '../../widgets/notification_bell.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/support_provider.dart';
 
 class MoreView extends StatefulWidget {
   const MoreView({super.key});
@@ -28,10 +37,62 @@ class MoreView extends StatefulWidget {
 
 class _MoreViewState extends State<MoreView> {
   int _activeOrdersCount = 0;
+  @override
+  void dispose() {
+    locator<SocketService>().unsubscribe('store_registration_approved', _onStoreApprovedRealtime);
+    locator<SocketService>().unsubscribe('store_registration_rejected', _onStoreRejectedRealtime);
+    super.dispose();
+  }
+
+  void _onStoreApprovedRealtime(dynamic data) async {
+    await StoreRegistrationService.refreshUserProfile();
+    if (mounted) {
+      setState(() {});
+      StoreApprovalCelebrationDialog.show(context, onOpenStoreView: () {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const RestaurantOwnerMainView()),
+          (route) => false,
+        );
+      });
+    }
+  }
+
+  void _onStoreRejectedRealtime(dynamic data) {
+    if (mounted) {
+      final reason = (data is Map && data['reason'] != null) ? data['reason'] : '';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(reason.isNotEmpty ? "Đơn đăng ký cửa hàng bị từ chối: $reason" : "Đơn đăng ký cửa hàng của bạn chưa được phê duyệt."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _handleBecomeStore() {
+    if (UserRoleHelper.isMerchant) {
+      StoreApprovalCelebrationDialog.show(context, onOpenStoreView: () {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const RestaurantOwnerMainView()),
+          (route) => false,
+        );
+      });
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (ctx) => const StoreRegistrationView()),
+    );
+  }
+
 
   @override
   void initState() {
     super.initState();
+    locator<SocketService>().subscribe('store_registration_approved', _onStoreApprovedRealtime);
+    locator<SocketService>().subscribe('store_registration_rejected', _onStoreRejectedRealtime);
+
     _fetchActiveOrdersCount();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -170,6 +231,7 @@ class _MoreViewState extends State<MoreView> {
     final lang = context.watch<LanguageProvider>();
     final theme = context.watch<ThemeProvider>();
     final notifCount = context.watch<NotificationProvider>().unreadCount;
+    final unreadSupportCount = context.watch<SupportProvider>().unreadTicketsCount;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String currentThemeLabel = lang.tr('system_mode');
@@ -211,6 +273,14 @@ class _MoreViewState extends State<MoreView> {
         "base": _activeOrdersCount,
       },
       {
+        "index": "reservation",
+        "name": lang.languageCode == 'vi' ? "Đặt bàn của tôi" : "My Reservations",
+        "subtitle": lang.languageCode == 'vi' ? "Quản lý lịch hẹn & bàn ăn tại quán" : "Manage table bookings & schedules",
+        "icon": Icons.table_restaurant_rounded,
+        "iconBg": const Color(0xFF1E3A2B),
+        "iconColor": const Color(0xFF10B981),
+      },
+      {
         "index": "3",
         "name": lang.tr('notifications'),
         "subtitle": lang.languageCode == 'vi' ? "Ưu đãi & tin tức quan trọng" : "Deals & important news",
@@ -226,6 +296,23 @@ class _MoreViewState extends State<MoreView> {
         "icon": Icons.confirmation_number_outlined,
         "iconBg": const Color(0xFF3D271D),
         "iconColor": const Color(0xFFFC6011),
+      },
+      {
+        "index": "become_store",
+        "name": "Trở thành cửa hàng",
+        "subtitle": UserRoleHelper.isMerchant ? "Quản lý & thông tin đối tác" : "Đăng ký bán hàng cùng Food Route",
+        "icon": Icons.storefront_outlined,
+        "iconBg": const Color(0xFF3D271D),
+        "iconColor": const Color(0xFFFC6011),
+      },
+      {
+        "index": "support",
+        "name": lang.languageCode == 'vi' ? "Trung tâm hỗ trợ" : "Support Center",
+        "subtitle": lang.languageCode == 'vi' ? "Hotline, FAQ & Góp ý phản hồi" : "Hotline, FAQ & Feedback",
+        "icon": Icons.headset_mic_outlined,
+        "iconBg": const Color(0xFF1E2A3A),
+        "iconColor": const Color(0xFF38BDF8),
+        "base": unreadSupportCount,
       },
       {
         "index": "5",
@@ -362,9 +449,9 @@ class _MoreViewState extends State<MoreView> {
                     onTap: () async {
                       switch (mObj["index"].toString()) {
                         case "store_owner":
-                          Navigator.pushReplacement(
-                            context,
+                          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (context) => const RestaurantOwnerMainView()),
+                            (route) => false,
                           );
                           break;
                         case "lang":
@@ -386,6 +473,12 @@ class _MoreViewState extends State<MoreView> {
                           );
                           _fetchActiveOrdersCount();
                           break;
+                        case "reservation":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ReservationListView()),
+                          );
+                          break;
                         case "3":
                           await Navigator.push(
                             context,
@@ -399,6 +492,15 @@ class _MoreViewState extends State<MoreView> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const InboxView()),
+                          );
+                          break;
+                        case "become_store":
+                          _handleBecomeStore();
+                          break;
+                        case "support":
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SupportCenterView()),
                           );
                           break;
                         case "5":

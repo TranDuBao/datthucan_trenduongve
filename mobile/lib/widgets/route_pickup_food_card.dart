@@ -23,7 +23,7 @@ class RoutePickupFoodCard extends StatelessWidget {
     this.userLng,
   }) : super(key: key);
 
-  String _formatDistance() {
+  double _calculateDistanceMeters() {
     final uLat = userLat ?? 10.762622;
     final uLng = userLng ?? 106.682029;
     final storeLat = (item["lat"] as num?)?.toDouble() ?? 10.762622;
@@ -33,8 +33,11 @@ class RoutePickupFoodCard extends StatelessWidget {
     final a = 0.5 - math.cos((storeLat - uLat) * p) / 2 +
         math.cos(uLat * p) * math.cos(storeLat * p) *
             (1 - math.cos((storeLng - uLng) * p)) / 2;
-    final meters = 12742 * math.asin(math.sqrt(a)) * 1000;
+    return 12742 * math.asin(math.sqrt(a)) * 1000;
+  }
 
+  String _formatDistance() {
+    final meters = _calculateDistanceMeters();
     if (meters < 100) {
       return "Cách 150m";
     } else if (meters < 1000) {
@@ -42,6 +45,28 @@ class RoutePickupFoodCard extends StatelessWidget {
     } else {
       return "Cách ${(meters / 1000).toStringAsFixed(1)}km";
     }
+  }
+
+  int _calculatePickupMinutes() {
+    final meters = _calculateDistanceMeters();
+
+    // Thời gian chuẩn bị món của quán (mặc định 5-10 phút cho món ăn nhanh / đồ uống)
+    final rawPrepTime = item["thoiGianChuanBi"] ?? item["prepTime"] ?? item["thoigianchuanbi"];
+    int prepMinutes = rawPrepTime != null ? (int.tryParse(rawPrepTime.toString()) ?? 5) : 5;
+    if (prepMinutes <= 0) prepMinutes = 5;
+
+    // Thời gian di chuyển thực tế theo khoảng cách GPS (tốc độ xe trong đô thị ~350m/phút)
+    final travelMinutes = (meters / 350).ceil();
+
+    // Thời gian ghé lấy thực tế = max(thời gian di chuyển tới quán, thời gian quán chuẩn bị xong)
+    final pickupMinutes = math.max(travelMinutes, prepMinutes);
+
+    return pickupMinutes.clamp(3, 45);
+  }
+
+  String _formatPickupBadge() {
+    final minutes = _calculatePickupMinutes();
+    return "Ghé lấy sau ${minutes}p";
   }
 
   @override
@@ -101,7 +126,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isSoldOut ? "Hết món" : "Ghé lấy sau 8p",
+                      isSoldOut ? "Hết món" : _formatPickupBadge(),
                       style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -212,7 +237,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
-                          item["tenQuan"] ?? "Cửa hàng",
+                          "${item["tenQuan"] ?? "Cửa hàng"} • ${_formatDistance()}",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

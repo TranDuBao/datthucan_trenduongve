@@ -1,3 +1,5 @@
+import { SystemInfoController } from '../controllers/system_info_controller';
+import { StoreCategoryController } from '../controllers/store_category_controller';
 import { Router } from 'express';
 import { AdminController } from '../controllers/admin_controller';
 import { authMiddleware } from '../middlewares/auth_middleware';
@@ -8,6 +10,9 @@ import { AuditLogController } from '../controllers/audit_log_controller';
 const router = Router();
 const controller = new AdminController();
 const auditLogController = new AuditLogController();
+const storeCatController = new StoreCategoryController();
+const systemInfoController = new SystemInfoController();
+
 
 // All Admin routes require Auth & ADMIN Role
 router.use(authMiddleware as any);
@@ -36,6 +41,15 @@ router.patch('/restaurants/:id/restore', controller.restoreRestaurant as any);
 router.post('/restaurants/:id/restore', controller.restoreRestaurant as any);
 
 
+
+// Store Categories (Loai Hinh Quan) CRUD & Controls
+router.get('/store-categories', storeCatController.getAll as any);
+router.post('/store-categories', storeCatController.create as any);
+router.get('/store-categories/:id', storeCatController.getById as any);
+router.put('/store-categories/:id', storeCatController.update as any);
+router.delete('/store-categories/:id', storeCatController.delete as any);
+router.get('/store-categories/:id/restaurants', storeCatController.getRestaurantsByCategory as any);
+
 router.get('/categories', controller.getCategories as any);
 router.post('/categories', controller.createCategory as any);
 router.put('/categories/:id', controller.updateCategory as any);
@@ -55,5 +69,9 @@ router.get('/orders', controller.getOrders as any);
 router.get('/payments', controller.getPayments as any);
 router.get('/activity-logs/export-csv', auditLogController.exportCsv as any);
 router.get('/activity-logs', auditLogController.getLogs as any);
+
+// System Info / About Us Management
+router.get('/about-us', systemInfoController.getAboutUs as any);
+router.put('/about-us', systemInfoController.updateAboutUs as any);
 
 export default router;

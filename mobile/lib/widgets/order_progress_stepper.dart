@@ -26,6 +26,7 @@ class OrderProgressStepper extends StatefulWidget {
   static int getStepFromStatus(String statusStr) {
     final s = statusStr.trim().toUpperCase();
     if (s == 'DA_HUY' || s == 'CANCELLED' || s == 'ĐÃ HỦY') return 0;
+    if (s == 'CHO_THANH_TOAN' || s == 'UNPAID' || s == 'CHỜ THANH TOÁN') return 0;
     if (s == 'HOAN_TAT' ||
         s == 'HOAN_THANH' ||
         s == 'COMPLETED' ||
@@ -47,6 +48,11 @@ class OrderProgressStepper extends StatefulWidget {
         s == 'CHƯA LÀM') return 3;
     if (s == 'DA_XAC_NHAN' || s == 'CONFIRMED' || s == 'ĐÃ XÁC NHẬN') return 2;
     return 1;
+  }
+
+  static bool isUnpaidStatus(String statusStr) {
+    final s = statusStr.trim().toUpperCase();
+    return s == 'CHO_THANH_TOAN' || s == 'UNPAID' || s == 'CHỜ THANH TOÁN';
   }
 
   static bool isCancelledStatus(String statusStr) {
@@ -80,11 +86,16 @@ class _OrderProgressStepperState extends State<OrderProgressStepper>
   @override
   Widget build(BuildContext context) {
     final isCancelled = OrderProgressStepper.isCancelledStatus(widget.status);
+    final isUnpaid = OrderProgressStepper.isUnpaidStatus(widget.status);
     final currentStep = OrderProgressStepper.getStepFromStatus(widget.status);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (isCancelled) {
       return _buildCancelledBanner(context, isDark);
+    }
+
+    if (isUnpaid) {
+      return _buildUnpaidBanner(context, isDark);
     }
 
     if (widget.isCompact) {
@@ -94,7 +105,49 @@ class _OrderProgressStepperState extends State<OrderProgressStepper>
     return _buildFullStepper(context, currentStep, isDark);
   }
 
-  Widget _buildCancelledBanner(BuildContext context, bool isDark) {
+    Widget _buildUnpaidBanner(BuildContext context, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.pending_actions_rounded, color: Color(0xFFD97706), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Chưa thanh toán (Chờ thanh toán VietQR)",
+                  style: TextStyle(
+                    color: Color(0xFFB45309),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Quán chưa tiếp nhận đơn cho đến khi bạn hoàn tất thanh toán.",
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFFD0D4E0) : const Color(0xFF666666),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildCancelledBanner(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
