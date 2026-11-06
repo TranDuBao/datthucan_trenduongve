@@ -49,6 +49,8 @@ mobile/assets/img/*_backup.*
 # Uploaded media (runtime user/merchant content)
 uploads/*
 !uploads/.gitkeep
+uploads_kyc/*
+!uploads_kyc/.gitkeep
 
 # Android Keystores & Credentials
 *.keystore
