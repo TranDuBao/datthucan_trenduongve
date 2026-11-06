@@ -34,18 +34,21 @@ const restaurantController = new RestaurantController();
 const adminBannerService = new AdminBannerService();
 const systemInfoController = new SystemInfoController();
 
-// Configured CORS Origin (P3-02 Fix)
-const allowedOrigins = process.env.CLIENT_ORIGIN
-  ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim())
+// Configured CORS Origin (supports CLIENT_ORIGIN or CORS_ORIGIN)
+const corsEnv = process.env.CLIENT_ORIGIN || process.env.CORS_ORIGIN;
+const allowedOrigins = corsEnv
+  ? corsEnv.split(',').map((o) => o.trim())
   : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
-      } else {
+      } else if (process.env.NODE_ENV !== 'production') {
         callback(null, true); // Dev fallback
+      } else {
+        callback(new Error('Chặn bởi chính sách bảo mật CORS (Origin không được phép)'));
       }
     },
     credentials: true,
@@ -67,8 +70,22 @@ const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// Security: Chặn truy cập công khai trực tiếp tới các tệp KYC/CCCD nhạy cảm
+const blockKycStatic = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const normalized = (req.path || '').toLowerCase();
+  if (normalized.includes('kyc_') || normalized.includes('cccd_')) {
+    return res.status(403).json({
+      statusCode: 403,
+      message: 'Tài liệu nhạy cảm yêu cầu xác thực qua /api/v1/upload/kyc',
+    });
+  }
+  next();
+};
+
 app.use(
   '/uploads',
+  blockKycStatic,
   express.static(uploadsDir, {
     setHeaders: (res) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -79,6 +96,7 @@ const fallbackUploadsDir = path.join(__dirname, '../uploads');
 if (fs.existsSync(fallbackUploadsDir)) {
   app.use(
     '/uploads',
+    blockKycStatic,
     express.static(fallbackUploadsDir, {
       setHeaders: (res) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -121,6 +139,26 @@ app.use('/api', supportRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Smart City Food Route API running' });
+});
+
+// 404 Handler cho các API không tồn tại
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ statusCode: 404, status: 'error', message: 'API route không tồn tại' });
+  }
+  next();
+});
+
+// Middleware xử lý lỗi toàn cục (Global Exception Handler)
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[App] [Lỗi chưa bắt]:', err);
+  const status = Number(err.statusCode || err.status || 500);
+  const message = err.message || 'Lỗi hệ thống nội bộ';
+  return res.status(status).json({
+    statusCode: status,
+    status: 'error',
+    message: process.env.NODE_ENV === 'production' && status === 500 ? 'Đã có lỗi hệ thống xảy ra' : message,
+  });
 });
 
 export default app;

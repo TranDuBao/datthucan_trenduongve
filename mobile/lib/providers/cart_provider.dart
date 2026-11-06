@@ -15,7 +15,9 @@ class CartProvider extends ChangeNotifier {
   final List<CartItemModel> _items = [];
 
   CartProvider() {
-    locator<SocketService>().listenToVoucherUpdates(_onVoucherUpdated);
+    if (locator.isRegistered<SocketService>()) {
+      locator<SocketService>().listenToVoucherUpdates(_onVoucherUpdated);
+    }
   }
 
   void _onVoucherUpdated(dynamic data) {
@@ -33,7 +35,9 @@ class CartProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    locator<SocketService>().offVoucherUpdates(_onVoucherUpdated);
+    if (locator.isRegistered<SocketService>()) {
+      locator<SocketService>().offVoucherUpdates(_onVoucherUpdated);
+    }
     super.dispose();
   }
   // Lưu thông tin tên/địa chỉ của từng quán đang có món trong giỏ

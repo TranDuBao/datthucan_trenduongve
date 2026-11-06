@@ -32,8 +32,11 @@ class MenuItemRow extends StatelessWidget {
     
     final priceVal = (mObj["price"] ?? mObj["giaMonAn"] as num?)?.toInt() ?? 65000;
     final formattedPrice = "${priceVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ";
-    final oldPriceVal = (priceVal * 1.35).toInt();
-    final formattedOldPrice = "${oldPriceVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ";
+    final giaGocVal = (mObj["giaGoc"] as num?)?.toInt();
+    final bool hasDiscount = giaGocVal != null && giaGocVal > priceVal;
+    final formattedOldPrice = hasDiscount
+        ? "${giaGocVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ"
+        : null;
 
     final rawImg = mObj["image"]?.toString() ?? mObj["img"]?.toString() ?? mObj["hinhAnh"]?.toString();
     final imgUrl = (rawImg != null && rawImg.trim().isNotEmpty) ? rawImg.trim() : "assets/img/menu_1.png";
@@ -223,14 +226,15 @@ class MenuItemRow extends StatelessWidget {
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                Text(
-                                  formattedOldPrice,
-                                  style: TextStyle(
-                                    color: TColor.secondaryTextOf(context),
-                                    fontSize: 11,
-                                    decoration: TextDecoration.lineThrough,
+                                if (hasDiscount && formattedOldPrice != null)
+                                  Text(
+                                    formattedOldPrice,
+                                    style: TextStyle(
+                                      color: TColor.secondaryTextOf(context),
+                                      fontSize: 11,
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                             Container(

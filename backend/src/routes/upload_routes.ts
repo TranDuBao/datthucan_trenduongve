@@ -16,4 +16,7 @@ router.post('/base64', uploadLimiter as any, authMiddleware as any, controller.u
 // Active Delete route (Web calls 'DELETE /file')
 router.delete('/file', authMiddleware as any, controller.deleteFile as any);
 
+// Secure KYC file route
+router.get('/kyc/:filename', authMiddleware as any, controller.getKycFile as any);
+
 export default router;

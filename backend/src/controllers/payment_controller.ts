@@ -194,13 +194,13 @@ export class PaymentController {
    */
   handleWebhook = async (req: Request, res: Response) => {
     try {
-      const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+      const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.PAYOS_CHECKSUM_KEY;
 
       if (!webhookSecret) {
-        console.error('[PaymentController] [Error] CẢNH BÁO BẢO MẬT: PAYMENT_WEBHOOK_SECRET chưa được cấu hình trong .env!');
+        console.error('[PaymentController] [Error] CẢNH BÁO BẢO MẬT: PAYMENT_WEBHOOK_SECRET hoặc PAYOS_CHECKSUM_KEY chưa được cấu hình trong .env!');
         return res.status(500).json({
           status: 'error',
-          message: 'Hệ thống chưa thiết lập khóa bảo mật Webhook thanh toán (PAYMENT_WEBHOOK_SECRET)',
+          message: 'Hệ thống chưa thiết lập khóa bảo mật Webhook thanh toán (PAYMENT_WEBHOOK_SECRET / PAYOS_CHECKSUM_KEY)',
         });
       }
 

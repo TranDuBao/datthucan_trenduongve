@@ -54,3 +54,6 @@ uploads/*
 *.keystore
 *.jks
 key.properties
+
+# Private deployment guides
+BuildProject*

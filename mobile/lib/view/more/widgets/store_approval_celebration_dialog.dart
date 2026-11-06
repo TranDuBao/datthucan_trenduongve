@@ -59,7 +59,7 @@ class _StoreApprovalCelebrationDialogState extends State<StoreApprovalCelebratio
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const portalUrl = SVKey.restaurantWebPortalUrl;
+    final portalUrl = SVKey.restaurantWebPortalUrl;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -187,7 +187,7 @@ class _StoreApprovalCelebrationDialogState extends State<StoreApprovalCelebratio
                   ),
                   InkWell(
                     onTap: () {
-                      Clipboard.setData(const ClipboardData(text: portalUrl));
+                      Clipboard.setData(ClipboardData(text: portalUrl));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Đã sao chép liên kết vào bộ nhớ tạm!"),

@@ -131,10 +131,30 @@ export class RealtimeService {
         }
       }
 
+      // Per-socket rate limiter to protect database from room:join query flooding
+      let joinCount = 0;
+      let lastResetTime = Date.now();
+      const MAX_JOINS_PER_MINUTE = 30;
+
       // Client room join requests (strictly validated by server for ownership)
       socket.on('room:join', async (data: { roomType: string; id?: number }) => {
-        if (!data || !data.roomType) return;
+        if (!data || typeof data.roomType !== 'string') return;
+
+        // Check sliding window rate limit
+        const now = Date.now();
+        if (now - lastResetTime > 60000) {
+          joinCount = 0;
+          lastResetTime = now;
+        }
+        joinCount++;
+        if (joinCount > MAX_JOINS_PER_MINUTE) {
+          console.warn(`[RealtimeService] [Security] Rate limit exceeded on room:join for socket ${socket.id} (user #${user.sub})`);
+          socket.emit('error', { code: 'RATE_LIMIT_EXCEEDED', message: 'Quá nhiều yêu cầu tham gia phòng. Vui lòng đợi 1 phút.' });
+          return;
+        }
+
         const roomId = Number(data.id || 0);
+        if (isNaN(roomId) || roomId < 0) return;
         const userRole = String(user.role || '').toUpperCase();
         const subId = Number(user.sub);
 

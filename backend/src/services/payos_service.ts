@@ -35,7 +35,7 @@ export interface PayOSPaymentInfo {
 export class PayOSService {
   private static clientId = process.env.PAYOS_CLIENT_ID || '';
   private static apiKey = process.env.PAYOS_API_KEY || '';
-  private static checksumKey = process.env.PAYMENT_WEBHOOK_SECRET || '';
+  private static checksumKey = process.env.PAYMENT_WEBHOOK_SECRET || process.env.PAYOS_CHECKSUM_KEY || '';
 
   /**
    * Tạo Payment Link chính thức từ PayOS để nhận biến động số dư TỨC THÌ (1-2 giây)

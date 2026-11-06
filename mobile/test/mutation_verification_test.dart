@@ -11,7 +11,6 @@ void main() {
     test('[MUTATION 1] Bỏ phần xóa điểm ghé khi hủy đơn -> Test PHẢI ĐỎ nếu điểm ghé không bị xóa', () {
       final mapProv = MapProvider();
       const orderId = 9999;
-      mapProv.attachOrderIdToStopover(orderId);
       mapProv.setActiveStopoverOrder({
         'maDonHang': orderId,
         'tenQuan': 'Test Store',

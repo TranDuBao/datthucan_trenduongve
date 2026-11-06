@@ -135,6 +135,7 @@ export class RestaurantService {
         FROM danhgia_mon dgm
         JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
         WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND dg.maquan = $1
 
         UNION
 
@@ -145,6 +146,7 @@ export class RestaurantService {
         FROM chitietdonhang ct
         JOIN danhgia dg ON dg.madonhang = ct.madonhang
         WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND dg.maquan = $1
           AND ct.mamonan IS NOT NULL
       )
       SELECT 
@@ -153,7 +155,7 @@ export class RestaurantService {
         ROUND(AVG(stars)::numeric, 1) as avg_rating
       FROM dish_reviews_combined
       GROUP BY mamonan
-    `);
+    `, [maQuan]);
     const dishRatingMap = new Map<number, { count: number; avg: number }>();
     for (const dr of dishRatings) {
       dishRatingMap.set(Number(dr.mamonan), {
@@ -267,12 +269,40 @@ export class RestaurantService {
       return [];
     }
 
-    const allStores = await this.getAllRestaurants();
-    let validStores = allStores.filter((s) => s.lat != null && s.lng != null);
+    const deg2rad = Math.PI / 180;
 
-    if (validStores.length === 0) {
+    // Fast bounding-box pre-filtering directly on Database (Eliminates OOM on route search)
+    let minLat = 90;
+    let maxLat = -90;
+    let minLng = 180;
+    let maxLng = -180;
+    for (const pt of routePoints) {
+      if (pt.lat < minLat) minLat = pt.lat;
+      if (pt.lat > maxLat) maxLat = pt.lat;
+      if (pt.lng < minLng) minLng = pt.lng;
+      if (pt.lng > maxLng) maxLng = pt.lng;
+    }
+    const latBuffer = (maxDistanceMeters / 110540) + 0.01;
+    const lngBuffer = (maxDistanceMeters / (111320 * Math.cos(((minLat + maxLat) / 2) * deg2rad))) + 0.01;
+    const bMinLat = minLat - latBuffer;
+    const bMaxLat = maxLat + latBuffer;
+    const bMinLng = minLng - lngBuffer;
+    const bMaxLng = maxLng + lngBuffer;
+
+    const candidateStores = await this.cuaHangRepo
+      .createQueryBuilder('c')
+      .where('c.isDeleted = false')
+      .andWhere('c.lat IS NOT NULL AND c.lng IS NOT NULL')
+      .andWhere('c.lat BETWEEN :bMinLat AND :bMaxLat', { bMinLat, bMaxLat })
+      .andWhere('c.lng BETWEEN :bMinLng AND :bMaxLng', { bMinLng, bMaxLng })
+      .getMany();
+
+    if (candidateStores.length === 0) {
       return [];
     }
+
+    let validStores = candidateStores;
+    const candidateStoreIds = validStores.map((s) => s.maQuan);
 
 function removeVietnameseTones(str: string): string {
   if (!str) return '';
@@ -303,7 +333,8 @@ function removeVietnameseTones(str: string): string {
     if (cleanKw.length > 0) {
       const allActiveFoods = await this.monAnRepo
         .createQueryBuilder('m')
-        .where('m.soLuongMon > 0')
+        .where('m.maQuan IN (:...candidateStoreIds)', { candidateStoreIds })
+        .andWhere('m.soLuongMon > 0')
         .andWhere("(m.trangThaiMon IS NULL OR UPPER(m.trangThaiMon) NOT IN ('HET_HANG', 'HET_MON', 'TAM_NGUNG'))")
         .getMany();
 
@@ -423,7 +454,6 @@ function removeVietnameseTones(str: string): string {
     }
 
     // Pre-calculate segments from route points
-    const deg2rad = Math.PI / 180;
     const segments: {
       lat1: number;
       lng1: number;
@@ -461,31 +491,6 @@ function removeVietnameseTones(str: string): string {
         lenSq,
       });
     }
-
-    // Fast bounding-box pre-filtering to avoid checking stores far away from route
-    let minLat = 90;
-    let maxLat = -90;
-    let minLng = 180;
-    let maxLng = -180;
-    for (const pt of routePoints) {
-      if (pt.lat < minLat) minLat = pt.lat;
-      if (pt.lat > maxLat) maxLat = pt.lat;
-      if (pt.lng < minLng) minLng = pt.lng;
-      if (pt.lng > maxLng) maxLng = pt.lng;
-    }
-    // Margin buffer based on maxDistanceMeters + safety buffer (~0.01 deg ~= 1.1km)
-    const latBuffer = (maxDistanceMeters / 110540) + 0.01;
-    const lngBuffer = (maxDistanceMeters / (111320 * Math.cos(((minLat + maxLat) / 2) * deg2rad))) + 0.01;
-    const bMinLat = minLat - latBuffer;
-    const bMaxLat = maxLat + latBuffer;
-    const bMinLng = minLng - lngBuffer;
-    const bMaxLng = maxLng + lngBuffer;
-
-    const candidateStores = validStores.filter((s) => {
-      const sLat = Number(s.lat);
-      const sLng = Number(s.lng);
-      return sLat >= bMinLat && sLat <= bMaxLat && sLng >= bMinLng && sLng <= bMaxLng;
-    });
 
     let tableStoreIds = new Set<number>();
     try {

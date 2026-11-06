@@ -3,11 +3,15 @@ import { RefundService } from '../services/refund_service';
 import { AppDataSource } from '../config/database';
 import { CuaHangModel } from '../models/cua_hang_model';
 import { HoanTienModel, RefundStatus } from '../models/hoan_tien_model';
+import { DonHangModel } from '../models/don_hang_model';
+import { KhachHangModel } from '../models/khach_hang_model';
 
 export class RefundController {
   private refundService = RefundService.getInstance();
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
   private hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
+  private donHangRepo = AppDataSource.getRepository(DonHangModel);
+  private khachHangRepo = AppDataSource.getRepository(KhachHangModel);
 
   /**
    * Danh sách yêu cầu hoàn tiền (Có phân quyền Admin và Quán)
@@ -51,14 +55,46 @@ export class RefundController {
   };
 
   /**
-   * Chi tiết yêu cầu hoàn tiền
+   * Chi tiết yêu cầu hoàn tiền (Có kiểm tra quyền sở hữu BOLA/IDOR)
    */
   getRefundById = async (req: Request, res: Response) => {
     try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ status: 'error', message: 'Bạn chưa đăng nhập' });
+      }
+
       const maHoanTien = Number(req.params.id);
+      if (isNaN(maHoanTien) || maHoanTien <= 0) {
+        return res.status(400).json({ status: 'error', message: 'Mã yêu cầu hoàn tiền không hợp lệ' });
+      }
+
       const refund = await this.hoanTienRepo.findOne({ where: { maHoanTien } });
       if (!refund) {
         return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+      }
+
+      const userSub = Number(user.sub);
+      const userRole = String(user.role || '').toUpperCase();
+
+      if (userRole !== 'ADMIN') {
+        const order = await this.donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+        if (!order) {
+          return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+        }
+
+        if (userRole === 'CUAN_HANG' || userRole === 'CUA_HANG' || userRole === 'RESTAURANT' || userRole === 'STORE') {
+          const store = await this.storeRepo.findOne({ where: { maTaiKhoan: userSub } });
+          if (!store || store.maQuan !== order.maQuan) {
+            return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+          }
+        } else {
+          // Customer Role
+          const khachHang = await this.khachHangRepo.findOne({ where: { maTaiKhoan: userSub } });
+          if (!khachHang || order.maKhachHang !== khachHang.maKhachHang) {
+            return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+          }
+        }
       }
 
       return res.status(200).json({
@@ -116,15 +152,27 @@ export class RefundController {
   };
 
   /**
-   * Khách hàng hoặc Quán bổ sung thông tin tài khoản ngân hàng nhận tiền hoàn
+   * Khách hàng bổ sung/cập nhật thông tin tài khoản ngân hàng nhận tiền hoàn (Có kiểm tra quyền sở hữu chặt chẽ)
    */
   updateBankInfo = async (req: Request, res: Response) => {
     try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ status: 'error', message: 'Bạn chưa đăng nhập' });
+      }
+
       const maHoanTien = Number(req.params.id);
+      if (isNaN(maHoanTien) || maHoanTien <= 0) {
+        return res.status(400).json({ status: 'error', message: 'Mã hoàn tiền không hợp lệ' });
+      }
+
       const { nganHang, soTaiKhoan, tenChuTaiKhoan } = req.body;
 
-      if (!nganHang || !soTaiKhoan) {
-        return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp ngân hàng và số tài khoản' });
+      if (!nganHang || typeof nganHang !== 'string' || !nganHang.trim()) {
+        return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp ngân hàng hợp lệ' });
+      }
+      if (!soTaiKhoan || typeof soTaiKhoan !== 'string' || !soTaiKhoan.trim()) {
+        return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp số tài khoản hợp lệ' });
       }
 
       const refund = await this.hoanTienRepo.findOne({ where: { maHoanTien } });
@@ -132,9 +180,38 @@ export class RefundController {
         return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
       }
 
-      refund.nganHangNhan = nganHang;
-      refund.soTaiKhoanNhan = soTaiKhoan;
-      if (tenChuTaiKhoan) refund.tenChuTaiKhoanNhan = tenChuTaiKhoan;
+      const userSub = Number(user.sub);
+      const userRole = String(user.role || '').toUpperCase();
+
+      // Chỉ khách hàng sở hữu đơn hàng hoặc Admin mới có quyền cập nhật tài khoản nhận hoàn tiền
+      if (userRole !== 'ADMIN') {
+        const order = await this.donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+        if (!order) {
+          return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+        }
+
+        const khachHang = await this.khachHangRepo.findOne({ where: { maTaiKhoan: userSub } });
+        if (!khachHang || order.maKhachHang !== khachHang.maKhachHang) {
+          return res.status(404).json({
+            status: 'error',
+            message: 'Không tìm thấy yêu cầu hoàn tiền',
+          });
+        }
+      }
+
+      // Không cho phép chỉnh sửa nếu yêu cầu đã hoàn tất thành công
+      if (refund.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG' || refund.trangThaiHoanTien === 'DANG_XU_LY') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Yêu cầu hoàn tiền đang được xử lý hoặc đã hoàn tất, không thể thay đổi thông tin ngân hàng',
+        });
+      }
+
+      refund.nganHangNhan = nganHang.trim();
+      refund.soTaiKhoanNhan = soTaiKhoan.trim();
+      if (tenChuTaiKhoan && typeof tenChuTaiKhoan === 'string') {
+        refund.tenChuTaiKhoanNhan = tenChuTaiKhoan.trim();
+      }
 
       await this.hoanTienRepo.save(refund);
 

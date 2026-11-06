@@ -129,15 +129,18 @@ export class AuthService {
       throw new Error('Google ID Token không được để trống');
     }
 
-    const configuredClientId = process.env.GOOGLE_CLIENT_ID || '';
-    const fallbackClientId = '963558323583-t3295k9m03vpbrqjaimfp7d8o3gsaaqd.apps.googleusercontent.com';
-    const client = new OAuth2Client(configuredClientId || fallbackClientId);
+    const configuredClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    if (!configuredClientId) {
+      console.error('[AuthService] [Error] GOOGLE_CLIENT_ID environment variable is not configured');
+      throw new Error('Chức năng đăng nhập Google chưa được kích hoạt trên hệ thống');
+    }
+    const client = new OAuth2Client(configuredClientId);
 
     let payload;
     try {
       const ticket = await client.verifyIdToken({
         idToken: idToken.trim(),
-        audience: configuredClientId ? [configuredClientId, fallbackClientId] : fallbackClientId,
+        audience: configuredClientId,
       });
       payload = ticket.getPayload();
     } catch (err: any) {

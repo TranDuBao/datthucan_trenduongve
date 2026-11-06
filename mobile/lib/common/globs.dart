@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:food_route/main.dart';
@@ -82,12 +83,25 @@ class Globs {
 
 class SVKey {
   // Support custom API_URL passed at build time via --dart-define=API_URL=...
-  // Fallback to 10.0.2.2 for Android Emulator, or localhost for Web/Desktop/iOS Sim
+  // In release builds, default to production endpoint to prevent 10.0.2.2 crash on real devices.
   static String get mainUrl {
     const customUrl = String.fromEnvironment('API_URL');
     if (customUrl.isNotEmpty) {
       return customUrl;
     }
+    try {
+      if (dotenv.isInitialized && (dotenv.env['API_URL']?.isNotEmpty ?? false)) {
+        return dotenv.env['API_URL']!;
+      }
+    } catch (_) {}
+
+    // In production/release builds, never use Android emulator loopback 10.0.2.2
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    const prodUrl = String.fromEnvironment('PROD_API_URL', defaultValue: 'https://api.foodroute.vn');
+    if (isRelease) {
+      return prodUrl;
+    }
+
     if (!kIsWeb && Platform.isAndroid) {
       return "http://10.0.2.2:3000";
     }
@@ -114,7 +128,13 @@ class SVKey {
   static String get svOrders => '${mainUrl}/api/v1/orders';
   static String get svVerifyPayment => '${mainUrl}/api/v1/payments/verify';
   static String get svReservations => '${mainUrl}/api/v1/reservations';
-  static const String restaurantWebPortalUrl = 'http://localhost:5173/restaurant';
+  static String get restaurantWebPortalUrl {
+    const custom = String.fromEnvironment('RESTAURANT_WEB_PORTAL_URL');
+    if (custom.isNotEmpty) return custom;
+    const isRelease = bool.fromEnvironment('dart.vm.product');
+    if (isRelease) return 'https://merchant.foodroute.vn';
+    return 'http://localhost:5173/restaurant';
+  }
   static String get svStoreRegistration => '${mainUrl}/api/v1/store-registrations';
   static String get svStoreRegistrationMyStatus => '${mainUrl}/api/v1/store-registrations/my-status';
   static String get svActiveLegalDocuments => '${mainUrl}/api/v1/legal-documents/active';

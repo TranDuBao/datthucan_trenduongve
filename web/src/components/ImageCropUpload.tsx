@@ -25,6 +25,7 @@ interface ImageCropUploadProps {
   onImageCropped?: (url: string) => void;
   label?: string;
   aspectRatio?: number; // 1: 1:1 square, 1.77: 16:9 banner, 1.58: CCCD
+  isKyc?: boolean;
 }
 
 export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
@@ -34,6 +35,7 @@ export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
   onImageCropped,
   label = 'Hình ảnh',
   aspectRatio = 1,
+  isKyc,
 }) => {
   const currentValue = value || initialImage || '';
   const triggerChange = (url: string) => {
@@ -285,9 +287,10 @@ export const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
       const oldUrl = currentValue;
       let finalUrl = '';
       try {
+        const isKycUpload = Boolean(isKyc || label.toLowerCase().includes('cccd'));
         const res = await apiFetch<{ url: string }>('/upload', {
           method: 'POST',
-          body: JSON.stringify({ image: croppedBase64 }),
+          body: JSON.stringify({ image: croppedBase64, isKyc: isKycUpload }),
         });
         finalUrl = res.url || (res as any).data?.url;
         if (!finalUrl) throw new Error('Không nhận được đường dẫn ảnh từ máy chủ');

@@ -82,6 +82,12 @@ export const AppDataSource = new DataSource({
   // CRITICAL DB SAFETY RULE: Never drop or synchronize schema automatically!
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
+  extra: {
+    max: Number(process.env.DB_POOL_MAX) || 25,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  },
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 export const connectDatabase = async () => {
@@ -90,9 +96,27 @@ export const connectDatabase = async () => {
       await AppDataSource.initialize();
     }
     console.log('[Database] [Info] Kết nối PostgreSQL thành công (Bảo vệ dữ liệu synchronize=false)');
-    await AppDataSource.query(`ALTER TABLE monan ALTER COLUMN img TYPE TEXT;`).catch(() => {});
-    await AppDataSource.query(`ALTER TABLE cuahang ALTER COLUMN img TYPE TEXT;`).catch(() => {});
-    await AppDataSource.query(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`).catch(() => {});
+
+    // Sử dụng Advisory Lock để tránh xung đột Exclusive Table Lock khi nhiều container/worker khởi động cùng lúc
+    const lockRes = await AppDataSource.query(`SELECT pg_try_advisory_lock(987654) as locked;`).catch(() => [{ locked: true }]);
+    const hasLock = Boolean(lockRes && lockRes[0] && lockRes[0].locked);
+
+    if (hasLock) {
+      try {
+        const safeQuery = async (sql: string, params: any[] = []) => {
+          try {
+            await AppDataSource.query(sql, params);
+          } catch (err: any) {
+            // Ignore if already exists or duplicate
+            if (!err.message?.includes('already exists') && !err.message?.includes('duplicate key') && !err.message?.includes('column') && !err.message?.includes('relation')) {
+              console.warn(`[Database] [Schema Check Notice] ${err.message}`);
+            }
+          }
+        };
+
+        await safeQuery(`ALTER TABLE monan ALTER COLUMN img TYPE TEXT;`);
+        await safeQuery(`ALTER TABLE cuahang ALTER COLUMN img TYPE TEXT;`);
+        await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`);
     await AppDataSource.query(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
     await AppDataSource.query(`
@@ -505,8 +529,14 @@ export const connectDatabase = async () => {
     } catch (e) {
       console.warn('[Database] Seed FAQ warn:', e);
     }
+  } finally {
+    await AppDataSource.query(`SELECT pg_advisory_unlock(987654);`).catch(() => {});
+  }
+} else {
+  console.log('[Database] [Info] Node khác đang kiểm tra cấu trúc CSDL. Bỏ qua kiểm tra để tránh xung đột khóa bảng.');
+}
 
-    await ensureAdminUserExists();
+await ensureAdminUserExists();
     // Auto-sanitization disabled to protect production/user data integrity
   } catch (error) {
     console.error('[Database] [Error] Lỗi kết nối PostgreSQL:', error);

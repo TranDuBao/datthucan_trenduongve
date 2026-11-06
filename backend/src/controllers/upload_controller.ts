@@ -80,19 +80,25 @@ export class UploadController {
         });
       }
 
-      const uploadsDir = path.join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
+      const isKyc = req.body.isKyc === true || req.body.isKyc === 'true';
+      const userSub = (req as any).user?.sub ? String((req as any).user.sub) : '0';
+
+      const targetDir = isKyc
+        ? path.join(process.cwd(), 'uploads_kyc')
+        : path.join(process.cwd(), 'uploads');
+
+      if (!fs.existsSync(targetDir)) {
+        await fs.promises.mkdir(targetDir, { recursive: true });
       }
 
-      const userSub = (req as any).user?.sub ? String((req as any).user.sub) : '0';
-      const fileName = `img_u${userSub}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-      const filePath = path.join(uploadsDir, fileName);
+      const prefix = isKyc ? `kyc_u${userSub}_` : `img_u${userSub}_`;
+      const fileName = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+      const filePath = path.join(targetDir, fileName);
 
       // Async non-blocking file write
       await fs.promises.writeFile(filePath, buffer);
 
-      const imageUrl = `/uploads/${fileName}`;
+      const imageUrl = isKyc ? `/api/v1/upload/kyc/${fileName}` : `/uploads/${fileName}`;
 
       return res.status(200).json({
         statusCode: 200,
@@ -171,6 +177,56 @@ export class UploadController {
       return res.status(200).json({ statusCode: 200, status: '1', message: 'Đã dọn dẹp tệp ảnh cũ thành công' });
     } catch (error: any) {
       return res.status(500).json({ statusCode: 500, message: error.message || 'Lỗi xóa tệp' });
+    }
+  };
+
+  /**
+   * Endpoint phục vụ tệp KYC/CCCD nhạy cảm (Chỉ ADMIN hoặc chủ sở hữu tệp được xem)
+   */
+  getKycFile = async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ statusCode: 401, message: 'Bạn chưa đăng nhập' });
+      }
+
+      const fileName = path.basename(req.params.filename || '');
+      if (!fileName || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+        return res.status(400).json({ statusCode: 400, message: 'Tên tệp không hợp lệ' });
+      }
+
+      const userRole = String(user.role || '').toUpperCase();
+      const userSub = Number(user.sub);
+
+      let isAllowed = false;
+      if (userRole === 'ADMIN') {
+        isAllowed = true;
+      } else if (fileName.startsWith(`kyc_u${userSub}_`) || fileName.startsWith(`img_u${userSub}_`)) {
+        isAllowed = true;
+      }
+
+      if (!isAllowed) {
+        return res.status(403).json({
+          statusCode: 403,
+          message: 'Bạn không có quyền truy cập tài liệu KYC nhạy cảm này',
+        });
+      }
+
+      const kycDir = path.join(process.cwd(), 'uploads_kyc');
+      const filePath = path.join(kycDir, fileName);
+
+      if (!fs.existsSync(filePath)) {
+        // Fallback kiểm tra trong uploads nếu file cũ được lưu trước đây
+        const fallbackPath = path.join(process.cwd(), 'uploads', fileName);
+        if (fs.existsSync(fallbackPath)) {
+          return res.sendFile(fallbackPath);
+        }
+        return res.status(404).json({ statusCode: 404, message: 'Không tìm thấy tệp tài liệu' });
+      }
+
+      return res.sendFile(filePath);
+    } catch (error: any) {
+      return res.status(500).json({ statusCode: 500, message: error.message || 'Lỗi đọc tệp KYC' });
     }
   };
 }
