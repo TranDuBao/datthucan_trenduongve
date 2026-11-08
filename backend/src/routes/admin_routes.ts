@@ -21,6 +21,7 @@ router.use(authMiddleware as any);
 router.use(requireRole(['ADMIN']) as any);
 
 router.get('/stats', controller.getDashboardStats as any);
+router.get('/app-stats', controller.getAppStats as any);
 router.get('/users', controller.getUsers as any);
 router.post('/users', controller.createUser as any);
 

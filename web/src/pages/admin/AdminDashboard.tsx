@@ -21,6 +21,10 @@ import {
   ChevronsRight,
   RotateCcw,
   Calendar,
+  Smartphone,
+  Download,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { OrderDetailModal } from '../../components/OrderDetailModal';
@@ -81,6 +85,49 @@ export const AdminDashboard: React.FC = () => {
   // Hovered Chart Bar State for Tooltip
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
+  // Mobile App Download Telemetry & Release Monitor State
+  const [appStats, setAppStats] = useState<any>(null);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  const fetchAppStats = () => {
+    // 1. Try our backend proxy endpoint
+    apiFetch<any>('/admin/app-stats')
+      .then((res) => {
+        if (res.data) setAppStats(res.data);
+      })
+      .catch(() => {
+        // 2. Direct GitHub API fallback
+        fetch('https://api.github.com/repos/TranDuBao/datthucan_trenduongve/releases')
+          .then((r) => r.json())
+          .then((releases) => {
+            if (Array.isArray(releases) && releases.length > 0) {
+              const rel = releases[0];
+              const apk = rel.assets?.find((a: any) => a.name.endsWith('.apk'));
+              setAppStats({
+                totalDownloads: rel.assets?.reduce((sum: number, a: any) => sum + (a.download_count || 0), 0) || 0,
+                version: rel.tag_name || 'v1.0.0',
+                releaseName: rel.name || 'FoodRoute App v1.0.0',
+                publishedAt: rel.published_at,
+                apkName: apk?.name || 'FoodRoute_v1.0.apk',
+                apkSize: apk?.size || 71512646,
+                apkDownloadCount: apk?.download_count || 0,
+                downloadUrl: apk?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+                releaseUrl: rel.html_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
+              });
+            }
+          })
+          .catch(console.error);
+      });
+  };
+
+  const handleCopyDownloadLink = () => {
+    const url = appStats?.downloadUrl || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk';
+    navigator.clipboard.writeText(url).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    });
+  };
+
   const currentPageRef = useRef<number>(1);
   currentPageRef.current = tablePagination.page;
 
@@ -112,6 +159,7 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardStats(1, false);
+    fetchAppStats();
 
     const socket = getSocket();
     if (socket) {
@@ -366,6 +414,145 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
             {stats?.todayOrders || 0} đơn hôm nay • {stats?.completedOrders || 0} hoàn thành
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile App Downloads & Release Monitor Banner */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          borderRadius: '16px',
+          padding: '18px 24px',
+          color: '#ffffff',
+          boxShadow: '0 4px 20px rgba(15,23,42,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #fc6011 0%, #ff8342 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(252,96,17,0.4)',
+              flexShrink: 0,
+            }}
+          >
+            <Smartphone size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800 }}>Ứng Dụng Di Động Android</span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  background: 'rgba(16,185,129,0.2)',
+                  color: '#34d399',
+                  border: '1px solid rgba(52,211,153,0.3)',
+                }}
+              >
+                {appStats?.version || 'v1.0.0'} • Chính Thức
+              </span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+              Tệp: <b style={{ color: '#f1f5f9' }}>{appStats?.apkName || 'FoodRoute_v1.0.apk'}</b> ({appStats?.apkSize ? (appStats.apkSize / (1024 * 1024)).toFixed(1) : '68.2'} MB) • Hỗ trợ Android 7.0+
+            </div>
+          </div>
+        </div>
+
+        {/* Download Count Metric & Quick Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '0 16px',
+              borderLeft: '1px solid rgba(255,255,255,0.12)',
+              borderRight: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>
+              Tổng Lượt Tải APK
+            </div>
+            <div style={{ fontSize: '26px', fontWeight: 900, color: '#38bdf8', marginTop: '2px' }}>
+              <AnimatedNumber value={appStats?.apkDownloadCount ?? appStats?.totalDownloads ?? 0} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={handleCopyDownloadLink}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                background: copySuccess ? '#10b981' : 'rgba(255,255,255,0.12)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                fontWeight: 600,
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              title="Sao chép link tải file APK trực tiếp"
+            >
+              {copySuccess ? <Check size={14} /> : <Copy size={14} />}
+              {copySuccess ? 'Đã copy link tải!' : 'Copy Link Tải'}
+            </button>
+
+            <a
+              href={appStats?.downloadUrl || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk'}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                background: '#fc6011',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '12px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(252,96,17,0.3)',
+              }}
+            >
+              <Download size={14} /> Tải File APK
+            </a>
+
+            <button
+              onClick={fetchAppStats}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#94a3b8',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Làm mới số lượt tải từ GitHub Release"
+            >
+              <RotateCcw size={14} />
+            </button>
           </div>
         </div>
       </div>
