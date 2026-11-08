@@ -4,11 +4,13 @@ import { RefundService } from '../services/refund_service';
 import { AppDataSource } from '../config/database';
 import { KhachHangModel } from '../models/khach_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
+import { AuditLogService } from '../services/admin/audit_log_service';
 
 export class OrderController {
   private orderService = new OrderService();
   private khachHangRepo = AppDataSource.getRepository(KhachHangModel);
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
+  private auditLogService = new AuditLogService();
 
   createOrder = async (req: Request, res: Response) => {
     try {
@@ -217,6 +219,20 @@ export class OrderController {
           bankInfo: req.body.bankInfo,
         });
 
+        // Audit Log for Order Cancellation
+        this.auditLogService.logAction({
+          maTaiKhoan: userSub,
+          tenNguoiThucHien: userRole === 'ADMIN' ? 'Quản Trị Viên' : (userRole.includes('CUAN') ? `Cửa Hàng (#${order.maQuan})` : 'Khách Hàng'),
+          actorRole: userRole,
+          loaiHanhDong: 'HUY_DON_HANG',
+          moTa: `Hủy đơn hàng #${maDonHang}. Lý do: ${cancellationReason}`,
+          doiTuong: 'DON_HANG',
+          maDoiTuong: maDonHang,
+          result: 'success',
+          reason: cancellationReason,
+          changes: { before: { trangThai: order.trangThai }, after: { trangThai: 'DA_HUY' } },
+        }).catch((e) => console.error('[OrderController] Audit log error:', e));
+
         return res.status(200).json({
           status: 'success',
           message: cancelResult.message,
@@ -233,6 +249,20 @@ export class OrderController {
         cancellationReason,
         updatedBy
       );
+
+      // Audit Log for Order Status Transition
+      this.auditLogService.logAction({
+        maTaiKhoan: userSub,
+        tenNguoiThucHien: userRole === 'ADMIN' ? 'Quản Trị Viên' : (userRole.includes('CUAN') ? `Cửa Hàng (#${order.maQuan})` : 'Khách Hàng'),
+        actorRole: userRole,
+        loaiHanhDong: targetStatus === 'COMPLETED' || targetStatus === 'HOAN_THANH' ? 'HOAN_THANH_DON' : 'CAP_NHAT_TRANG_THAI_DON',
+        moTa: `Cập nhật trạng thái đơn hàng #${maDonHang} từ "${order.trangThai}" sang "${targetStatus}"`,
+        doiTuong: 'DON_HANG',
+        maDoiTuong: maDonHang,
+        result: 'success',
+        changes: { before: { trangThai: order.trangThai }, after: { trangThai: targetStatus } },
+      }).catch((e) => console.error('[OrderController] Audit log error:', e));
+
       return res.status(200).json({
         status: 'success',
         message: 'Cập nhật trạng thái đơn hàng thành công',

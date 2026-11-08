@@ -71,6 +71,7 @@ router.put('/foods/:id', controller.updateFood as any);
 router.get('/orders', controller.getOrders as any);
 router.get('/payments', controller.getPayments as any);
 router.get('/activity-logs/export-csv', auditLogController.exportCsv as any);
+router.post('/activity-logs/devops-check', auditLogController.runDevOpsHealthCheck as any);
 router.get('/activity-logs', auditLogController.getLogs as any);
 
 // Reviews & Moderation

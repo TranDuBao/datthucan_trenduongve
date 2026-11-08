@@ -7,6 +7,7 @@ import { AuthenticatedRequest } from '../middlewares/auth_middleware';
 export class AuthController {
   private authService = new AuthService();
   private userService = new UserService();
+  private auditLogService = new (require('../services/admin/audit_log_service').AuditLogService)();
 
   register = async (req: Request, res: Response) => {
     try {
@@ -53,6 +54,23 @@ export class AuthController {
       }
 
       const result = await this.authService.login({ email, password });
+      try {
+        const clientIp = req.ip || req.headers['x-forwarded-for']?.toString() || req.socket.remoteAddress || '127.0.0.1';
+        const role = String(result?.user?.role || '').toUpperCase();
+        if (role === 'ADMIN' || role === 'CUAN_HANG' || role === 'CUA_HANG' || role === 'RESTAURANT') {
+          this.auditLogService.logAction({
+            maTaiKhoan: result.user.id,
+            tenNguoiThucHien: result.user.username || result.user.email || 'Quản trị viên',
+            actorEmail: result.user.email,
+            actorRole: role,
+            loaiHanhDong: role === 'ADMIN' ? 'DANG_NHAP_ADMIN_THANH_CONG' : 'DANG_NHAP_CUAN_HANG_THANH_CONG',
+            moTa: `Đăng nhập quản trị hệ thống thành công với vai trò ${role}`,
+            doiTuong: 'HE_THONG_ADMIN',
+            result: 'success',
+            ipAddress: clientIp,
+          }).catch(() => {});
+        }
+      } catch (e) {}
       return res.status(200).json({
         statusCode: 200,
         status: "1",
@@ -62,6 +80,20 @@ export class AuthController {
       });
     } catch (error: any) {
       console.error('[AuthController] [Error] Login Error:', error);
+      try {
+        const clientIp = req.ip || req.headers['x-forwarded-for']?.toString() || req.socket.remoteAddress || '127.0.0.1';
+        this.auditLogService.logAction({
+          tenNguoiThucHien: 'Khách / Vãng lai',
+          actorEmail: req.body?.email || 'N/A',
+          actorRole: 'ANONYMOUS',
+          loaiHanhDong: 'CANH_BAO_DANG_NHAP',
+          moTa: `Cảnh báo đăng nhập thất bại với tài khoản "${req.body?.email || ''}". Lý do: ${error.message}`,
+          doiTuong: 'XAC_THUC',
+          result: 'failed',
+          reason: error.message,
+          ipAddress: clientIp,
+        }).catch(() => {});
+      } catch (e) {}
       return res.status(401).json({
         statusCode: 401,
         status: "0",

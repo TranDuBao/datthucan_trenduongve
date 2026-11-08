@@ -6,6 +6,7 @@ import { NotificationService } from './notification_service';
 import { RealtimeService } from './realtime_service';
 import { LEGAL_REQUIREMENTS, validateMaSoThue, LoaiHinhPhapLy } from '../config/legal_requirements';
 import { LegalDocumentService } from './legal_document_service';
+import { AuditLogService } from './admin/audit_log_service';
 
 export interface SubmitRegistrationDTO {
   tenQuan: string;
@@ -444,8 +445,24 @@ export class StoreRegistrationService {
         body: `Chào mừng bạn gia nhập Food Route với vai trò cửa hàng "${approvedReg!.tenQuan}". Bạn đã có thể quản lý cửa hàng ngay trên app hoặc qua FoodRoute Restaurant Portal.`,
         data: payload,
       });
+
+      // Audit Log for Store Approval
+      await new AuditLogService().logAction({
+        maTaiKhoan: adminMaTaiKhoan,
+        tenNguoiThucHien: 'Quản Trị Viên Hệ Thống',
+        actorRole: 'ADMIN',
+        loaiHanhDong: 'DUYET_DANG_KY_QUAN',
+        moTa: `Duyệt đơn đăng ký mở quán cho "${approvedReg!.tenQuan}" (Mã ĐK #${approvedReg!.maDon})`,
+        doiTuong: 'CUA_HANG',
+        maDoiTuong: createdStore!.maQuan,
+        changes: {
+          before: { trangThai: 'CHO_DUYET' },
+          after: { trangThai: 'DA_DUYET', maQuan: createdStore!.maQuan, tenQuan: createdStore!.tenQuan },
+        },
+        result: 'success',
+      });
     } catch (e) {
-      console.error('[StoreRegistrationService] Error sending approval realtime notice:', e);
+      console.error('[StoreRegistrationService] Error sending approval realtime notice or audit log:', e);
     }
 
     return {
@@ -498,8 +515,25 @@ export class StoreRegistrationService {
         body: `Đơn đăng ký "${rejectedReg!.tenQuan}" chưa được chấp thuận. Lý do: ${rejectedReg!.lyDoTuChoi}`,
         data: payload,
       });
+
+      // Audit Log for Store Rejection
+      await new AuditLogService().logAction({
+        maTaiKhoan: adminMaTaiKhoan,
+        tenNguoiThucHien: 'Quản Trị Viên Hệ Thống',
+        actorRole: 'ADMIN',
+        loaiHanhDong: 'TU_CHOI_DANG_KY_QUAN',
+        moTa: `Từ chối đơn đăng ký mở quán "${rejectedReg!.tenQuan}" (Mã ĐK #${rejectedReg!.maDon}). Lý do: ${rejectedReg!.lyDoTuChoi}`,
+        doiTuong: 'DON_DANG_KY',
+        maDoiTuong: rejectedReg!.maDon,
+        reason: rejectedReg!.lyDoTuChoi,
+        changes: {
+          before: { trangThai: 'CHO_DUYET' },
+          after: { trangThai: 'TU_CHOI', lyDoTuChoi: rejectedReg!.lyDoTuChoi },
+        },
+        result: 'denied',
+      });
     } catch (e) {
-      console.error('[StoreRegistrationService] Error sending rejection realtime notice:', e);
+      console.error('[StoreRegistrationService] Error sending rejection realtime notice or audit log:', e);
     }
 
     return {

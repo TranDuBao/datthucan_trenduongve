@@ -5,6 +5,7 @@ import { KhachHangModel } from '../../models/khach_hang_model';
 import { MonAnModel } from '../../models/mon_an_model';
 import { DonHangModel } from '../../models/don_hang_model';
 import { DanhMucModel } from '../../models/danh_muc_model';
+import { AuditLogService } from './audit_log_service';
 
 export class AdminRestaurantService {
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
@@ -13,6 +14,7 @@ export class AdminRestaurantService {
   private foodRepo = AppDataSource.getRepository(MonAnModel);
   private orderRepo = AppDataSource.getRepository(DonHangModel);
   private categoryRepo = AppDataSource.getRepository(DanhMucModel);
+  private auditLogService = new AuditLogService();
 
   async getRestaurants(page: number = 1, limit: number = 1000, search: string = '') {
     const skip = (page - 1) * limit;
@@ -165,9 +167,23 @@ export class AdminRestaurantService {
     const store = await this.storeRepo.findOne({ where: { maQuan } });
     if (!store) throw new Error('Không tìm thấy nhà hàng');
 
+    const previousStatus = store.trangThai;
     store.isDeleted = true;
     store.trangThai = 'ĐÃ XÓA';
-    return await this.storeRepo.save(store);
+    const saved = await this.storeRepo.save(store);
+
+    this.auditLogService.logAction({
+      tenNguoiThucHien: 'Quản Trị Viên Hệ Thống',
+      actorRole: 'ADMIN',
+      loaiHanhDong: 'XOA_NHA_HANG',
+      moTa: `Thực hiện xóa mềm nhà hàng "${store.tenQuan}" (Mã #${maQuan})`,
+      doiTuong: 'CUA_HANG',
+      maDoiTuong: maQuan,
+      result: 'success',
+      changes: { before: { isDeleted: false, trangThai: previousStatus }, after: { isDeleted: true, trangThai: 'ĐÃ XÓA' } },
+    }).catch(e => console.error('[AdminRestaurantService] Audit log error:', e));
+
+    return saved;
   }
 
   async restoreRestaurant(maQuan: number) {
@@ -176,7 +192,20 @@ export class AdminRestaurantService {
 
     store.isDeleted = false;
     store.trangThai = 'mở cửa';
-    return await this.storeRepo.save(store);
+    const saved = await this.storeRepo.save(store);
+
+    this.auditLogService.logAction({
+      tenNguoiThucHien: 'Quản Trị Viên Hệ Thống',
+      actorRole: 'ADMIN',
+      loaiHanhDong: 'PHUOC_HOI_NHA_HANG',
+      moTa: `Khôi phục trạng thái hoạt động cho nhà hàng "${store.tenQuan}" (Mã #${maQuan})`,
+      doiTuong: 'CUA_HANG',
+      maDoiTuong: maQuan,
+      result: 'success',
+      changes: { before: { isDeleted: true, trangThai: 'ĐÃ XÓA' }, after: { isDeleted: false, trangThai: 'mở cửa' } },
+    }).catch(e => console.error('[AdminRestaurantService] Audit log error:', e));
+
+    return saved;
   }
 }
 

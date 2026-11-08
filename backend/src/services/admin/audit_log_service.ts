@@ -25,6 +25,7 @@ export interface GetAuditLogsQuery {
   limit?: number;
   search?: string;
   actionType?: string;
+  category?: 'ALL' | 'SECURITY' | 'STORE_APPROVAL' | 'ORDERS' | 'DEVOPS';
   result?: string;
   actor?: string;
   period?: 'today' | '7days' | '30days' | 'custom';
@@ -91,6 +92,27 @@ export class AuditLogService {
       qb.andWhere('nk.loaiHanhDong = :actionType', { actionType: query.actionType });
     }
 
+    // 2.1 Domain / Category Filter
+    if (query.category && query.category !== 'ALL') {
+      if (query.category === 'SECURITY') {
+        qb.andWhere(
+          "(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN') OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%')"
+        );
+      } else if (query.category === 'STORE_APPROVAL') {
+        qb.andWhere(
+          "(nk.loaiHanhDong IN ('DUYET_DANG_KY_QUAN', 'TU_CHOI_DANG_KY_QUAN', 'KHOA_QUAN', 'MO_KHOA_QUAN', 'XOA_NHA_HANG', 'PHUOC_HOI_NHA_HANG', 'KHOI_PHUC_NHA_HANG', 'YEU_CAU_BO_SUNG_KYC') OR nk.doiTuong IN ('CUA_HANG', 'DON_DANG_KY', 'KYC') OR nk.loaiHanhDong LIKE '%QUAN%' OR nk.loaiHanhDong LIKE '%STORE%')"
+        );
+      } else if (query.category === 'ORDERS') {
+        qb.andWhere(
+          "(nk.loaiHanhDong IN ('XAC_NHAN_DON', 'CAP_NHAT_TRANG_THAI_DON', 'HOAN_THANH_DON', 'HUY_DON_HANG', 'HUY_DON', 'HOAN_TIEN') OR nk.doiTuong = 'DON_HANG' OR nk.loaiHanhDong LIKE '%DON%')"
+        );
+      } else if (query.category === 'DEVOPS') {
+        qb.andWhere(
+          "(nk.loaiHanhDong IN ('DEVOPS_HEALTH_CHECK', 'DEVOPS_APP_RELEASE', 'DEVOPS_SOCKET_RELOAD', 'DEVOPS_BACKUP_DB', 'EXPORT_AUDIT_LOG', 'system.export_audit_log_csv') OR nk.loaiHanhDong LIKE 'DEVOPS%' OR nk.doiTuong LIKE '%HE_THONG%' OR nk.doiTuong LIKE '%HA_TANG%')"
+        );
+      }
+    }
+
     // 3. Result Filter
     if (query.result && query.result !== 'ALL') {
       qb.andWhere('nk.result = :result', { result: query.result });
@@ -138,6 +160,23 @@ export class AuditLogService {
     const failedCount = await this.logRepo.count({ where: { result: 'failed' } });
     const deniedCount = await this.logRepo.count({ where: { result: 'denied' } });
 
+    // Category breakdown counts
+    const securityCount = await this.logRepo.createQueryBuilder('nk')
+      .where("(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN') OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%')")
+      .getCount();
+
+    const storeApprovalCount = await this.logRepo.createQueryBuilder('nk')
+      .where("(nk.loaiHanhDong IN ('DUYET_DANG_KY_QUAN', 'TU_CHOI_DANG_KY_QUAN', 'KHOA_QUAN', 'MO_KHOA_QUAN', 'XOA_NHA_HANG', 'PHUOC_HOI_NHA_HANG', 'KHOI_PHUC_NHA_HANG', 'YEU_CAU_BO_SUNG_KYC') OR nk.doiTuong IN ('CUA_HANG', 'DON_DANG_KY', 'KYC') OR nk.loaiHanhDong LIKE '%QUAN%' OR nk.loaiHanhDong LIKE '%STORE%')")
+      .getCount();
+
+    const orderCount = await this.logRepo.createQueryBuilder('nk')
+      .where("(nk.loaiHanhDong IN ('XAC_NHAN_DON', 'CAP_NHAT_TRANG_THAI_DON', 'HOAN_THANH_DON', 'HUY_DON_HANG', 'HUY_DON', 'HOAN_TIEN') OR nk.doiTuong = 'DON_HANG' OR nk.loaiHanhDong LIKE '%DON%')")
+      .getCount();
+
+    const devopsCount = await this.logRepo.createQueryBuilder('nk')
+      .where("(nk.loaiHanhDong IN ('DEVOPS_HEALTH_CHECK', 'DEVOPS_APP_RELEASE', 'DEVOPS_SOCKET_RELOAD', 'DEVOPS_BACKUP_DB', 'EXPORT_AUDIT_LOG', 'system.export_audit_log_csv') OR nk.loaiHanhDong LIKE 'DEVOPS%' OR nk.doiTuong LIKE '%HE_THONG%' OR nk.doiTuong LIKE '%HA_TANG%')")
+      .getCount();
+
     return {
       items,
       total,
@@ -149,6 +188,10 @@ export class AuditLogService {
         success: successCount,
         failed: failedCount,
         denied: deniedCount,
+        securityCount,
+        storeApprovalCount,
+        orderCount,
+        devopsCount,
       },
     };
   }

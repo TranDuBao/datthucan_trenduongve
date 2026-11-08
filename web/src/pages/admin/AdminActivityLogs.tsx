@@ -1,19 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch, API_BASE_URL } from '../../api/apiClient';
 import { Modal } from '../../components/Modal';
-import { Search, ShieldAlert, FileText, Lock, DollarSign, RefreshCw, Download, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Info, Globe, FileJson, Layers, Tag, Unlock, Trash2 } from 'lucide-react';
+import {
+  Search,
+  ShieldAlert,
+  FileText,
+  Lock,
+  RefreshCw,
+  Download,
+  Calendar,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
+  Info,
+  Globe,
+  FileJson,
+  Layers,
+  Tag,
+  Unlock,
+  Trash2,
+  Activity,
+  Server,
+  ShieldCheck,
+  AlertOctagon,
+  CheckSquare,
+  ShoppingBag,
+  Smartphone,
+  Check,
+} from 'lucide-react';
 
 export const AdminActivityLogs: React.FC = () => {
-  const [data, setData] = useState<any>({ items: [], total: 0 });
+  const [data, setData] = useState<any>({ items: [], total: 0, stats: {} });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [actionType, setActionType] = useState('');
+  const [category, setCategory] = useState<'ALL' | 'SECURITY' | 'STORE_APPROVAL' | 'ORDERS' | 'DEVOPS'>('ALL');
   const [resultFilter, setResultFilter] = useState('');
   const [period, setPeriod] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [runningDevOps, setRunningDevOps] = useState(false);
+  const [devOpsSuccessNotice, setDevOpsSuccessNotice] = useState<string | null>(null);
 
   const fetchLogs = () => {
     setLoading(true);
@@ -23,6 +54,10 @@ export const AdminActivityLogs: React.FC = () => {
       actionType: actionType.trim(),
       result: resultFilter.trim(),
     };
+
+    if (category !== 'ALL') {
+      queryParams.category = category;
+    }
 
     if (period !== 'all') {
       queryParams.period = period;
@@ -36,7 +71,7 @@ export const AdminActivityLogs: React.FC = () => {
 
     apiFetch<any>(`/admin/activity-logs?${query}`)
       .then((res) => {
-        setData(res.data || { items: [], total: 0 });
+        setData(res.data || { items: [], total: 0, stats: {} });
       })
       .catch((err) => console.error('[AdminActivityLogs] [Error] Error fetching activity logs:', err))
       .finally(() => setLoading(false));
@@ -44,7 +79,24 @@ export const AdminActivityLogs: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [search, actionType, resultFilter, period, startDate, endDate]);
+  }, [search, actionType, category, resultFilter, period, startDate, endDate]);
+
+  const handleRunDevOpsCheck = async () => {
+    try {
+      setRunningDevOps(true);
+      const res = await apiFetch<any>('/admin/activity-logs/devops-check', { method: 'POST' });
+      const d = res.data;
+      setDevOpsSuccessNotice(
+        `Kiểm tra DevOps thành công! Database: ${d?.database?.latency || 'OK'} • RAM: ${d?.memory?.rss || 'OK'} • Uptime: ${d?.uptime || 'OK'}`
+      );
+      setTimeout(() => setDevOpsSuccessNotice(null), 6000);
+      fetchLogs();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi kích hoạt kiểm tra DevOps!');
+    } finally {
+      setRunningDevOps(false);
+    }
+  };
 
   const handleExportCsv = async () => {
     try {
@@ -54,6 +106,7 @@ export const AdminActivityLogs: React.FC = () => {
         actionType: actionType.trim(),
         result: resultFilter.trim(),
       };
+      if (category !== 'ALL') queryParams.category = category;
       if (period !== 'all') queryParams.period = period;
       if (period === 'custom') {
         if (startDate) queryParams.startDate = startDate;
@@ -101,11 +154,18 @@ export const AdminActivityLogs: React.FC = () => {
       t.includes('HUY_DON') ||
       t.includes('HOAN_TIEN') ||
       t.includes('DOI_MAT_KHAU') ||
-      t.includes('EXPORT')
+      t.includes('CANH_BAO_DANG_NHAP')
     ) {
       return 'HIGH';
     }
-    if (t.includes('UPDATE') || t.includes('CAP_NHAT') || t.includes('CHANGE')) {
+    if (
+      t.includes('UPDATE') ||
+      t.includes('CAP_NHAT') ||
+      t.includes('CHANGE') ||
+      t.includes('DUYET') ||
+      t.includes('TU_CHOI') ||
+      t.includes('RELEASE')
+    ) {
       return 'MEDIUM';
     }
     return 'LOW';
@@ -113,65 +173,206 @@ export const AdminActivityLogs: React.FC = () => {
 
   const renderActionBadge = (type: string) => {
     const t = (type || '').toUpperCase();
-    if (t.includes('HUY_DON') || t.includes('CANCEL')) {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 700 }}><XCircle size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HỦY ĐƠN HÀNG</span>;
+
+    // Store & Partner Registration Approval Badges
+    if (t.includes('DUYET_DANG_KY_QUAN') || t.includes('APPROVE_STORE') || t.includes('DUYET_QUAN')) {
+      return (
+        <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 800 }}>
+          <CheckSquare size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> DUYỆT ĐĂNG KÝ QUÁN
+        </span>
+      );
+    }
+    if (t.includes('TU_CHOI_DANG_KY_QUAN') || t.includes('REJECT_STORE') || t.includes('TU_CHOI_QUAN')) {
+      return (
+        <span className="badge" style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', fontWeight: 800 }}>
+          <XCircle size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> TỪ CHỐI ĐĂNG KÝ
+        </span>
+      );
+    }
+
+    // Order & Transaction Badges
+    if (t.includes('HUY_DON') || t.includes('CANCEL_ORDER')) {
+      return (
+        <span className="badge" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 800 }}>
+          <XCircle size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HỦY ĐƠN HÀNG
+        </span>
+      );
     }
     if (t.includes('HOAN_TIEN') || t.includes('REFUND')) {
-      return <span className="badge" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', fontWeight: 700 }}><Tag size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HOÀN TIỀN</span>;
+      return (
+        <span className="badge" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', fontWeight: 700 }}>
+          <Tag size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HOÀN TIỀN
+        </span>
+      );
+    }
+    if (t.includes('HOAN_THANH_DON') || t.includes('COMPLETE_ORDER')) {
+      return (
+        <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: 700 }}>
+          <CheckCircle2 size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> HOÀN THÀNH ĐƠN
+        </span>
+      );
+    }
+    if (t.includes('CAP_NHAT_TRANG_THAI_DON') || t.includes('UPDATE_ORDER')) {
+      return (
+        <span className="badge" style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', fontWeight: 700 }}>
+          <ShoppingBag size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> CẬP NHẬT TRẠNG THÁI ĐƠN
+        </span>
+      );
+    }
+
+    // DevOps & Infrastructure Monitoring Badges
+    if (t.includes('DEVOPS_HEALTH_CHECK') || t.includes('HEALTH_CHECK')) {
+      return (
+        <span className="badge" style={{ background: '#ecfeff', color: '#0891b2', border: '1px solid #a5f3fc', fontWeight: 800 }}>
+          <Activity size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> GIÁM SÁT HẠ TẦNG (DEVOPS)
+        </span>
+      );
+    }
+    if (t.includes('DEVOPS_APP_RELEASE') || t.includes('RELEASE_APP')) {
+      return (
+        <span className="badge" style={{ background: '#fff4ee', color: '#fc6011', border: '1px solid #fed7aa', fontWeight: 800 }}>
+          <Smartphone size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> PHÁT HÀNH APP APK
+        </span>
+      );
+    }
+    if (t.includes('DEVOPS_SOCKET_RELOAD') || t.includes('SOCKET')) {
+      return (
+        <span className="badge" style={{ background: '#faf5ff', color: '#9333ea', border: '1px solid #e9d5ff', fontWeight: 700 }}>
+          <Server size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> ĐỒNG BỘ GATEWAY
+        </span>
+      );
+    }
+
+    // Security & Auth Badges
+    if (t.includes('DANG_NHAP_ADMIN_THANH_CONG')) {
+      return (
+        <span className="badge" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 700 }}>
+          <ShieldCheck size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> ĐĂNG NHẬP ADMIN
+        </span>
+      );
+    }
+    if (t.includes('CANH_BAO_DANG_NHAP') || t.includes('LOGIN_FAILED')) {
+      return (
+        <span className="badge" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 800 }}>
+          <AlertOctagon size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> CẢNH BÁO ĐĂNG NHẬP
+        </span>
+      );
     }
     if (t.includes('KHOA_QUAN') || t.includes('LOCK_STORE')) {
-      return <span className="badge" style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700 }}><Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA NHÀ HÀNG</span>;
+      return (
+        <span className="badge" style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700 }}>
+          <Lock size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA NHÀ HÀNG
+        </span>
+      );
     }
     if (t.includes('MO_KHOA_QUAN') || t.includes('UNLOCK_STORE')) {
-      return <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: 700 }}><Unlock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA QUÁN</span>;
+      return (
+        <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: 700 }}>
+          <Unlock size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA QUÁN
+        </span>
+      );
     }
     if (t.includes('XOA_NHA_HANG') || t.includes('DELETE_STORE')) {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontWeight: 700 }}><Trash2 size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> XÓA MỀM NHÀ HÀNG</span>;
+      return (
+        <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontWeight: 700 }}>
+          <Trash2 size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> XÓA MỀM NHÀ HÀNG
+        </span>
+      );
     }
     if (t.includes('PHUOC_HOI_NHA_HANG') || t.includes('RESTORE_STORE')) {
-      return <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 700 }}>PHỤC HỒI NHÀ HÀNG</span>;
+      return (
+        <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 700 }}>
+          PHỤC HỒI NHÀ HÀNG
+        </span>
+      );
     }
     if (t.includes('KHOA_USER') || t.includes('LOCK_USER')) {
-      return <span className="badge" style={{ background: '#fdf2f8', color: '#db2777', border: '1px solid #fbcfe8', fontWeight: 700 }}><Lock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA TÀI KHOẢN</span>;
+      return (
+        <span className="badge" style={{ background: '#fdf2f8', color: '#db2777', border: '1px solid #fbcfe8', fontWeight: 700 }}>
+          <Lock size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> KHÓA TÀI KHOẢN
+        </span>
+      );
     }
     if (t.includes('MO_KHOA_USER') || t.includes('UNLOCK_USER')) {
-      return <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontWeight: 700 }}><Unlock size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA USER</span>;
+      return (
+        <span className="badge" style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontWeight: 700 }}>
+          <Unlock size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: '4px' }} /> MỞ KHÓA USER
+        </span>
+      );
     }
     if (t.includes('DOI_MAT_KHAU') || t.includes('PASSWORD')) {
-      return <span className="badge" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontWeight: 700 }}>ĐỔI MẬT KHẨU</span>;
+      return (
+        <span className="badge" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontWeight: 700 }}>
+          ĐỔI MẬT KHẨU
+        </span>
+      );
     }
     if (t.includes('EXPORT') || t.includes('CSV')) {
-      return <span className="badge" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 700 }}>XUẤT CSV BÁO CÁO</span>;
+      return (
+        <span className="badge" style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: 700 }}>
+          XUẤT CSV BÁO CÁO
+        </span>
+      );
     }
-    return <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontWeight: 600 }}>{type}</span>;
+    return (
+      <span className="badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontWeight: 600 }}>
+        {type}
+      </span>
+    );
   };
 
   const renderRiskBadge = (type: string) => {
     const risk = getRiskLevel(type);
     if (risk === 'HIGH') {
-      return <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: '11px', fontWeight: 800 }}><AlertTriangle size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> RỦI RO CAO</span>;
+      return (
+        <span className="badge" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: '11px', fontWeight: 800 }}>
+          <AlertTriangle size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> RỦI RO CAO
+        </span>
+      );
     }
     if (risk === 'MEDIUM') {
-      return <span className="badge" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', fontSize: '11px', fontWeight: 700 }}>TRUNG BÌNH</span>;
+      return (
+        <span className="badge" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', fontSize: '11px', fontWeight: 700 }}>
+          TRUNG BÌNH
+        </span>
+      );
     }
-    return <span className="badge" style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600 }}><Info size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> THẤP</span>;
+    return (
+      <span className="badge" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #dcfce7', fontSize: '11px', fontWeight: 600 }}>
+        <CheckCircle2 size={12} style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: '4px' }} /> THẤP
+      </span>
+    );
   };
 
   const renderResultBadge = (res: string) => {
     const r = (res || 'success').toLowerCase();
     if (r === 'success') {
-      return <span style={{ color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}><CheckCircle2 size={14} /> Thành công</span>;
+      return (
+        <span style={{ color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+          <CheckCircle2 size={14} /> Thành công
+        </span>
+      );
     }
     if (r === 'failed') {
-      return <span style={{ color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}><XCircle size={14} /> Thất bại</span>;
+      return (
+        <span style={{ color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+          <XCircle size={14} /> Thất bại
+        </span>
+      );
     }
-    return <span style={{ color: '#d97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}><AlertTriangle size={14} /> Bị từ chối</span>;
+    return (
+      <span style={{ color: '#d97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+        <AlertTriangle size={14} /> Bị từ chối
+      </span>
+    );
   };
 
   const logsList = data.items || [];
-  const highRiskCount = logsList.filter((l: any) => getRiskLevel(l.loaiHanhDong) === 'HIGH').length;
-  const financialCount = logsList.filter((l: any) => l.loaiHanhDong?.includes('HUY') || l.loaiHanhDong?.includes('HOAN')).length;
-  const securityCount = logsList.filter((l: any) => l.loaiHanhDong?.includes('KHOA') || l.loaiHanhDong?.includes('PASSWORD') || l.loaiHanhDong?.includes('XOA')).length;
+  const stats = data.stats || {};
+  const totalCount = stats.total ?? (data.total || logsList.length);
+  const securityCount = stats.securityCount ?? logsList.filter((l: any) => l.loaiHanhDong?.includes('PASSWORD') || l.loaiHanhDong?.includes('KHOA') || l.loaiHanhDong?.includes('DANG_NHAP')).length;
+  const storeAndOrderCount = (stats.storeApprovalCount || 0) + (stats.orderCount || 0) || logsList.filter((l: any) => l.loaiHanhDong?.includes('QUAN') || l.loaiHanhDong?.includes('DON')).length;
+  const devopsCount = stats.devopsCount ?? logsList.filter((l: any) => l.loaiHanhDong?.includes('DEVOPS') || l.loaiHanhDong?.includes('EXPORT')).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -179,61 +380,139 @@ export const AdminActivityLogs: React.FC = () => {
       <div className="page-header" style={{ marginBottom: 0 }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldAlert size={24} color="#fc6011" /> Nhật Ký Hoạt Động & Kiểm Toán (Audit Logs)
+            <ShieldAlert size={24} color="#fc6011" /> Nhật Ký Hoạt Động, Bảo Mật & Giám Sát DevOps
           </h1>
           <p className="page-subtitle">
-            Ghi lại minh bạch toàn bộ thao tác hệ thống: Ai làm gì, lúc nào, đối tượng nào, IP nào và chi tiết thay đổi (Before/After JSON diff).
+            Theo dõi minh bạch toàn bộ thao tác hệ thống: Bảo mật truy cập, Thẩm định duyệt quán, Quản trị đơn hàng, Giám sát hạ tầng máy chủ và JSON Diff chi tiết.
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={handleExportCsv}
-          disabled={exporting}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
-        >
-          <Download size={18} /> {exporting ? 'Đang xuất CSV...' : 'Xuất Báo Cáo CSV'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            className="btn btn-outline"
+            onClick={handleRunDevOpsCheck}
+            disabled={runningDevOps}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, background: '#ffffff' }}
+            title="Kích hoạt kiểm tra sức khỏe hạ tầng hệ thống và ghi nhận log"
+          >
+            <Activity size={16} color={runningDevOps ? '#fc6011' : '#0891b2'} className={runningDevOps ? 'spinning' : ''} />
+            {runningDevOps ? 'Đang kiểm tra hạ tầng...' : 'Kiểm Tra DevOps'}
+          </button>
+
+          <button
+            className="btn btn-primary"
+            onClick={handleExportCsv}
+            disabled={exporting}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+          >
+            <Download size={18} /> {exporting ? 'Đang xuất CSV...' : 'Xuất Báo Cáo CSV'}
+          </button>
+        </div>
       </div>
 
-      {/* Overview Stat Widgets */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      {/* DevOps Health Check Notice */}
+      {devOpsSuccessNotice && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #ecfeff 0%, #cffafe 100%)',
+            border: '1px solid #a5f3fc',
+            color: '#0e7490',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '13px',
+            fontWeight: 700,
+            boxShadow: '0 2px 8px rgba(6,182,212,0.15)',
+          }}
+        >
+          <Check size={18} color="#0891b2" />
+          <span>{devOpsSuccessNotice}</span>
+        </div>
+      )}
+
+      {/* Overview Stat Widgets - 4 Focused Domains */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#fff4ee', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fc6011' }}>
             <FileText size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>TỔNG NHẬT KÝ GHI NHẬN</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>{data.total || logsList.length}</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>TỔNG NHẬT KÝ HỆ THỐNG</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>{totalCount}</div>
           </div>
         </div>
 
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
-            <AlertTriangle size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>THAO TÁC RỦI RO CAO</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: '#dc2626', marginTop: '2px' }}>{highRiskCount} lượt</div>
-          </div>
-        </div>
-
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
             <Lock size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>THAO TÁC AN NINH & TÀI CHÍNH</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: '#0284c7', marginTop: '2px' }}>{securityCount + financialCount} lượt</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>BẢO MẬT & TRUY CẬP</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, color: '#2563eb', marginTop: '2px' }}>{securityCount} lượt</div>
+          </div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+            <CheckSquare size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>DUYỆT QUÁN & ĐƠN HÀNG</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, color: '#059669', marginTop: '2px' }}>{storeAndOrderCount} lượt</div>
+          </div>
+        </div>
+
+        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#ecfeff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0891b2' }}>
+            <Server size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>DEVOPS & HẠ TẦNG</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, color: '#0891b2', marginTop: '2px' }}>{devopsCount} lượt</div>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs & Toolbar Card */}
+      {/* Main Table Card with Multi-Category Domain Filters */}
       <div className="card-table">
+        {/* Category Domain Tabs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc', borderTopLeftRadius: '14px', borderTopRightRadius: '14px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155', marginRight: '6px' }}>Nghiệp vụ:</span>
+          {[
+            { id: 'ALL', label: 'Tất cả nghiệp vụ' },
+            { id: 'SECURITY', label: '🛡️ Bảo Mật & Phân Quyền' },
+            { id: 'STORE_APPROVAL', label: '🏪 Thẩm Định & Duyệt Quán' },
+            { id: 'ORDERS', label: '📦 Xử Lý & Duyệt Đơn' },
+            { id: 'DEVOPS', label: '⚙️ DevOps & Giám Sát Hạ Tầng' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setCategory(tab.id as any);
+                setActionType(''); // reset individual action type on category switch
+              }}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: category === tab.id ? 800 : 600,
+                background: category === tab.id ? '#fc6011' : '#ffffff',
+                color: category === tab.id ? '#ffffff' : '#64748b',
+                border: category === tab.id ? '1px solid #fc6011' : '1px solid #cbd5e1',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Date Filter Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc', borderTopLeftRadius: '14px', borderTopRightRadius: '14px' }}>
-          <Calendar size={16} color="#64748b" />
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginRight: '6px' }}>Khoảng thời gian:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: '1px solid #f1f5f9', background: '#ffffff', flexWrap: 'wrap' }}>
+          <Calendar size={15} color="#64748b" />
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', marginRight: '4px' }}>Thời gian:</span>
           {[
             { id: 'all', label: 'Tất cả' },
             { id: 'today', label: 'Hôm nay' },
@@ -245,15 +524,14 @@ export const AdminActivityLogs: React.FC = () => {
               key={tab.id}
               onClick={() => setPeriod(tab.id as any)}
               style={{
-                padding: '6px 14px',
+                padding: '4px 12px',
                 borderRadius: '20px',
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: period === tab.id ? 800 : 600,
-                background: period === tab.id ? '#fc6011' : '#ffffff',
+                background: period === tab.id ? '#334155' : '#ffffff',
                 color: period === tab.id ? '#ffffff' : '#64748b',
-                border: period === tab.id ? '1px solid #fc6011' : '1px solid #cbd5e1',
+                border: period === tab.id ? '1px solid #334155' : '1px solid #e2e8f0',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
               }}
             >
               {tab.label}
@@ -281,7 +559,7 @@ export const AdminActivityLogs: React.FC = () => {
           )}
         </div>
 
-        {/* Search & Filter Dropdowns */}
+        {/* Search & Granular Filter Dropdowns */}
         <div className="table-toolbar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', padding: '14px 16px' }}>
           <div className="search-input-group" style={{ flex: 1, minWidth: '240px' }}>
             <Search size={16} />
@@ -295,26 +573,43 @@ export const AdminActivityLogs: React.FC = () => {
 
           <select
             className="form-control"
-            style={{ width: '220px', fontWeight: 600 }}
+            style={{ width: '260px', fontWeight: 600 }}
             value={actionType}
             onChange={(e) => setActionType(e.target.value)}
           >
             <option value="">Tất cả loại hành động</option>
-            <option value="KHOA_QUAN">Khóa nhà hàng (KHOA_QUAN)</option>
-            <option value="MO_KHOA_QUAN">Mở khóa quán (MO_KHOA_QUAN)</option>
-            <option value="XOA_NHA_HANG">Xóa mềm nhà hàng (XOA_NHA_HANG)</option>
-            <option value="PHUOC_HOI_NHA_HANG">Phục hồi nhà hàng</option>
-            <option value="HUY_DON">Hủy đơn hàng (HUY_DON)</option>
-            <option value="HOAN_TIEN">Hoàn tiền (HOAN_TIEN)</option>
-            <option value="KHOA_USER">Khóa tài khoản (KHOA_USER)</option>
-            <option value="MO_KHOA_USER">Mở khóa tài khoản (MO_KHOA_USER)</option>
-            <option value="DOI_MAT_KHAU">Đổi mật khẩu (DOI_MAT_KHAU)</option>
-            <option value="system.export_audit_log_csv">Xuất CSV báo cáo</option>
+            <optgroup label="Thẩm Định & Duyệt Quán">
+              <option value="DUYET_DANG_KY_QUAN">Duyệt đăng ký quán (DUYET_DANG_KY_QUAN)</option>
+              <option value="TU_CHOI_DANG_KY_QUAN">Từ chối đăng ký (TU_CHOI_DANG_KY_QUAN)</option>
+              <option value="KHOA_QUAN">Khóa nhà hàng (KHOA_QUAN)</option>
+              <option value="MO_KHOA_QUAN">Mở khóa quán (MO_KHOA_QUAN)</option>
+              <option value="XOA_NHA_HANG">Xóa mềm nhà hàng</option>
+              <option value="PHUOC_HOI_NHA_HANG">Phục hồi nhà hàng</option>
+            </optgroup>
+            <optgroup label="Xử Lý & Duyệt Đơn Hàng">
+              <option value="CAP_NHAT_TRANG_THAI_DON">Cập nhật trạng thái đơn</option>
+              <option value="HOAN_THANH_DON">Hoàn thành đơn hàng</option>
+              <option value="HUY_DON_HANG">Hủy đơn hàng (HUY_DON_HANG)</option>
+              <option value="HOAN_TIEN">Hoàn tiền giao dịch</option>
+            </optgroup>
+            <optgroup label="Bảo Mật & Quản Trị Tài Khoản">
+              <option value="DANG_NHAP_ADMIN_THANH_CONG">Đăng nhập Admin thành công</option>
+              <option value="CANH_BAO_DANG_NHAP">Cảnh báo đăng nhập thất bại</option>
+              <option value="DOI_MAT_KHAU">Đổi mật khẩu tài khoản</option>
+              <option value="KHOA_USER">Khóa tài khoản (KHOA_USER)</option>
+              <option value="MO_KHOA_USER">Mở khóa tài khoản (MO_KHOA_USER)</option>
+            </optgroup>
+            <optgroup label="DevOps & Giám Sát Hạ Tầng">
+              <option value="DEVOPS_HEALTH_CHECK">Kiểm tra sức khỏe hệ thống (DEVOPS_HEALTH_CHECK)</option>
+              <option value="DEVOPS_APP_RELEASE">Phát hành App APK (DEVOPS_APP_RELEASE)</option>
+              <option value="DEVOPS_SOCKET_RELOAD">Đồng bộ Gateway Socket.io</option>
+              <option value="EXPORT_AUDIT_LOG">Xuất báo cáo kiểm toán CSV</option>
+            </optgroup>
           </select>
 
           <select
             className="form-control"
-            style={{ width: '160px', fontWeight: 600 }}
+            style={{ width: '150px', fontWeight: 600 }}
             value={resultFilter}
             onChange={(e) => setResultFilter(e.target.value)}
           >
@@ -333,19 +628,19 @@ export const AdminActivityLogs: React.FC = () => {
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}><div className="loading-spinner" /></div>
         ) : logsList.length === 0 ? (
-          <div className="empty-state">Chưa có nhật ký hoạt động nào khớp với bộ lọc</div>
+          <div className="empty-state">Chưa có nhật ký hoạt động nào khớp với bộ lọc nghiệp vụ hiện tại.</div>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>STT</th>
-                <th style={{ width: '150px' }}>Thời Gian</th>
-                <th style={{ width: '180px' }}>Người Thực Hiện</th>
-                <th style={{ width: '170px' }}>Loại Hành Động</th>
+                <th style={{ width: '140px' }}>Thời Gian</th>
+                <th style={{ width: '170px' }}>Người Thực Hiện</th>
+                <th style={{ width: '200px' }}>Loại Hành Động</th>
                 <th style={{ width: '110px', textAlign: 'center' }}>Rủi Ro</th>
                 <th style={{ width: '130px' }}>Đối Tượng</th>
                 <th style={{ width: '110px' }}>Kết Quả</th>
-                <th>Mô Tả Chi Tiết</th>
+                <th>Mô Tả Chi Tiết Nghiệp Vụ</th>
                 <th style={{ width: '110px' }}>IP Address</th>
               </tr>
             </thead>
@@ -365,7 +660,7 @@ export const AdminActivityLogs: React.FC = () => {
                   <td>
                     <div style={{ fontWeight: 700, color: '#0f172a' }}>{log.tenNguoiThucHien || 'Admin'}</div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>
-                      {log.actorEmail ? log.actorEmail : `TK #${log.maTaiKhoan || 1}`}
+                      {log.actorEmail ? log.actorEmail : (log.actorRole || `TK #${log.maTaiKhoan || 1}`)}
                     </div>
                   </td>
                   <td>{renderActionBadge(log.loaiHanhDong)}</td>
