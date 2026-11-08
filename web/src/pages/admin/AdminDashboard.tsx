@@ -86,31 +86,58 @@ export const AdminDashboard: React.FC = () => {
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
   // Mobile App Download Telemetry & Release Monitor State
-  const [appStats, setAppStats] = useState<any>(null);
+  const [appStats, setAppStats] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('foodroute_last_apk_stats');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return {
+      totalDownloads: 9,
+      apkDownloadCount: 9,
+      version: 'v1.0.0',
+      apkName: 'FoodRoute_v1.0.apk',
+      apkSize: 71512646,
+      downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+      releaseUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
+    };
+  });
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   const fetchAppStats = () => {
-    // 1. Try our backend proxy endpoint
+    const handleStats = (data: any) => {
+      if (!data) return;
+      const count = Number(data.apkDownloadCount ?? data.totalDownloads ?? 0);
+      setAppStats((prev: any) => {
+        const prevCount = Number(prev?.apkDownloadCount ?? prev?.totalDownloads ?? 0);
+        if (count === 0 && prevCount > 0) return prev;
+        const merged = { ...prev, ...data, totalDownloads: Math.max(count, prevCount), apkDownloadCount: Math.max(count, prevCount) };
+        try {
+          localStorage.setItem('foodroute_last_apk_stats', JSON.stringify(merged));
+        } catch (_) {}
+        return merged;
+      });
+    };
+
     apiFetch<any>('/admin/app-stats')
       .then((res) => {
-        if (res.data) setAppStats(res.data);
+        if (res.data) handleStats(res.data);
       })
       .catch(() => {
-        // 2. Direct GitHub API fallback
         fetch('https://api.github.com/repos/TranDuBao/datthucan_trenduongve/releases')
           .then((r) => r.json())
           .then((releases) => {
             if (Array.isArray(releases) && releases.length > 0) {
               const rel = releases[0];
               const apk = rel.assets?.find((a: any) => a.name.endsWith('.apk'));
-              setAppStats({
-                totalDownloads: rel.assets?.reduce((sum: number, a: any) => sum + (a.download_count || 0), 0) || 0,
+              const dlCount = rel.assets?.reduce((sum: number, a: any) => sum + (a.download_count || 0), 0) || 0;
+              handleStats({
+                totalDownloads: dlCount,
                 version: rel.tag_name || 'v1.0.0',
                 releaseName: rel.name || 'FoodRoute App v1.0.0',
                 publishedAt: rel.published_at,
                 apkName: apk?.name || 'FoodRoute_v1.0.apk',
                 apkSize: apk?.size || 71512646,
-                apkDownloadCount: apk?.download_count || 0,
+                apkDownloadCount: apk?.download_count || dlCount,
                 downloadUrl: apk?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
                 releaseUrl: rel.html_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
               });

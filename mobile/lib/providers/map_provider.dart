@@ -12,6 +12,7 @@ import '../services/directions_service.dart';
 import '../services/category_service.dart';
 import '../config/api_config.dart';
 import '../services/navigation_progress_service.dart';
+import '../services/recent_destinations_service.dart';
 import '../widgets/navigation_arrival_modals.dart';
 
 enum MapState { idle, searchingOrigin, searchingDestination, loadingRoute, showingRoute }
@@ -214,40 +215,34 @@ class MapProvider extends ChangeNotifier {
   PlaceModel? _destinationPlace;
   PlaceModel? get originPlace => _originPlace;
   PlaceModel? get destinationPlace => _destinationPlace;
-
   List<PlaceModel> _suggestions = [];
   List<PlaceModel> get suggestions => _suggestions;
-
   bool _showSuggestions = false;
   bool get showSuggestions => _showSuggestions;
-
   bool _isSearching = false;
   bool get isSearching => _isSearching;
+  List<PlaceModel> _recentDestinations = [];
+  List<PlaceModel> get recentDestinations => _recentDestinations;
 
   // ── Route ─────────────────────────────────────────────────────────────────
   RouteModel? _currentRoute;
   RouteModel? get currentRoute => _currentRoute;
-
   RouteModel? _originalRoute;
   RouteModel? get originalRoute => _originalRoute ?? _currentRoute;
 
   // ── Stopover (Ghé quán Q: A -> Q -> B) ───────────────────────────────────
   RouteModel? _stopoverRoute;
   RouteModel? get stopoverRoute => _stopoverRoute;
-
   Map<String, dynamic>? _selectedStopoverStore;
   Map<String, dynamic>? get selectedStopoverStore => _selectedStopoverStore;
-
   Map<String, dynamic>? _selectedStopoverFood;
   Map<String, dynamic>? get selectedStopoverFood => _selectedStopoverFood;
-
   bool _isLoadingStopoverRoute = false;
   bool get isLoadingStopoverRoute => _isLoadingStopoverRoute;
 
   // ── Active Order Guidance (Sau khi đặt đơn thành công) ───────────────────
   Map<String, dynamic>? _activeStopoverOrder;
   Map<String, dynamic>? get activeStopoverOrder => _activeStopoverOrder;
-
   bool _isOrderPickedUp = false;
   bool get isOrderPickedUp => _isOrderPickedUp;
 
@@ -447,34 +442,17 @@ class MapProvider extends ChangeNotifier {
     switch (_foodRouteOption) {
       case FoodRouteOption.takeaway:
         return _routeRestaurants.where((r) {
-          final tienIch = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
-          final hasTakeaway = r['hasTakeaway'] == true ||
-              r['hasTakeaway'] == null ||
-              tienIch.contains('take-away') ||
-              tienIch.contains('mang về') ||
-              tienIch.contains('mang ve');
-          return hasTakeaway;
+          final t = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
+          return r['hasTakeaway'] == true || r['hasTakeaway'] == null || t.contains('take-away') || t.contains('mang về') || t.contains('mang ve');
         }).toList();
 
       case FoodRouteOption.preOrder:
-        return _routeRestaurants.where((r) {
-          final coDatTruoc = r['coChoDatTruoc'] == true ||
-              r['cochodattruoc'] == true ||
-              r['hasPreOrder'] == true;
-          return coDatTruoc;
-        }).toList();
+        return _routeRestaurants.where((r) => r['coChoDatTruoc'] == true || r['cochodattruoc'] == true || r['hasPreOrder'] == true).toList();
 
       case FoodRouteOption.dineIn:
         return _routeRestaurants.where((r) {
-          final tienIch = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
-          final hasDineIn = r['hasDineIn'] == true ||
-              r['coChoNgoi'] == true ||
-              tienIch.contains('chỗ ngồi') ||
-              tienIch.contains('cho ngoi') ||
-              tienIch.contains('tại chỗ') ||
-              tienIch.contains('tai cho') ||
-              tienIch.contains('dine-in');
-          return hasDineIn;
+          final t = (r['tienIch'] ?? r['tienich'] ?? '').toString().toLowerCase();
+          return r['hasDineIn'] == true || r['coChoNgoi'] == true || t.contains('chỗ ngồi') || t.contains('tại chỗ') || t.contains('dine-in');
         }).toList();
     }
   }
@@ -504,45 +482,42 @@ class MapProvider extends ChangeNotifier {
   Timer? _debounceTimer;
 
   // Init
-
   Future<void> initialize() async {
-    await _requestLocationPermission();
+    _recentDestinations = await RecentDestinationsService.getRecentDestinations();
     notifyListeners();
+    await _requestLocationPermission();
   }
 
   Future<void> _requestLocationPermission() async {
     _isLoadingLocation = true;
     notifyListeners();
-
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
       await _getCurrentLocation();
-    } catch (e) {
+    } catch (_) {
       try {
         await _getCurrentLocation();
       } catch (_) {
         _errorMessage = 'Không thể lấy vị trí hiện tại';
       }
+    } finally {
+      _isLoadingLocation = false;
+      notifyListeners();
     }
-
-    _isLoadingLocation = false;
-    notifyListeners();
   }
 
-  /// Lấy vị trí thông qua địa chỉ IP (rất hữu ích khi chạy trên emulator)
+  /// Lấy vị trí thông qua địa chỉ IP (dự phòng cho emulator)
   Future<LatLng?> _getLocationByIP() async {
     for (final url in ['https://ipapi.co/json/', 'https://ipinfo.io/json']) {
       try {
         final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 4));
         if (res.statusCode == 200) {
           final data = json.decode(utf8.decode(res.bodyBytes));
-          final lat = (data['latitude'] as num?)?.toDouble() ??
-              (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[0]) : null);
-          final lon = (data['longitude'] as num?)?.toDouble() ??
-              (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[1]) : null);
+          final lat = (data['latitude'] as num?)?.toDouble() ?? (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[0]) : null);
+          final lon = (data['longitude'] as num?)?.toDouble() ?? (data['loc'] != null ? double.tryParse(data['loc'].toString().split(',')[1]) : null);
           if (lat != null && lon != null) return LatLng(lat, lon);
         }
       } catch (_) {}
@@ -563,10 +538,22 @@ class MapProvider extends ChangeNotifier {
     bool isMockLocation = false;
 
     try {
-      debugPrint('[MapProvider] [Info] Đang thử lấy vị trí bằng GPS của thiết bị...');
+      debugPrint('[MapProvider] [Info] Đang kiểm tra vị trí GPS của thiết bị...');
+      // 1. Thử lấy nhanh vị trí đã biết gần nhất từ cache thiết bị (0ms, chính xác cao trên máy thật)
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        final lastLatLng = LatLng(lastKnown.latitude, lastKnown.longitude);
+        if (lastLatLng.latitude >= 8.0 && lastLatLng.latitude <= 24.0 &&
+            lastLatLng.longitude >= 102.0 && lastLatLng.longitude <= 112.0) {
+          detectedPosition = lastLatLng;
+          debugPrint('[MapProvider] [Info] Lấy thành công vị trí gần nhất: ${detectedPosition.latitude}, ${detectedPosition.longitude}');
+        }
+      }
+
+      // 2. Lấy vị trí GPS tươi mới với thời gian chờ 8s (đảm bảo máy thật đủ thời gian bắt sóng vệ tinh)
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: const Duration(seconds: 2),
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 8),
       );
 
       final gpsLatLng = LatLng(position.latitude, position.longitude);
@@ -575,13 +562,13 @@ class MapProvider extends ChangeNotifier {
 
       if (!inVietnam) {
         isMockLocation = true;
-        debugPrint('[MapProvider] [Info] Tọa độ GPS ngoài lãnh thổ VN (${gpsLatLng.latitude}, ${gpsLatLng.longitude}). Sẽ dùng tọa độ mặc định TP.HCM.');
+        debugPrint('[MapProvider] [Info] Tọa độ GPS ngoài lãnh thổ VN. Sẽ dùng tọa độ mặc định TP.HCM.');
       } else {
         detectedPosition = gpsLatLng;
         debugPrint('[MapProvider] [Info] Lấy vị trí GPS thực tế thành công: ${detectedPosition.latitude}, ${detectedPosition.longitude}');
       }
     } catch (e) {
-      debugPrint('[MapProvider] [Error] Lấy GPS thiết bị thất bại (hoặc không bật định vị): $e');
+      debugPrint('[MapProvider] [Error] Lấy GPS thiết bị thất bại: $e');
     }
 
     if (detectedPosition == null || isMockLocation) {
@@ -598,10 +585,11 @@ class MapProvider extends ChangeNotifier {
     _moveCamera(_currentPosition, zoom: 16);
 
     final place = await _placesService.reverseGeocode(_currentPosition);
+    final isDefault = (_currentPosition.latitude == ApiConfig.defaultLat && _currentPosition.longitude == ApiConfig.defaultLng);
     _originPlace = place ?? PlaceModel(
       id: 'current_loc',
-      name: 'Trần Quý Cáp, Bình Thạnh',
-      address: 'Trần Quý Cáp, Phường 11, Bình Thạnh, TP. Hồ Chí Minh',
+      name: isDefault ? 'Trần Quý Cáp, Bình Thạnh' : 'Vị trí hiện tại',
+      address: isDefault ? 'Trần Quý Cáp, Phường 11, Bình Thạnh, TP. Hồ Chí Minh' : 'Vị trí hiện tại của bạn',
       latLng: _currentPosition,
     );
     originController.text = _originPlace!.name;
@@ -662,12 +650,22 @@ class MapProvider extends ChangeNotifier {
       _destinationPlace = place;
       destinationController.text = place.name;
       _moveCamera(place.latLng);
+      RecentDestinationsService.addRecentDestination(place).then((list) {
+        _recentDestinations = list;
+        notifyListeners();
+      });
     }
 
     if (_originPlace != null && _destinationPlace != null) {
       await fetchRoute();
     }
 
+    notifyListeners();
+  }
+
+  Future<void> clearRecentDestinations() async {
+    await RecentDestinationsService.clearRecentDestinations();
+    _recentDestinations = [];
     notifyListeners();
   }
 
@@ -972,11 +970,7 @@ class MapProvider extends ChangeNotifier {
   }
 
   Future<void> goToMyLocation() async {
-    _isLoadingLocation = true;
-    notifyListeners();
-    await _getCurrentLocation();
-    _isLoadingLocation = false;
-    notifyListeners();
+    await _requestLocationPermission();
   }
 
   @override

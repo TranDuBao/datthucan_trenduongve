@@ -367,6 +367,18 @@ export class AdminController {
     }
   };
 
+  private static lastKnownStats: any = {
+    totalDownloads: 9,
+    version: 'v1.0.0',
+    releaseName: 'FoodRoute App v1.0.0',
+    publishedAt: '2026-11-08T14:41:36Z',
+    apkName: 'FoodRoute_v1.0.apk',
+    apkSize: 71512646,
+    apkDownloadCount: 9,
+    downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+    releaseUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
+  };
+
   private cachedAppStats: { data: any; expiry: number } | null = null;
 
   getAppStats = async (req: Request, res: Response) => {
@@ -378,9 +390,12 @@ export class AdminController {
 
       // Fetch from GitHub Releases API
       const repo = 'TranDuBao/datthucan_trenduongve';
-      const ghRes = await fetch(`https://api.github.com/repos/${repo}/releases`, {
-        headers: { 'User-Agent': 'FoodRoute-Backend' },
-      });
+      const headers: Record<string, string> = { 'User-Agent': 'FoodRoute-Backend' };
+      if (process.env.GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      }
+
+      const ghRes = await fetch(`https://api.github.com/repos/${repo}/releases`, { headers });
 
       if (!ghRes.ok) {
         throw new Error(`GitHub API error: ${ghRes.status}`);
@@ -406,36 +421,28 @@ export class AdminController {
       }
 
       const payload = {
-        totalDownloads,
+        totalDownloads: totalDownloads > 0 ? totalDownloads : AdminController.lastKnownStats.totalDownloads,
         version: latestRelease?.tag_name || 'v1.0.0',
         releaseName: latestRelease?.name || 'FoodRoute App v1.0.0',
         publishedAt: latestRelease?.published_at || new Date().toISOString(),
         apkName: apkAsset?.name || 'FoodRoute_v1.0.apk',
         apkSize: apkAsset?.size || 71512646,
-        apkDownloadCount: apkAsset?.download_count || 0,
+        apkDownloadCount: (apkAsset?.download_count != null && apkAsset.download_count > 0) ? apkAsset.download_count : AdminController.lastKnownStats.apkDownloadCount,
         downloadUrl: apkAsset?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
         releaseUrl: latestRelease?.html_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
       };
 
-      // Cache for 60 seconds
-      this.cachedAppStats = { data: payload, expiry: now + 60000 };
+      if (payload.totalDownloads > 0) {
+        AdminController.lastKnownStats = payload;
+      }
+
+      // Cache for 3 minutes to preserve GitHub rate limits
+      this.cachedAppStats = { data: payload, expiry: now + 180000 };
 
       return res.status(200).json({ statusCode: 200, status: '1', data: payload });
     } catch (error: any) {
       console.warn('[AdminController] [Warn] Lỗi lấy thống kê app từ GitHub:', error.message);
-      // Return safe fallback
-      const fallbackPayload = {
-        totalDownloads: 0,
-        version: 'v1.0.0',
-        releaseName: 'FoodRoute App v1.0.0',
-        publishedAt: new Date().toISOString(),
-        apkName: 'FoodRoute_v1.0.apk',
-        apkSize: 71512646,
-        apkDownloadCount: 0,
-        downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
-        releaseUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
-      };
-      return res.status(200).json({ statusCode: 200, status: '1', data: fallbackPayload });
+      return res.status(200).json({ statusCode: 200, status: '1', data: AdminController.lastKnownStats });
     }
   };
 }

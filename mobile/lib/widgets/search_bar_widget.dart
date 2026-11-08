@@ -686,6 +686,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
 
   Widget _buildQuickOptions(MapProvider provider) {
     final isOriginActive = _originFocused;
+    final recentList = provider.recentDestinations;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
       decoration: BoxDecoration(
@@ -702,6 +703,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isOriginActive)
             InkWell(
@@ -752,22 +754,104 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 ),
               ),
             ),
+          if (!isOriginActive && recentList.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded, size: 16, color: Color(0xFFFC6011)),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${recentList.length} điểm đến gần nhất',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => provider.clearRecentDestinations(),
+                    child: Text(
+                      'Xóa',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white38,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...recentList.map((place) => InkWell(
+              onTap: () {
+                _destFocus.unfocus();
+                provider.selectPlace(place, isOrigin: false);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.place_rounded, color: Color(0xFFFC6011), size: 16),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            place.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            place.address.isNotEmpty ? place.address : 'Tọa độ: ${place.latLng.latitude.toStringAsFixed(4)}, ${place.latLng.longitude.toStringAsFixed(4)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.north_west_rounded, size: 14, color: Colors.white.withValues(alpha: 0.25)),
+                  ],
+                ),
+              ),
+            )),
+            const Divider(color: Colors.white10, height: 1),
+          ],
           Padding(
             padding: EdgeInsets.fromLTRB(
-                16, isOriginActive ? 0 : 14, 16, 14),
+                16, isOriginActive || recentList.isNotEmpty ? 10 : 14, 16, 14),
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: const Color(0xFF2D2D5E),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.search_rounded,
                     color: Colors.white.withValues(alpha: 0.5),
-                    size: 18,
+                    size: 16,
                   ),
                 ),
                 const SizedBox(width: 12),
