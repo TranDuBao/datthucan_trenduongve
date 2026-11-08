@@ -149,15 +149,17 @@ app.use((req, res, next) => {
   next();
 });
 
+import { sanitizeErrorMessage } from './utils/error_sanitizer';
+
 // Middleware xử lý lỗi toàn cục (Global Exception Handler)
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[App] [Lỗi chưa bắt]:', err);
   const status = Number(err.statusCode || err.status || 500);
-  const message = err.message || 'Lỗi hệ thống nội bộ';
+  const safeMessage = sanitizeErrorMessage(err, 'Hệ thống đang gặp lỗi, vui lòng thử lại');
   return res.status(status).json({
     statusCode: status,
     status: 'error',
-    message: process.env.NODE_ENV === 'production' && status === 500 ? 'Đã có lỗi hệ thống xảy ra' : message,
+    message: safeMessage,
   });
 });
 

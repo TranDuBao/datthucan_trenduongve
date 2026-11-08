@@ -117,8 +117,18 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE monan ALTER COLUMN img TYPE TEXT;`);
         await safeQuery(`ALTER TABLE cuahang ALTER COLUMN img TYPE TEXT;`);
         await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`);
-    await AppDataSource.query(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`).catch(() => {});
-    await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
+        await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`);
+
+        // Ensure auto-increment sequence default for taikhoan & khachhang primary keys
+        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS taikhoan_mataikhoan_seq;`);
+        await safeQuery(`SELECT setval('taikhoan_mataikhoan_seq', COALESCE((SELECT MAX(mataikhoan) FROM taikhoan), 0) + 1, false);`);
+        await safeQuery(`ALTER TABLE taikhoan ALTER COLUMN mataikhoan SET DEFAULT nextval('taikhoan_mataikhoan_seq');`);
+
+        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS khachhang_makhachhang_seq;`);
+        await safeQuery(`SELECT setval('khachhang_makhachhang_seq', COALESCE((SELECT MAX(makhachhang) FROM khachhang), 0) + 1, false);`);
+        await safeQuery(`ALTER TABLE khachhang ALTER COLUMN makhachhang SET DEFAULT nextval('khachhang_makhachhang_seq');`);
+
+        await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS banner (
         mabanner SERIAL PRIMARY KEY,

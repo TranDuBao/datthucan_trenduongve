@@ -107,7 +107,17 @@ export class AdminUserService {
     if (existing) throw new Error('Tên đăng nhập đã tồn tại!');
 
     const hashedPassword = await bcrypt.hash(data.matKhau, 10);
+
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.userRepo.query('SELECT COALESCE(MAX(mataikhoan), 0) + 1 as next_id FROM taikhoan');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const newAccount = this.userRepo.create({
+      ...(nextId ? { maTaiKhoan: nextId } : {}),
       tenDangNhap: data.tenDangNhap.trim(),
       matKhau: hashedPassword,
       loaiTaiKhoan: data.loaiTaiKhoan || 'KHACH_HANG',
@@ -115,7 +125,16 @@ export class AdminUserService {
     });
     const savedAccount = await this.userRepo.save(newAccount);
 
+    let nextKhId: number | undefined;
+    try {
+      const maxKh = await this.khachHangRepo.query('SELECT COALESCE(MAX(makhachhang), 0) + 1 as next_id FROM khachhang');
+      if (maxKh && maxKh[0] && maxKh[0].next_id) {
+        nextKhId = Number(maxKh[0].next_id);
+      }
+    } catch (_) {}
+
     const newProfile = this.khachHangRepo.create({
+      ...(nextKhId ? { maKhachHang: nextKhId } : {}),
       maTaiKhoan: savedAccount.maTaiKhoan,
       hoTen: data.hoTen,
       sdt: data.sdt,

@@ -527,11 +527,16 @@ class _LoginViewState extends State<LoginView> {
           (route) => false,
         );
       } else {
-        mdShowAlert(Globs.appName, responseObj[KKey.message] as String? ?? MSG.fail, () {});
+        String msg = (responseObj[KKey.message] as String?)?.trim() ?? MSG.fail;
+        final lower = msg.toLowerCase();
+        if (lower.contains('database') || lower.contains('violates') || lower.contains('constraint') || lower.contains('relation') || lower.contains('column') || lower.contains('syntax')) {
+          msg = "Hệ thống đang gặp lỗi, vui lòng thử lại";
+        }
+        mdShowAlert(Globs.appName, msg, () {});
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert(Globs.appName, err.toString(), () {});
+      mdShowAlert(Globs.appName, "Hệ thống đang gặp lỗi, vui lòng thử lại", () {});
     });
   }
 }

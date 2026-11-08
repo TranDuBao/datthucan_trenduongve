@@ -363,11 +363,43 @@ class _SignUpViewState extends State<SignUpView> {
           );
         }, isError: false);
       } else {
-        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.authSignUpFailed, () {}, isError: true);
+        String msg = (responseObj[KKey.message] as String?)?.trim() ?? '';
+        final lower = msg.toLowerCase();
+        if (msg.isEmpty ||
+            lower.contains('null value') ||
+            lower.contains('violates') ||
+            lower.contains('constraint') ||
+            lower.contains('relation') ||
+            lower.contains('column') ||
+            lower.contains('syntax') ||
+            lower.contains('database') ||
+            lower.contains('typeorm') ||
+            lower.contains('postgres') ||
+            lower.contains('query') ||
+            lower.contains('table') ||
+            lower.contains('error')) {
+          msg = "Hệ thống đang gặp lỗi, vui lòng thử lại";
+        }
+        mdShowAlert(context.l10n.commonNotification, msg, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
+      String msg = err.toString();
+      final lower = msg.toLowerCase();
+      if (lower.contains('null value') ||
+          lower.contains('violates') ||
+          lower.contains('constraint') ||
+          lower.contains('relation') ||
+          lower.contains('column') ||
+          lower.contains('socketexception') ||
+          lower.contains('connection refused') ||
+          lower.contains('handshake') ||
+          lower.contains('clientexception') ||
+          lower.contains('exception') ||
+          lower.contains('error')) {
+        msg = "Hệ thống đang gặp lỗi, vui lòng thử lại";
+      }
+      mdShowAlert(context.l10n.commonNotification, msg, () {}, isError: true);
     });
   }
 }

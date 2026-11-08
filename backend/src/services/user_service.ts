@@ -66,7 +66,17 @@ export class UserService {
     const khachHangRepo = await this.getKhachHangRepo();
     const tenDangNhapSafe = data.tenDangNhap.trim().slice(0, 50);
 
+    // Compute nextMaTaiKhoan to protect against missing auto-increment sequence
+    let nextId: number | undefined;
+    try {
+      const maxRes = await taiKhoanRepo.query('SELECT COALESCE(MAX(mataikhoan), 0) + 1 as next_id FROM taikhoan');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const newTaiKhoan = taiKhoanRepo.create({
+      ...(nextId ? { maTaiKhoan: nextId } : {}),
       tenDangNhap: tenDangNhapSafe,
       matKhau: data.matKhau,
       loaiTaiKhoan: LoaiTaiKhoan.KHACH_HANG,
@@ -74,7 +84,17 @@ export class UserService {
     });
     const savedTaiKhoan = await taiKhoanRepo.save(newTaiKhoan);
 
+    // Compute nextMaKhachHang to protect against missing auto-increment sequence on khachhang
+    let nextKhId: number | undefined;
+    try {
+      const maxKh = await khachHangRepo.query('SELECT COALESCE(MAX(makhachhang), 0) + 1 as next_id FROM khachhang');
+      if (maxKh && maxKh[0] && maxKh[0].next_id) {
+        nextKhId = Number(maxKh[0].next_id);
+      }
+    } catch (_) {}
+
     const newKhachHang = khachHangRepo.create({
+      ...(nextKhId ? { maKhachHang: nextKhId } : {}),
       maTaiKhoan: savedTaiKhoan.maTaiKhoan,
       hoTen: data.hoTen,
       email: data.email,

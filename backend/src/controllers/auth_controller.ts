@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth_service';
 import { UserService } from '../services/user_service';
 import { AdminService } from '../services/admin_service';
 import { AuthenticatedRequest } from '../middlewares/auth_middleware';
+import { sanitizeErrorMessage } from '../utils/error_sanitizer';
 
 export class AuthController {
   private authService = new AuthService();
@@ -52,7 +53,7 @@ export class AuthController {
       return res.status(400).json({
         statusCode: 400,
         status: "0",
-        message: error.message || 'Đăng ký thất bại!',
+        message: sanitizeErrorMessage(error, 'Hệ thống đang gặp lỗi, vui lòng thử lại'),
       });
     }
   };
@@ -112,7 +113,7 @@ export class AuthController {
       return res.status(401).json({
         statusCode: 401,
         status: "0",
-        message: error.message || 'Đăng nhập thất bại!',
+        message: sanitizeErrorMessage(error, 'Đăng nhập thất bại, vui lòng kiểm tra lại tài khoản hoặc thử lại sau!'),
       });
     }
   };
@@ -142,7 +143,7 @@ export class AuthController {
       return res.status(400).json({
         statusCode: 400,
         status: "0",
-        message: error.message || 'Đăng nhập Google thất bại!',
+        message: sanitizeErrorMessage(error, 'Đăng nhập Google thất bại, vui lòng thử lại sau!'),
       });
     }
   };
@@ -190,7 +191,7 @@ export class AuthController {
       return res.status(500).json({
         statusCode: 500,
         status: "0",
-        message: error.message || 'Lỗi server!',
+        message: sanitizeErrorMessage(error, 'Hệ thống đang gặp lỗi, vui lòng thử lại'),
       });
     }
   };
@@ -246,7 +247,7 @@ export class AuthController {
       return res.status(500).json({
         statusCode: 500,
         status: '0',
-        message: error.message || 'Lỗi server!',
+        message: sanitizeErrorMessage(error, 'Hệ thống đang gặp lỗi, vui lòng thử lại'),
       });
     }
   };
@@ -296,7 +297,7 @@ export class AuthController {
       return res.status(500).json({
         statusCode: 500,
         status: '0',
-        message: error.message || 'Lỗi server!',
+        message: sanitizeErrorMessage(error, 'Hệ thống đang gặp lỗi, vui lòng thử lại'),
       });
     }
   };
@@ -350,7 +351,7 @@ export class AuthController {
       return res.status(401).json({
         statusCode: 401,
         status: '0',
-        message: error.message || 'Làm mới token thất bại',
+        message: sanitizeErrorMessage(error, 'Làm mới token thất bại, vui lòng thử lại'),
       });
     }
   };
@@ -370,7 +371,7 @@ export class AuthController {
         data: result,
       });
     } catch (error: any) {
-      return res.status(500).json({ statusCode: 500, status: '0', message: error.message || 'Lỗi server' });
+      return res.status(500).json({ statusCode: 500, status: '0', message: sanitizeErrorMessage(error, 'Hệ thống đang gặp lỗi, vui lòng thử lại') });
     }
   };
   scanCCCD = async (req: Request, res: Response) => {
@@ -380,7 +381,7 @@ export class AuthController {
       const result = await adminService.scanCCCD({ image, frontImage, backImage, side }, side);
       return res.status(200).json({ statusCode: 200, status: '1', data: result });
     } catch (error: any) {
-      return res.status(400).json({ statusCode: 400, message: error.message });
+      return res.status(400).json({ statusCode: 400, message: sanitizeErrorMessage(error, 'Quét CCCD thất bại, vui lòng thử lại') });
     }
   };
 }
