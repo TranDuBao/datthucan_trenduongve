@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../model/store_registration_model.dart';
 import '../../services/store_registration_service.dart';
 import 'store_registration_view.dart';
@@ -60,7 +61,7 @@ class _StoreRegistrationStatusViewState extends State<StoreRegistrationStatusVie
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Trạng Thái Đơn Đăng Ký",
+          context.l10n.storeStatusTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 18,
@@ -111,9 +112,9 @@ class _StoreRegistrationStatusViewState extends State<StoreRegistrationStatusVie
                     }
                   },
                   icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
-                  label: const Text(
-                    "Chỉnh sửa & Gửi lại đơn",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                  label: Text(
+                    context.l10n.storeStatusActionReapply,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: TColor.primary,

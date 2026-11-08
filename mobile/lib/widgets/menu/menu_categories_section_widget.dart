@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../services/category_service.dart';
 import '../../view/menu/menu_items_view.dart';
@@ -36,7 +37,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          "Thực Đơn Quán Tuyển Chọn",
+                          context.l10n.menuFeaturedTitle,
                           style: TextStyle(
                             color: TColor.primaryTextOf(context),
                             fontSize: 18,
@@ -51,7 +52,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            "${categoryList.length} Nhóm món",
+                            context.l10n.menuGroupCount(categoryList.length),
                             style: const TextStyle(
                               color: Color(0xFFD32F2F),
                               fontSize: 10,
@@ -63,7 +64,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Đóng gói sẵn sàng, dừng xe lấy trong 1 phút",
+                      context.l10n.menuReadyPickupSubtitle,
                       style: TextStyle(
                         color: TColor.secondaryTextOf(context),
                         fontSize: 11,
@@ -95,7 +96,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "Chưa có danh mục nào trong cơ sở dữ liệu",
+                    context.l10n.menuNoCategories,
                     style: TextStyle(
                       color: TColor.secondaryTextOf(context),
                       fontSize: 14,
@@ -106,7 +107,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: onRetry,
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text("Tải lại thực đơn"),
+                      label: Text(context.l10n.menuReloadButton),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: TColor.primary,
                         foregroundColor: Colors.white,
@@ -213,7 +214,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Chế biến tươi nóng • Gia vị gia truyền 24h",
+                              context.l10n.menuFreshCookedSubtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -231,7 +232,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    "${mObj.itemsCount} món đang phục vụ",
+                                    context.l10n.menuServingItemCount(mObj.itemsCount),
                                     style: TextStyle(
                                       color: TColor.primary,
                                       fontSize: 10,

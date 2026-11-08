@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../config/api_config.dart';
+import '../common/format_utils.dart';
 import '../providers/map_provider.dart';
 import '../models/route_model.dart';
 import '../models/place_model.dart';
@@ -99,10 +100,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               final bool isNavigating = provider.isNavigating;
               if (order == null && !isNavigating) return const SizedBox.shrink();
 
-              final storeName = order?['tenQuan'] ?? order?['restaurantName'] ?? 'Quán ghé lấy';
-              final orderCode = order?['maDonHang'] ?? order?['id'] ?? '';
+              final storeName = order?['tenQuan'] ?? order?['restaurantName'] ?? context.l10n.orderModeQuickStop;
+              final orderCode = (order?['maDonHang'] ?? order?['id'] ?? '').toString();
               final bool isPickedUp = provider.isOrderPickedUp;
-              final destName = provider.destinationPlace?.name ?? 'Điểm đến';
+              final destName = provider.destinationPlace?.name ?? context.l10n.homeDestination;
 
               return Positioned(
                 top: 0,
@@ -138,8 +139,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Expanded(
                           child: Text(
                             isPickedUp
-                                ? 'Đã lấy món tại $storeName • Tiếp tục đến $destName'
-                                : 'Đang dẫn đường ghé: $storeName${orderCode.toString().isNotEmpty ? ' (Đơn #$orderCode)' : ''}',
+                                ? context.l10n.homePickedUpContinue(storeName.toString(), destName)
+                                : orderCode.isNotEmpty
+                                    ? context.l10n.homeNavigatingWithOrder(storeName.toString(), orderCode)
+                                    : context.l10n.homeNavigatingToStore(storeName.toString()),
                             style: GoogleFonts.outfit(
                               color: Colors.white,
                               fontSize: 13,
@@ -178,14 +181,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   _buildFab(
                                     icon: Icons.my_location_rounded,
                                     onTap: provider.goToMyLocation,
-                                    tooltip: 'Vị trí của tôi',
+                                    tooltip: context.l10n.homeMyLocation,
                                   ),
                                   if (provider.currentRoute != null) ...[
                                     const SizedBox(height: 8),
                                     _buildFab(
                                       icon: Icons.close_rounded,
                                       onTap: provider.clearAll,
-                                      tooltip: 'Xóa đường đi',
+                                      tooltip: context.l10n.homeClearRoute,
                                       color: const Color(0xFFFF5252),
                                     ),
                                   ],
@@ -242,28 +245,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTopGradient() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 220,
-      child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                const Color(0xFF0F0F1E).withValues(alpha: 0.95),
-                const Color(0xFF0F0F1E).withValues(alpha: 0.6),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ),
-          ),
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildLoadingOverlay() {

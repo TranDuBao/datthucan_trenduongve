@@ -19,6 +19,7 @@ import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/reservation_provider.dart';
 import 'providers/support_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'view/login/welcome_view.dart';
 import 'view/main_tabview/main_tabview.dart';
 import 'view/on_boarding/startup_view.dart';
@@ -94,6 +95,8 @@ class _MyAppState extends State<MyApp> {
       title: 'Food Route',
       debugShowCheckedModeBanner: false,
       locale: languageProvider.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeProvider.lightTheme,
       darkTheme: ThemeProvider.darkTheme,
       themeMode: themeProvider.themeMode,

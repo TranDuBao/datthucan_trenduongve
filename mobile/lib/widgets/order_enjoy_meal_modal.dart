@@ -1,6 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../common/format_utils.dart';
 
 class OrderEnjoyMealModal extends StatefulWidget {
   final String storeName;
@@ -186,7 +186,7 @@ class _OrderEnjoyMealModalState extends State<OrderEnjoyMealModal>
 
               // ── Title ──
               Text(
-                'Chúc Quý Khách Ngon Miệng!',
+                context.l10n.orderEnjoyMealTitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   color: Colors.white,
@@ -200,7 +200,7 @@ class _OrderEnjoyMealModalState extends State<OrderEnjoyMealModal>
 
               // ── Safe journey message ──
               Text(
-                'Đã lấy món thành công. Chúc bạn có một hành trình thật an toàn và thuận lợi!',
+                context.l10n.orderEnjoyMealSubtitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   color: const Color(0xFF94A3B8),
@@ -286,7 +286,7 @@ class _OrderEnjoyMealModalState extends State<OrderEnjoyMealModal>
                   },
                   icon: const Icon(Icons.flag_rounded, color: Colors.white, size: 18),
                   label: Text(
-                    'Hoàn tất & Tiếp tục lộ trình',
+                    context.l10n.orderEnjoyMealContinue,
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 14,
@@ -310,7 +310,7 @@ class _OrderEnjoyMealModalState extends State<OrderEnjoyMealModal>
                     size: 16,
                   ),
                   label: Text(
-                    'Xem lại bản đồ (nếu bấm nhầm)',
+                    context.l10n.orderEnjoyMealReviewMap,
                     style: GoogleFonts.outfit(
                       color: const Color(0xFF94A3B8),
                       fontSize: 13,

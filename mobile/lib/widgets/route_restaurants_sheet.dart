@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
+import '../common/format_utils.dart';
 import '../providers/map_provider.dart';
 import '../view/menu/restaurant_detail_view.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../common_widget/smart_network_image.dart';
+
+int _safeInt(dynamic val, {int fallback = 0}) {
+  if (val == null) return fallback;
+  if (val is num) return val.toInt();
+  final s = val.toString();
+  return int.tryParse(s) ?? (double.tryParse(s)?.toInt() ?? fallback);
+}
+
+double? _safeDouble(dynamic val) {
+  if (val == null) return null;
+  if (val is num) return val.toDouble();
+  return double.tryParse(val.toString());
+}
 
 class RouteRestaurantsSheet extends StatelessWidget {
   final MapProvider provider;
@@ -64,7 +78,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Quán ăn trên lộ trình (${restaurants.length})',
+                        context.l10n.routeRestaurantsTitle(restaurants.length),
                         style: GoogleFonts.outfit(
                           color: const Color(0xFF0F172A),
                           fontSize: 16,
@@ -72,7 +86,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Tiện đường ghé lấy • Không cần đi vòng',
+                        context.l10n.routeRestaurantsSubtitle,
                         style: GoogleFonts.outfit(
                           color: const Color(0xFF64748B),
                           fontSize: 12,
@@ -95,7 +109,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                         const Icon(Icons.search_off_rounded, color: Color(0xFF94A3B8), size: 48),
                         const SizedBox(height: 12),
                         Text(
-                          'Đang tải hoặc chưa có quán ăn trực tiếp trên trục đường này',
+                          context.l10n.routeNoRestaurantsFound,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 14),
                         ),
@@ -111,7 +125,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                             if (mainTab != null) mainTab.changeTab(1);
                           },
                           child: Text(
-                            'Khám phá toàn bộ thực đơn',
+                            context.l10n.routeExploreFullMenu,
                             style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -125,18 +139,18 @@ class RouteRestaurantsSheet extends StatelessWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (ctx, idx) {
                       final r = restaurants[idx] as Map;
-                      final storeName = (r['tenQuan'] ?? r['name'] ?? 'Nhà hàng').toString();
-                      final address = (r['diaChi'] ?? r['address'] ?? 'Địa chỉ tự đến lấy').toString();
-                      final int dist = (r['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
-                      final int prepTime = (r['thoiGianChuanBi'] as num?)?.toInt() ?? 15;
-                      final double rating = (r['diemDanhGiaTB'] as num?)?.toDouble() ??
-                          (r['danhGiaTrungBinh'] as num?)?.toDouble() ??
-                          (r['rate'] as num?)?.toDouble() ??
+                      final storeName = (r['tenQuan'] ?? r['name'] ?? ctx.l10n.restaurantDefaultName).toString();
+                      final address = (r['diaChi'] ?? r['address'] ?? ctx.l10n.pickupAddressDefault).toString();
+                      final int dist = _safeInt(r['distanceFromRouteMeters']);
+                      final int prepTime = _safeInt(r['thoiGianChuanBi'], fallback: 15);
+                      final double rating = _safeDouble(r['diemDanhGiaTB']) ??
+                          _safeDouble(r['danhGiaTrungBinh']) ??
+                          _safeDouble(r['rate']) ??
                           0.0;
-                      final int ratingCount = int.tryParse((r['soLuongDanhGia'] ?? r['soLuotDanhGia'] ?? r['ratingCount'] ?? 0).toString()) ?? 0;
+                      final int ratingCount = _safeInt(r['soLuongDanhGia'] ?? r['soLuotDanhGia'] ?? r['ratingCount']);
                       final bool hasRealRating = rating > 0 && ratingCount > 0 && r['chuaCoDanhGia'] != true;
-                      final double? storeLat = (r['lat'] as num?)?.toDouble() ?? (r['latitude'] as num?)?.toDouble();
-                      final double? storeLng = (r['lng'] as num?)?.toDouble() ?? (r['longitude'] as num?)?.toDouble();
+                      final double? storeLat = _safeDouble(r['lat']) ?? _safeDouble(r['latitude']);
+                      final double? storeLng = _safeDouble(r['lng']) ?? _safeDouble(r['longitude']);
                       final userLat = provider.originPlace?.latLng.latitude;
                       final userLng = provider.originPlace?.latLng.longitude;
 
@@ -214,7 +228,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                                 ],
                                               )
                                             : Text(
-                                                'Mới',
+                                                ctx.l10n.badgeNew,
                                                 style: GoogleFonts.outfit(
                                                   color: const Color(0xFFFC6011),
                                                   fontSize: 10,
@@ -270,7 +284,9 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                                 const Icon(Icons.north_east_rounded, size: 11, color: Color(0xFF059669)),
                                                 const SizedBox(width: 3),
                                                 Text(
-                                                  dist > 0 ? 'Lệch tuyến ${dist}m' : 'Ngay trên tuyến',
+                                                  dist > 0
+                                                      ? ctx.l10n.routeDetourMeters(dist)
+                                                      : ctx.l10n.routeOnRoute,
                                                   style: GoogleFonts.outfit(
                                                     color: const Color(0xFF059669),
                                                     fontSize: 10,
@@ -283,10 +299,10 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                           Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(Icons.access_time_rounded, size: 12, color: Color(0xFF64748B)),
+                                              const Icon(Icons.timer_outlined, size: 12, color: Color(0xFF64748B)),
                                               const SizedBox(width: 3),
                                               Text(
-                                                'Chuẩn bị ~$prepTime phút',
+                                                ctx.l10n.routePrepTimeApprox(prepTime),
                                                 style: GoogleFonts.outfit(
                                                   color: const Color(0xFF64748B),
                                                   fontSize: 10,
@@ -311,7 +327,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Cách bạn: ',
+                                      ctx.l10n.routeDistanceLabel,
                                       style: GoogleFonts.outfit(
                                         color: const Color(0xFF64748B),
                                         fontSize: 12,
@@ -355,7 +371,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          'Xem Menu',
+                                          ctx.l10n.routeViewMenu,
                                           style: GoogleFonts.outfit(
                                             color: Colors.white,
                                             fontSize: 11,

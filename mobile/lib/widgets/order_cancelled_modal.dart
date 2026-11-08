@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/map_provider.dart';
-import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../view/more/order_history_view.dart';
 
@@ -136,7 +136,7 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
 
                     // Tiêu đề
                     Text(
-                      'Đã hủy đơn hàng',
+                      context.l10n.orderCancelledTitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -167,8 +167,7 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Text(
-                        widget.message ??
-                            'Đơn hàng chưa thanh toán đã được hủy thành công.\nKhông phát sinh giao dịch hoàn tiền.',
+                        widget.message ?? context.l10n.orderCancelledDefaultMsg,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13.5,
@@ -207,7 +206,7 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                                 ),
                               ),
                               child: Text(
-                                'Về trang chủ',
+                                context.l10n.orderCancelledBackHome,
                                 style: TextStyle(
                                   color: isDark ? Colors.white : const Color(0xFF344054),
                                   fontSize: 13,
@@ -247,9 +246,9 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
-                                'Xem đơn hàng',
-                                style: TextStyle(
+                              child: Text(
+                                context.l10n.orderCancelledViewOrder,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,

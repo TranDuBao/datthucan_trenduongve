@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import '../../common/format_utils.dart';
 import 'package:food_route/common_widget/round_button.dart';
 import 'package:provider/provider.dart';
 
@@ -75,7 +76,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Xác nhận đơn Pre-Order",
+                        context.l10n.checkoutPreOrderTitle,
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
                           fontSize: 20,
@@ -241,7 +242,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                         Icon(Icons.alarm_on_rounded, color: TColor.primary, size: 18),
                         const SizedBox(width: 6),
                         Text(
-                          "Giờ hẹn nhận món",
+                          context.l10n.checkoutPickupTimeScheduled,
                           style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -274,7 +275,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Phương thức thanh toán",
+                      context.l10n.checkoutPaymentMethod,
                       style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 14, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
@@ -302,7 +303,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                                 size: 22,
                               ),
                               const SizedBox(width: 12),
-                              Expanded(child: Text(pObj["name"]!,
+                              Expanded(child: Text(pObj["code"] == "PAYOS" ? context.l10n.checkoutPayWithVietQR : pObj["name"]!,
                                   style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13, fontWeight: FontWeight.w600))),
                               Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
                                   color: TColor.primary, size: 20),
@@ -326,7 +327,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Tiền món ăn", style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13)),
+                        Text(context.l10n.checkoutDishSubtotal, style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13)),
                         Text("${_fmt(cart.subTotal.toInt())}đ",
                             style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
@@ -339,7 +340,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                           Row(children: [
                             const Icon(Icons.confirmation_number_rounded, color: Color(0xFF10B981), size: 14),
                             const SizedBox(width: 4),
-                            Text("Giảm giá (${cart.appliedVoucherCode})",
+                            Text(context.l10n.checkoutDiscountWithCode(cart.appliedVoucherCode ?? ''),
                                 style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w700)),
                           ]),
                           Text("-${_fmt(cart.discountAmount.toInt())}đ",
@@ -351,8 +352,8 @@ class _CheckoutViewState extends State<CheckoutView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Phí giao hàng", style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13)),
-                        const Text("0đ (Tự đến lấy)", style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w700)),
+                        Text(context.l10n.checkoutDeliveryFee, style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13)),
+                        Text(context.l10n.checkoutFreeSelfPickup, style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w700)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -361,7 +362,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Tổng thanh toán", style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 15, fontWeight: FontWeight.w800)),
+                        Text(context.l10n.checkoutTotalPayment, style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 15, fontWeight: FontWeight.w800)),
                         Text("${_fmt(cart.total.toInt())}đ",
                             style: TextStyle(color: TColor.primary, fontSize: 20, fontWeight: FontWeight.w800)),
                       ],
@@ -375,7 +376,7 @@ class _CheckoutViewState extends State<CheckoutView> {
                 child: isSubmitting
                     ? Center(child: CircularProgressIndicator(color: TColor.primary))
                     : RoundButton(
-                        title: "Hoàn tất đặt món",
+                        title: context.l10n.checkoutCompleteOrder,
                         onPressed: _handlePlaceOrders,
                       ),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../view/menu/item_details_view.dart';
 import '../skeleton/skeleton_shimmer.dart';
@@ -73,7 +74,7 @@ class FlashSaleSectionWidget extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: Text(
-                    "Xem tất cả >",
+                    "${context.l10n.commonSeeAll} >",
                     style: TextStyle(
                       color: TColor.secondaryTextOf(context),
                       fontSize: 12,
@@ -216,7 +217,7 @@ class FlashSaleSectionWidget extends StatelessWidget {
                                       children: [
                                         const Icon(Icons.access_time, color: Colors.white70, size: 10),
                                         const SizedBox(width: 2),
-                                        Text("${prepMin}p", style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                        Text(context.l10n.flashSalePrepTimeMin(prepMin), style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -254,7 +255,7 @@ class FlashSaleSectionWidget extends StatelessWidget {
                                       const SizedBox(width: 3),
                                       Expanded(
                                         child: Text(
-                                          "• Đã bán $soldCount",
+                                          "• ${context.l10n.flashSaleSoldCount(soldCount)}",
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
+import '../../common/format_utils.dart';
 
 class QuickCategoriesWidget extends StatelessWidget {
   final List<Map<String, String>>? quickCategories;
@@ -12,6 +13,29 @@ class QuickCategoriesWidget extends StatelessWidget {
     this.selectedCategory,
     this.onCategorySelected,
   });
+
+  static String getLocalizedCategoryName(BuildContext context, String catName) {
+    switch (catName) {
+      case "Món Giảm 50%":
+        return context.l10n.quickCatDiscount50;
+      case "Trà Sữa / Cà Phê":
+        return context.l10n.quickCatBobaCoffee;
+      case "Phở & Bún Nóng":
+        return context.l10n.quickCatHotNoodles;
+      case "Cơm Trưa Nóng":
+        return context.l10n.quickCatHotLunch;
+      case "Bánh Mì & Nhanh":
+        return context.l10n.quickCatBanhMiFast;
+      case "Ăn Kèm & Vặt":
+        return context.l10n.quickCatSnacks;
+      case "Eat Clean Healthy":
+        return context.l10n.quickCatEatClean;
+      case "Ghé Lấy 0Đ":
+        return context.l10n.quickCatPickup0d;
+      default:
+        return catName;
+    }
+  }
 
   static const List<Map<String, String>> defaultCategories = [
     {"name": "Món Giảm 50%", "icon": "badgePercent", "bg": "0xFFFFF3E0", "color": "0xFFE65100"},
@@ -109,7 +133,7 @@ class QuickCategoriesWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  catName,
+                  getLocalizedCategoryName(context, catName),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

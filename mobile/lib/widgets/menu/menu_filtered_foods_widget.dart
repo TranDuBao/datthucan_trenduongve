@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../view/menu/item_details_view.dart';
+import 'quick_categories_widget.dart';
 
 class MenuFilteredFoodsWidget extends StatelessWidget {
   final List<dynamic> filteredFoods;
@@ -44,8 +46,11 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     selectedCategory != null
-                        ? "Đang lọc: $selectedCategory (${filteredFoods.length} món)"
-                        : "Kết quả cho '$searchQuery' (${filteredFoods.length} món)",
+                        ? context.l10n.menuFilteringBy(
+                            QuickCategoriesWidget.getLocalizedCategoryName(context, selectedCategory!),
+                            filteredFoods.length,
+                          )
+                        : context.l10n.menuSearchResultsCount(searchQuery, filteredFoods.length),
                     style: const TextStyle(
                       color: Color(0xFFFC6011),
                       fontSize: 12,
@@ -62,9 +67,9 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                       color: const Color(0xFFFC6011),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      "Bỏ lọc ✕",
-                      style: TextStyle(
+                    child: Text(
+                      "${context.l10n.menuClearFilter} ✕",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,

@@ -13,6 +13,7 @@ import '../more/my_order_view.dart';
 import '../more/restaurant_reviews_sheet.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../common/locator.dart';
+import '../../common/format_utils.dart';
 import '../../services/socket_service.dart';
 import 'item_details_view.dart';
 import '../reservation/reservation_booking_view.dart';
@@ -40,6 +41,19 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
   bool isLoadingVouchers = true;
   Set<int> collectedVoucherIds = {};
   late void Function(dynamic) _voucherListener;
+
+  String _getCategoryDisplayName(BuildContext context, dynamic cat) {
+    if (cat == null) return '';
+    final name = (cat['name'] ?? '').toString();
+    final id = cat['id'];
+    if (id == 0 || name.toLowerCase() == 'tất cả' || name.toLowerCase() == 'all') {
+      return context.l10n.storeTabAll;
+    }
+    if (name.toLowerCase() == 'thực đơn' || name.toLowerCase() == 'menu') {
+      return context.l10n.storeTabMenu;
+    }
+    return name;
+  }
 
   @override
   void initState() {
@@ -506,7 +520,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                isStoreClosed ? "• Đóng cửa" : "• Đang mở",
+                                isStoreClosed ? "• ${context.l10n.storeStatusClosed}" : "• ${context.l10n.storeStatusOpen}",
                                 style: TextStyle(
                                   color: isStoreClosed ? const Color(0xFFFF5252) : const Color(0xFF00E676),
                                   fontSize: 12,
@@ -575,9 +589,9 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                             );
                           },
                           icon: const Icon(Icons.table_restaurant_rounded, color: Color(0xFF10B981), size: 18),
-                          label: const Text(
-                            "Đặt bàn tại quán (Dine-in)",
-                            style: TextStyle(
+                          label: Text(
+                            context.l10n.storeDineInReservation,
+                            style: const TextStyle(
                               color: Color(0xFF10B981),
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
@@ -725,7 +739,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                     border: Border.all(color: isSelected ? TColor.primary : TColor.borderOf(context)),
                                   ),
                                   child: Text(
-                                    cat['name'] ?? 'Danh mục',
+                                    _getCategoryDisplayName(context, cat),
                                     style: TextStyle(
                                       color: isSelected ? Colors.white : TColor.primaryTextOf(context),
                                       fontSize: 13,
@@ -751,7 +765,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                       ? SliverFillRemaining(
                           child: Center(
                             child: Text(
-                              "Chưa có món ăn nào trong nhà hàng này",
+                              context.l10n.storeEmptyItems,
                               style: TextStyle(color: TColor.secondaryTextOf(context)),
                             ),
                           ),
@@ -773,7 +787,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      cat['name'],
+                                      _getCategoryDisplayName(context, cat),
                                       style: TextStyle(
                                         color: TColor.primaryTextOf(context),
                                         fontSize: 18,
@@ -1079,11 +1093,11 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Tổng thanh toán (${cart.items.length} món)",
+                          context.l10n.storeFloatingCartTotal(cart.items.length),
                           style: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 11),
                         ),
                         Text(
-                          "${cart.total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
+                          FormatUtils.formatCurrency(cart.total, locale: Localizations.localeOf(context)),
                           style: TextStyle(
                             color: TColor.primaryTextOf(context),
                             fontSize: 18,
@@ -1105,9 +1119,9 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 18),
-                      label: const Text(
-                        "Đặt hàng ngay",
-                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                      label: Text(
+                        context.l10n.storeFloatingOrderNow,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ],

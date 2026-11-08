@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../common/format_utils.dart';
 import '../providers/cart_provider.dart';
 
 /// Modal cảnh báo có animation: khách hàng đang trong lộ trình chỉ được đặt món
@@ -169,7 +170,7 @@ class _SingleRestaurantWarningModalState
 
                     // Tiêu đề
                     Text(
-                      'Chỉ đặt 1 quán mỗi lần',
+                      context.l10n.singleStoreWarningTitle,
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -189,7 +190,7 @@ class _SingleRestaurantWarningModalState
                           height: 1.5,
                         ),
                         children: [
-                          const TextSpan(text: 'Bạn đang có món từ '),
+                          TextSpan(text: context.l10n.singleStoreWarningPart1),
                           TextSpan(
                             text: '"${widget.existingRestaurantName}"',
                             style: const TextStyle(
@@ -197,8 +198,8 @@ class _SingleRestaurantWarningModalState
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const TextSpan(
-                            text: ' trong giỏ hàng.\n\nVui lòng thanh toán xong rồi mới đặt ở ',
+                          TextSpan(
+                            text: context.l10n.singleStoreWarningPart2,
                           ),
                           TextSpan(
                             text: '"${widget.newRestaurantName}"',
@@ -217,10 +218,10 @@ class _SingleRestaurantWarningModalState
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFC6011).withOpacity(0.08),
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFFFC6011).withOpacity(0.2),
+                          color: const Color(0xFFFC6011).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -230,7 +231,7 @@ class _SingleRestaurantWarningModalState
                               color: Color(0xFFFC6011), size: 15),
                           const SizedBox(width: 6),
                           Text(
-                            'Giỏ hiện có ${cart.totalItemCount} món (${_fmt(cart.subTotal)})',
+                            context.l10n.singleStoreWarningCartBadge(cart.totalItemCount, _fmt(cart.subTotal)),
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -257,7 +258,7 @@ class _SingleRestaurantWarningModalState
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             child: Text(
-                              'Thanh toán giỏ hiện tại trước',
+                              context.l10n.singleStoreWarningPayExisting,
                               style: GoogleFonts.outfit(
                                   color: Colors.white,
                                   fontSize: 13.5,
@@ -283,7 +284,7 @@ class _SingleRestaurantWarningModalState
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             child: Text(
-                              'Xóa giỏ hàng & đặt quán mới',
+                              context.l10n.singleStoreWarningClearAndOrder,
                               style: GoogleFonts.outfit(
                                 color: isDark
                                     ? const Color(0xFF94A3B8)

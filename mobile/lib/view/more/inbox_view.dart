@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';
@@ -119,11 +120,11 @@ class _InboxViewState extends State<InboxView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _buildFilterChip("Tất cả", count: availableCount, idx: 0, isDark: isDark),
+                  _buildFilterChip(context.l10n.voucherTabAll, count: availableCount, idx: 0, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Mã giảm giá", idx: 1, isDark: isDark),
+                  _buildFilterChip(context.l10n.voucherTabDiscount, idx: 1, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Voucher đã lưu", count: savedVoucherList.length, idx: 2, isDark: isDark),
+                  _buildFilterChip(context.l10n.voucherTabSaved, count: savedVoucherList.length, idx: 2, isDark: isDark),
                 ],
               ),
             ),
@@ -138,12 +139,12 @@ class _InboxViewState extends State<InboxView> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.confirmation_number_outlined, size: 54, color: TColor.secondaryTextOf(context).withOpacity(0.5)),
+                              Icon(Icons.confirmation_number_outlined, size: 54, color: TColor.secondaryTextOf(context).withValues(alpha: 0.5)),
                               const SizedBox(height: 12),
                               Text(
                                 selectTab == 2
-                                    ? "Chưa có voucher nào trong ví"
-                                    : "Chưa có voucher khả dụng nào",
+                                    ? context.l10n.voucherEmptyWallet
+                                    : context.l10n.voucherEmptyAvailable,
                                 style: TextStyle(
                                   color: TColor.primaryTextOf(context),
                                   fontSize: 16,
@@ -153,8 +154,8 @@ class _InboxViewState extends State<InboxView> {
                               const SizedBox(height: 6),
                               Text(
                                 selectTab == 2
-                                    ? "Hãy bấm 'Thu thập' để lưu mã giảm giá vào ví"
-                                    : "Tất cả voucher có thể đã được thu thập hoặc hết hạn",
+                                    ? context.l10n.voucherEmptyWalletSubtitle
+                                    : context.l10n.voucherEmptyAvailableSubtitle,
                                 style: TextStyle(
                                   color: TColor.secondaryTextOf(context),
                                   fontSize: 12,
@@ -213,7 +214,7 @@ class _InboxViewState extends State<InboxView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Kho Voucher",
+                    context.l10n.moreInbox,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 18,
@@ -233,7 +234,7 @@ class _InboxViewState extends State<InboxView> {
               ),
               const SizedBox(height: 2),
               Text(
-                "MealMonkey Rewards & Deals ($availableCount khả dụng)",
+                context.l10n.voucherRewardsSubtitle(availableCount),
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 11,
@@ -464,7 +465,7 @@ class _InboxViewState extends State<InboxView> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    "Còn lại: $remainingQty/${item.soLuongToiDa}",
+                                    context.l10n.voucherRemaining(remainingQty, item.soLuongToiDa),
                                     style: TextStyle(
                                       color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                                       fontSize: 12,
@@ -501,7 +502,7 @@ class _InboxViewState extends State<InboxView> {
                       if (item.expiryDate != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          "Hạn dùng: ${item.expiryDate}",
+                          "${context.l10n.voucherExpiryLabel}: ${item.expiryDate}",
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 11,
@@ -526,7 +527,7 @@ class _InboxViewState extends State<InboxView> {
                             child: Row(
                               children: [
                                 Text(
-                                  "Mã : ",
+                                  "${context.l10n.voucherCodeLabel} : ",
                                   style: TextStyle(
                                     color: TColor.secondaryTextOf(context),
                                     fontSize: 11,
@@ -550,18 +551,18 @@ class _InboxViewState extends State<InboxView> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withOpacity(0.15),
+                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFF10B981)),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF10B981)),
-                                  SizedBox(width: 4),
+                                  const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF10B981)),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    "Đã lưu",
-                                    style: TextStyle(
+                                    context.l10n.voucherStatusSaved,
+                                    style: const TextStyle(
                                       color: Color(0xFF10B981),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
@@ -583,7 +584,7 @@ class _InboxViewState extends State<InboxView> {
                                     });
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(res['message'] ?? "Đã lưu mã ${item.code} vào ví của bạn!"),
+                                        content: Text(res['message'] ?? context.l10n.voucherCollectedSuccess(item.code)),
                                         duration: const Duration(seconds: 2),
                                         backgroundColor: const Color(0xFF10B981),
                                       ),
@@ -591,7 +592,7 @@ class _InboxViewState extends State<InboxView> {
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(res['message'] ?? "Không thể lưu voucher"),
+                                        content: Text(res['message'] ?? context.l10n.voucherCollectFailed),
                                         duration: const Duration(seconds: 2),
                                         backgroundColor: Colors.redAccent,
                                       ),
@@ -610,18 +611,18 @@ class _InboxViewState extends State<InboxView> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    "Thu thập",
-                                    style: TextStyle(
+                                    context.l10n.voucherActionCollect,
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(Icons.bookmark_add_rounded, size: 16),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.bookmark_add_rounded, size: 16),
                                 ],
                               ),
                             ),

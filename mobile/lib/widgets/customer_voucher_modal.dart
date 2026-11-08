@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 import '../common/globs.dart';
 import '../providers/cart_provider.dart';
 import '../common/locator.dart';
@@ -93,17 +94,17 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
   Future<void> _applyVoucherCode(String code) async {
     final rawCode = code.trim().toUpperCase();
     if (rawCode.isEmpty) {
-      CustomToast.showError(context, "Vui lòng nhập mã voucher");
+      CustomToast.showError(context, context.l10n.voucherInputRequired);
       return;
     }
     if (rawCode.contains('FREESHIP')) {
-      CustomToast.showError(context, "Mã voucher này không còn hiệu lực");
+      CustomToast.showError(context, context.l10n.voucherInvalid);
       return;
     }
 
     final cart = context.read<CartProvider>();
     if (cart.subTotal <= 0) {
-      CustomToast.showError(context, "Giỏ hàng đang trống");
+      CustomToast.showError(context, context.l10n.cartEmptyTitle);
       return;
     }
 
@@ -142,18 +143,18 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
         if (mounted) {
           CustomToast.showSuccess(
             context,
-            "Đã áp dụng mã ${data['maCode']} (Giảm ${_formatVND(discountAmount)})",
+            context.l10n.voucherAppliedSuccess((data['maCode'] ?? rawCode).toString(), _formatVND(discountAmount)),
           );
           Navigator.pop(context);
         }
       } else {
         if (mounted) {
-          CustomToast.showError(context, body['message'] ?? "Mã voucher không hợp lệ");
+          CustomToast.showError(context, body['message'] ?? context.l10n.voucherInvalid);
         }
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, "Không thể xác minh mã voucher. Vui lòng kiểm tra lại mạng.");
+        CustomToast.showError(context, context.l10n.voucherNetworkError);
       }
     } finally {
       if (mounted) setState(() => _validating = false);
@@ -197,7 +198,7 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                   Icon(Icons.confirmation_number_rounded, color: TColor.primary, size: 22),
                   const SizedBox(width: 8),
                   Text(
-                    "Chọn Ưu Đãi Khuyến Mãi",
+                    context.l10n.voucherSelectTitle,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -222,7 +223,7 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                   controller: _codeController,
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    hintText: "Nhập mã giảm giá...",
+                    hintText: context.l10n.voucherInputHint,
                     hintStyle: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
                     filled: true,
                     fillColor: isDark ? const Color(0xFF2C3240) : const Color(0xFFF5F5F5),
@@ -245,7 +246,7 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                 onPressed: _validating ? null : () => _applyVoucherCode(_codeController.text),
                 child: _validating
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text("Áp dụng", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    : Text(context.l10n.commonApply, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
           ),
@@ -270,11 +271,11 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Đã áp dụng: ${cart.appliedVoucherCode}",
+                            context.l10n.voucherAppliedCode(cart.appliedVoucherCode ?? ''),
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981), fontSize: 13),
                           ),
                           Text(
-                            "Giảm giá: -${_formatVND(cart.discountAmount)}",
+                            context.l10n.voucherDiscountAmount(_formatVND(cart.discountAmount)),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF047857)),
                           ),
                         ],
@@ -284,9 +285,9 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                   TextButton(
                     onPressed: () {
                       cart.removeVoucher();
-                      CustomToast.showSuccess(context, "Đã gỡ voucher");
+                      CustomToast.showSuccess(context, context.l10n.voucherRemovedSuccess);
                     },
-                    child: const Text("Gỡ bỏ", style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(context.l10n.voucherRemove, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -295,7 +296,7 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
           ],
 
           Text(
-            "Mã ưu đãi khả dụng",
+            context.l10n.voucherAvailableTitle,
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: TColor.secondaryTextOf(context)),
           ),
           const SizedBox(height: 10),
@@ -307,7 +308,7 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                 : _availableVouchers.isEmpty
                     ? Center(
                         child: Text(
-                          "Chưa có voucher khả dụng từ nhà hàng này",
+                          context.l10n.voucherNoAvailableFromStore,
                           style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
                         ),
                       )
@@ -360,13 +361,15 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                                       const SizedBox(height: 2),
                                       Text(
                                         isPercent
-                                            ? "Giảm ${giamGia.toInt()}%${giamToiDa > 0 ? ' (Tối đa ${_formatVND(giamToiDa)})' : ''}"
-                                            : "Giảm ${_formatVND(giamGia)}",
+                                            ? (giamToiDa > 0
+                                                ? context.l10n.voucherDiscountPercentMax(giamGia.toInt(), _formatVND(giamToiDa))
+                                                : context.l10n.voucherDiscountPercent(giamGia.toInt()))
+                                            : context.l10n.voucherDiscountFixed(_formatVND(giamGia)),
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF10B981)),
                                       ),
                                       if (donToiThieu > 0)
                                         Text(
-                                          "Đơn từ ${_formatVND(donToiThieu)}",
+                                          context.l10n.voucherMinOrder(_formatVND(donToiThieu)),
                                           style: TextStyle(fontSize: 10.5, color: isEligible ? TColor.secondaryTextOf(context) : Colors.redAccent),
                                         ),
                                     ],
@@ -382,7 +385,11 @@ class _CustomerVoucherModalState extends State<CustomerVoucherModal> {
                                   ),
                                   onPressed: isApplied || !isEligible ? null : () => _applyVoucherCode(code),
                                   child: Text(
-                                    isApplied ? "Đã dùng" : isEligible ? "Áp dụng" : "Chưa đủ đơn",
+                                    isApplied
+                                        ? context.l10n.voucherAppliedStatus
+                                        : isEligible
+                                            ? context.l10n.commonApply
+                                            : context.l10n.voucherNotEligibleStatus,
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                   ),
                                 ),

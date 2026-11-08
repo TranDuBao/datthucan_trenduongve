@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common/globs.dart';
 import 'package:food_route/common/locator.dart';
 import 'package:http/http.dart' as http;
@@ -86,14 +86,14 @@ class ServiceCall {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.12),
+                  color: Colors.red.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 28),
               ),
               const SizedBox(height: 14),
               Text(
-                "Đăng xuất",
+                context.l10n.authLogoutConfirmTitle,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class ServiceCall {
               ),
               const SizedBox(height: 6),
               Text(
-                "Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?",
+                context.l10n.authLogoutConfirmMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -125,7 +125,7 @@ class ServiceCall {
                       ),
                       onPressed: () => Navigator.pop(context),
                       child: Text(
-                        "Hủy",
+                        context.l10n.commonCancel,
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.black87,
                           fontWeight: FontWeight.w600,
@@ -148,9 +148,9 @@ class ServiceCall {
                         Navigator.pop(context);
                         logout();
                       },
-                      child: const Text(
-                        "Xác nhận",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.commonConfirm,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),

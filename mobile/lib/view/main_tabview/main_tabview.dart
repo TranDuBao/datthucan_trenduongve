@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/tab_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/user_role_helper.dart';
-import '../../providers/language_provider.dart';
 import '../home/home_view.dart';
 import '../menu/menu_view.dart';
 import '../more/more_view.dart';
@@ -121,7 +121,6 @@ class MainTabViewState extends State<MainTabView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMerchant = UserRoleHelper.isMerchant;
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -181,7 +180,7 @@ class MainTabViewState extends State<MainTabView> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.12),
+                                    color: Colors.black.withValues(alpha: 0.12),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -227,8 +226,8 @@ class MainTabViewState extends State<MainTabView> {
                   boxShadow: [
                     BoxShadow(
                       color: selctTab == 2
-                          ? TColor.primary.withOpacity(0.35)
-                          : Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                          ? TColor.primary.withValues(alpha: 0.35)
+                          : Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                       blurRadius: 16,
                       spreadRadius: 2,
                       offset: const Offset(0, 4),
@@ -271,7 +270,7 @@ class MainTabViewState extends State<MainTabView> {
                   children: [
                     Expanded(
                       child: TabButton(
-                        title: lang.tr('menu'),
+                        title: context.l10n.navMenu,
                         icon: "assets/img/tab_menu.png",
                         onTap: () => _onTabTapped(0),
                         isSelected: selctTab == 0,
@@ -279,7 +278,7 @@ class MainTabViewState extends State<MainTabView> {
                     ),
                     Expanded(
                       child: TabButton(
-                        title: lang.tr('offer'),
+                        title: context.l10n.navOffer,
                         iconData: Icons.storefront_rounded,
                         onTap: () => _onTabTapped(1),
                         isSelected: selctTab == 1,
@@ -288,7 +287,7 @@ class MainTabViewState extends State<MainTabView> {
                     const SizedBox(width: 48),
                     Expanded(
                       child: TabButton(
-                        title: lang.tr('profile'),
+                        title: context.l10n.navProfile,
                         icon: "assets/img/tab_profile.png",
                         onTap: () => _onTabTapped(3),
                         isSelected: selctTab == 3,
@@ -296,7 +295,7 @@ class MainTabViewState extends State<MainTabView> {
                     ),
                     Expanded(
                       child: TabButton(
-                        title: lang.tr('more'),
+                        title: context.l10n.navMore,
                         icon: "assets/img/tab_more.png",
                         onTap: () => _onTabTapped(4),
                         isSelected: selctTab == 4,

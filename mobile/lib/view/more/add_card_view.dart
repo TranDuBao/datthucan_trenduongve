@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/round_icon_button.dart';
 import 'package:food_route/common_widget/round_textfield.dart';
 
@@ -37,7 +38,7 @@ class _AddCardViewState extends State<AddCardView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Add Credit/Debit Card",
+                  context.l10n.addCardTitle,
                   style: TextStyle(
                       color: TColor.primaryText,
                       fontSize: 14,
@@ -56,14 +57,14 @@ class _AddCardViewState extends State<AddCardView> {
               ],
             ),
             Divider(
-              color: TColor.secondaryText.withOpacity(0.4),
+              color: TColor.secondaryText.withValues(alpha: 0.4),
               height: 1,
             ),
             const SizedBox(
               height: 15,
             ),
             RoundTextfield(
-              hintText: "Card Number",
+              hintText: context.l10n.addCardNumberHint,
               controller: txtCardNumber,
               keyboardType: TextInputType.number,
             ),
@@ -73,7 +74,7 @@ class _AddCardViewState extends State<AddCardView> {
             Row(
               children: [
                 Text(
-                  "Expiry",
+                  context.l10n.addCardExpiryLabel,
                   style: TextStyle(
                       color: TColor.primaryText,
                       fontSize: 14,
@@ -83,7 +84,7 @@ class _AddCardViewState extends State<AddCardView> {
                 SizedBox(
                   width: 100,
                   child: RoundTextfield(
-                    hintText: "MM",
+                    hintText: context.l10n.addCardMonthHint,
                     controller: txtCardMonth,
                     keyboardType: TextInputType.number,
                   ),
@@ -92,7 +93,7 @@ class _AddCardViewState extends State<AddCardView> {
                 SizedBox(
                   width: 100,
                   child: RoundTextfield(
-                    hintText: "YYYY",
+                    hintText: context.l10n.addCardYearHint,
                     controller: txtCardYear,
                     keyboardType: TextInputType.number,
                   ),
@@ -103,7 +104,7 @@ class _AddCardViewState extends State<AddCardView> {
               height: 15,
             ),
             RoundTextfield(
-              hintText: "Card Security Code",
+              hintText: context.l10n.addCardSecurityCodeHint,
               controller: txtCardCode,
               keyboardType: TextInputType.number,
             ),
@@ -111,28 +112,29 @@ class _AddCardViewState extends State<AddCardView> {
               height: 15,
             ),
             RoundTextfield(
-              hintText: "First Name",
+              hintText: context.l10n.addCardFirstNameHint,
               controller: txtFirstName,
             ),
             const SizedBox(
               height: 15,
             ),
             RoundTextfield(
-              hintText: "Last Name",
+              hintText: context.l10n.addCardLastNameHint,
               controller: txtLastName,
             ),
             const SizedBox(
               height: 15,
             ),
             Row(children: [
-              Text(
-                "You can remove this card at anytime",
-                style: TextStyle(
-                    color: TColor.secondaryText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500),
+              Expanded(
+                child: Text(
+                  context.l10n.addCardRemoveAnytime,
+                  style: TextStyle(
+                      color: TColor.secondaryText,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
+                ),
               ),
-              const Spacer(),
               Switch(
                   value: isAnyTime,
                   activeColor: TColor.primary,
@@ -146,7 +148,7 @@ class _AddCardViewState extends State<AddCardView> {
               height: 25,
             ),
             RoundIconButton(
-                title: "Add Card",
+                title: context.l10n.addCardButton,
                 icon: "assets/img/add.png",
                 color: TColor.primary,
                 fontSize: 16,

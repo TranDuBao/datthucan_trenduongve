@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../common/format_utils.dart';
 import '../common/color_extension.dart';
 import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
@@ -26,8 +27,8 @@ class RoutePickupFoodCard extends StatelessWidget {
   double _calculateDistanceMeters() {
     final uLat = userLat ?? 10.762622;
     final uLng = userLng ?? 106.682029;
-    final storeLat = (item["lat"] as num?)?.toDouble() ?? 10.762622;
-    final storeLng = (item["lng"] as num?)?.toDouble() ?? 106.682029;
+    final storeLat = double.tryParse((item["lat"] ?? '').toString()) ?? 10.762622;
+    final storeLng = double.tryParse((item["lng"] ?? '').toString()) ?? 106.682029;
 
     const p = 0.017453292519943295;
     final a = 0.5 - math.cos((storeLat - uLat) * p) / 2 +
@@ -36,15 +37,17 @@ class RoutePickupFoodCard extends StatelessWidget {
     return 12742 * math.asin(math.sqrt(a)) * 1000;
   }
 
-  String _formatDistance() {
+  String _formatDistance(BuildContext context) {
     final meters = _calculateDistanceMeters();
+    final String distStr;
     if (meters < 100) {
-      return "Cách 150m";
+      distStr = "150m";
     } else if (meters < 1000) {
-      return "Cách ${meters.round()}m";
+      distStr = "${meters.round()}m";
     } else {
-      return "Cách ${(meters / 1000).toStringAsFixed(1)}km";
+      distStr = "${(meters / 1000).toStringAsFixed(1)}km";
     }
+    return context.l10n.pickupDistanceAway(distStr);
   }
 
   int _calculatePickupMinutes() {
@@ -64,15 +67,15 @@ class RoutePickupFoodCard extends StatelessWidget {
     return pickupMinutes.clamp(3, 45);
   }
 
-  String _formatPickupBadge() {
+  String _formatPickupBadge(BuildContext context) {
     final minutes = _calculatePickupMinutes();
-    return "Ghé lấy sau ${minutes}p";
+    return context.l10n.pickupInMinutes(minutes);
   }
 
   @override
   Widget build(BuildContext context) {
     final name = item["name"] ?? item["tenMonAn"] ?? "Món tiện đường";
-    final price = (item["price"] as num? ?? item["giaMonAn"] as num? ?? 45000).toInt();
+    final price = int.tryParse((item["price"] ?? item["giaMonAn"] ?? 45000).toString()) ?? 45000;
     final img = item["image"] ?? item["img"] ?? "";
 
     final int stockQty = int.tryParse((item["soLuongMon"] ?? item["quantity"] ?? item["soLuong"] ?? 0).toString()) ?? 0;
@@ -126,7 +129,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      isSoldOut ? "Hết món" : _formatPickupBadge(),
+                      isSoldOut ? context.l10n.menuItemSoldOut : _formatPickupBadge(context),
                       style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -164,7 +167,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                             restaurantName: storeName,
                             restaurantAddress: storeAddress,
                           ));
-                          CustomToast.showSuccess(context, "Đã thêm '$name' vào giỏ hàng");
+                          CustomToast.showSuccess(context, context.l10n.cartAddedSuccess(name));
                         }
 
                         if (cart.hasConflictWith(restaurantId)) {
@@ -237,7 +240,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
-                          "${item["tenQuan"] ?? "Cửa hàng"} • ${_formatDistance()}",
+                          "${item["tenQuan"] ?? context.l10n.restaurantDefaultName} • ${_formatDistance(context)}",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -250,7 +253,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                       if (soldQty > 0) ...[
                         const SizedBox(width: 4),
                         Text(
-                          "• Đã bán $soldQty",
+                          "• ${context.l10n.itemSoldCount(soldQty)}",
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 9,

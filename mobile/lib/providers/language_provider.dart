@@ -29,8 +29,13 @@ class LanguageProvider extends ChangeNotifier {
     final savedCode = prefs.getString(_prefKey);
     if (savedCode != null && (savedCode == 'vi' || savedCode == 'en')) {
       _locale = Locale(savedCode);
-      notifyListeners();
+    } else {
+      // Lần đầu mở app: phát hiện theo ngôn ngữ thiết bị (nếu không phải 'vi' thì mặc định 'en')
+      final deviceCode =
+          WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      _locale = deviceCode == 'vi' ? const Locale('vi') : const Locale('en');
     }
+    notifyListeners();
   }
 
   Future<void> setLanguage(String code) async {
@@ -103,6 +108,16 @@ class LanguageProvider extends ChangeNotifier {
       'save': 'Lưu',
       'success': 'Thành công',
       'error': 'Lỗi',
+
+      // Onboarding
+      'onboarding_title_1': 'Món Ngon Tiện Đường',
+      'onboarding_subtitle_1': 'Khám phá hàng trăm quán ngon chuẩn vị,\nđặt trước tiện lợi ngay trên lộ trình di chuyển',
+      'onboarding_title_2': 'Nóng Hổi Chuẩn Giờ',
+      'onboarding_subtitle_2': 'Quán chuẩn bị món vừa xong đúng lúc bạn ghé lấy,\ntối ưu thời gian, không cần chờ đợi',
+      'onboarding_title_3': 'Lộ Trình Thông Minh',
+      'onboarding_subtitle_3': 'Định vị điểm đến và theo dõi đơn hàng thời gian thực,\nsẵn sàng trên mọi cung đường của bạn',
+      'next': 'Tiếp tục',
+      'get_started': 'Bắt đầu ngay',
     },
     'en': {
       // Navigation & Tabs
@@ -160,6 +175,16 @@ class LanguageProvider extends ChangeNotifier {
       'save': 'Save',
       'success': 'Success',
       'error': 'Error',
+
+      // Onboarding (FoodRoute - Đặt món tiện đường ghé lấy)
+      'onboarding_title_1': 'Eats Along Your Route',
+      'onboarding_subtitle_1': 'Discover top delicious food spots and order ahead,\nconveniently right along your travel route',
+      'onboarding_title_2': 'Hot & Ready When You Arrive',
+      'onboarding_subtitle_2': 'Freshly prepared right as you pull up to pick up,\nmaximize your time with zero waiting',
+      'onboarding_title_3': 'Smart Route & Pickup',
+      'onboarding_subtitle_3': 'Set your destination and track orders in real time,\nalways ready on every journey you make',
+      'next': 'Continue',
+      'get_started': 'Get Started',
     },
   };
 }

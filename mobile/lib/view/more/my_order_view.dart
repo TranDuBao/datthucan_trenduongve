@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/round_button.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Giỏ hàng & Đặt trước",
+                        context.l10n.cartTitle,
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
                           fontSize: 22,
@@ -64,11 +65,11 @@ class _MyOrderViewState extends State<MyOrderView> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: TColor.primary.withOpacity(0.12),
+                          color: TColor.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "${cart.totalItemCount} món",
+                          context.l10n.formatItemCount(cart.totalItemCount),
                           style: TextStyle(
                             color: TColor.primary,
                             fontSize: 12,
@@ -121,7 +122,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            "Thời gian tự đến lấy (Pickup Time)",
+                            context.l10n.cartPickupTime,
                             style: TextStyle(
                               color: TColor.primaryTextOf(context),
                               fontSize: 14,
@@ -238,7 +239,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              "Món ăn sẽ được nhà hàng chuẩn bị sẵn sàng vào thời điểm trên.",
+                              context.l10n.cartPickupNote,
                               style: TextStyle(
                                 color: TColor.secondaryTextOf(context),
                                 fontSize: 11,
@@ -315,7 +316,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                                 Text(
                                   cart.appliedVoucherCode != null
                                       ? "Voucher: ${cart.appliedVoucherCode}"
-                                      : "Chọn hoặc nhập mã Voucher",
+                                      : context.l10n.cartSelectOrInputVoucher,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
@@ -327,8 +328,8 @@ class _MyOrderViewState extends State<MyOrderView> {
                                 const SizedBox(height: 2),
                                 Text(
                                   cart.appliedVoucherCode != null
-                                      ? "Đã giảm -${cart.discountAmount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ"
-                                      : "Giảm tiền trực tiếp cho đơn pre-order",
+                                      ? context.l10n.cartVoucherAppliedDiscount(FormatUtils.formatCurrency(cart.discountAmount, locale: Localizations.localeOf(context)))
+                                      : context.l10n.cartVoucherDirectDiscount,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: TColor.secondaryTextOf(context),
@@ -360,7 +361,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Tiền món",
+                          context.l10n.cartSubtotal,
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 13,
@@ -390,7 +391,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                "Giảm giá Voucher (${cart.appliedVoucherCode})",
+                                "${context.l10n.cartDiscount} (${cart.appliedVoucherCode})",
                                 style: const TextStyle(
                                   color: Color(0xFF10B981),
                                   fontSize: 13,
@@ -415,15 +416,15 @@ class _MyOrderViewState extends State<MyOrderView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Phí giao hàng",
+                          context.l10n.cartShippingFee,
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 13,
                           ),
                         ),
-                        const Text(
-                          "0đ (Tự đến lấy)",
-                          style: TextStyle(
+                        Text(
+                          context.l10n.cartShippingFree,
+                          style: const TextStyle(
                             color: Color(0xFF00C853),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -438,7 +439,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Tổng thanh toán",
+                          context.l10n.cartTotal,
                           style: TextStyle(
                             color: TColor.primaryTextOf(context),
                             fontSize: 16,
@@ -457,11 +458,11 @@ class _MyOrderViewState extends State<MyOrderView> {
                     ),
                     const SizedBox(height: 25),
                     RoundButton(
-                      title: "Xác nhận đặt món & Thanh toán",
+                      title: context.l10n.cartProceedConfirm,
                       onPressed: () {
                         if (cart.items.isEmpty) {
                           CustomToast.showError(
-                              context, "Giỏ hàng của bạn đang trống!");
+                              context, context.l10n.cartEmptyTitle);
                           return;
                         }
 
@@ -482,7 +483,7 @@ class _MyOrderViewState extends State<MyOrderView> {
 
                         if (!cart.isPickupTimeValid()) {
                           CustomToast.showError(context,
-                              "Thời gian hẹn lấy phải cách hiện tại ít nhất 5 phút!");
+                              context.l10n.cartPickupTimeInvalid);
                           return;
                         }
 
@@ -532,7 +533,7 @@ class _MyOrderViewState extends State<MyOrderView> {
             ),
             const SizedBox(height: 16),
             Text(
-              "Giỏ hàng chưa có món nào",
+              context.l10n.cartEmptyTitle,
               style: TextStyle(
                 color: TColor.primaryTextOf(context),
                 fontSize: 16,
@@ -541,7 +542,7 @@ class _MyOrderViewState extends State<MyOrderView> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Hãy chọn các món ăn ưa thích từ thực đơn để thêm vào giỏ hàng pre-order!",
+              context.l10n.cartEmptySubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: TColor.secondaryTextOf(context),

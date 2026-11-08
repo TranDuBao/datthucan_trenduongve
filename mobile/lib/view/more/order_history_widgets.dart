@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../services/order_service.dart';
 import '../../widgets/order_progress_stepper.dart';
 
@@ -116,10 +117,10 @@ class OrderFilterTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tabs = [
-      {'title': 'Tất cả', 'count': allOrders.length},
-      {'title': 'Đang xử lý', 'count': activeOrders.length},
-      {'title': 'Đã hoàn thành', 'count': completedOrders.length},
-      {'title': 'Đã hủy', 'count': cancelledOrders.length},
+      {'title': context.l10n.commonAll, 'count': allOrders.length},
+      {'title': context.l10n.orderTabProcessing, 'count': activeOrders.length},
+      {'title': context.l10n.orderTabCompleted, 'count': completedOrders.length},
+      {'title': context.l10n.orderStatusCancelled, 'count': cancelledOrders.length},
     ];
 
     return SingleChildScrollView(
@@ -230,55 +231,64 @@ class OrderSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            if (iconDot) ...[
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(color: Color(0xFFFC6011), shape: BoxShape.circle),
+        Expanded(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (iconDot) ...[
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(color: Color(0xFFFC6011), shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (iconCheck) ...[
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(color: Color(0xFFFFF2EB), shape: BoxShape.circle),
+                  child: const Icon(Icons.check_rounded, color: Color(0xFFFC6011), size: 12),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (iconClose) ...[
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(color: Color(0xFFFEF3F2), shape: BoxShape.circle),
+                  child: const Icon(Icons.close_rounded, color: Color(0xFFF04438), size: 12),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: iconDot
+                        ? (isDark ? const Color(0xFFFF7A38) : const Color(0xFFD94F04))
+                        : (isDark ? Colors.white : const Color(0xFF101828)),
+                    fontSize: iconDot ? 12 : 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: iconDot ? 0.4 : 0,
+                  ),
+                ),
               ),
-              const SizedBox(width: 8),
             ],
-            if (iconCheck) ...[
-              Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(color: Color(0xFFFFF2EB), shape: BoxShape.circle),
-                child: const Icon(Icons.check_rounded, color: Color(0xFFFC6011), size: 12),
-              ),
-              const SizedBox(width: 8),
-            ],
-            if (iconClose) ...[
-              Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(color: Color(0xFFFEF3F2), shape: BoxShape.circle),
-                child: const Icon(Icons.close_rounded, color: Color(0xFFF04438), size: 12),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              title,
-              style: TextStyle(
-                color: iconDot
-                    ? (isDark ? const Color(0xFFFF7A38) : const Color(0xFFD94F04))
-                    : (isDark ? Colors.white : const Color(0xFF101828)),
-                fontSize: iconDot ? 12 : 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: iconDot ? 0.4 : 0,
-              ),
-            ),
-          ],
+          ),
         ),
-        if (subtitle != null)
+        if (subtitle != null) ...[
+          const SizedBox(width: 8),
           Text(
             subtitle!,
-            style: const TextStyle(color: Color(0xFFFC6011), fontSize: 12, fontWeight: FontWeight.w700),
+            style: const TextStyle(color: Color(0xFFFC6011), fontSize: 11.5, fontWeight: FontWeight.w700),
           ),
-        if (badgeText != null)
+        ],
+        if (badgeText != null) ...[
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -294,6 +304,7 @@ class OrderSectionHeader extends StatelessWidget {
               ),
             ),
           ),
+        ],
       ],
     );
   }
@@ -320,10 +331,16 @@ class OrderFiveStepStepper extends StatelessWidget {
     Icons.check_rounded,
   ];
 
-  static const _stepLabels = ['Đã đặt', 'Xác nhận', 'Chuẩn bị', 'Chờ lấy', 'Đã lấy'];
-
   @override
   Widget build(BuildContext context) {
+    final stepLabels = [
+      context.l10n.orderStepPlaced,
+      context.l10n.orderStepConfirmed,
+      context.l10n.orderStepPreparing,
+      context.l10n.orderStepReady,
+      context.l10n.orderStepPickedUp,
+    ];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
@@ -416,7 +433,7 @@ class OrderFiveStepStepper extends StatelessWidget {
                       SizedBox(height: 34, child: Center(child: nodeWidget)),
                       const SizedBox(height: 6),
                       Text(
-                        _stepLabels[index],
+                        stepLabels[index],
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: labelColor,

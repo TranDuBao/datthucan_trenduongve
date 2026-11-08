@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/format_utils.dart';
 import '../../../providers/support_provider.dart';
 import '../../../widgets/skeleton/support_skeleton.dart';
 import '../widgets/store_registration_section_card.dart';
@@ -43,7 +44,7 @@ class _SupportCenterViewState extends State<SupportCenterView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Không thể mở trình quay số. Đã chép số hotline $phoneNumber vào bộ nhớ tạm.'),
+          content: Text(context.l10n.supportDialError(phoneNumber)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -62,7 +63,7 @@ class _SupportCenterViewState extends State<SupportCenterView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã sao chép địa chỉ email hỗ trợ ($email) vào bộ nhớ tạm.'),
+          content: Text(context.l10n.supportCopyEmailSuccess(email)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -89,7 +90,7 @@ class _SupportCenterViewState extends State<SupportCenterView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Trung Tâm Hỗ Trợ',
+          context.l10n.moreSupportCenter,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 18,
@@ -138,9 +139,9 @@ class _SupportCenterViewState extends State<SupportCenterView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Trung Tâm Trợ Giúp',
-                                  style: TextStyle(
+                                Text(
+                                  context.l10n.supportHeroTitle,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 17,
                                     fontWeight: FontWeight.w800,
@@ -149,7 +150,7 @@ class _SupportCenterViewState extends State<SupportCenterView> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Food Route luôn sẵn sàng đồng hành và giải đáp mọi thắc mắc của bạn.',
+                                  context.l10n.supportHeroDesc,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.94),
                                     fontSize: 12.5,
@@ -181,8 +182,8 @@ class _SupportCenterViewState extends State<SupportCenterView> {
 
                     // SECTION 1: Báo Cáo Sự Cố & Chat Trực Tuyến
                     StoreRegistrationSectionCard(
-                      title: 'Báo Cáo Sự Cố & Chat Trực Tuyến',
-                      subtitle: 'Hội thoại trực tiếp với đội ngũ Admin hỗ trợ',
+                      title: context.l10n.supportSecIncidentChat,
+                      subtitle: context.l10n.supportSecIncidentChatSub,
                       icon: Icons.chat_bubble_outline_rounded,
                       children: [
                         // View tickets card
@@ -281,9 +282,9 @@ class _SupportCenterViewState extends State<SupportCenterView> {
                               );
                             },
                             icon: const Icon(Icons.add_circle_outline_rounded, size: 19),
-                            label: const Text(
-                              'Gửi Báo Cáo Sự Cố Mới',
-                              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                            label: Text(
+                              context.l10n.supportCreateTicket,
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: TColor.primary,
@@ -300,8 +301,8 @@ class _SupportCenterViewState extends State<SupportCenterView> {
 
                     // SECTION 2: Liên Hệ Trực Tiếp (Hotline & Email aligned symmetrically)
                     StoreRegistrationSectionCard(
-                      title: 'Liên Hệ Trực Tiếp',
-                      subtitle: 'Đội ngũ chăm sóc khách hàng phục vụ tận tâm',
+                      title: context.l10n.supportSecDirectContact,
+                      subtitle: context.l10n.supportSecDirectContactSub,
                       icon: Icons.phone_in_talk_rounded,
                       children: [
                         // Hotline Card
@@ -481,8 +482,8 @@ class _SupportCenterViewState extends State<SupportCenterView> {
 
                     // SECTION 3: Tự phục vụ & Góp ý
                     StoreRegistrationSectionCard(
-                      title: 'Hỏi Đáp & Trợ Giúp Nhanh',
-                      subtitle: 'Tìm câu trả lời hoặc gửi phản hồi ý kiến',
+                      title: context.l10n.supportSecFaqFeedback,
+                      subtitle: context.l10n.supportSecFaqFeedbackSub,
                       icon: Icons.lightbulb_outline_rounded,
                       children: [
                         // FAQ Navigation Item

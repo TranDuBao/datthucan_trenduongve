@@ -7,6 +7,7 @@ import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
 import 'package:food_route/view/login/login_view.dart';
 
+import '../../common/format_utils.dart';
 import '../../common/globs.dart';
 import '../../common/service_call.dart';
 import '../on_boarding/on_boarding_view.dart';
@@ -66,7 +67,7 @@ class _SignUpViewState extends State<SignUpView> {
                 children: [
                   // Title & Subtitle
                   Text(
-                    "Tạo tài khoản mới",
+                    context.l10n.authSignUpTitle,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 24,
@@ -76,7 +77,7 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Đăng ký để khám phá hàng ngàn quán ngon",
+                    context.l10n.authSignUpSubtitle,
                     style: TextStyle(
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                       fontSize: 13,
@@ -87,7 +88,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Full Name
                   AuthTextfield(
-                    label: "Họ và tên",
+                    label: context.l10n.authFullName,
                     hintText: "Nguyễn Văn A",
                     controller: txtName,
                     prefixIcon: Icons.person_outline_rounded,
@@ -96,7 +97,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Email
                   AuthTextfield(
-                    label: "Email",
+                    label: context.l10n.authYourEmail,
                     hintText: "foodroute@gmail.com",
                     controller: txtEmail,
                     prefixIcon: Icons.mail_outline_rounded,
@@ -106,7 +107,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Mobile Phone
                   AuthTextfield(
-                    label: "Số điện thoại",
+                    label: context.l10n.authPhone,
                     hintText: "0912345678",
                     controller: txtMobile,
                     prefixIcon: Icons.phone_outlined,
@@ -116,7 +117,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Address
                   AuthTextfield(
-                    label: "Địa chỉ",
+                    label: context.l10n.authAddress,
                     hintText: "Số nhà, tên đường, quận/huyện...",
                     controller: txtAddress,
                     prefixIcon: Icons.location_on_outlined,
@@ -125,7 +126,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Password
                   AuthTextfield(
-                    label: "Mật khẩu",
+                    label: context.l10n.authPassword,
                     hintText: "••••••••••••",
                     controller: txtPassword,
                     prefixIcon: Icons.lock_outline_rounded,
@@ -139,7 +140,7 @@ class _SignUpViewState extends State<SignUpView> {
 
                   // Confirm Password
                   AuthTextfield(
-                    label: "Xác nhận mật khẩu",
+                    label: context.l10n.authConfirmPassword,
                     hintText: "••••••••••••",
                     controller: txtConfirmPassword,
                     prefixIcon: Icons.lock_outline_rounded,
@@ -186,7 +187,7 @@ class _SignUpViewState extends State<SignUpView> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            "Tôi đồng ý với Điều khoản dịch vụ & Chính sách bảo mật",
+                            context.l10n.authAgreeTerms,
                             style: TextStyle(
                               color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                               fontSize: 12.5,
@@ -210,7 +211,7 @@ class _SignUpViewState extends State<SignUpView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          color: const Color(0xFFFF5216).withValues(alpha: 0.32),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -225,9 +226,9 @@ class _SignUpViewState extends State<SignUpView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        "Đăng ký",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.authSignUp,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -257,16 +258,16 @@ class _SignUpViewState extends State<SignUpView> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: "Đã có tài khoản? ",
+                                text: context.l10n.authAlreadyHaveAccount,
                                 style: TextStyle(
                                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const TextSpan(
-                                text: "Đăng nhập ngay",
-                                style: TextStyle(
+                              TextSpan(
+                                text: context.l10n.authLoginNow,
+                                style: const TextStyle(
                                   color: Color(0xFFFF5216),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
@@ -290,37 +291,37 @@ class _SignUpViewState extends State<SignUpView> {
 
   void btnSignUp() {
     if (txtName.text.trim().isEmpty) {
-      mdShowAlert("Thông báo", "Vui lòng nhập họ và tên", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authNameRequired, () {}, isError: true);
       return;
     }
 
     if (!txtEmail.text.trim().isEmail) {
-      mdShowAlert("Thông báo", "Vui lòng nhập email hợp lệ", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authEmailInvalid, () {}, isError: true);
       return;
     }
 
     if (txtMobile.text.trim().isEmpty) {
-      mdShowAlert("Thông báo", "Vui lòng nhập số điện thoại", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authPhoneRequired, () {}, isError: true);
       return;
     }
 
     if (txtAddress.text.trim().isEmpty) {
-      mdShowAlert("Thông báo", "Vui lòng nhập địa chỉ", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authAddressRequired, () {}, isError: true);
       return;
     }
 
     if (txtPassword.text.length < 6) {
-      mdShowAlert("Thông báo", "Mật khẩu phải có ít nhất 6 ký tự", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authPasswordMinLength, () {}, isError: true);
       return;
     }
 
     if (txtPassword.text != txtConfirmPassword.text) {
-      mdShowAlert("Thông báo", "Mật khẩu xác nhận không khớp", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authPasswordMismatch, () {}, isError: true);
       return;
     }
 
     if (!_agreeTerms) {
-      mdShowAlert("Thông báo", "Vui lòng đồng ý với điều khoản dịch vụ để tiếp tục", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authAgreeTermsRequired, () {}, isError: true);
       return;
     }
 
@@ -352,7 +353,7 @@ class _SignUpViewState extends State<SignUpView> {
         }
         Globs.udBoolSet(true, Globs.userLogin);
 
-        mdShowAlert("Thông báo", "Đăng ký thành công!", () {
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authSignUpSuccess, () {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -362,11 +363,11 @@ class _SignUpViewState extends State<SignUpView> {
           );
         }, isError: false);
       } else {
-        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Đăng ký thất bại. Vui lòng thử lại!", () {}, isError: true);
+        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.authSignUpFailed, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 }

@@ -1,6 +1,7 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';
@@ -101,13 +102,13 @@ class _NotificationsViewState extends State<NotificationsView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _buildFilterChip("Tất cả", idx: 0, isDark: isDark),
+                  _buildFilterChip(context.l10n.notifTabAll, idx: 0, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Đơn hàng", idx: 1, isDark: isDark),
+                  _buildFilterChip(context.l10n.notifTabOrders, idx: 1, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip(isDark ? "Ưu đãi" : "Ưu đãi hot", idx: 2, isDark: isDark),
+                  _buildFilterChip(context.l10n.notifTabPromos, idx: 2, isDark: isDark),
                   const SizedBox(width: 8),
-                  _buildFilterChip(isDark ? "Hệ thống" : "Cập nhật", idx: 3, isDark: isDark),
+                  _buildFilterChip(context.l10n.notifTabSystem, idx: 3, isDark: isDark),
                 ],
               ),
             ),
@@ -125,7 +126,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                               Icon(Icons.notifications_none_rounded, size: 52, color: TColor.secondaryTextOf(context)),
                               const SizedBox(height: 12),
                               Text(
-                                "Bạn chưa có thông báo nào",
+                                context.l10n.notifEmpty,
                                 style: TextStyle(
                                   color: TColor.primaryTextOf(context),
                                   fontSize: 15,
@@ -168,7 +169,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                                       const Icon(Icons.shield_outlined, color: Color(0xFF4CAF50), size: 16),
                                       const SizedBox(width: 8),
                                       Text(
-                                        "Tất cả thông báo đều được mã hóa an toàn",
+                                        context.l10n.notifSecurityEncrypted,
                                         style: TextStyle(
                                           color: TColor.secondaryTextOf(context),
                                           fontSize: 11,
@@ -219,18 +220,18 @@ class _NotificationsViewState extends State<NotificationsView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Đang thèm gì đó?",
-                            style: TextStyle(
+                          Text(
+                            context.l10n.notifCravingSomething,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           Text(
-                            "Khám phá món ngon gần bạn",
+                            context.l10n.notifDiscoverFoodNearYou,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 11,
                             ),
                           ),
@@ -257,11 +258,11 @@ class _NotificationsViewState extends State<NotificationsView> {
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Text("Đặt món", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded, size: 14),
+                          Text(context.l10n.notifOrderNow, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_rounded, size: 14),
                         ],
                       ),
                     ),
@@ -298,7 +299,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           child: Column(
             children: [
               Text(
-                "Thông Báo",
+                context.l10n.moreNotifications,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
@@ -308,7 +309,7 @@ class _NotificationsViewState extends State<NotificationsView> {
               ),
               if (unreadCount > 0)
                 Text(
-                  "$unreadCount thông báo mới",
+                  context.l10n.notifNewCount(unreadCount),
                   style: const TextStyle(
                     color: Color(0xFFFF5252),
                     fontSize: 11,
@@ -317,7 +318,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                 )
               else
                 Text(
-                  "Đã đọc tất cả",
+                  context.l10n.notifAllRead,
                   style: TextStyle(
                     color: TColor.secondaryTextOf(context),
                     fontSize: 11,
@@ -381,6 +382,109 @@ class _NotificationsViewState extends State<NotificationsView> {
     );
   }
 
+  String _getLocalizedGroupName(BuildContext context, String groupName) {
+    switch (groupName) {
+      case 'HÔM NAY':
+        return context.l10n.notifPeriodToday;
+      case 'TUẦN NÀY':
+        return context.l10n.notifPeriodThisWeek;
+      case 'TRƯỚC ĐÓ':
+      case 'CŨ HƠN':
+        return context.l10n.notifPeriodEarlier;
+      default:
+        return groupName;
+    }
+  }
+
+  String? _getLocalizedStatusTag(BuildContext context, String? tag) {
+    if (tag == null || tag.isEmpty) return null;
+    switch (tag.toUpperCase()) {
+      case 'HOAN_TAT':
+      case 'HOÀN TẤT':
+      case 'COMPLETED':
+        return context.l10n.notifTagCompleted;
+      case 'SAN_SANG':
+      case 'SẴN SÀNG':
+      case 'READY':
+      case 'READY_FOR_PICKUP':
+        return context.l10n.notifTagReady;
+      case 'DANG_CHUAN_BI':
+      case 'ĐANG CHUẨN BỊ':
+      case 'BẾP CHUẨN BỊ':
+      case 'PREPARING':
+        return context.l10n.notifTagPreparing;
+      case 'DANG_GIAO':
+      case 'ĐANG GIAO':
+      case 'DELIVERING':
+        return context.l10n.notifTagDelivering;
+      case 'THANH_TOAN':
+      case 'THANH TOÁN':
+      case 'THÀNH CÔNG':
+      case 'PAID':
+        return context.l10n.notifTagPaid;
+      case 'DA_HUY':
+      case 'ĐÃ HỦY':
+      case 'CANCELLED':
+        return context.l10n.notifTagCancelled;
+      default:
+        return tag;
+    }
+  }
+
+  String _getLocalizedTimeAgo(BuildContext context, NotificationModel item) {
+    if (item.createdAt != null) {
+      final diff = DateTime.now().difference(item.createdAt!);
+      if (diff.inSeconds < 60) {
+        return context.l10n.formatJustNow;
+      } else if (diff.inMinutes < 60) {
+        return context.l10n.formatMinutesAgo(diff.inMinutes);
+      } else if (diff.inHours < 24) {
+        return context.l10n.formatHoursAgo(diff.inHours);
+      } else {
+        return context.l10n.formatDaysAgo(diff.inDays);
+      }
+    }
+    return item.timeAgo;
+  }
+
+  String _getLocalizedTitle(BuildContext context, String rawTitle) {
+    final t = rawTitle.trim();
+    if (t == 'Thanh toán thành công') return context.l10n.notifTitlePaymentSuccess;
+    if (t == 'Đơn hàng hoàn tất') return context.l10n.notifTitleOrderCompleted;
+    if (t == 'Món ăn đã sẵn sàng') return context.l10n.notifTitleFoodReady;
+    if (t == 'Đang chuẩn bị món') return context.l10n.notifTitleFoodPreparing;
+    if (t.contains('xác nhận') || t.contains('nhận đơn')) return context.l10n.notifTitleOrderConfirmed;
+    if (t.contains('hủy')) return context.l10n.notifTitleOrderCancelled;
+    return rawTitle;
+  }
+
+  String _getLocalizedBody(BuildContext context, NotificationModel item) {
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    if (!isEn) return item.body;
+
+    final b = item.body;
+    final code = item.orderCode ?? (item.orderId != null ? '#DH-${item.orderId}' : '');
+
+    if (item.title.contains('Thanh toán thành công') || b.contains('xác nhận thanh toán thành công')) {
+      final amountMatch = RegExp(r'\(([\d\.]+[đ|k|VND]?)\)').firstMatch(b);
+      final amt = amountMatch != null ? ' ${amountMatch.group(0)}' : '';
+      return 'Order $code payment was confirmed$amt. The store is receiving your order.';
+    }
+    if (item.title.contains('hoàn tất') || b.contains('đã hoàn tất')) {
+      return 'Order $code is completed. Thank you for choosing our store!';
+    }
+    if (item.title.contains('sẵn sàng') || b.contains('đã sẵn sàng')) {
+      return 'Order $code is ready! Please arrive to pick up your food.';
+    }
+    if (item.title.contains('chuẩn bị') || b.contains('đang chuẩn bị')) {
+      return 'The store is currently preparing your order $code.';
+    }
+    if (item.title.contains('hủy') || b.contains('đã hủy') || b.contains('đã bị hủy')) {
+      return 'Order $code has been cancelled.';
+    }
+    return item.body;
+  }
+
   Widget _buildGroupHeader(String groupName, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -397,7 +501,7 @@ class _NotificationsViewState extends State<NotificationsView> {
             ),
             const SizedBox(width: 8),
             Text(
-              groupName,
+              _getLocalizedGroupName(context, groupName),
               style: TextStyle(
                 color: TColor.secondaryTextOf(context),
                 fontSize: 12,
@@ -411,7 +515,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           InkWell(
             onTap: _markAllAsRead,
             child: Text(
-              "Đánh dấu đã đọc",
+              context.l10n.notifMarkAllRead,
               style: TextStyle(
                 color: TColor.primary,
                 fontSize: 11,
@@ -525,7 +629,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    item.statusTag!,
+                                    _getLocalizedStatusTag(context, item.statusTag) ?? item.statusTag!,
                                     style: TextStyle(
                                       color: iconColor,
                                       fontSize: 10,
@@ -536,7 +640,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                                 const SizedBox(width: 8),
                               ],
                               Text(
-                                item.timeAgo,
+                                _getLocalizedTimeAgo(context, item),
                                 style: TextStyle(
                                   color: TColor.secondaryTextOf(context),
                                   fontSize: 10,
@@ -559,7 +663,7 @@ class _NotificationsViewState extends State<NotificationsView> {
 
                       // Title
                       Text(
-                        item.title,
+                        _getLocalizedTitle(context, item.title),
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
                           fontSize: 14,
@@ -570,7 +674,7 @@ class _NotificationsViewState extends State<NotificationsView> {
 
                       // Body
                       Text(
-                        item.body,
+                        _getLocalizedBody(context, item),
                         style: TextStyle(
                           color: TColor.secondaryTextOf(context),
                           fontSize: 12,

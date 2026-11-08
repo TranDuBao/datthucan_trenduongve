@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../common/service_call.dart';
 import '../../common_widget/custom_selection_sheet.dart';
 import '../../providers/language_provider.dart';
@@ -59,10 +60,12 @@ class _MoreViewState extends State<MoreView> {
 
   void _onStoreRejectedRealtime(dynamic data) {
     if (mounted) {
-      final reason = (data is Map && data['reason'] != null) ? data['reason'] : '';
+      final reason = (data is Map && data['reason'] != null) ? data['reason'].toString() : '';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(reason.isNotEmpty ? "Đơn đăng ký cửa hàng bị từ chối: $reason" : "Đơn đăng ký cửa hàng của bạn chưa được phê duyệt."),
+          content: Text(reason.isNotEmpty
+              ? context.l10n.storeRejectedReason(reason)
+              : context.l10n.storeRejectedDefault),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -118,11 +121,9 @@ class _MoreViewState extends State<MoreView> {
 
     CustomSelectionSheet.show<String>(
       context: context,
-      title: langProvider.tr('select_language'),
-      subtitle: langProvider.languageCode == 'vi'
-          ? "Lựa chọn ngôn ngữ hiển thị chính"
-          : "Select your primary display language",
-      confirmText: langProvider.tr('confirm'),
+      title: context.l10n.settingsSelectLanguage,
+      subtitle: context.l10n.moreSelectLanguageSubtitle,
+      confirmText: context.l10n.commonConfirm,
       initialValue: langProvider.languageCode,
       onConfirm: (val) {
         langProvider.setLanguage(val);
@@ -130,8 +131,8 @@ class _MoreViewState extends State<MoreView> {
       options: [
         SelectionOptionItem<String>(
           value: 'vi',
-          title: langProvider.tr('vietnamese'),
-          subtitle: langProvider.languageCode == 'vi' ? "Mặc định hệ thống" : "System default",
+          title: context.l10n.settingsVietnamese,
+          subtitle: context.l10n.moreLangViSubtitle,
           iconWidget: Container(
             width: 40,
             height: 40,
@@ -144,8 +145,8 @@ class _MoreViewState extends State<MoreView> {
         ),
         SelectionOptionItem<String>(
           value: 'en',
-          title: langProvider.tr('english'),
-          subtitle: langProvider.languageCode == 'vi' ? "Ngôn ngữ quốc tế" : "Global language",
+          title: context.l10n.settingsEnglish,
+          subtitle: context.l10n.moreLangEnSubtitle,
           iconWidget: Container(
             width: 40,
             height: 40,
@@ -166,15 +167,12 @@ class _MoreViewState extends State<MoreView> {
 
   void _showThemeBottomSheet(BuildContext context) {
     final themeProvider = context.read<ThemeProvider>();
-    final langProvider = context.read<LanguageProvider>();
 
     CustomSelectionSheet.show<ThemeMode>(
       context: context,
-      title: langProvider.tr('select_theme'),
-      subtitle: langProvider.languageCode == 'vi'
-          ? "Lựa chọn chế độ giao diện cho ứng dụng"
-          : "Choose app appearance theme mode",
-      confirmText: langProvider.tr('confirm'),
+      title: context.l10n.settingsSelectTheme,
+      subtitle: context.l10n.moreSelectThemeSubtitle,
+      confirmText: context.l10n.commonConfirm,
       initialValue: themeProvider.themeMode,
       onConfirm: (val) {
         themeProvider.setThemeMode(val);
@@ -182,8 +180,8 @@ class _MoreViewState extends State<MoreView> {
       options: [
         SelectionOptionItem<ThemeMode>(
           value: ThemeMode.light,
-          title: langProvider.tr('light_mode'),
-          subtitle: langProvider.languageCode == 'vi' ? "Giao diện sáng rực rỡ" : "Bright & vibrant interface",
+          title: context.l10n.settingsLightMode,
+          subtitle: context.l10n.moreThemeLightSubtitle,
           iconWidget: Container(
             width: 40,
             height: 40,
@@ -196,8 +194,8 @@ class _MoreViewState extends State<MoreView> {
         ),
         SelectionOptionItem<ThemeMode>(
           value: ThemeMode.dark,
-          title: langProvider.tr('dark_mode'),
-          subtitle: langProvider.languageCode == 'vi' ? "Tối màu diệu mắt, tiết kiệm pin" : "Easy on eyes, saves battery",
+          title: context.l10n.settingsDarkMode,
+          subtitle: context.l10n.moreThemeDarkSubtitle,
           iconWidget: Container(
             width: 40,
             height: 40,
@@ -210,8 +208,8 @@ class _MoreViewState extends State<MoreView> {
         ),
         SelectionOptionItem<ThemeMode>(
           value: ThemeMode.system,
-          title: langProvider.tr('system_mode'),
-          subtitle: langProvider.languageCode == 'vi' ? "Tự động đồng bộ cài đặt máy" : "Sync with OS system settings",
+          title: context.l10n.settingsSystemMode,
+          subtitle: context.l10n.moreThemeSystemSubtitle,
           iconWidget: Container(
             width: 40,
             height: 40,
@@ -233,23 +231,24 @@ class _MoreViewState extends State<MoreView> {
     final notifCount = context.watch<NotificationProvider>().unreadCount;
     final unreadSupportCount = context.watch<SupportProvider>().unreadTicketsCount;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
 
-    String currentThemeLabel = lang.tr('system_mode');
-    if (theme.themeMode == ThemeMode.light) currentThemeLabel = lang.tr('light_mode');
-    if (theme.themeMode == ThemeMode.dark) currentThemeLabel = "${lang.tr('dark_mode')} •";
+    String currentThemeLabel = l10n.settingsSystemMode;
+    if (theme.themeMode == ThemeMode.light) currentThemeLabel = l10n.settingsLightMode;
+    if (theme.themeMode == ThemeMode.dark) currentThemeLabel = "${l10n.settingsDarkMode} •";
 
     List moreArr = [
       {
         "index": "lang",
-        "name": lang.tr('language'),
-        "subtitle": lang.tr(lang.languageCode == 'vi' ? 'vietnamese' : 'english'),
+        "name": l10n.settingsLanguage,
+        "subtitle": lang.languageCode == 'vi' ? l10n.settingsVietnamese : l10n.settingsEnglish,
         "icon": Icons.language_rounded,
         "iconBg": const Color(0xFF3D271D),
         "iconColor": TColor.primary,
       },
       {
         "index": "theme",
-        "name": lang.tr('theme_mode'),
+        "name": l10n.settingsThemeMode,
         "subtitle": currentThemeLabel,
         "icon": Icons.palette_outlined,
         "iconBg": const Color(0xFF3D2D1B),
@@ -257,16 +256,16 @@ class _MoreViewState extends State<MoreView> {
       },
       {
         "index": "1",
-        "name": lang.tr('payment_details'),
-        "subtitle": lang.languageCode == 'vi' ? "Thẻ & ví điện tử" : "Cards & e-wallets",
+        "name": l10n.morePaymentDetails,
+        "subtitle": l10n.morePaymentDetailsSubtitle,
         "icon": Icons.credit_card_rounded,
         "iconBg": const Color(0xFF1B2A3D),
         "iconColor": const Color(0xFF42A5F5),
       },
       {
         "index": "2",
-        "name": lang.tr('my_order'),
-        "subtitle": lang.languageCode == 'vi' ? "Lịch sử và theo dõi đơn" : "History & tracking",
+        "name": l10n.moreMyOrder,
+        "subtitle": l10n.moreMyOrderSubtitle,
         "icon": Icons.local_mall_outlined,
         "iconBg": const Color(0xFF1B332B),
         "iconColor": const Color(0xFF4CAF50),
@@ -274,16 +273,16 @@ class _MoreViewState extends State<MoreView> {
       },
       {
         "index": "reservation",
-        "name": lang.languageCode == 'vi' ? "Đặt bàn của tôi" : "My Reservations",
-        "subtitle": lang.languageCode == 'vi' ? "Quản lý lịch hẹn & bàn ăn tại quán" : "Manage table bookings & schedules",
+        "name": l10n.moreReservations,
+        "subtitle": l10n.moreReservationsSubtitle,
         "icon": Icons.table_restaurant_rounded,
         "iconBg": const Color(0xFF1E3A2B),
         "iconColor": const Color(0xFF10B981),
       },
       {
         "index": "3",
-        "name": lang.tr('notifications'),
-        "subtitle": lang.languageCode == 'vi' ? "Ưu đãi & tin tức quan trọng" : "Deals & important news",
+        "name": l10n.moreNotifications,
+        "subtitle": l10n.moreNotificationsSubtitle,
         "icon": Icons.notifications_none_rounded,
         "iconBg": const Color(0xFF3B1E2B),
         "iconColor": const Color(0xFFFF5252),
@@ -291,24 +290,24 @@ class _MoreViewState extends State<MoreView> {
       },
       {
         "index": "4",
-        "name": lang.tr('inbox'),
-        "subtitle": lang.languageCode == 'vi' ? "Kho voucher & mã giảm giá" : "Vouchers & promo codes",
+        "name": l10n.moreInbox,
+        "subtitle": l10n.moreInboxSubtitle,
         "icon": Icons.confirmation_number_outlined,
         "iconBg": const Color(0xFF3D271D),
         "iconColor": const Color(0xFFFC6011),
       },
       {
         "index": "become_store",
-        "name": "Trở thành cửa hàng",
-        "subtitle": UserRoleHelper.isMerchant ? "Quản lý & thông tin đối tác" : "Đăng ký bán hàng cùng Food Route",
+        "name": l10n.moreBecomeStore,
+        "subtitle": UserRoleHelper.isMerchant ? l10n.morePartnerInfoSubtitle : l10n.moreBecomeStoreSubtitle,
         "icon": Icons.storefront_outlined,
         "iconBg": const Color(0xFF3D271D),
         "iconColor": const Color(0xFFFC6011),
       },
       {
         "index": "support",
-        "name": lang.languageCode == 'vi' ? "Trung tâm hỗ trợ" : "Support Center",
-        "subtitle": lang.languageCode == 'vi' ? "Hotline, FAQ & Góp ý phản hồi" : "Hotline, FAQ & Feedback",
+        "name": l10n.moreSupportCenter,
+        "subtitle": l10n.moreSupportCenterSubtitle,
         "icon": Icons.headset_mic_outlined,
         "iconBg": const Color(0xFF1E2A3A),
         "iconColor": const Color(0xFF38BDF8),
@@ -316,16 +315,16 @@ class _MoreViewState extends State<MoreView> {
       },
       {
         "index": "5",
-        "name": lang.tr('about_us'),
-        "subtitle": lang.languageCode == 'vi' ? "Phiên bản v2.4.0 • Điều khoản" : "Version v2.4.0 • Terms",
+        "name": l10n.moreAboutUs,
+        "subtitle": l10n.moreAboutUsSubtitle,
         "icon": Icons.info_outline_rounded,
         "iconBg": const Color(0xFF222638),
         "iconColor": const Color(0xFF7E57C2),
       },
       {
         "index": "6",
-        "name": lang.tr('logout'),
-        "subtitle": lang.languageCode == 'vi' ? "Thoát tài khoản hiện tại" : "Sign out current account",
+        "name": l10n.moreLogout,
+        "subtitle": l10n.moreLogoutSubtitle,
         "icon": Icons.logout_rounded,
         "iconBg": const Color(0xFF3D1B1B),
         "iconColor": const Color(0xFFFF3D00),
@@ -336,10 +335,10 @@ class _MoreViewState extends State<MoreView> {
     if (UserRoleHelper.isMerchant) {
       moreArr.insert(0, {
         "index": "store_owner",
-        "name": "Giao diện Cửa Hàng",
-        "subtitle": "Quản lý đơn hàng, thực đơn & doanh thu",
+        "name": l10n.moreRestaurantPortal,
+        "subtitle": l10n.moreRestaurantPortalSubtitle,
         "icon": Icons.storefront_rounded,
-        "iconBg": const Color(0xFFFC6011).withOpacity(0.15),
+        "iconBg": const Color(0xFFFC6011).withValues(alpha: 0.15),
         "iconColor": const Color(0xFFFC6011),
       });
     }
@@ -359,7 +358,7 @@ class _MoreViewState extends State<MoreView> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      lang.tr('more'),
+                      l10n.moreTitle,
                       style: TextStyle(
                         color: TColor.primaryTextOf(context),
                         fontSize: 24,
@@ -484,9 +483,8 @@ class _MoreViewState extends State<MoreView> {
                             context,
                             MaterialPageRoute(builder: (context) => const NotificationsView()),
                           );
-                          if (mounted) {
-                            context.read<NotificationProvider>().refreshAll();
-                          }
+                          if (!context.mounted) return;
+                          context.read<NotificationProvider>().refreshAll();
                           break;
                         case "4":
                           Navigator.push(

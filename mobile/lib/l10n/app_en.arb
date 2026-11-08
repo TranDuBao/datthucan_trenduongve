@@ -1,0 +1,1154 @@
+{
+  "@@locale": "en",
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "commonSave": "Save",
+  "commonDelete": "Delete",
+  "commonSuccess": "Success",
+  "commonError": "Error",
+  "commonRetry": "Retry",
+  "commonLoading": "Loading...",
+  "commonSearch": "Search",
+  "commonClose": "Close",
+  "commonBack": "Back",
+  "commonNext": "Continue",
+  "commonGetStarted": "Get Started",
+  "commonSeeAll": "See All",
+  "commonAll": "All",
+  "commonViewDetail": "View Details",
+  "commonApply": "Apply",
+  "commonEdit": "Edit",
+  "commonShare": "Share",
+  "commonCopy": "Copy",
+  "commonCopied": "Copied to clipboard",
+  "commonUnderDevelopment": "Feature under development",
+  "commonNotification": "Notifications",
+  "commonQuantity": "Quantity",
+  "commonNote": "Note",
+  "navHome": "Home",
+  "navMenu": "Menu",
+  "navOffer": "Stores",
+  "navProfile": "Profile",
+  "navMore": "More",
+  "navCart": "Cart",
+  "navMyOrder": "My Orders",
+  "navNotifications": "Notifications",
+  "navInbox": "Vouchers",
+  "orderModeQuickStop": "Quick stop",
+  "orderModePreOrder": "Pre-order",
+  "orderModeDineIn": "Dine-in",
+  "orderModeReserveTable": "Reserve a table",
+  "orderStatusUnpaid": "Unpaid",
+  "orderStatusAwaitingConfirmation": "Awaiting Confirmation",
+  "orderStatusConfirmed": "Confirmed",
+  "orderStatusPreparing": "Preparing",
+  "orderStatusReadyForPickup": "Ready for Pickup",
+  "orderStatusCompleted": "Completed",
+  "orderStatusCancelled": "Cancelled",
+  "reservationStatusPending": "Awaiting Confirmation",
+  "reservationStatusConfirmed": "Confirmed",
+  "reservationStatusCompleted": "Completed",
+  "reservationStatusCancelled": "Cancelled",
+  "paymentMethodCash": "Cash on pickup",
+  "paymentMethodVietQR": "VietQR bank transfer",
+  "paymentMethodVNPay": "VNPay e-wallet",
+  "paymentMethodMoMo": "MoMo e-wallet",
+  "onboardingTitle1": "Eats Along Your Route",
+  "onboardingSubtitle1": "Discover top delicious food spots and order ahead,\nconveniently right along your travel route",
+  "onboardingTitle2": "Hot & Ready When You Arrive",
+  "onboardingSubtitle2": "Freshly prepared right as you pull up to pick up,\nmaximize your time with zero waiting",
+  "onboardingTitle3": "Smart Route & Pickup",
+  "onboardingSubtitle3": "Set your destination and track orders in real time,\nalways ready on every journey you make",
+  "onboardingPinStart": "Start",
+  "onboardingPinStore": "Food store",
+  "onboardingPinHome": "Home",
+  "onboardingStorePickup1Min": "1 min pickup",
+  "onboardingStorePickupDone": "✔ Picked up",
+  "authWelcome": "Welcome",
+  "authWelcomeBack": "Welcome Back",
+  "authLogin": "Login",
+  "authSignUp": "Sign Up",
+  "authLogout": "Logout",
+  "authLoginTitle": "Login",
+  "authLoginSubtitle": "Sign in to explore thousands of delicious food spots",
+  "authSignUpTitle": "Create New Account",
+  "authSignUpSubtitle": "Sign up to explore thousands of delicious food spots",
+  "authFullName": "Full Name",
+  "authYourEmail": "Your Email",
+  "authAccountOrEmail": "Account or Email",
+  "authPhone": "Phone Number",
+  "authAddress": "Address",
+  "authPassword": "Password",
+  "authConfirmPassword": "Confirm Password",
+  "authForgotPassword": "Forgot Password?",
+  "authResetPassword": "Reset Password",
+  "authRememberMe": "Remember me",
+  "authOrLoginWith": "OR LOGIN WITH",
+  "authLoginGoogle": "Google",
+  "authLoginApple": "Apple",
+  "authDontHaveAccount": "Don't have an Account? ",
+  "authAlreadyHaveAccount": "Already have an Account? ",
+  "authRegisterNow": "Sign Up Now",
+  "authLoginNow": "Login Now",
+  "authLogoutConfirmTitle": "Logout",
+  "authLogoutConfirmMessage": "Are you sure you want to logout?",
+  "authEmailRequired": "Please enter your email",
+  "authPasswordRequired": "Please enter your password",
+  "authAccountAndPasswordRequired": "Please enter account and password",
+  "authPasswordMismatch": "Passwords do not match",
+  "authAgreeTerms": "I agree to the Terms of Service & Privacy Policy",
+  "authNameRequired": "Please enter your full name",
+  "authEmailInvalid": "Please enter a valid email address",
+  "authPhoneRequired": "Please enter your phone number",
+  "authAddressRequired": "Please enter your address",
+  "authPasswordMinLength": "Password must be at least 6 characters",
+  "authAgreeTermsRequired": "Please agree to the terms of service to continue",
+  "authSignUpSuccess": "Registration successful!",
+  "authSignUpFailed": "Registration failed. Please try again!",
+  "homeDeliverTo": "DELIVER TO",
+  "homePickupPoint": "PICKUP POINT",
+  "homePickupHint": "Enter pickup location...",
+  "homeDestination": "DESTINATION",
+  "homeDestinationHint": "Choose destination...",
+  "homeFoodSearchHint": "Search food, spots along route...",
+  "homeMyLocation": "My Location",
+  "homeClearRoute": "Clear route",
+  "homeNavigatingToStore": "Navigating to: {storeName}",
+  "@homeNavigatingToStore": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNavigatingWithOrder": "Navigating to: {storeName} (Order #{orderCode})",
+  "@homeNavigatingWithOrder": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      },
+      "orderCode": {
+        "type": "String"
+      }
+    }
+  },
+  "homePickedUpContinue": "Picked up at {storeName} • Continue to {destName}",
+  "@homePickedUpContinue": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      },
+      "destName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCategories": "Categories",
+  "homePopularRestaurants": "Popular Spots",
+  "homeNearbyRestaurants": "Spots Near You",
+  "homeSuggestedStops": "Suggested Stops Along Route",
+  "homeFoodSearchAlongRoute": "SEARCH FOOD ALONG ROUTE",
+  "homeSubtextTravel": "{minutes} mins travel",
+  "@homeSubtextTravel": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSubtextQuickPickup": "Quick pickup",
+  "homeSubtextPreOrderPrep": "~45 mins prep",
+  "homeSubtextDineInRelax": "Dine comfortably",
+  "menuAddToCart": "Add to Cart",
+  "menuItemDetails": "Dish Details",
+  "menuRestaurantDetails": "Store Info",
+  "menuSpecialInstructions": "Instructions for Store",
+  "menuSpecialInstructionsHint": "e.g. less sugar, no spicy, separate ice...",
+  "menuSize": "Size / Portion",
+  "menuToppings": "Extra Toppings",
+  "menuReviews": "Dish Reviews",
+  "menuAddedToCart": "Added to cart successfully",
+  "cartTitle": "Cart & Pre-order",
+  "cartEmptyTitle": "Your cart is empty",
+  "cartEmptySubtitle": "Explore menus and add your favorite dishes",
+  "cartExploreNow": "Explore now",
+  "cartPickupTime": "Estimated pickup time",
+  "cartPickupToday": "Pick up today",
+  "cartPickupOtherDay": "Pick up another day",
+  "cartSelectPickupTime": "Select pickup time",
+  "cartVoucher": "Discount Voucher",
+  "cartSelectVoucher": "Select or enter voucher code",
+  "cartSubtotal": "Subtotal",
+  "cartDiscount": "Voucher discount",
+  "cartTotal": "Total payment",
+  "cartProceedCheckout": "Proceed to checkout",
+  "checkoutTitle": "Order Confirmation",
+  "checkoutPickupTime": "Pickup time",
+  "checkoutPaymentMethod": "Payment method",
+  "checkoutSelectedItems": "Selected items",
+  "checkoutOrderNotes": "Order notes",
+  "checkoutPlaceOrder": "Place Order Now",
+  "checkoutSuccessTitle": "Order Placed Successfully!",
+  "checkoutSuccessSubtitle": "Your order has been sent to the store. It will be ready right when you arrive.",
+  "checkoutViewOrder": "View Order",
+  "orderHistoryTitle": "My Orders",
+  "orderHistoryTabActive": "Active",
+  "orderHistoryTabCompleted": "History",
+  "orderHistoryEmpty": "No orders yet",
+  "orderDetailTitle": "Order Details",
+  "orderCode": "Order Code",
+  "orderPickupEstimate": "Estimated pickup time",
+  "orderCancelReason": "Cancellation reason:",
+  "orderReviewButton": "Review",
+  "orderReorderButton": "Reorder",
+  "orderCancelButton": "Cancel order",
+  "orderStepperStep1": "Awaiting Confirmation",
+  "orderStepperStep2": "Confirmed",
+  "orderStepperStep3": "Preparing",
+  "orderStepperStep4": "Ready for Pickup",
+  "orderStepperStep5": "Completed",
+  "orderStepperUnpaidBanner": "Unpaid (Awaiting VietQR payment)",
+  "orderStepperUnpaidNote": "The store will start preparing once your payment is completed.",
+  "orderStepperCancelledBanner": "Order has been cancelled",
+  "settingsTitle": "Settings",
+  "settingsLanguage": "Language",
+  "settingsThemeMode": "Theme Mode",
+  "settingsSelectLanguage": "Select Language",
+  "settingsSelectTheme": "Select Theme Mode",
+  "settingsVietnamese": "Tiếng Việt",
+  "settingsEnglish": "English",
+  "settingsLightMode": "Light Mode",
+  "settingsDarkMode": "Dark Mode",
+  "settingsSystemMode": "System Default",
+  "moreTitle": "More",
+  "moreLanguageSubtitle": "Display language",
+  "morePaymentDetails": "Payment Details",
+  "morePaymentDetailsSubtitle": "Cards & e-wallets",
+  "moreMyOrder": "My Orders",
+  "moreMyOrderSubtitle": "History & tracking",
+  "moreReservations": "My Reservations",
+  "moreReservationsSubtitle": "Manage table bookings & schedules",
+  "moreNotifications": "Notifications",
+  "moreNotificationsSubtitle": "Deals & important news",
+  "moreInbox": "Vouchers for me",
+  "moreInboxSubtitle": "Vouchers & promo codes",
+  "moreBecomeStore": "Become a Store Partner",
+  "moreBecomeStoreSubtitle": "Register to sell on Food Route",
+  "morePartnerInfoSubtitle": "Partner management & info",
+  "moreRestaurantPortal": "Restaurant Portal",
+  "moreRestaurantPortalSubtitle": "Manage orders, menu & revenue",
+  "moreSupportCenter": "Support Center",
+  "moreSupportCenterSubtitle": "Hotline, FAQ & Feedback",
+  "moreAboutUs": "About Us",
+  "moreAboutUsSubtitle": "Version v2.4.0 • Terms",
+  "moreLogout": "Logout",
+  "moreLogoutSubtitle": "Sign out current account",
+  "moreSelectLanguageSubtitle": "Select your primary display language",
+  "moreSelectThemeSubtitle": "Choose app appearance theme mode",
+  "moreLangViSubtitle": "System default",
+  "moreLangEnSubtitle": "Global language",
+  "moreThemeLightSubtitle": "Bright & vibrant interface",
+  "moreThemeDarkSubtitle": "Easy on eyes, saves battery",
+  "moreThemeSystemSubtitle": "Sync with OS system settings",
+  "storeRejectedReason": "Store registration rejected: {reason}",
+  "@storeRejectedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "storeRejectedDefault": "Your store registration has not been approved.",
+  "menuConvenientPickup": "CONVENIENT PICKUP",
+  "menuLocating": "Locating...",
+  "menuSearchFoodHint": "Search beef pho, broken rice, milk tea...",
+  "menuFeaturedTitle": "Featured Restaurant Menu",
+  "menuGroupCount": "{count, plural, =1{1 Category} other{{count} Categories}}",
+  "@menuGroupCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuReadyPickupSubtitle": "Ready packed, 1-minute quick pickup",
+  "menuFreshCookedSubtitle": "Freshly cooked • 24h traditional spices",
+  "menuServingItemCount": "{count, plural, =1{1 item available} other{{count} items available}}",
+  "@menuServingItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuNoCategories": "No categories found in database",
+  "menuReloadButton": "Reload Menu",
+  "menuRoutePickupTitle": "Convenient Route Pickup",
+  "menuViewMap": "Map",
+  "menuDistanceForm": "From {dist} away • Quick prep from {min}m",
+  "@menuDistanceForm": {
+    "placeholders": {
+      "dist": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "storeRouteHeader": "ROUTE STORES",
+  "storeNearbyTitle": "Stores Near You",
+  "storeNoFound": "No stores found in this category",
+  "storeReloadButton": "Reload Store List",
+  "storeFilterAll": "All",
+  "cartPickupNote": "Food will be prepared and ready by the store at the selected time.",
+  "cartShippingFee": "Delivery Fee",
+  "cartShippingFree": "0đ (Self pickup)",
+  "cartPickupTimeInvalid": "Pickup time must be at least 5 minutes from now!",
+  "cartProceedConfirm": "Confirm Order & Pay",
+  "voucherTabAll": "All",
+  "voucherTabDiscount": "Discount Codes",
+  "voucherTabSaved": "Saved Vouchers",
+  "voucherEmptyWallet": "No vouchers in your wallet yet",
+  "voucherEmptyWalletSubtitle": "Tap 'Collect' to save discount codes to wallet",
+  "voucherEmptyAvailable": "No available vouchers right now",
+  "voucherEmptyAvailableSubtitle": "All vouchers may have been collected or expired",
+  "voucherCodeLabel": "Code",
+  "voucherExpiryLabel": "Expires",
+  "voucherStatusSaved": "Saved",
+  "voucherActionCollect": "Collect",
+  "voucherCollectedSuccess": "Code {code} saved to your wallet!",
+  "@voucherCollectedSuccess": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherCollectFailed": "Failed to save voucher",
+  "voucherSelectTitle": "Select Promotion & Voucher",
+  "voucherInputHint": "Enter promo code...",
+  "voucherInputRequired": "Please enter a voucher code",
+  "voucherInvalid": "Invalid voucher code",
+  "singleStoreWarningTitle": "Only 1 store per order",
+  "singleStoreWarningPart1": "You have items from ",
+  "singleStoreWarningPart2": " in your cart.\n\nPlease complete checkout before ordering from ",
+  "singleStoreWarningCartBadge": "Cart has {count} items ({price})",
+  "@singleStoreWarningCartBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "singleStoreWarningPayExisting": "Checkout current cart first",
+  "singleStoreWarningClearAndOrder": "Clear cart & order from new store",
+  "orderCancelledTitle": "Order has been cancelled",
+  "orderCancelledDefaultMsg": "Unpaid order has been successfully cancelled.\nNo refund transaction incurred.",
+  "orderCancelledBackHome": "Back to Home",
+  "orderCancelledViewOrder": "View Orders",
+  "orderEnjoyMealTitle": "Enjoy Your Meal!",
+  "orderEnjoyMealSubtitle": "Picked up successfully. Have a safe and pleasant journey!",
+  "orderEnjoyMealContinue": "Complete & Continue Journey",
+  "orderEnjoyMealReviewMap": "Review map (if tapped by mistake)",
+  "modalFeedbackThanksTitle": "Thank you!",
+  "modalFeedbackThanksMessage": "Your feedback has been recorded. Food Route team will always strive to improve and provide the best service!",
+  "modalFeedbackBadge": "FEEDBACK RECORDED",
+  "profilePaymentDetails": "Payment Details",
+  "profileAboutUs": "About Us",
+  "profileChangeAddress": "Change Address",
+  "formatItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@formatItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatMinuteCount": "{count, plural, =1{1 min} other{{count} mins}}",
+  "@formatMinuteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatTableCount": "{count, plural, =1{1 table} other{{count} tables}}",
+  "@formatTableCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatJustNow": "Just now",
+  "formatMinutesAgo": "{count} mins ago",
+  "@formatMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatHoursAgo": "{count} hours ago",
+  "@formatHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatDaysAgo": "{count} days ago",
+  "@formatDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartSelectOrInputVoucher": "Select or enter Voucher code",
+  "cartVoucherDirectDiscount": "Direct discount for pre-order",
+  "cartVoucherAppliedDiscount": "Discounted -{amount}",
+  "@cartVoucherAppliedDiscount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "storeStatusOpen": "Open",
+  "storeStatusClosed": "Closed",
+  "storeDineInReservation": "Reserve a table (Dine-in)",
+  "storeTabAll": "All",
+  "storeTabMenu": "Menu",
+  "storeEmptyItems": "No food items in this restaurant yet",
+  "storeFloatingCartTotal": "Total payment ({count, plural, =1{1 item} other{{count} items}})",
+  "@storeFloatingCartTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeFloatingOrderNow": "Order Now",
+  "quickCatDiscount50": "50% Off Dishes",
+  "quickCatBobaCoffee": "Milk Tea / Coffee",
+  "quickCatHotNoodles": "Hot Pho & Noodles",
+  "quickCatHotLunch": "Hot Lunch Rice",
+  "quickCatBanhMiFast": "Banh Mi & Fast Food",
+  "quickCatSnacks": "Snacks & Sides",
+  "quickCatEatClean": "Eat Clean Healthy",
+  "quickCatPickup0d": "0Đ Route Pickup",
+  "menuFilteringBy": "Filtering by: {category} ({count, plural, =1{1 item} other{{count} items}})",
+  "@menuFilteringBy": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuSearchResultsCount": "Results for '{query}' ({count, plural, =1{1 item} other{{count} items}})",
+  "@menuSearchResultsCount": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuClearFilter": "Clear filter",
+  "storeFilterPho": "Pho",
+  "storeFilterNoodles": "Noodles",
+  "storeFilterRice": "Rice",
+  "storeFilterCoffee": "Coffee",
+  "storeFilterMilkTea": "Milk Tea",
+  "storeFilterPastry": "Pastry",
+  "storeFilterBanhMi": "Banh Mi",
+  "storeFilterBirthdayCake": "Birthday Cake",
+  "storeFilterIceCream": "Ice Cream",
+  "storeBadgeRouteDiscount10k": "10K ROUTE OFFER",
+  "storePrepTime15to20": "15-20 mins",
+  "storeFeaturedDishes": "Featured dishes:",
+  "storeGiftRoutePickup": "Pre-order for route pickup",
+  "storeViewMenu": "View menu",
+  "storeCuisineVietnamese": "Vietnamese food",
+  "storeRouteSpecialty": "Route specialty",
+  "storeRatingsCount": "{count, plural, =1{(1 Rating)} other{({count} Ratings)}}",
+  "@storeRatingsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paymentOptionsTitle": "Payment Options",
+  "paymentOptionsSubtitle": "Choose your default e-wallet or online payment gateway when placing pre-orders.",
+  "paymentCashlessBannerTitle": "Online Payment (Cashless)",
+  "paymentCashlessBannerSubtitle": "All Pre-Order meals are automatically processed and verified via e-wallet.",
+  "paymentGatewaysSectionTitle": "E-WALLETS & PAYMENT GATEWAYS",
+  "paymentGatewaysAvailable": "{count, plural, =1{1 GATEWAY AVAILABLE} other{{count} GATEWAYS AVAILABLE}}",
+  "@paymentGatewaysAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paymentPciSecurityFootnote": "PCI-DSS Level 1 Security & 256-bit SSL Encryption",
+  "paymentReconciliationFootnote": "Transactions are automatically verified directly through payment gateways",
+  "paymentHeaderSslSub": "Secured with 256-bit SSL encryption",
+  "paymentDefaultToast": "Selected {name} as your default payment wallet",
+  "@paymentDefaultToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentTagRecommended": "RECOMMENDED",
+  "paymentTagPopular": "POPULAR",
+  "paymentTagConvenient": "CONVENIENT",
+  "paymentTagNationwide": "NATIONWIDE",
+  "paymentVietqrSub": "Scan 24/7 bank QR code with automated 3-second instant confirmation.",
+  "paymentMomoSub": "One-touch payment via MoMo e-wallet or linked MoMo QR code.",
+  "paymentZaloPaySub": "Fast and secure checkout via ZaloPay & Zalo e-wallet app.",
+  "paymentVnpaySub": "National payment gateway, scan directly from all banking applications.",
+  "addCardTitle": "Add Credit/Debit Card",
+  "addCardNumberHint": "Card Number",
+  "addCardExpiryLabel": "Expiry",
+  "addCardMonthHint": "MM",
+  "addCardYearHint": "YYYY",
+  "addCardSecurityCodeHint": "Card Security Code (CVV/CVC)",
+  "addCardFirstNameHint": "First Name",
+  "addCardLastNameHint": "Last Name",
+  "addCardRemoveAnytime": "You can remove this card at anytime",
+  "addCardButton": "Add Card",
+  "orderConfirmCancelTitle": "Confirm Order Cancellation",
+  "orderConfirmCancelContent": "Are you sure you want to cancel order #{id}? This action cannot be undone.",
+  "@orderConfirmCancelContent": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderCancelNotAllowed": "Order is at Step {stepNum} (Kitchen preparing). Cannot cancel at this stage!",
+  "@orderCancelNotAllowed": {
+    "placeholders": {
+      "stepNum": {
+        "type": "int"
+      }
+    }
+  },
+  "orderCancellingProgress": "Cancelling order...",
+  "orderUnpaidSectionTitle": "AWAITING PAYMENT ({count, plural, =1{1 ORDER} other{{count} ORDERS}})",
+  "@orderUnpaidSectionTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderUnpaidSectionSub": "Store has not accepted order",
+  "orderPreparingSectionTitle": "PREPARING & PICKUP ({count, plural, =1{1 ORDER} other{{count} ORDERS}})",
+  "@orderPreparingSectionTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderPreparingSectionSub": "Live updates",
+  "orderCompletedSectionTitle": "Picked up order history",
+  "orderCancelledSectionTitle": "Cancelled orders",
+  "orderContactRestaurant": "Contact restaurant",
+  "orderCallNow": "Call now",
+  "orderCallClose": "Close",
+  "notifCravingSomething": "Craving something?",
+  "notifDiscoverFoodNearYou": "Discover delicious meals near you",
+  "notifOrderNow": "Order now",
+  "notifAllRead": "All caught up",
+  "notifNewCount": "{count, plural, =1{1 new notification} other{{count} new notifications}}",
+  "@notifNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPeriodToday": "TODAY",
+  "notifPeriodEarlier": "EARLIER",
+  "notifMarkAllRead": "Mark all as read",
+  "notifTabAll": "All",
+  "notifTabOrders": "Orders",
+  "notifTabPromos": "Deals",
+  "notifTabSystem": "System",
+  "notifEmpty": "You have no notifications yet",
+  "notifSecurityEncrypted": "All notifications are securely encrypted",
+  "voucherRemaining": "Remaining: {qty}/{total}",
+  "@voucherRemaining": {
+    "placeholders": {
+      "qty": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherRewardsSubtitle": "Food Route Rewards & Deals ({count, plural, =1{1 available} other{{count} available}})",
+  "@voucherRewardsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherUseNow": "USE NOW",
+  "supportHeroTitle": "Help Center",
+  "supportHeroDesc": "Food Route is always ready to assist and answer any of your questions.",
+  "supportSecIncidentChat": "Report Incident & Live Chat",
+  "supportSecIncidentChatSub": "Direct conversation with Admin support team",
+  "supportSecDirectContact": "Direct Contact",
+  "supportSecDirectContactSub": "Dedicated customer care service team",
+  "supportSecFaqFeedback": "FAQ & Quick Help",
+  "supportSecFaqFeedbackSub": "Find answers or send feedback",
+  "supportViewTickets": "My Support Tickets",
+  "supportCreateTicket": "Create New Ticket",
+  "supportCustomerHotline": "Customer Care Hotline",
+  "supportOnlineEmail": "Online Support Email",
+  "supportFaqTitle": "Frequently Asked Questions (FAQ)",
+  "supportFeedbackTitle": "Send Your Feedback",
+  "supportDialError": "Unable to launch phone dialer. Copied hotline {phone} to clipboard.",
+  "@supportDialError": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "supportCopyEmailSuccess": "Copied support email ({email}) to clipboard.",
+  "@supportCopyEmailSuccess": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "supportFeedbackTopic": "Feedback topic",
+  "supportFeedbackInputTitle": "Title",
+  "supportFeedbackDetail": "Detailed content",
+  "supportFeedbackAttachImages": "Attach images",
+  "supportFeedbackSubmit": "Submit feedback",
+  "supportFeedbackThanksTitle": "Thank you!",
+  "supportFeedbackMaxImages": "Maximum 3 images allowed.",
+  "supportFeedbackUploadFailed": "Image upload failed. Please try again!",
+  "supportFeedbackFailedMsg": "Failed to send feedback",
+  "supportFaqSearchHint": "Search questions...",
+  "supportFaqEmpty": "No matching questions found",
+  "aboutCoreValues": "Core Values",
+  "aboutStandard5Star": "5-Star Standard",
+  "aboutStoreCommitment": "Our Commitment",
+  "aboutVersionPrefix": "Version {version} • FoodRoute Official",
+  "@aboutVersionPrefix": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutCopyrightDefault": "© 2026 FoodRoute Inc. All rights reserved.",
+  "storeStatusTitle": "Partner Registration Status",
+  "storeStatusReviewing": "Under Review",
+  "storeStatusApproved": "Approved",
+  "storeStatusRejected": "Not Approved",
+  "storeStatusActionManage": "Enter Store Management",
+  "storeStatusActionReapply": "Resubmit Registration",
+  "supportMyTicketsTitle": "Your Support Tickets",
+  "supportNewReportBtn": "New Report",
+  "supportStatusNew": "New",
+  "supportStatusProcessing": "Processing",
+  "supportStatusResolved": "Resolved",
+  "supportStatusClosed": "Closed",
+  "supportNoTicketsTitle": "No support tickets yet",
+  "supportNoTicketsDesc": "If you encounter any issues with orders or the app, tap \"New Report\" below for direct assistance.",
+  "supportNewMessagesCount": "{count} new messages",
+  "@supportNewMessagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportCreateTitle": "Report an Issue",
+  "supportCreateIssueTypeLabel": "Issue Category *",
+  "supportIssueOrder": "Order",
+  "supportIssuePayment": "Payment",
+  "supportIssueRestaurant": "Restaurant",
+  "supportIssueAppBug": "App Bug",
+  "supportIssueOther": "Other",
+  "supportOrderIdRelatedLabel": "Related Order ID (Optional)",
+  "supportOrderIdRelatedHint": "e.g. 1234",
+  "supportIssueDescLabel": "Detailed Description *",
+  "supportIssueDescHint": "Please describe the problem clearly so our team can assist you quickly...",
+  "supportIssueDescMinLength": "Please describe the issue (at least 5 characters)",
+  "supportIssuePhotosLabel": "Illustrative Photos",
+  "supportIssuePhotosCount": "{count}/3 photos",
+  "@supportIssuePhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportAddPhoto": "Add photo",
+  "supportCreateSubmitBtn": "Submit Report & Start Chat",
+  "supportChatHeader": "Support #{id}",
+  "@supportChatHeader": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "supportChatClosedNotice": "This support ticket is closed.",
+  "supportChatSenderYou": "You",
+  "supportChatSenderAdmin": "Food Route Admin",
+  "supportChatStatusSeen": "Seen",
+  "supportChatStatusSent": "Sent",
+  "supportChatInputHint": "Type your message...",
+  "supportChatInputClosedHint": "Support ticket is closed",
+  "orderTabProcessing": "Processing",
+  "orderTabCompleted": "Completed",
+  "orderCompletedCountBadge": "{count} completed",
+  "@orderCompletedCountBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderEmptyProcessing": "No processing orders yet",
+  "orderStepPlaced": "Placed",
+  "orderStepConfirmed": "Confirmed",
+  "orderStepPreparing": "Preparing",
+  "orderStepReady": "Ready",
+  "orderStepPickedUp": "Picked up",
+  "orderSelfPickup": "Self pickup",
+  "orderTotalLabel": "Total",
+  "orderCancelBtn": "✕ Cancel",
+  "orderStepTitlePlaced": "Step 1: Order placed",
+  "orderStepSubPlaced": "Store is receiving order",
+  "orderStepTitleConfirmed": "Step 2: Store confirmed",
+  "orderStepSubConfirmedPickup": "Est. pickup: {time}",
+  "@orderStepSubConfirmedPickup": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "orderStepSubConfirmedApproved": "Store approved order",
+  "orderStepTitlePreparing": "Step 3: Preparing food",
+  "orderStepSubPreparing": "Kitchen is preparing",
+  "orderStepTitleReady": "Step 4: Ready for pickup",
+  "orderStepSubReady": "Ready to pick up now",
+  "orderStatusBadgePickedUp": "● Picked up",
+  "orderStatusBadgeCancelled": "● Cancelled",
+  "orderReviewBtn": "Review",
+  "orderReviewedBtn": "Reviewed",
+  "orderReorderBtn": "Reorder",
+  "checkoutPreOrderTitle": "Confirm Pre-Order",
+  "checkoutPickupTimeScheduled": "Pickup Time",
+  "checkoutPayWithVietQR": "Pay with VietQR / PayOS",
+  "checkoutDishSubtotal": "Items subtotal",
+  "checkoutDiscountWithCode": "Discount ({code})",
+  "@checkoutDiscountWithCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutDeliveryFee": "Delivery fee",
+  "checkoutFreeSelfPickup": "0đ (Self pickup)",
+  "checkoutTotalPayment": "Total payment",
+  "checkoutCompleteOrder": "Complete Order",
+  "vietqrPaymentTitle": "VietQR / PayOS Payment",
+  "vietqrOrderCodeAmount": "Order ID: #DH-{id} • {amount}đ",
+  "@vietqrOrderCodeAmount": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "vietqrBank": "Bank",
+  "vietqrAccountNumber": "Account Number",
+  "vietqrAccountName": "Account Holder",
+  "vietqrTransferContent": "Transfer Memo",
+  "vietqrExactMemoNotice": "Please keep the exact transfer memo for the system to automatically verify your order.",
+  "vietqrAutoDetecting": "Automatically verifying payment...",
+  "vietqrCancelOrderBtn": "Cancel order",
+  "vietqrCancelDialogTitle": "Cancel order?",
+  "vietqrCancelDialogDesc": "Order #{id} ({amount}đ) will be cancelled and cannot be restored.",
+  "@vietqrCancelDialogDesc": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "vietqrContinuePaymentBtn": "Continue Payment",
+  "vietqrConfirmCancelBtn": "Confirm Cancel",
+  "vietqrCancelFailed": "Failed to cancel order. Please try again.",
+  "notifPeriodThisWeek": "THIS WEEK",
+  "notifTitlePaymentSuccess": "Payment Successful",
+  "notifTitleOrderCompleted": "Order Completed",
+  "notifTitleFoodReady": "Food is Ready",
+  "notifTitleFoodPreparing": "Preparing Food",
+  "notifTitleOrderConfirmed": "Order Confirmed",
+  "notifTitleOrderCancelled": "Order Cancelled",
+  "notifTagPaid": "Paid",
+  "notifTagPreparing": "Preparing",
+  "notifTagReady": "Ready",
+  "notifTagCompleted": "Completed",
+  "notifTagDelivering": "Delivering",
+  "notifTagCancelled": "Cancelled",
+  "flashSaleTitle": "Flash Sale Deals",
+  "flashSaleEndsIn": "ENDS IN",
+  "flashSaleBannerSubtitle": "20 random items • Refreshed every 5 hours",
+  "flashSalePrepTimeMin": "{time}m",
+  "@flashSalePrepTimeMin": {
+    "placeholders": {
+      "time": {
+        "type": "int"
+      }
+    }
+  },
+  "flashSaleSoldCount": "{count} sold",
+  "@flashSaleSoldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "flashSaleSellingFast": "Selling fast",
+  "flashSaleRemaining": "{count} left",
+  "@flashSaleRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeClearTraffic": "Clear route",
+  "routeClearTrafficDetail": "Clear route, no traffic congestion",
+  "routeTrafficStatusLabel": "Traffic: {status}",
+  "@routeTrafficStatusLabel": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "routeTrafficStatusDetail": "Traffic condition: {status}",
+  "@routeTrafficStatusDetail": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "trafficStatusSmooth": "Smooth",
+  "trafficStatusSlow": "Slow",
+  "trafficStatusModerate": "Moderate traffic",
+  "trafficStatusHeavy": "Heavy traffic",
+  "routeDineInHeader": "DINE-IN",
+  "routePreOrderHeader": "PRE-ORDER",
+  "routeQuickStopHeader": "QUICK STOP",
+  "routeMinutesApprox": "~{minutes} mins",
+  "@routeMinutesApprox": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "routeConvenientBadge": "ON ROUTE",
+  "routeSearchingBadge": "SEARCHING",
+  "routeStopoverBadge": "STOPOVER",
+  "routeZeroStoresBadge": "0 STORES",
+  "routeStopoverBanner": "Pickup stopover: {storeName}",
+  "@routeStopoverBanner": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSearchingFoodAlong": "Searching: \"{keyword}\" along route...",
+  "@routeSearchingFoodAlong": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoStoresForKeyword": "No restaurants found for \"{keyword}\" along this route",
+  "@routeNoStoresForKeyword": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeFoundStoresForKeyword": "Found {count} restaurants with \"{keyword}\" along route",
+  "@routeFoundStoresForKeyword": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDefaultCommuteBanner": "On your commute • Pre-order and pick up without waiting",
+  "routeConfirmDineIn": "Confirm dine-in route",
+  "routeConfirmPreOrder": "Confirm pre-order route",
+  "routeConfirmQuickStop": "Confirm quick stop route",
+  "routeDirectionsTitle": "Turn-by-turn directions",
+  "routeStepsCount": "{count} steps",
+  "@routeStepsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeArriveAt": "Arrive at {time}",
+  "@routeArriveAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoDirectionsData": "No directions data available",
+  "routeTrafficDelayed": "Estimated delay {delay} due to traffic",
+  "@routeTrafficDelayed": {
+    "placeholders": {
+      "delay": {
+        "type": "String"
+      }
+    }
+  },
+  "routeGoStraight": "Go straight",
+  "durationHoursMinutes": "{hours} hr {minutes} min",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} mins",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trafficDelayMinutes": "+{minutes} mins",
+  "@trafficDelayMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trafficDelayHours": "+{hours} hr",
+  "@trafficDelayHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "routeRestaurantsTitle": "Restaurants along route ({count})",
+  "@routeRestaurantsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeRestaurantsSubtitle": "Convenient pickup • No detours",
+  "routeNoRestaurantsFound": "Loading or no restaurants directly along this route",
+  "routeExploreFullMenu": "Explore full menu",
+  "routeOnRoute": "Right on route",
+  "routeDetourMeters": "Detour {dist}m",
+  "@routeDetourMeters": {
+    "placeholders": {
+      "dist": {
+        "type": "int"
+      }
+    }
+  },
+  "routePrepTimeApprox": "Prep ~{time} mins",
+  "@routePrepTimeApprox": {
+    "placeholders": {
+      "time": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDistanceLabel": "Distance: ",
+  "routeViewMenu": "View Menu",
+  "badgeNew": "New",
+  "restaurantDefaultName": "Restaurant",
+  "pickupAddressDefault": "Self-pickup address",
+  "placeTypeLocation": "Location",
+  "placeTypeRestaurant": "Restaurant",
+  "placeTypeHotel": "Hotel",
+  "placeTypeHospital": "Hospital",
+  "placeTypeSchool": "School",
+  "placeTypeCafe": "Café",
+  "placeTypeBank": "Bank",
+  "placeTypePark": "Park",
+  "placeTypeAirport": "Airport",
+  "mapDirectionsHere": "Directions here",
+  "mapSetAsStart": "Set as start point",
+  "mapCopiedCoordinates": "Copied coordinates: {coord}",
+  "@mapCopiedCoordinates": {
+    "placeholders": {
+      "coord": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherAppliedCode": "Applied: {code}",
+  "@voucherAppliedCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherDiscountAmount": "Discount: -{amount}",
+  "@voucherDiscountAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherRemove": "Remove",
+  "voucherAvailableTitle": "Available promo codes",
+  "voucherNoAvailableFromStore": "No vouchers available from this restaurant",
+  "voucherMinOrder": "From {amount}",
+  "@voucherMinOrder": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherAppliedStatus": "Used",
+  "voucherNotEligibleStatus": "Ineligible",
+  "pickupDistanceAway": "{distance} away",
+  "@pickupDistanceAway": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "pickupInMinutes": "Pickup in {minutes}m",
+  "@pickupInMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDetails": "Details",
+  "routeViewSegmentDetails": "View route segment details",
+  "menuItemSoldOut": "Sold out",
+  "cartAddedSuccess": "Added \"{name}\" to cart",
+  "@cartAddedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "itemSoldCount": "{count} sold",
+  "@itemSoldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherRemovedSuccess": "Voucher removed",
+  "voucherAppliedSuccess": "Applied promo code {code} (Save {amount})",
+  "@voucherAppliedSuccess": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherNetworkError": "Cannot verify voucher code. Please check your connection.",
+  "voucherDiscountPercent": "{percent}% off",
+  "@voucherDiscountPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherDiscountPercentMax": "{percent}% off (Up to {maxAmount})",
+  "@voucherDiscountPercentMax": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "maxAmount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherDiscountFixed": "{amount} off",
+  "@voucherDiscountFixed": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+}

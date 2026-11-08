@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../common/format_utils.dart';
 import '../providers/map_provider.dart';
 import '../models/place_model.dart';
 import 'place_detail_sheet.dart';
@@ -19,6 +20,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
   late Animation<double> _fadeAnim;
   bool _originFocused = false;
   bool _destFocused = false;
+  bool _isExpanded = true;
 
   final FocusNode _originFocus = FocusNode();
   final FocusNode _destFocus = FocusNode();
@@ -39,6 +41,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     setState(() {
       _originFocused = _originFocus.hasFocus;
       _destFocused = _destFocus.hasFocus;
+      if (_originFocused || _destFocused) {
+        _isExpanded = true;
+      }
     });
   }
 
@@ -54,9 +59,10 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
   Widget build(BuildContext context) {
     return Consumer<MapProvider>(
       builder: (context, provider, _) {
-        final showList = provider.showSuggestions ||
-            _originFocused ||
-            _destFocused;
+        final showList = _isExpanded &&
+            (provider.showSuggestions ||
+                _originFocused ||
+                _destFocused);
 
         if (showList) {
           _animCtrl.forward();
@@ -67,19 +73,31 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
         return Column(
           children: [
             _buildHeaderBar(provider),
-            const SizedBox(height: 8),
-            _buildDeliveryCard(provider),
-            if (provider.showSuggestions)
-              FadeTransition(
-                opacity: _fadeAnim,
-                child: _buildSuggestionsList(provider),
-              )
-            else if ((_originFocused || _destFocused) &&
-                provider.suggestions.isEmpty)
-              FadeTransition(
-                opacity: _fadeAnim,
-                child: _buildQuickOptions(provider),
+            AnimatedCrossFade(
+              firstChild: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildDeliveryCard(provider),
+                  if (provider.showSuggestions)
+                    FadeTransition(
+                      opacity: _fadeAnim,
+                      child: _buildSuggestionsList(provider),
+                    )
+                  else if ((_originFocused || _destFocused) &&
+                      provider.suggestions.isEmpty)
+                    FadeTransition(
+                      opacity: _fadeAnim,
+                      child: _buildQuickOptions(provider),
+                    ),
+                ],
               ),
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: _isExpanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              duration: const Duration(milliseconds: 250),
+            ),
           ],
         );
       },
@@ -91,74 +109,99 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.near_me_rounded,
-              color: Color(0xFFFC6011),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'GIAO ĐẾN HIỆN TẠI',
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        provider.originPlace?.name ?? 'Trang Chủ',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Colors.white,
-                      size: 20,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFF0E6),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.near_me_rounded,
+                        color: Color(0xFFFC6011),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            context.l10n.homeDeliverTo,
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF8E8E93),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            provider.originPlace?.name ?? context.l10n.navHome,
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF1C1C1E),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    AnimatedRotation(
+                      turns: _isExpanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Color(0xFF1C1C1E),
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const NotificationBell(width: 42, height: 42, size: 22),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Container(
-            width: 42,
-            height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C3E),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
+            child: const NotificationBell(width: 48, height: 48, size: 22),
           ),
         ],
       ),
@@ -182,14 +225,14 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
       child: Column(
         children: [
           _buildLocationInputRow(
-            label: 'ĐIỂM ĐÓN',
+            label: context.l10n.homePickupPoint,
             subtitleColor: const Color(0xFF00C853),
             icon: Icons.circle,
             iconColor: const Color(0xFF00C853),
             controller: provider.originController,
             focusNode: _originFocus,
             isFocused: _originFocused,
-            hint: 'Nhập vị trí điểm đón...',
+            hint: context.l10n.homePickupHint,
             isOrigin: true,
             provider: provider,
             rightAction: GestureDetector(
@@ -214,14 +257,14 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
             child: Divider(color: Color(0xFFF2F2F7), height: 1),
           ),
           _buildLocationInputRow(
-            label: 'ĐIỂM ĐẾN',
+            label: context.l10n.homeDestination,
             subtitleColor: const Color(0xFFFC6011),
             icon: Icons.location_on_rounded,
             iconColor: const Color(0xFFFC6011),
             controller: provider.destinationController,
             focusNode: _destFocus,
             isFocused: _destFocused,
-            hint: 'Chọn địa điểm đến...',
+            hint: context.l10n.homeDestinationHint,
             isOrigin: false,
             provider: provider,
             rightAction: provider.destinationPlace != null
@@ -277,7 +320,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 Row(
                   children: [
                     Text(
-                      'TÌM MÓN DỌC TUYẾN ĐƯỜNG',
+                      context.l10n.homeFoodSearchAlongRoute,
                       style: GoogleFonts.outfit(
                         color: const Color(0xFFFC6011),
                         fontSize: 9,
@@ -303,7 +346,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                     fontWeight: FontWeight.w700,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Nhập món muốn tìm (phở bò, bánh mì, cơm tấm...)',
+                    hintText: context.l10n.homeFoodSearchHint,
                     hintStyle: GoogleFonts.outfit(
                       color: const Color(0xFFC7C7CC),
                       fontSize: 12,
@@ -434,26 +477,26 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
           _foodRouteOptionTab(
             provider: provider,
             option: FoodRouteOption.takeaway,
-            label: 'Ghé mua',
+            label: context.l10n.orderModeQuickStop,
             subtext: provider.travelMinutes > 0
-                ? '${provider.travelMinutes}p di chuyển'
-                : 'Ghé lấy nhanh',
+                ? context.l10n.homeSubtextTravel(provider.travelMinutes)
+                : context.l10n.homeSubtextQuickPickup,
             icon: Icons.shopping_bag_rounded,
           ),
           const SizedBox(width: 8),
           _foodRouteOptionTab(
             provider: provider,
             option: FoodRouteOption.preOrder,
-            label: 'Đặt trước',
-            subtext: 'Chuẩn bị ~45p',
+            label: context.l10n.orderModePreOrder,
+            subtext: context.l10n.homeSubtextPreOrderPrep,
             icon: Icons.access_time_filled_rounded,
           ),
           const SizedBox(width: 8),
           _foodRouteOptionTab(
             provider: provider,
             option: FoodRouteOption.dineIn,
-            label: 'Ăn tại quán',
-            subtext: 'Thoải mái ghé',
+            label: context.l10n.orderModeDineIn,
+            subtext: context.l10n.homeSubtextDineInRelax,
             icon: Icons.table_restaurant_rounded,
           ),
         ],

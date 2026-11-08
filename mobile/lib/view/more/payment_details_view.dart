@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/globs.dart';
@@ -74,10 +75,41 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
     }
   }
 
+  String _getWalletSubtitle(BuildContext context, String code, String defaultSub) {
+    switch (code) {
+      case "PAYOS":
+        return context.l10n.paymentVietqrSub;
+      case "MOMO":
+        return context.l10n.paymentMomoSub;
+      case "ZALOPAY":
+        return context.l10n.paymentZaloPaySub;
+      case "VNPAY":
+        return context.l10n.paymentVnpaySub;
+      default:
+        return defaultSub;
+    }
+  }
+
+  String _getWalletTag(BuildContext context, String? tag) {
+    if (tag == null) return '';
+    switch (tag.toUpperCase()) {
+      case "KHUYÊN DÙNG":
+        return context.l10n.paymentTagRecommended;
+      case "PHỔ BIẾN":
+        return context.l10n.paymentTagPopular;
+      case "TIỆN LỢI":
+        return context.l10n.paymentTagConvenient;
+      case "TOÀN QUỐC":
+        return context.l10n.paymentTagNationwide;
+      default:
+        return tag;
+    }
+  }
+
   void _selectWallet(String code, String name) {
     setState(() => selectedWalletCode = code);
     Globs.udStringSet(code, _prefKey);
-    CustomToast.showSuccess(context, "Đã chọn $name làm ví thanh toán mặc định");
+    CustomToast.showSuccess(context, context.l10n.paymentDefaultToast(name));
   }
 
   @override
@@ -100,7 +132,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
 
               // Title Section
               Text(
-                "Tùy chọn thanh toán",
+                context.l10n.paymentOptionsTitle,
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
                   fontSize: 20,
@@ -109,7 +141,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Chọn ví điện tử hoặc cổng thanh toán trực tuyến bạn muốn sử dụng làm mặc định khi đặt món.",
+                context.l10n.paymentOptionsSubtitle,
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 12,
@@ -133,7 +165,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: TColor.primary.withOpacity(0.12),
+                        color: TColor.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.flash_on_rounded, color: TColor.primary, size: 20),
@@ -144,7 +176,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Thanh toán trực tuyến (Cashless)",
+                            context.l10n.paymentCashlessBannerTitle,
                             style: TextStyle(
                               color: TColor.primaryTextOf(context),
                               fontSize: 13,
@@ -153,7 +185,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            "Tất cả đơn hàng Pre-Order được thanh toán và xác nhận tự động qua ví điện tử.",
+                            context.l10n.paymentCashlessBannerSubtitle,
                             style: TextStyle(
                               color: TColor.secondaryTextOf(context),
                               fontSize: 11,
@@ -172,7 +204,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "VÍ ĐIỆN TỬ & CỔNG THANH TOÁN",
+                    context.l10n.paymentGatewaysSectionTitle,
                     style: TextStyle(
                       color: TColor.secondaryTextOf(context),
                       fontSize: 11,
@@ -187,7 +219,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      "${wallets.length} CỔNG KHẢ DỤNG",
+                      context.l10n.paymentGatewaysAvailable(wallets.length),
                       style: const TextStyle(
                         color: Color(0xFF2E7D32),
                         fontSize: 10,
@@ -285,7 +317,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          tag,
+                                          _getWalletTag(context, tag),
                                           style: TextStyle(
                                             color: tagColor,
                                             fontSize: 9,
@@ -298,7 +330,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  subtitle,
+                                  _getWalletSubtitle(context, code, subtitle),
                                   style: TextStyle(
                                     color: TColor.secondaryTextOf(context),
                                     fontSize: 11,
@@ -347,9 +379,9 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                           const Icon(Icons.verified_user_rounded, color: Color(0xFF2E7D32), size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            "Bảo mật PCI-DSS cấp độ 1 & Mã hóa SSL 256-bit",
+                            context.l10n.paymentPciSecurityFootnote,
                             style: TextStyle(
-                              color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1B5E20),
+                              color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1B5E20),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -359,9 +391,9 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Giao dịch được đối soát và xác thực tự động trực tiếp qua cổng thanh toán",
+                      context.l10n.paymentReconciliationFootnote,
                       style: TextStyle(
-                        color: TColor.secondaryTextOf(context).withOpacity(0.7),
+                        color: TColor.secondaryTextOf(context).withValues(alpha: 0.7),
                         fontSize: 10,
                       ),
                     ),
@@ -400,7 +432,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
           child: Column(
             children: [
               Text(
-                "Chi tiết thanh toán",
+                context.l10n.morePaymentDetails,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
@@ -409,7 +441,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                 ),
               ),
               Text(
-                "Bảo mật chuẩn mã hóa SSL 256-bit",
+                context.l10n.paymentHeaderSslSub,
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 11,

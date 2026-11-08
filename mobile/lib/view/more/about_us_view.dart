@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../common/format_utils.dart';
+
 import '../../common/locator.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../common_widget/social_brand_icon.dart';
@@ -152,7 +154,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "Giá trị cốt lõi",
+                        context.l10n.aboutCoreValues,
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
                           fontSize: 18,
@@ -162,7 +164,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                     ],
                   ),
                   Text(
-                    isDark ? "Tiêu chuẩn 5 sao" : "Cam kết của quán",
+                    isDark ? context.l10n.aboutStandard5Star : context.l10n.aboutStoreCommitment,
                     style: TextStyle(
                       color: TColor.primary,
                       fontSize: 12,
@@ -198,7 +200,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _systemInfo?['phienban']?.toString() ?? "Phiên bản 2.5.0 • FoodRoute Official",
+                          _systemInfo?['phienban']?.toString() ?? context.l10n.aboutVersionPrefix("2.5.0"),
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 11,
@@ -208,7 +210,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _systemInfo?['banquyen']?.toString() ?? "© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.",
+                      _systemInfo?['banquyen']?.toString() ?? context.l10n.aboutCopyrightDefault,
                       style: TextStyle(
                         color: TColor.secondaryTextOf(context).withValues(alpha: 0.6),
                         fontSize: 10,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/locator.dart';
+import '../../common/format_utils.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../services/order_service.dart';
@@ -156,7 +157,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đơn hàng đang ở Bước $stepNum (Bếp đang chuẩn bị). Không thể hủy đơn lúc này!'),
+          content: Text(context.l10n.orderCancelNotAllowed(stepNum)),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -167,13 +168,13 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Xác nhận hủy đơn hàng'),
+        title: Text(context.l10n.orderConfirmCancelTitle),
         content: Text(
             'Bạn có chắc chắn muốn hủy đơn hàng #DH${order.orderId} tại ${order.restaurantName} không?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Không', style: TextStyle(color: Colors.grey)),
+            child: Text(context.l10n.commonCancel, style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -181,7 +182,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
               backgroundColor: const Color(0xFFD92D20),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Hủy đơn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.l10n.orderCancelButton, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -190,7 +191,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     if (confirm == true) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đang xử lý hủy đơn...'), duration: Duration(seconds: 1)),
+        SnackBar(content: Text(context.l10n.orderCancellingProgress), duration: const Duration(seconds: 1)),
       );
       final res = await OrderService.cancelOrder(order.orderId);
       final success = res['success'] == true;
@@ -298,7 +299,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                       isDark: isDark,
                     ),
                   Text(
-                    'Đơn hàng của tôi',
+                    context.l10n.moreMyOrder,
                     style: TextStyle(
                       color: isDark ? Colors.white : const Color(0xFF101828),
                       fontSize: 19,
@@ -346,8 +347,8 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                 // Unpaid section (Chờ thanh toán)
                                 if ((selectedTabIndex == 0 || selectedTabIndex == 1) && _unpaidOrders.isNotEmpty) ...[
                                   OrderSectionHeader(
-                                    title: 'CHỜ THANH TOÁN (${_unpaidOrders.length} ĐƠN)',
-                                    subtitle: 'Quán chưa nhận đơn',
+                                    title: context.l10n.orderUnpaidSectionTitle(_unpaidOrders.length),
+                                    subtitle: context.l10n.orderUnpaidSectionSub,
                                     iconDot: true,
                                     isDark: isDark,
                                   ),
@@ -366,8 +367,8 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                 if (selectedTabIndex == 0 || selectedTabIndex == 1) ...[
                                   if (_activeOrders.isNotEmpty) ...[
                                     OrderSectionHeader(
-                                      title: 'ĐANG CHUẨN BỊ & GIAO (${_activeOrders.length} ĐƠN)',
-                                      subtitle: 'Cập nhật tức thì',
+                                      title: context.l10n.orderPreparingSectionTitle(_activeOrders.length),
+                                      subtitle: context.l10n.orderPreparingSectionSub,
                                       iconDot: true,
                                       isDark: isDark,
                                     ),
@@ -381,7 +382,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                         )),
                                     const SizedBox(height: 16),
                                   ] else if (selectedTabIndex == 1) ...[
-                                    const OrderEmptyFilterState(message: 'Chưa có đơn hàng đang xử lý'),
+                                    OrderEmptyFilterState(message: context.l10n.orderEmptyProcessing),
                                   ],
                                 ],
 
@@ -389,8 +390,8 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                 if (selectedTabIndex == 0 || selectedTabIndex == 2) ...[
                                   if (_completedOrders.isNotEmpty) ...[
                                     OrderSectionHeader(
-                                      title: 'Lịch sử đã lấy hàng',
-                                      badgeText: '${_completedOrders.length} đơn hoàn tất',
+                                      title: context.l10n.orderCompletedSectionTitle,
+                                      badgeText: context.l10n.orderCompletedCountBadge(_completedOrders.length),
                                       iconCheck: true,
                                       isDark: isDark,
                                     ),
@@ -413,7 +414,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                 if (selectedTabIndex == 0 || selectedTabIndex == 3) ...[
                                   if (_cancelledOrders.isNotEmpty) ...[
                                     OrderSectionHeader(
-                                      title: 'Đơn hàng đã hủy',
+                                      title: context.l10n.orderCancelledSectionTitle,
                                       badgeText: '${_cancelledOrders.length} đơn đã hủy',
                                       iconClose: true,
                                       isDark: isDark,

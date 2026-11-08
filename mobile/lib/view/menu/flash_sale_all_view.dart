@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../providers/cart_provider.dart';
 import '../../view/menu/item_details_view.dart';
@@ -121,7 +122,7 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Flash Sale Giá Sốc",
+          context.l10n.flashSaleTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 18,
@@ -197,17 +198,17 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.bolt_rounded, color: Colors.yellow, size: 20),
-                            SizedBox(width: 4),
+                            const Icon(Icons.bolt_rounded, color: Colors.yellow, size: 20),
+                            const SizedBox(width: 4),
                             Text(
-                              "KẾT THÚC TRONG",
-                              style: TextStyle(
+                              context.l10n.flashSaleEndsIn,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
@@ -216,10 +217,10 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "20 món ăn ngẫu nhiên • Làm mới mỗi 5 tiếng",
-                          style: TextStyle(
+                          context.l10n.flashSaleBannerSubtitle,
+                          style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -475,8 +476,8 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      "Đang bán chạy",
+                                    Text(
+                                      context.l10n.flashSaleSellingFast,
                                       style: TextStyle(
                                         color: Color(0xFFD32F2F),
                                         fontSize: 9,

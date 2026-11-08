@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/format_utils.dart';
 import '../../../common/globs.dart';
 import '../../../model/support_model.dart';
 import '../../../services/support_service.dart';
@@ -36,6 +37,23 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
   bool _isSubmitting = false;
 
   final ImagePicker _picker = ImagePicker();
+
+  String _getIssueTypeLabel(BuildContext context, String type) {
+    switch (type) {
+      case 'Đơn hàng':
+        return context.l10n.supportIssueOrder;
+      case 'Thanh toán':
+        return context.l10n.supportIssuePayment;
+      case 'Quán ăn':
+        return context.l10n.supportIssueRestaurant;
+      case 'Lỗi ứng dụng':
+        return context.l10n.supportIssueAppBug;
+      case 'Khác':
+        return context.l10n.supportIssueOther;
+      default:
+        return type;
+    }
+  }
 
   @override
   void initState() {
@@ -160,7 +178,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Báo Cáo Sự Cố',
+          context.l10n.supportCreateTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 17,
@@ -189,7 +207,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                   children: [
                     // Issue category
                     Text(
-                      'Loại sự cố gặp phải *',
+                      context.l10n.supportCreateIssueTypeLabel,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -203,7 +221,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                       children: _issueTypes.map((type) {
                         final isSelected = _selectedType == type;
                         return ChoiceChip(
-                          label: Text(type),
+                          label: Text(_getIssueTypeLabel(context, type)),
                           selected: isSelected,
                           onSelected: (val) {
                             if (val) {
@@ -233,7 +251,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
 
                     // Related Order ID (Optional)
                     Text(
-                      'Mã đơn hàng liên quan (tùy chọn)',
+                      context.l10n.supportOrderIdRelatedLabel,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -246,7 +264,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                       keyboardType: TextInputType.number,
                       style: TextStyle(fontSize: 14, color: TColor.primaryTextOf(context)),
                       decoration: InputDecoration(
-                        hintText: 'Ví dụ: 1234',
+                        hintText: context.l10n.supportOrderIdRelatedHint,
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         filled: true,
                         fillColor: isDark ? const Color(0xFF262C3A) : const Color(0xFFF8FAFC),
@@ -269,7 +287,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
 
                     // Description
                     Text(
-                      'Mô tả chi tiết sự cố *',
+                      context.l10n.supportIssueDescLabel,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -282,7 +300,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                       maxLines: 5,
                       style: TextStyle(fontSize: 14, color: TColor.primaryTextOf(context)),
                       decoration: InputDecoration(
-                        hintText: 'Vui lòng mô tả rõ sự cố để nhân viên hỗ trợ bạn nhanh chóng nhất...',
+                        hintText: context.l10n.supportIssueDescHint,
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         filled: true,
                         fillColor: isDark ? const Color(0xFF262C3A) : const Color(0xFFF8FAFC),
@@ -305,7 +323,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                       ),
                       validator: (val) {
                         if (val == null || val.trim().length < 5) {
-                          return 'Vui lòng mô tả sự cố (tối thiểu 5 ký tự)';
+                          return context.l10n.supportIssueDescMinLength;
                         }
                         return null;
                       },
@@ -318,7 +336,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Hình ảnh minh họa sự cố',
+                          context.l10n.supportIssuePhotosLabel,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -326,7 +344,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                           ),
                         ),
                         Text(
-                          '${_uploadedImages.length}/3 ảnh',
+                          context.l10n.supportIssuePhotosCount(_uploadedImages.length),
                           style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         ),
                       ],
@@ -406,7 +424,7 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                                         Icon(Icons.add_photo_alternate_outlined, color: TColor.primary, size: 26),
                                         const SizedBox(height: 2),
                                         Text(
-                                          'Thêm ảnh',
+                                          context.l10n.supportAddPhoto,
                                           style: TextStyle(
                                             fontSize: 10,
                                             color: isDark ? Colors.white70 : const Color(0xFF64748B),
@@ -440,14 +458,14 @@ class _SupportTicketCreateViewState extends State<SupportTicketCreateView> {
                         width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.send_rounded, size: 18),
-                          SizedBox(width: 8),
+                          const Icon(Icons.send_rounded, size: 18),
+                          const SizedBox(width: 8),
                           Text(
-                            'Gửi Báo Cáo & Bắt Đầu Chat',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            context.l10n.supportCreateSubmitBtn,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),

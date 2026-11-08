@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import 'package:food_route/providers/language_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/map_provider.dart';
@@ -442,14 +443,14 @@ class _MenuViewState extends State<MenuView> {
 
     String distText;
     if (minDistance.isInfinite || minDistance < 100) {
-      distText = "Cách bạn từ 150m";
+      distText = "150m";
     } else if (minDistance < 1000) {
-      distText = "Cách bạn từ ${minDistance.round()}m";
+      distText = "${minDistance.round()}m";
     } else {
-      distText = "Cách bạn từ ${(minDistance / 1000).toStringAsFixed(1)}km";
+      distText = "${(minDistance / 1000).toStringAsFixed(1)}km";
     }
 
-    return "$distText • Chuẩn bị nhanh từ ${minPrep}p";
+    return context.l10n.menuDistanceForm(distText, minPrep);
   }
 
   @override
@@ -510,7 +511,7 @@ class _MenuViewState extends State<MenuView> {
                                     Row(
                                       children: [
                                         Text(
-                                          "TIỆN ĐƯỜNG GHÉ LẤY",
+                                          context.l10n.menuConvenientPickup,
                                           style: TextStyle(
                                             color: TColor.primary,
                                             fontSize: 10,
@@ -523,7 +524,7 @@ class _MenuViewState extends State<MenuView> {
                                     ),
                                     Text(
                                       mapProv.isLoadingLocation
-                                          ? "Đang xác định vị trí..."
+                                          ? context.l10n.menuLocating
                                           : mapProv.currentLocationText,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -639,9 +640,9 @@ class _MenuViewState extends State<MenuView> {
                             fontSize: 13,
                           ),
                           decoration: InputDecoration(
-                            hintText: "Tìm kiếm phở bò, cơm tấm, trà sữa...",
+                            hintText: context.l10n.menuSearchFoodHint,
                             hintStyle: TextStyle(
-                              color: TColor.secondaryTextOf(context).withOpacity(0.7),
+                              color: TColor.secondaryTextOf(context).withValues(alpha: 0.7),
                               fontSize: 13,
                             ),
                             border: InputBorder.none,
@@ -746,7 +747,7 @@ class _MenuViewState extends State<MenuView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Tiện Đường Ghé Lấy",
+                              context.l10n.menuRoutePickupTitle,
                               style: TextStyle(
                                 color: TColor.primaryTextOf(context),
                                 fontSize: 18,
@@ -770,12 +771,12 @@ class _MenuViewState extends State<MenuView> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: TColor.primary.withOpacity(0.12),
+                            color: TColor.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
-                              Text("Bản đồ", style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
+                              Text(context.l10n.menuViewMap, style: TextStyle(color: TColor.primary, fontSize: 11, fontWeight: FontWeight.w800)),
                               const SizedBox(width: 4),
                               const Icon(Icons.map_outlined, color: Color(0xFFFC6011), size: 14),
                             ],

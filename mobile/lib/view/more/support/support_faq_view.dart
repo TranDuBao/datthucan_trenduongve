@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/format_utils.dart';
 import '../../../model/support_model.dart';
 import '../../../providers/support_provider.dart';
 import '../../../widgets/skeleton/support_skeleton.dart';
@@ -48,7 +49,7 @@ class _SupportFaqViewState extends State<SupportFaqView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Câu Hỏi Thường Gặp (FAQ)',
+          context.l10n.supportFaqTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 17,
@@ -77,7 +78,7 @@ class _SupportFaqViewState extends State<SupportFaqView> {
                 style: TextStyle(fontSize: 14, color: TColor.primaryTextOf(context)),
                 decoration: InputDecoration(
                   icon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                  hintText: 'Tìm kiếm câu hỏi hoặc từ khóa...',
+                  hintText: context.l10n.supportFaqSearchHint,
                   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                   border: InputBorder.none,
                   suffixIcon: _searchCtrl.text.isNotEmpty
@@ -105,7 +106,7 @@ class _SupportFaqViewState extends State<SupportFaqView> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   _buildFilterChip(
-                    label: 'Tất cả',
+                    label: context.l10n.notifTabAll,
                     isSelected: _selectedGroupId == null,
                     onTap: () {
                       setState(() {
@@ -145,7 +146,7 @@ class _SupportFaqViewState extends State<SupportFaqView> {
                               Icon(Icons.search_off_rounded, size: 54, color: isDark ? Colors.white30 : const Color(0xFFCBD5E1)),
                               const SizedBox(height: 12),
                               Text(
-                                'Không tìm thấy câu hỏi phù hợp',
+                                context.l10n.supportFaqEmpty,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,

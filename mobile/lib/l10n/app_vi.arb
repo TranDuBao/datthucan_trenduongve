@@ -1,0 +1,1154 @@
+{
+  "@@locale": "vi",
+  "commonCancel": "Hủy",
+  "commonConfirm": "Xác nhận",
+  "commonSave": "Lưu",
+  "commonDelete": "Xóa",
+  "commonSuccess": "Thành công",
+  "commonError": "Lỗi",
+  "commonRetry": "Thử lại",
+  "commonLoading": "Đang tải...",
+  "commonSearch": "Tìm kiếm",
+  "commonClose": "Đóng",
+  "commonBack": "Quay lại",
+  "commonNext": "Tiếp tục",
+  "commonGetStarted": "Bắt đầu ngay",
+  "commonSeeAll": "Xem tất cả",
+  "commonAll": "Tất cả",
+  "commonViewDetail": "Xem chi tiết",
+  "commonApply": "Áp dụng",
+  "commonEdit": "Chỉnh sửa",
+  "commonShare": "Chia sẻ",
+  "commonCopy": "Sao chép",
+  "commonCopied": "Đã sao chép vào bộ nhớ tạm",
+  "commonUnderDevelopment": "Tính năng đang được phát triển",
+  "commonNotification": "Thông báo",
+  "commonQuantity": "Số lượng",
+  "commonNote": "Ghi chú",
+  "navHome": "Trang chủ",
+  "navMenu": "Thực đơn",
+  "navOffer": "Cửa hàng",
+  "navProfile": "Hồ sơ",
+  "navMore": "Khác",
+  "navCart": "Giỏ hàng",
+  "navMyOrder": "Đơn hàng của tôi",
+  "navNotifications": "Thông báo",
+  "navInbox": "Voucher",
+  "orderModeQuickStop": "Ghé mua",
+  "orderModePreOrder": "Đặt trước",
+  "orderModeDineIn": "Ăn tại quán",
+  "orderModeReserveTable": "Đặt bàn",
+  "orderStatusUnpaid": "Chờ thanh toán",
+  "orderStatusAwaitingConfirmation": "Chờ xác nhận",
+  "orderStatusConfirmed": "Đã xác nhận",
+  "orderStatusPreparing": "Đang chuẩn bị",
+  "orderStatusReadyForPickup": "Sẵn sàng lấy",
+  "orderStatusCompleted": "Đã hoàn tất",
+  "orderStatusCancelled": "Đã hủy",
+  "reservationStatusPending": "Chờ xác nhận",
+  "reservationStatusConfirmed": "Đã xác nhận",
+  "reservationStatusCompleted": "Hoàn tất",
+  "reservationStatusCancelled": "Đã hủy",
+  "paymentMethodCash": "Tiền mặt khi nhận món",
+  "paymentMethodVietQR": "Chuyển khoản VietQR",
+  "paymentMethodVNPay": "Ví điện tử VNPAY",
+  "paymentMethodMoMo": "Ví điện tử MoMo",
+  "onboardingTitle1": "Món Ngon Tiện Đường",
+  "onboardingSubtitle1": "Khám phá hàng trăm quán ngon chuẩn vị,\nđặt trước tiện lợi ngay trên lộ trình di chuyển",
+  "onboardingTitle2": "Nóng Hổi Chuẩn Giờ",
+  "onboardingSubtitle2": "Quán chuẩn bị món vừa xong đúng lúc bạn ghé lấy,\ntối ưu thời gian, không cần chờ đợi",
+  "onboardingTitle3": "Lộ Trình Thông Minh",
+  "onboardingSubtitle3": "Định vị điểm đến và theo dõi đơn hàng thời gian thực,\nsẵn sàng trên mọi cung đường của bạn",
+  "onboardingPinStart": "Điểm đi",
+  "onboardingPinStore": "Quán ăn",
+  "onboardingPinHome": "Về nhà",
+  "onboardingStorePickup1Min": "Ghé lấy 1p",
+  "onboardingStorePickupDone": "✔ Đã lấy món",
+  "authWelcome": "Chào mừng",
+  "authWelcomeBack": "Chào mừng trở lại",
+  "authLogin": "Đăng nhập",
+  "authSignUp": "Đăng ký",
+  "authLogout": "Đăng xuất",
+  "authLoginTitle": "Đăng nhập",
+  "authLoginSubtitle": "Đăng nhập để khám phá hàng ngàn quán ngon",
+  "authSignUpTitle": "Tạo tài khoản mới",
+  "authSignUpSubtitle": "Đăng ký để khám phá hàng ngàn quán ngon",
+  "authFullName": "Họ và tên",
+  "authYourEmail": "Email của bạn",
+  "authAccountOrEmail": "Tài khoản hoặc Email",
+  "authPhone": "Số điện thoại",
+  "authAddress": "Địa chỉ",
+  "authPassword": "Mật khẩu",
+  "authConfirmPassword": "Xác nhận mật khẩu",
+  "authForgotPassword": "Quên mật khẩu?",
+  "authResetPassword": "Đặt lại mật khẩu",
+  "authRememberMe": "Ghi nhớ đăng nhập",
+  "authOrLoginWith": "HOẶC ĐĂNG NHẬP VỚI",
+  "authLoginGoogle": "Google",
+  "authLoginApple": "Apple",
+  "authDontHaveAccount": "Chưa có tài khoản? ",
+  "authAlreadyHaveAccount": "Đã có tài khoản? ",
+  "authRegisterNow": "Đăng ký ngay",
+  "authLoginNow": "Đăng nhập ngay",
+  "authLogoutConfirmTitle": "Đăng xuất",
+  "authLogoutConfirmMessage": "Bạn có chắc chắn muốn đăng xuất không?",
+  "authEmailRequired": "Vui lòng nhập email",
+  "authPasswordRequired": "Vui lòng nhập mật khẩu",
+  "authAccountAndPasswordRequired": "Vui lòng nhập tài khoản và mật khẩu",
+  "authPasswordMismatch": "Mật khẩu xác nhận không khớp",
+  "authAgreeTerms": "Tôi đồng ý với Điều khoản dịch vụ & Chính sách bảo mật",
+  "authNameRequired": "Vui lòng nhập họ và tên",
+  "authEmailInvalid": "Vui lòng nhập email hợp lệ",
+  "authPhoneRequired": "Vui lòng nhập số điện thoại",
+  "authAddressRequired": "Vui lòng nhập địa chỉ",
+  "authPasswordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+  "authAgreeTermsRequired": "Vui lòng đồng ý với điều khoản dịch vụ để tiếp tục",
+  "authSignUpSuccess": "Đăng ký thành công!",
+  "authSignUpFailed": "Đăng ký thất bại. Vui lòng thử lại!",
+  "homeDeliverTo": "GIAO ĐẾN HIỆN TẠI",
+  "homePickupPoint": "ĐIỂM ĐÓN",
+  "homePickupHint": "Nhập vị trí điểm đón...",
+  "homeDestination": "ĐIỂM ĐẾN",
+  "homeDestinationHint": "Chọn địa điểm đến...",
+  "homeFoodSearchHint": "Tìm món ăn, quán ngon tiện đường...",
+  "homeMyLocation": "Vị trí của tôi",
+  "homeClearRoute": "Xóa đường đi",
+  "homeNavigatingToStore": "Đang dẫn đường ghé: {storeName}",
+  "@homeNavigatingToStore": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNavigatingWithOrder": "Đang dẫn đường ghé: {storeName} (Đơn #{orderCode})",
+  "@homeNavigatingWithOrder": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      },
+      "orderCode": {
+        "type": "String"
+      }
+    }
+  },
+  "homePickedUpContinue": "Đã lấy món tại {storeName} • Tiếp tục đến {destName}",
+  "@homePickedUpContinue": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      },
+      "destName": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCategories": "Danh mục",
+  "homePopularRestaurants": "Quán ngon phổ biến",
+  "homeNearbyRestaurants": "Quán ngon gần bạn",
+  "homeSuggestedStops": "Gợi ý điểm dừng tiện đường",
+  "homeFoodSearchAlongRoute": "TÌM MÓN DỌC TUYẾN ĐƯỜNG",
+  "homeSubtextTravel": "{minutes}p di chuyển",
+  "@homeSubtextTravel": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSubtextQuickPickup": "Ghé lấy nhanh",
+  "homeSubtextPreOrderPrep": "Chuẩn bị ~45p",
+  "homeSubtextDineInRelax": "Thoải mái ghé",
+  "menuAddToCart": "Thêm vào giỏ hàng",
+  "menuItemDetails": "Chi tiết món ăn",
+  "menuRestaurantDetails": "Thông tin nhà hàng",
+  "menuSpecialInstructions": "Ghi chú cho quán",
+  "menuSpecialInstructionsHint": "Ví dụ: ít đường, không cay, để riêng đá...",
+  "menuSize": "Kích thước / Size",
+  "menuToppings": "Topping thêm",
+  "menuReviews": "Đánh giá món ăn",
+  "menuAddedToCart": "Đã thêm vào giỏ hàng thành công",
+  "cartTitle": "Giỏ hàng & Đặt trước",
+  "cartEmptyTitle": "Giỏ hàng của bạn đang trống",
+  "cartEmptySubtitle": "Khám phá thực đơn và thêm món ăn yêu thích của bạn",
+  "cartExploreNow": "Khám phá ngay",
+  "cartPickupTime": "Thời gian ghé lấy dự kiến",
+  "cartPickupToday": "Ghé lấy hôm nay",
+  "cartPickupOtherDay": "Hẹn ngày khác",
+  "cartSelectPickupTime": "Chọn giờ ghé lấy",
+  "cartVoucher": "Mã giảm giá / Voucher",
+  "cartSelectVoucher": "Chọn hoặc nhập mã giảm giá",
+  "cartSubtotal": "Tạm tính",
+  "cartDiscount": "Giảm giá voucher",
+  "cartTotal": "Tổng thanh toán",
+  "cartProceedCheckout": "Tiến hành thanh toán",
+  "checkoutTitle": "Xác nhận đơn hàng",
+  "checkoutPickupTime": "Thời gian ghé lấy",
+  "checkoutPaymentMethod": "Phương thức thanh toán",
+  "checkoutSelectedItems": "Món đã chọn",
+  "checkoutOrderNotes": "Ghi chú đơn hàng",
+  "checkoutPlaceOrder": "Đặt đơn ngay",
+  "checkoutSuccessTitle": "Đặt món thành công!",
+  "checkoutSuccessSubtitle": "Đơn hàng của bạn đã được gửi tới quán. Quán sẽ chuẩn bị đúng giờ bạn ghé lấy.",
+  "checkoutViewOrder": "Xem đơn hàng",
+  "orderHistoryTitle": "Đơn hàng của tôi",
+  "orderHistoryTabActive": "Đang đến",
+  "orderHistoryTabCompleted": "Lịch sử",
+  "orderHistoryEmpty": "Chưa có đơn hàng nào",
+  "orderDetailTitle": "Chi tiết đơn hàng",
+  "orderCode": "Mã đơn hàng",
+  "orderPickupEstimate": "Thời gian ghé lấy dự kiến",
+  "orderCancelReason": "Lý do hủy:",
+  "orderReviewButton": "Đánh giá",
+  "orderReorderButton": "Đặt lại",
+  "orderCancelButton": "Hủy đơn",
+  "orderStepperStep1": "Chờ xác nhận",
+  "orderStepperStep2": "Đã xác nhận",
+  "orderStepperStep3": "Đang chuẩn bị",
+  "orderStepperStep4": "Sẵn sàng ghé lấy",
+  "orderStepperStep5": "Đã hoàn thành",
+  "orderStepperUnpaidBanner": "Chưa thanh toán (Chờ thanh toán VietQR)",
+  "orderStepperUnpaidNote": "Quán chưa tiếp nhận đơn cho đến khi bạn hoàn tất thanh toán.",
+  "orderStepperCancelledBanner": "Đơn hàng đã bị hủy",
+  "settingsTitle": "Cài đặt",
+  "settingsLanguage": "Ngôn ngữ",
+  "settingsThemeMode": "Giao diện",
+  "settingsSelectLanguage": "Chọn ngôn ngữ",
+  "settingsSelectTheme": "Chọn chế độ giao diện",
+  "settingsVietnamese": "Tiếng Việt",
+  "settingsEnglish": "English",
+  "settingsLightMode": "Chế độ Sáng",
+  "settingsDarkMode": "Chế độ Tối",
+  "settingsSystemMode": "Theo hệ thống",
+  "moreTitle": "Khác",
+  "moreLanguageSubtitle": "Ngôn ngữ hiển thị",
+  "morePaymentDetails": "Chi tiết thanh toán",
+  "morePaymentDetailsSubtitle": "Thẻ & ví điện tử",
+  "moreMyOrder": "Đơn hàng của tôi",
+  "moreMyOrderSubtitle": "Lịch sử và theo dõi đơn",
+  "moreReservations": "Đặt bàn của tôi",
+  "moreReservationsSubtitle": "Quản lý lịch hẹn & bàn ăn tại quán",
+  "moreNotifications": "Thông báo",
+  "moreNotificationsSubtitle": "Ưu đãi & tin tức quan trọng",
+  "moreInbox": "Voucher cho tôi",
+  "moreInboxSubtitle": "Kho voucher & mã giảm giá",
+  "moreBecomeStore": "Trở thành cửa hàng",
+  "moreBecomeStoreSubtitle": "Đăng ký bán hàng cùng Food Route",
+  "morePartnerInfoSubtitle": "Quản lý & thông tin đối tác",
+  "moreRestaurantPortal": "Giao diện Cửa Hàng",
+  "moreRestaurantPortalSubtitle": "Quản lý đơn hàng, thực đơn & doanh thu",
+  "moreSupportCenter": "Trung tâm hỗ trợ",
+  "moreSupportCenterSubtitle": "Hotline, FAQ & Góp ý phản hồi",
+  "moreAboutUs": "Về chúng tôi",
+  "moreAboutUsSubtitle": "Phiên bản v2.4.0 • Điều khoản",
+  "moreLogout": "Đăng xuất",
+  "moreLogoutSubtitle": "Thoát tài khoản hiện tại",
+  "moreSelectLanguageSubtitle": "Lựa chọn ngôn ngữ hiển thị chính",
+  "moreSelectThemeSubtitle": "Lựa chọn chế độ giao diện cho ứng dụng",
+  "moreLangViSubtitle": "Mặc định hệ thống",
+  "moreLangEnSubtitle": "Ngôn ngữ quốc tế",
+  "moreThemeLightSubtitle": "Giao diện sáng rực rỡ",
+  "moreThemeDarkSubtitle": "Tối màu dịu mắt, tiết kiệm pin",
+  "moreThemeSystemSubtitle": "Tự động đồng bộ cài đặt máy",
+  "storeRejectedReason": "Đơn đăng ký cửa hàng bị từ chối: {reason}",
+  "@storeRejectedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "storeRejectedDefault": "Đơn đăng ký cửa hàng của bạn chưa được phê duyệt.",
+  "menuConvenientPickup": "TIỆN ĐƯỜNG GHÉ LẤY",
+  "menuLocating": "Đang xác định vị trí...",
+  "menuSearchFoodHint": "Tìm kiếm phở bò, cơm tấm, trà sữa...",
+  "menuFeaturedTitle": "Thực Đơn Quán Tuyển Chọn",
+  "menuGroupCount": "{count} Nhóm món",
+  "@menuGroupCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuReadyPickupSubtitle": "Đóng gói sẵn sàng, dừng xe lấy trong 1 phút",
+  "menuFreshCookedSubtitle": "Chế biến tươi nóng • Gia vị gia truyền 24h",
+  "menuServingItemCount": "{count} món đang phục vụ",
+  "@menuServingItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuNoCategories": "Chưa có danh mục nào trong cơ sở dữ liệu",
+  "menuReloadButton": "Tải lại thực đơn",
+  "menuRoutePickupTitle": "Tiện Đường Ghé Lấy",
+  "menuViewMap": "Bản đồ",
+  "menuDistanceForm": "Cách bạn từ {dist} • Chuẩn bị nhanh từ {min}p",
+  "@menuDistanceForm": {
+    "placeholders": {
+      "dist": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "storeRouteHeader": "CỬA HÀNG LỘ TRÌNH",
+  "storeNearbyTitle": "Cửa hàng gần bạn",
+  "storeNoFound": "Không tìm thấy cửa hàng nào thuộc danh mục này",
+  "storeReloadButton": "Tải lại danh sách quán",
+  "storeFilterAll": "Tất cả",
+  "cartPickupNote": "Món ăn sẽ được nhà hàng chuẩn bị sẵn sàng vào thời điểm trên.",
+  "cartShippingFee": "Phí giao hàng",
+  "cartShippingFree": "0đ (Tự đến lấy)",
+  "cartPickupTimeInvalid": "Thời gian hẹn lấy phải cách hiện tại ít nhất 5 phút!",
+  "cartProceedConfirm": "Xác nhận đặt món & Thanh toán",
+  "voucherTabAll": "Tất cả",
+  "voucherTabDiscount": "Mã giảm giá",
+  "voucherTabSaved": "Voucher đã lưu",
+  "voucherEmptyWallet": "Chưa có voucher nào trong ví",
+  "voucherEmptyWalletSubtitle": "Hãy bấm 'Thu thập' để lưu mã giảm giá vào ví",
+  "voucherEmptyAvailable": "Chưa có voucher khả dụng nào",
+  "voucherEmptyAvailableSubtitle": "Tất cả voucher có thể đã được thu thập hoặc hết hạn",
+  "voucherCodeLabel": "Mã",
+  "voucherExpiryLabel": "Hạn dùng",
+  "voucherStatusSaved": "Đã lưu",
+  "voucherActionCollect": "Thu thập",
+  "voucherCollectedSuccess": "Đã lưu mã {code} vào ví của bạn!",
+  "@voucherCollectedSuccess": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherCollectFailed": "Không thể lưu voucher",
+  "voucherSelectTitle": "Chọn Ưu Đãi Khuyến Mãi",
+  "voucherInputHint": "Nhập mã giảm giá...",
+  "voucherInputRequired": "Vui lòng nhập mã voucher",
+  "voucherInvalid": "Mã voucher không hợp lệ",
+  "singleStoreWarningTitle": "Chỉ đặt 1 quán mỗi lần",
+  "singleStoreWarningPart1": "Bạn đang có món từ ",
+  "singleStoreWarningPart2": " trong giỏ hàng.\n\nVui lòng thanh toán xong rồi mới đặt ở ",
+  "singleStoreWarningCartBadge": "Giỏ hiện có {count} món ({price})",
+  "@singleStoreWarningCartBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "singleStoreWarningPayExisting": "Thanh toán giỏ hiện tại trước",
+  "singleStoreWarningClearAndOrder": "Xóa giỏ hàng & đặt quán mới",
+  "orderCancelledTitle": "Đơn hàng đã được hủy",
+  "orderCancelledDefaultMsg": "Đơn hàng chưa thanh toán đã được hủy thành công.\nKhông phát sinh giao dịch hoàn tiền.",
+  "orderCancelledBackHome": "Về trang chủ",
+  "orderCancelledViewOrder": "Xem đơn hàng",
+  "orderEnjoyMealTitle": "Chúc Quý Khách Ngon Miệng!",
+  "orderEnjoyMealSubtitle": "Đã lấy món thành công. Chúc bạn có một hành trình thật an toàn và thuận lợi!",
+  "orderEnjoyMealContinue": "Hoàn tất & Tiếp tục lộ trình",
+  "orderEnjoyMealReviewMap": "Xem lại bản đồ (nếu bấm nhầm)",
+  "modalFeedbackThanksTitle": "Cảm ơn bạn!",
+  "modalFeedbackThanksMessage": "Góp ý của bạn đã được ghi nhận. Đội ngũ Food Route sẽ luôn nỗ lực cải thiện để mang đến dịch vụ tốt nhất!",
+  "modalFeedbackBadge": "ĐÃ GHI NHẬN GÓP Ý",
+  "profilePaymentDetails": "Chi tiết thanh toán",
+  "profileAboutUs": "Về chúng tôi",
+  "profileChangeAddress": "Đổi địa chỉ",
+  "formatItemCount": "{count, plural, other{{count} món}}",
+  "@formatItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatMinuteCount": "{count, plural, other{{count} phút}}",
+  "@formatMinuteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatTableCount": "{count, plural, other{{count} bàn}}",
+  "@formatTableCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatJustNow": "Vừa xong",
+  "formatMinutesAgo": "{count} phút trước",
+  "@formatMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatHoursAgo": "{count} giờ trước",
+  "@formatHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formatDaysAgo": "{count} ngày trước",
+  "@formatDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartSelectOrInputVoucher": "Chọn hoặc nhập mã Voucher",
+  "cartVoucherDirectDiscount": "Giảm tiền trực tiếp cho đơn pre-order",
+  "cartVoucherAppliedDiscount": "Đã giảm -{amount}",
+  "@cartVoucherAppliedDiscount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "storeStatusOpen": "Đang mở",
+  "storeStatusClosed": "Đóng cửa",
+  "storeDineInReservation": "Đặt bàn tại quán (Dine-in)",
+  "storeTabAll": "Tất cả",
+  "storeTabMenu": "Thực đơn",
+  "storeEmptyItems": "Chưa có món ăn nào trong nhà hàng này",
+  "storeFloatingCartTotal": "Tổng thanh toán ({count} món)",
+  "@storeFloatingCartTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeFloatingOrderNow": "Đặt hàng ngay",
+  "quickCatDiscount50": "Món Giảm 50%",
+  "quickCatBobaCoffee": "Trà Sữa / Cà Phê",
+  "quickCatHotNoodles": "Phở & Bún Nóng",
+  "quickCatHotLunch": "Cơm Trưa Nóng",
+  "quickCatBanhMiFast": "Bánh Mì & Nhanh",
+  "quickCatSnacks": "Ăn Kèm & Vặt",
+  "quickCatEatClean": "Eat Clean Healthy",
+  "quickCatPickup0d": "Ghé Lấy 0Đ",
+  "menuFilteringBy": "Đang lọc: {category} ({count} món)",
+  "@menuFilteringBy": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuSearchResultsCount": "Kết quả cho '{query}' ({count} món)",
+  "@menuSearchResultsCount": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuClearFilter": "Bỏ lọc",
+  "storeFilterPho": "Phở",
+  "storeFilterNoodles": "Bún",
+  "storeFilterRice": "Cơm",
+  "storeFilterCoffee": "Cà phê",
+  "storeFilterMilkTea": "Trà sữa",
+  "storeFilterPastry": "Bánh ngọt",
+  "storeFilterBanhMi": "Bánh mì",
+  "storeFilterBirthdayCake": "Bánh sinh nhật",
+  "storeFilterIceCream": "Kem",
+  "storeBadgeRouteDiscount10k": "ƯU ĐÃI LỘ TRÌNH 10K",
+  "storePrepTime15to20": "15-20 phút",
+  "storeFeaturedDishes": "Món nổi bật:",
+  "storeGiftRoutePickup": "Đặt trước ghé lấy tiện đường",
+  "storeViewMenu": "Xem menu",
+  "storeCuisineVietnamese": "Món Việt",
+  "storeRouteSpecialty": "Đặc sản lộ trình",
+  "storeRatingsCount": "{count, plural, other{({count} đánh giá)}}",
+  "@storeRatingsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paymentOptionsTitle": "Tùy chọn thanh toán",
+  "paymentOptionsSubtitle": "Chọn ví điện tử hoặc cổng thanh toán trực tuyến bạn muốn sử dụng làm mặc định khi đặt món.",
+  "paymentCashlessBannerTitle": "Thanh toán trực tuyến (Cashless)",
+  "paymentCashlessBannerSubtitle": "Tất cả đơn hàng Pre-Order được thanh toán và xác nhận tự động qua ví điện tử.",
+  "paymentGatewaysSectionTitle": "VÍ ĐIỆN TỬ & CỔNG THANH TOÁN",
+  "paymentGatewaysAvailable": "{count} CỔNG KHẢ DỤNG",
+  "@paymentGatewaysAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paymentPciSecurityFootnote": "Bảo mật PCI-DSS cấp độ 1 & Mã hóa SSL 256-bit",
+  "paymentReconciliationFootnote": "Giao dịch được đối soát và xác thực tự động trực tiếp qua cổng thanh toán",
+  "paymentHeaderSslSub": "Bảo mật chuẩn mã hóa SSL 256-bit",
+  "paymentDefaultToast": "Đã chọn {name} làm ví thanh toán mặc định",
+  "@paymentDefaultToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentTagRecommended": "KHUYÊN DÙNG",
+  "paymentTagPopular": "PHỔ BIẾN",
+  "paymentTagConvenient": "TIỆN LỢI",
+  "paymentTagNationwide": "TOÀN QUỐC",
+  "paymentVietqrSub": "Quét mã QR chuyển khoản ngân hàng 24/7 tự động xác nhận đơn trong 3 giây.",
+  "paymentMomoSub": "Thanh toán một chạm qua ví điện tử MoMo hoặc quét mã QR MoMo liên kết.",
+  "paymentZaloPaySub": "Thanh toán an toàn, tức thì qua ứng dụng ví điện tử ZaloPay & Zalo.",
+  "paymentVnpaySub": "Cổng thanh toán quốc gia, quét mã thanh toán trực tiếp từ mọi ứng dụng ngân hàng.",
+  "addCardTitle": "Thêm thẻ tín dụng/ghi nợ",
+  "addCardNumberHint": "Số thẻ",
+  "addCardExpiryLabel": "Hạn dùng",
+  "addCardMonthHint": "MM",
+  "addCardYearHint": "YYYY",
+  "addCardSecurityCodeHint": "Mã bảo mật CVV/CVC",
+  "addCardFirstNameHint": "Tên",
+  "addCardLastNameHint": "Họ",
+  "addCardRemoveAnytime": "Bạn có thể xóa thẻ này bất kỳ lúc nào",
+  "addCardButton": "Thêm thẻ",
+  "orderConfirmCancelTitle": "Xác nhận hủy đơn hàng",
+  "orderConfirmCancelContent": "Bạn có chắc chắn muốn hủy đơn hàng #{id} không? Thao tác này không thể hoàn tác.",
+  "@orderConfirmCancelContent": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderCancelNotAllowed": "Đơn hàng đang ở Bước {stepNum} (Bếp đang chuẩn bị). Không thể hủy đơn lúc này!",
+  "@orderCancelNotAllowed": {
+    "placeholders": {
+      "stepNum": {
+        "type": "int"
+      }
+    }
+  },
+  "orderCancellingProgress": "Đang xử lý hủy đơn...",
+  "orderUnpaidSectionTitle": "CHỜ THANH TOÁN ({count} ĐƠN)",
+  "@orderUnpaidSectionTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderUnpaidSectionSub": "Quán chưa nhận đơn",
+  "orderPreparingSectionTitle": "ĐANG CHUẨN BỊ & GIAO ({count} ĐƠN)",
+  "@orderPreparingSectionTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderPreparingSectionSub": "Cập nhật tức thì",
+  "orderCompletedSectionTitle": "Lịch sử đã lấy hàng",
+  "orderCancelledSectionTitle": "Đơn hàng đã hủy",
+  "orderContactRestaurant": "Liên hệ nhà hàng",
+  "orderCallNow": "Gọi ngay",
+  "orderCallClose": "Đóng",
+  "notifCravingSomething": "Đang thèm gì đó?",
+  "notifDiscoverFoodNearYou": "Khám phá món ngon gần bạn",
+  "notifOrderNow": "Đặt món",
+  "notifAllRead": "Đã đọc tất cả",
+  "notifNewCount": "{count} thông báo mới",
+  "@notifNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPeriodToday": "HÔM NAY",
+  "notifPeriodEarlier": "TRƯỚC ĐÓ",
+  "notifMarkAllRead": "Đánh dấu đã đọc",
+  "notifTabAll": "Tất cả",
+  "notifTabOrders": "Đơn hàng",
+  "notifTabPromos": "Ưu đãi",
+  "notifTabSystem": "Hệ thống",
+  "notifEmpty": "Bạn chưa có thông báo nào",
+  "notifSecurityEncrypted": "Tất cả thông báo đều được mã hóa an toàn",
+  "voucherRemaining": "Còn lại: {qty}/{total}",
+  "@voucherRemaining": {
+    "placeholders": {
+      "qty": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherRewardsSubtitle": "Food Route Rewards & Deals ({count} khả dụng)",
+  "@voucherRewardsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherUseNow": "DÙNG NGAY",
+  "supportHeroTitle": "Trung Tâm Trợ Giúp",
+  "supportHeroDesc": "Food Route luôn sẵn sàng đồng hành và giải đáp mọi thắc mắc của bạn.",
+  "supportSecIncidentChat": "Báo Cáo Sự Cố & Chat Trực Tuyến",
+  "supportSecIncidentChatSub": "Hội thoại trực tiếp với đội ngũ Admin hỗ trợ",
+  "supportSecDirectContact": "Liên Hệ Trực Tiếp",
+  "supportSecDirectContactSub": "Đội ngũ chăm sóc khách hàng phục vụ tận tâm",
+  "supportSecFaqFeedback": "Hỏi Đáp & Trợ Giúp Nhanh",
+  "supportSecFaqFeedbackSub": "Tìm câu trả lời hoặc gửi phản hồi ý kiến",
+  "supportViewTickets": "Danh Sách Yêu Cầu Hỗ Trợ",
+  "supportCreateTicket": "Tạo Yêu Cầu Hỗ Trợ Mới",
+  "supportCustomerHotline": "Hotline Chăm Sóc Khách Hàng",
+  "supportOnlineEmail": "Email Hỗ Trực Tuyến",
+  "supportFaqTitle": "Câu Hỏi Thường Gặp (FAQ)",
+  "supportFeedbackTitle": "Gửi Ý Kiến Đóng Góp",
+  "supportDialError": "Không thể mở trình quay số. Đã chép số hotline {phone} vào bộ nhớ tạm.",
+  "@supportDialError": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "supportCopyEmailSuccess": "Đã sao chép địa chỉ email hỗ trợ ({email}) vào bộ nhớ tạm.",
+  "@supportCopyEmailSuccess": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "supportFeedbackTopic": "Chủ đề góp ý",
+  "supportFeedbackInputTitle": "Tiêu đề",
+  "supportFeedbackDetail": "Nội dung chi tiết",
+  "supportFeedbackAttachImages": "Đính kèm hình ảnh",
+  "supportFeedbackSubmit": "Gửi ý kiến",
+  "supportFeedbackThanksTitle": "Cảm ơn bạn!",
+  "supportFeedbackMaxImages": "Tối đa đính kèm 3 hình ảnh.",
+  "supportFeedbackUploadFailed": "Tải ảnh lên thất bại. Vui lòng thử lại!",
+  "supportFeedbackFailedMsg": "Gửi góp ý thất bại",
+  "supportFaqSearchHint": "Tìm kiếm câu hỏi...",
+  "supportFaqEmpty": "Không tìm thấy câu hỏi phù hợp",
+  "aboutCoreValues": "Giá trị cốt lõi",
+  "aboutStandard5Star": "Tiêu chuẩn 5 sao",
+  "aboutStoreCommitment": "Cam kết của quán",
+  "aboutVersionPrefix": "Phiên bản {version} • FoodRoute Official",
+  "@aboutVersionPrefix": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutCopyrightDefault": "© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.",
+  "storeStatusTitle": "Trạng thái đăng ký đối tác",
+  "storeStatusReviewing": "Đang duyệt hồ sơ",
+  "storeStatusApproved": "Đã phê duyệt",
+  "storeStatusRejected": "Chưa được duyệt",
+  "storeStatusActionManage": "Vào giao diện quản lý quán",
+  "storeStatusActionReapply": "Nộp lại hồ sơ đăng ký",
+  "supportMyTicketsTitle": "Phiếu Hỗ Trợ Của Bạn",
+  "supportNewReportBtn": "Báo Cáo Mới",
+  "supportStatusNew": "Mới",
+  "supportStatusProcessing": "Đang xử lý",
+  "supportStatusResolved": "Đã giải quyết",
+  "supportStatusClosed": "Đã đóng",
+  "supportNoTicketsTitle": "Chưa có phiếu hỗ trợ nào",
+  "supportNoTicketsDesc": "Nếu gặp sự cố về đơn hàng hoặc ứng dụng, hãy bấm nút \"Báo Cáo Mới\" bên dưới để được hỗ trợ trực tiếp.",
+  "supportNewMessagesCount": "{count} tin mới",
+  "@supportNewMessagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportCreateTitle": "Báo Cáo Sự Cố",
+  "supportCreateIssueTypeLabel": "Loại sự cố gặp phải *",
+  "supportIssueOrder": "Đơn hàng",
+  "supportIssuePayment": "Thanh toán",
+  "supportIssueRestaurant": "Quán ăn",
+  "supportIssueAppBug": "Lỗi ứng dụng",
+  "supportIssueOther": "Khác",
+  "supportOrderIdRelatedLabel": "Mã đơn hàng liên quan (tùy chọn)",
+  "supportOrderIdRelatedHint": "Ví dụ: 1234",
+  "supportIssueDescLabel": "Mô tả chi tiết sự cố *",
+  "supportIssueDescHint": "Vui lòng mô tả rõ sự cố để nhân viên hỗ trợ bạn nhanh chóng nhất...",
+  "supportIssueDescMinLength": "Vui lòng mô tả sự cố (tối thiểu 5 ký tự)",
+  "supportIssuePhotosLabel": "Hình ảnh minh họa sự cố",
+  "supportIssuePhotosCount": "{count}/3 ảnh",
+  "@supportIssuePhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportAddPhoto": "Thêm ảnh",
+  "supportCreateSubmitBtn": "Gửi Báo Cáo & Bắt Đầu Chat",
+  "supportChatHeader": "Hỗ trợ #{id}",
+  "@supportChatHeader": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "supportChatClosedNotice": "Phiếu hỗ trợ này đã được đóng.",
+  "supportChatSenderYou": "Bạn",
+  "supportChatSenderAdmin": "Admin Food Route",
+  "supportChatStatusSeen": "Đã xem",
+  "supportChatStatusSent": "Đã gửi",
+  "supportChatInputHint": "Nhập tin nhắn hỗ trợ...",
+  "supportChatInputClosedHint": "Phiếu hỗ trợ đã đóng",
+  "orderTabProcessing": "Đang xử lý",
+  "orderTabCompleted": "Đã hoàn thành",
+  "orderCompletedCountBadge": "{count} đơn hoàn tất",
+  "@orderCompletedCountBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderEmptyProcessing": "Chưa có đơn hàng đang xử lý",
+  "orderStepPlaced": "Đã đặt",
+  "orderStepConfirmed": "Xác nhận",
+  "orderStepPreparing": "Chuẩn bị",
+  "orderStepReady": "Chờ lấy",
+  "orderStepPickedUp": "Đã lấy",
+  "orderSelfPickup": "Tự ghé lấy",
+  "orderTotalLabel": "Tổng tiền",
+  "orderCancelBtn": "✕ Hủy đơn",
+  "orderStepTitlePlaced": "Bước 1: Đã đặt món",
+  "orderStepSubPlaced": "Quán đang tiếp nhận",
+  "orderStepTitleConfirmed": "Bước 2: Quán đã xác nhận",
+  "orderStepSubConfirmedPickup": "Dự kiến lấy: {time}",
+  "@orderStepSubConfirmedPickup": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "orderStepSubConfirmedApproved": "Quán đã duyệt đơn",
+  "orderStepTitlePreparing": "Bước 3: Đang chuẩn bị",
+  "orderStepSubPreparing": "Bếp đang thực hiện",
+  "orderStepTitleReady": "Bước 4: Sẵn sàng ghé lấy",
+  "orderStepSubReady": "Có thể đến lấy ngay",
+  "orderStatusBadgePickedUp": "● Đã lấy",
+  "orderStatusBadgeCancelled": "● Đã hủy",
+  "orderReviewBtn": "Đánh giá",
+  "orderReviewedBtn": "Đã đánh giá",
+  "orderReorderBtn": "Đặt lại",
+  "checkoutPreOrderTitle": "Xác nhận đơn Pre-Order",
+  "checkoutPickupTimeScheduled": "Giờ hẹn nhận món",
+  "checkoutPayWithVietQR": "Thanh toán qua VietQR / PayOS",
+  "checkoutDishSubtotal": "Tiền món ăn",
+  "checkoutDiscountWithCode": "Giảm giá ({code})",
+  "@checkoutDiscountWithCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutDeliveryFee": "Phí giao hàng",
+  "checkoutFreeSelfPickup": "0đ (Tự đến lấy)",
+  "checkoutTotalPayment": "Tổng thanh toán",
+  "checkoutCompleteOrder": "Hoàn tất đặt món",
+  "vietqrPaymentTitle": "Thanh toán VietQR / PayOS",
+  "vietqrOrderCodeAmount": "Mã đơn hàng: #DH-{id} • {amount}đ",
+  "@vietqrOrderCodeAmount": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "vietqrBank": "Ngân hàng",
+  "vietqrAccountNumber": "Số tài khoản",
+  "vietqrAccountName": "Chủ tài khoản",
+  "vietqrTransferContent": "Nội dung CK",
+  "vietqrExactMemoNotice": "Vui lòng giữ chính xác nội dung chuyển khoản để hệ thống tự động xác nhận đơn.",
+  "vietqrAutoDetecting": "Đang tự động nhận diện thanh toán...",
+  "vietqrCancelOrderBtn": "Hủy đơn hàng",
+  "vietqrCancelDialogTitle": "Hủy đơn hàng?",
+  "vietqrCancelDialogDesc": "Đơn hàng #{id} ({amount}đ) sẽ bị hủy và không thể khôi phục.",
+  "@vietqrCancelDialogDesc": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "vietqrContinuePaymentBtn": "Tiếp tục thanh toán",
+  "vietqrConfirmCancelBtn": "Xác nhận hủy",
+  "vietqrCancelFailed": "Hủy đơn hàng thất bại. Vui lòng thử lại.",
+  "notifPeriodThisWeek": "TUẦN NÀY",
+  "notifTitlePaymentSuccess": "Thanh toán thành công",
+  "notifTitleOrderCompleted": "Đơn hàng hoàn tất",
+  "notifTitleFoodReady": "Món ăn đã sẵn sàng",
+  "notifTitleFoodPreparing": "Đang chuẩn bị món",
+  "notifTitleOrderConfirmed": "Đã xác nhận đơn hàng",
+  "notifTitleOrderCancelled": "Đơn hàng đã hủy",
+  "notifTagPaid": "Đã thanh toán",
+  "notifTagPreparing": "Đang chuẩn bị",
+  "notifTagReady": "Sẵn sàng",
+  "notifTagCompleted": "Hoàn tất",
+  "notifTagDelivering": "Đang giao",
+  "notifTagCancelled": "Đã hủy",
+  "flashSaleTitle": "Flash Sale Giá Sốc",
+  "flashSaleEndsIn": "KẾT THÚC TRONG",
+  "flashSaleBannerSubtitle": "20 món ăn ngẫu nhiên • Làm mới mỗi 5 tiếng",
+  "flashSalePrepTimeMin": "{time}p",
+  "@flashSalePrepTimeMin": {
+    "placeholders": {
+      "time": {
+        "type": "int"
+      }
+    }
+  },
+  "flashSaleSoldCount": "Đã bán {count}",
+  "@flashSaleSoldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "flashSaleSellingFast": "Đang bán chạy",
+  "flashSaleRemaining": "Còn lại {count}",
+  "@flashSaleRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeClearTraffic": "Tuyến đường thông thoáng",
+  "routeClearTrafficDetail": "Tuyến đường thông thoáng, không có ùn tắc",
+  "routeTrafficStatusLabel": "Giao thông: {status}",
+  "@routeTrafficStatusLabel": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "routeTrafficStatusDetail": "Tình trạng giao thông: {status}",
+  "@routeTrafficStatusDetail": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "trafficStatusSmooth": "Thông thoáng",
+  "trafficStatusSlow": "Chậm",
+  "trafficStatusModerate": "Ùn tắc nhẹ",
+  "trafficStatusHeavy": "Ùn tắc nặng",
+  "routeDineInHeader": "ĂN TẠI QUÁN",
+  "routePreOrderHeader": "ĐẶT TRƯỚC",
+  "routeQuickStopHeader": "GHÉ LẤY",
+  "routeMinutesApprox": "~{minutes} phút",
+  "@routeMinutesApprox": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "routeConvenientBadge": "TIỆN ĐƯỜNG",
+  "routeSearchingBadge": "ĐANG TÌM",
+  "routeStopoverBadge": "GHÉ QUÁN",
+  "routeZeroStoresBadge": "0 QUÁN",
+  "routeStopoverBanner": "Điểm dừng ghé lấy: {storeName}",
+  "@routeStopoverBanner": {
+    "placeholders": {
+      "storeName": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSearchingFoodAlong": "Đang tìm: \"{keyword}\" dọc tuyến đường...",
+  "@routeSearchingFoodAlong": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoStoresForKeyword": "Không tìm thấy quán bán \"{keyword}\" dọc tuyến này",
+  "@routeNoStoresForKeyword": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeFoundStoresForKeyword": "Tìm thấy {count} quán có \"{keyword}\" dọc tuyến",
+  "@routeFoundStoresForKeyword": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "routeDefaultCommuteBanner": "Tiện đường đi làm về • Đặt trước ghé lấy không chờ đợi",
+  "routeConfirmDineIn": "Xác nhận lộ trình ăn tại quán",
+  "routeConfirmPreOrder": "Xác nhận lộ trình đặt trước",
+  "routeConfirmQuickStop": "Xác nhận lộ trình ghé lấy",
+  "routeDirectionsTitle": "Hướng dẫn đường đi",
+  "routeStepsCount": "{count} bước",
+  "@routeStepsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeArriveAt": "Đến {time}",
+  "@routeArriveAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeNoDirectionsData": "Không có dữ liệu hướng dẫn",
+  "routeTrafficDelayed": "Dự kiến trễ {delay} do giao thông",
+  "@routeTrafficDelayed": {
+    "placeholders": {
+      "delay": {
+        "type": "String"
+      }
+    }
+  },
+  "routeGoStraight": "Đi thẳng",
+  "durationHoursMinutes": "{hours} giờ {minutes} phút",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} phút",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trafficDelayMinutes": "+{minutes} phút",
+  "@trafficDelayMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trafficDelayHours": "+{hours} giờ",
+  "@trafficDelayHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "routeRestaurantsTitle": "Quán ăn trên lộ trình ({count})",
+  "@routeRestaurantsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeRestaurantsSubtitle": "Tiện đường ghé lấy • Không cần đi vòng",
+  "routeNoRestaurantsFound": "Đang tải hoặc chưa có quán ăn trực tiếp trên trục đường này",
+  "routeExploreFullMenu": "Khám phá toàn bộ thực đơn",
+  "routeOnRoute": "Ngay trên tuyến",
+  "routeDetourMeters": "Lệch tuyến {dist}m",
+  "@routeDetourMeters": {
+    "placeholders": {
+      "dist": {
+        "type": "int"
+      }
+    }
+  },
+  "routePrepTimeApprox": "Chuẩn bị ~{time} phút",
+  "@routePrepTimeApprox": {
+    "placeholders": {
+      "time": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDistanceLabel": "Cách bạn: ",
+  "routeViewMenu": "Xem Menu",
+  "badgeNew": "Mới",
+  "restaurantDefaultName": "Nhà hàng",
+  "pickupAddressDefault": "Địa chỉ tự đến lấy",
+  "placeTypeLocation": "Địa điểm",
+  "placeTypeRestaurant": "Nhà hàng",
+  "placeTypeHotel": "Khách sạn",
+  "placeTypeHospital": "Bệnh viện",
+  "placeTypeSchool": "Trường học",
+  "placeTypeCafe": "Café",
+  "placeTypeBank": "Ngân hàng",
+  "placeTypePark": "Công viên",
+  "placeTypeAirport": "Sân bay",
+  "mapDirectionsHere": "Chỉ đường đến đây",
+  "mapSetAsStart": "Đặt làm điểm bắt đầu",
+  "mapCopiedCoordinates": "Đã sao chép tọa độ: {coord}",
+  "@mapCopiedCoordinates": {
+    "placeholders": {
+      "coord": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherAppliedCode": "Đã áp dụng: {code}",
+  "@voucherAppliedCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherDiscountAmount": "Giảm giá: -{amount}",
+  "@voucherDiscountAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherRemove": "Gỡ bỏ",
+  "voucherAvailableTitle": "Mã ưu đãi khả dụng",
+  "voucherNoAvailableFromStore": "Chưa có voucher khả dụng từ nhà hàng này",
+  "voucherMinOrder": "Đơn từ {amount}",
+  "@voucherMinOrder": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherAppliedStatus": "Đã dùng",
+  "voucherNotEligibleStatus": "Chưa đủ đơn",
+  "pickupDistanceAway": "Cách {distance}",
+  "@pickupDistanceAway": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "pickupInMinutes": "Ghé lấy sau {minutes}p",
+  "@pickupInMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDetails": "Chi tiết",
+  "routeViewSegmentDetails": "Xem chi tiết chặng đường",
+  "menuItemSoldOut": "Hết món",
+  "cartAddedSuccess": "Đã thêm \"{name}\" vào giỏ hàng",
+  "@cartAddedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "itemSoldCount": "Đã bán {count}",
+  "@itemSoldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherRemovedSuccess": "Đã gỡ voucher",
+  "voucherAppliedSuccess": "Đã áp dụng mã {code} (Giảm {amount})",
+  "@voucherAppliedSuccess": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherNetworkError": "Không thể xác minh mã voucher. Vui lòng kiểm tra lại mạng.",
+  "voucherDiscountPercent": "Giảm {percent}%",
+  "@voucherDiscountPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherDiscountPercentMax": "Giảm {percent}% (Tối đa {maxAmount})",
+  "@voucherDiscountPercentMax": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "maxAmount": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherDiscountFixed": "Giảm {amount}",
+  "@voucherDiscountFixed": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,9 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../common/format_utils.dart';
 import 'route_restaurants_sheet.dart';
 import '../providers/map_provider.dart';
 import '../models/route_model.dart';
+
+String _formatRouteDuration(BuildContext context, int totalSec) {
+  if (totalSec >= 3600) {
+    final h = totalSec ~/ 3600;
+    final m = (totalSec % 3600) ~/ 60;
+    return context.l10n.durationHoursMinutes(h, m);
+  }
+  final m = (totalSec / 60).round();
+  return context.l10n.durationMinutes(m);
+}
+
+String _formatTrafficLabel(BuildContext context, TrafficStatus status) {
+  switch (status) {
+    case TrafficStatus.smooth:
+      return context.l10n.trafficStatusSmooth;
+    case TrafficStatus.slow:
+      return context.l10n.trafficStatusSlow;
+    case TrafficStatus.moderate:
+      return context.l10n.trafficStatusModerate;
+    case TrafficStatus.heavy:
+      return context.l10n.trafficStatusHeavy;
+  }
+}
+
+String _formatTrafficDelay(BuildContext context, int seconds) {
+  if (seconds < 60) return '';
+  if (seconds < 3600) {
+    return context.l10n.trafficDelayMinutes((seconds / 60).toInt());
+  }
+  return context.l10n.trafficDelayHours((seconds / 3600).toStringAsFixed(1));
+}
+
+String _formatStepDuration(BuildContext context, String rawDur) {
+  final isVi = Localizations.localeOf(context).languageCode == 'vi';
+  if (isVi) return rawDur;
+  return rawDur.replaceAll('phút', 'mins').replaceAll('giờ', 'hr');
+}
 
 class RouteInfoCard extends StatelessWidget {
   const RouteInfoCard({super.key});
@@ -71,7 +109,7 @@ class _RouteCard extends StatelessWidget {
                   ),
                 ),
                 _buildRouteAndPriceRow(context),
-                _buildRouteBanner(),
+                _buildRouteBanner(context),
                 _buildConfirmButton(context),
               ],
             ),
@@ -98,7 +136,7 @@ class _RouteCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            route.totalDuration,
+            _formatRouteDuration(context, route.totalDurationSeconds),
             style: GoogleFonts.outfit(
               color: const Color(0xFF1C1C1E),
               fontSize: 16,
@@ -108,7 +146,7 @@ class _RouteCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '(${route.totalDistance}) • ${provider.pickupReadyTimeText}',
+              '(${route.totalDistance}) • ${context.l10n.routePrepTimeApprox(provider.prepMinutes)}',
               style: GoogleFonts.outfit(
                 color: const Color(0xFF8E8E93),
                 fontSize: 12,
@@ -133,7 +171,7 @@ class _RouteCard extends StatelessWidget {
                       color: Color(0xFFFC6011), size: 14),
                   const SizedBox(width: 4),
                   Text(
-                    'Chi tiết',
+                    context.l10n.routeDetails,
                     style: GoogleFonts.outfit(
                       color: const Color(0xFFFC6011),
                       fontSize: 11,
@@ -151,8 +189,8 @@ class _RouteCard extends StatelessWidget {
 
   Widget _buildRouteAndPriceRow(BuildContext context) {
     final trafficNote = route.trafficStatus == TrafficStatus.smooth
-        ? 'Tuyến đường thông thoáng'
-        : 'Giao thông: ${route.trafficLabel}';
+        ? context.l10n.routeClearTraffic
+        : context.l10n.routeTrafficStatusLabel(_formatTrafficLabel(context, route.trafficStatus));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
@@ -162,7 +200,7 @@ class _RouteCard extends StatelessWidget {
           GestureDetector(
             onTap: () => _showStepsSheet(context),
             child: Tooltip(
-              message: 'Xem chi tiết chặng đường',
+              message: context.l10n.routeViewSegmentDetails,
               child: Container(
                 width: 42,
                 height: 42,
@@ -203,7 +241,7 @@ class _RouteCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      route.totalDuration,
+                      _formatRouteDuration(context, route.totalDurationSeconds),
                       style: GoogleFonts.outfit(
                         color: const Color(0xFF00C853),
                         fontSize: 15,
@@ -231,8 +269,10 @@ class _RouteCard extends StatelessWidget {
             children: [
               Text(
                 provider.foodRouteOption == FoodRouteOption.dineIn
-                    ? 'ĂN TẠI QUÁN'
-                    : (provider.foodRouteOption == FoodRouteOption.preOrder ? 'ĐẶT TRƯỚC' : 'GHÉ LẤY'),
+                    ? context.l10n.routeDineInHeader
+                    : (provider.foodRouteOption == FoodRouteOption.preOrder
+                        ? context.l10n.routePreOrderHeader
+                        : context.l10n.routeQuickStopHeader),
                 style: GoogleFonts.outfit(
                   color: const Color(0xFF8E8E93),
                   fontSize: 9,
@@ -242,7 +282,7 @@ class _RouteCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '~${provider.prepMinutes} phút',
+                context.l10n.routeMinutesApprox(provider.prepMinutes),
                 style: GoogleFonts.outfit(
                   color: const Color(0xFFFC6011),
                   fontSize: 17,
@@ -256,28 +296,28 @@ class _RouteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRouteBanner() {
+  Widget _buildRouteBanner(BuildContext context) {
     final stopoverStore = provider.selectedStopoverStore;
     final String bannerText;
     final String badgeText;
 
     if (stopoverStore != null) {
-      bannerText = 'Điểm dừng ghé lấy: ${stopoverStore['tenQuan'] ?? 'Đã chọn quán'}';
-      badgeText = 'GHÉ QUÁN';
+      bannerText = context.l10n.routeStopoverBanner((stopoverStore['tenQuan'] ?? context.l10n.restaurantDefaultName).toString());
+      badgeText = context.l10n.routeStopoverBadge;
     } else if (provider.foodKeyword.isNotEmpty) {
       if (provider.isSearchingFood) {
-        bannerText = 'Đang tìm: "${provider.foodKeyword}" dọc tuyến đường...';
-        badgeText = 'ĐANG TÌM';
+        bannerText = context.l10n.routeSearchingFoodAlong(provider.foodKeyword);
+        badgeText = context.l10n.routeSearchingBadge;
       } else if (provider.routeRestaurants.isEmpty) {
-        bannerText = 'Không tìm thấy quán bán "${provider.foodKeyword}" dọc tuyến này';
-        badgeText = '0 QUÁN';
+        bannerText = context.l10n.routeNoStoresForKeyword(provider.foodKeyword);
+        badgeText = context.l10n.routeZeroStoresBadge;
       } else {
-        bannerText = 'Tìm thấy ${provider.routeRestaurants.length} quán có "${provider.foodKeyword}" dọc tuyến';
-        badgeText = 'TIỆN ĐƯỜNG';
+        bannerText = context.l10n.routeFoundStoresForKeyword(provider.routeRestaurants.length, provider.foodKeyword);
+        badgeText = context.l10n.routeConvenientBadge;
       }
     } else {
-      bannerText = 'Tiện đường đi làm về • Đặt trước ghé lấy không chờ đợi';
-      badgeText = 'TIỆN ĐƯỜNG';
+      bannerText = context.l10n.routeDefaultCommuteBanner;
+      badgeText = context.l10n.routeConvenientBadge;
     }
 
     return Container(
@@ -321,6 +361,7 @@ class _RouteCard extends StatelessWidget {
                 color: const Color(0xFFFC6011),
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -331,12 +372,14 @@ class _RouteCard extends StatelessWidget {
 
   Widget _buildConfirmButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       child: GestureDetector(
-        onTap: () => _showRouteRestaurantsSheet(context),
+        onTap: () {
+          _showRouteRestaurantsSheet(context);
+        },
         child: Container(
           width: double.infinity,
-          height: 50,
+          height: 52,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFFC6011), Color(0xFFFF7A00)],
@@ -355,10 +398,10 @@ class _RouteCard extends StatelessWidget {
             children: [
               Text(
                 provider.foodRouteOption == FoodRouteOption.dineIn
-                    ? 'Xác nhận lộ trình ăn tại quán'
+                    ? context.l10n.routeConfirmDineIn
                     : (provider.foodRouteOption == FoodRouteOption.preOrder
-                        ? 'Xác nhận lộ trình đặt trước'
-                        : 'Xác nhận lộ trình ghé lấy'),
+                        ? context.l10n.routeConfirmPreOrder
+                        : context.l10n.routeConfirmQuickStop),
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 15,
@@ -429,7 +472,7 @@ class DirectionStepsList extends StatelessWidget {
                         color: Color(0xFF00E5FF), size: 22),
                     const SizedBox(width: 10),
                     Text(
-                      'Hướng dẫn đường đi',
+                      context.l10n.routeDirectionsTitle,
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontSize: 18,
@@ -439,7 +482,7 @@ class DirectionStepsList extends StatelessWidget {
                     const Spacer(),
                     _chip(
                         Icons.format_list_numbered_rounded,
-                        '${route.steps.length} bước',
+                        context.l10n.routeStepsCount(route.steps.length),
                         const Color(0xFF00E5FF)),
                   ],
                 ),
@@ -448,18 +491,18 @@ class DirectionStepsList extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Row(
                   children: [
-                    _chip(Icons.schedule_rounded, route.totalDuration,
+                    _chip(Icons.schedule_rounded, _formatRouteDuration(context, route.totalDurationSeconds),
                         const Color(0xFF00E5FF)),
                     const SizedBox(width: 8),
                     _chip(Icons.straighten_rounded, route.totalDistance,
                         const Color(0xFFFFD54F)),
                     const SizedBox(width: 8),
-                    _chip(Icons.location_on_rounded, 'Đến ${route.etaText}',
+                    _chip(Icons.location_on_rounded, context.l10n.routeArriveAt(route.etaText),
                         const Color(0xFF00E676)),
                   ],
                 ),
               ),
-              _buildTrafficSummary(),
+              _buildTrafficSummary(context),
               Divider(
                   color: Colors.white.withValues(alpha: 0.06),
                   height: 1,
@@ -476,7 +519,7 @@ class DirectionStepsList extends StatelessWidget {
                                 size: 32),
                             const SizedBox(height: 8),
                             Text(
-                              'Không có dữ liệu hướng dẫn',
+                              context.l10n.routeNoDirectionsData,
                               style: GoogleFonts.outfit(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 13,
@@ -490,7 +533,7 @@ class DirectionStepsList extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: route.steps.length,
                         itemBuilder: (_, i) =>
-                            _buildStep(route.steps[i], i, route.steps.length),
+                            _buildStep(context, route.steps[i], i, route.steps.length),
                       ),
               ),
             ],
@@ -500,7 +543,7 @@ class DirectionStepsList extends StatelessWidget {
     );
   }
 
-  Widget _buildTrafficSummary() {
+  Widget _buildTrafficSummary(BuildContext context) {
     final status = route.trafficStatus;
     final (color, icon) = switch (status) {
       TrafficStatus.smooth => (const Color(0xFF00E676), Icons.check_circle_outline_rounded),
@@ -526,16 +569,16 @@ class DirectionStepsList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tình trạng giao thông: ${route.trafficLabel}',
+                  context.l10n.routeTrafficStatusDetail(_formatTrafficLabel(context, route.trafficStatus)),
                   style: GoogleFonts.outfit(
                     color: color,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (route.trafficDelayText.isNotEmpty)
+                if (route.trafficDelayInSeconds >= 60)
                   Text(
-                    'Dự kiến trễ ${route.trafficDelayText} do giao thông',
+                    context.l10n.routeTrafficDelayed(_formatTrafficDelay(context, route.trafficDelayInSeconds)),
                     style: GoogleFonts.outfit(
                       color: color.withValues(alpha: 0.75),
                       fontSize: 11,
@@ -543,7 +586,7 @@ class DirectionStepsList extends StatelessWidget {
                   )
                 else
                   Text(
-                    'Tuyến đường thông thoáng, không có ùn tắc',
+                    context.l10n.routeClearTrafficDetail,
                     style: GoogleFonts.outfit(
                       color: color.withValues(alpha: 0.75),
                       fontSize: 11,
@@ -557,7 +600,7 @@ class DirectionStepsList extends StatelessWidget {
     );
   }
 
-  Widget _buildStep(RouteStep step, int index, int total) {
+  Widget _buildStep(BuildContext context, RouteStep step, int index, int total) {
     final isFirst = index == 0;
     final isLast = index == total - 1;
     final isArrive = step.maneuver.toUpperCase().contains('ARRIVE') ||
@@ -569,115 +612,107 @@ class DirectionStepsList extends StatelessWidget {
             ? const Color(0xFF00E5FF)
             : Colors.white.withValues(alpha: 0.8);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: 40,
-              child: Column(
-                children: [
-                  if (!isFirst)
-                    Expanded(
-                      child: Center(
-                        child: Container(
-                          width: 2,
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 8),
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: isArrive
-                          ? const Color(0xFF00E676).withValues(alpha: 0.15)
-                          : isFirst
-                              ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
-                              : const Color(0xFF2D2D5E),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: stepColor.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(step.maneuverIcon,
-                          style: const TextStyle(fontSize: 15)),
-                    ),
-                  ),
-                  if (!isLast)
-                    Expanded(
-                      child: Center(
-                        child: Container(
-                          width: 2,
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 8),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+    return InkWell(
+      onTap: () {},
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 32,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      step.instruction.isEmpty ? 'Đi thẳng' : step.instruction,
-                      style: GoogleFonts.outfit(
-                        color: stepColor,
-                        fontSize: 13,
-                        fontWeight: isFirst || isArrive
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: isArrive
+                            ? const Color(0xFF00E676).withValues(alpha: 0.2)
+                            : isFirst
+                                ? const Color(0xFF00E5FF).withValues(alpha: 0.2)
+                                : const Color(0xFF2D2D5E),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: stepColor.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(step.maneuverIcon,
+                            style: const TextStyle(fontSize: 15)),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        if (step.distance != '0 m') ...[
-                          Icon(Icons.straighten_rounded,
+                    if (!isLast)
+                      Expanded(
+                        child: Center(
+                          child: Container(
+                            width: 2,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        step.instruction.isEmpty ? context.l10n.routeGoStraight : step.instruction,
+                        style: GoogleFonts.outfit(
+                          color: stepColor,
+                          fontSize: 13,
+                          fontWeight: isFirst || isArrive
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          if (step.distance != '0 m') ...[
+                            Icon(Icons.straighten_rounded,
+                                size: 11,
+                                color: Colors.white.withValues(alpha: 0.4)),
+                            const SizedBox(width: 3),
+                            Text(
+                              step.distance,
+                              style: GoogleFonts.outfit(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 11,
+                              ),
+                            ),
+                            Text(' • ',
+                                style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    fontSize: 11)),
+                          ],
+                          Icon(Icons.schedule_rounded,
                               size: 11,
                               color: Colors.white.withValues(alpha: 0.4)),
                           const SizedBox(width: 3),
                           Text(
-                            step.distance,
+                            _formatStepDuration(context, step.duration),
                             style: GoogleFonts.outfit(
                               color: Colors.white.withValues(alpha: 0.5),
                               fontSize: 11,
                             ),
                           ),
-                          Text(' • ',
-                              style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  fontSize: 11)),
                         ],
-                        Icon(Icons.schedule_rounded,
-                            size: 11,
-                            color: Colors.white.withValues(alpha: 0.4)),
-                        const SizedBox(width: 3),
-                        Text(
-                          step.duration,
-                          style: GoogleFonts.outfit(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

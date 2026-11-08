@@ -6,6 +6,7 @@ import '../../../common/color_extension.dart';
 import '../../../common/globs.dart';
 import '../../../common/locator.dart';
 import '../../../model/support_model.dart';
+import '../../../common/format_utils.dart';
 import '../../../providers/support_provider.dart';
 import '../../../services/socket_service.dart';
 import '../../../services/support_service.dart';
@@ -289,16 +290,16 @@ class _SupportChatViewState extends State<SupportChatView> {
     }
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
     switch (status) {
       case 'MOI':
-        return 'Mới';
+        return context.l10n.supportStatusNew;
       case 'DANG_XU_LY':
-        return 'Đang xử lý';
+        return context.l10n.supportStatusProcessing;
       case 'DA_GIAI_QUYET':
-        return 'Đã giải quyết';
+        return context.l10n.supportStatusResolved;
       case 'DA_DONG':
-        return 'Đã đóng';
+        return context.l10n.supportStatusClosed;
       default:
         return status;
     }
@@ -332,7 +333,7 @@ class _SupportChatViewState extends State<SupportChatView> {
             Row(
               children: [
                 Text(
-                  'Hỗ trợ #${_ticket.maPhieu}',
+                  context.l10n.supportChatHeader(_ticket.maPhieu),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -347,7 +348,7 @@ class _SupportChatViewState extends State<SupportChatView> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    _getStatusText(_ticket.trangThai),
+                    _getStatusText(context, _ticket.trangThai),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -372,14 +373,14 @@ class _SupportChatViewState extends State<SupportChatView> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               color: isDark ? const Color(0xFF2D3748) : const Color(0xFFF1F5F9),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF64748B)),
-                  SizedBox(width: 8),
+                  const Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Phiếu hỗ trợ này đã được đóng.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      context.l10n.supportChatClosedNotice,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -413,8 +414,8 @@ class _SupportChatViewState extends State<SupportChatView> {
                                 padding: const EdgeInsets.only(bottom: 3, left: 2, right: 2),
                                 child: Text(
                                   isUser
-                                      ? 'Bạn • ${m.ngayTao.hour.toString().padLeft(2, '0')}:${m.ngayTao.minute.toString().padLeft(2, '0')}'
-                                      : 'Admin Food Route • ${m.ngayTao.hour.toString().padLeft(2, '0')}:${m.ngayTao.minute.toString().padLeft(2, '0')}',
+                                      ? '${context.l10n.supportChatSenderYou} • ${m.ngayTao.hour.toString().padLeft(2, '0')}:${m.ngayTao.minute.toString().padLeft(2, '0')}'
+                                      : '${context.l10n.supportChatSenderAdmin} • ${m.ngayTao.hour.toString().padLeft(2, '0')}:${m.ngayTao.minute.toString().padLeft(2, '0')}',
                                   style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                                 ),
                               ),
@@ -485,7 +486,7 @@ class _SupportChatViewState extends State<SupportChatView> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 2, right: 2),
                                   child: Text(
-                                    m.daXem ? 'Đã xem' : 'Đã gửi',
+                                    m.daXem ? context.l10n.supportChatStatusSeen : context.l10n.supportChatStatusSent,
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: m.daXem ? Colors.blue : const Color(0xFF94A3B8),
@@ -574,7 +575,7 @@ class _SupportChatViewState extends State<SupportChatView> {
                       onSubmitted: (_) => _send(),
                       style: TextStyle(fontSize: 14, color: TColor.primaryTextOf(context)),
                       decoration: InputDecoration(
-                        hintText: isClosed ? 'Phiếu hỗ trợ đã đóng' : 'Nhập tin nhắn hỗ trợ...',
+                        hintText: isClosed ? context.l10n.supportChatInputClosedHint : context.l10n.supportChatInputHint,
                         hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                         border: InputBorder.none,
                       ),

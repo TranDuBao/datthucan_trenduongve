@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/format_utils.dart';
 import '../../../common/globs.dart';
 import '../../../model/support_model.dart';
 import '../../../services/support_service.dart';
@@ -51,7 +52,7 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
   Future<void> _pickAndUploadImage() async {
     if (_uploadedImages.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tối đa đính kèm 3 hình ảnh.')),
+        SnackBar(content: Text(context.l10n.supportFeedbackMaxImages)),
       );
       return;
     }
@@ -82,7 +83,7 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tải ảnh lên thất bại. Vui lòng thử lại!')),
+            SnackBar(content: Text(context.l10n.supportFeedbackUploadFailed)),
           );
         }
       }
@@ -134,7 +135,7 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Gửi góp ý thất bại')),
+          SnackBar(content: Text(res['message'] ?? context.l10n.supportFeedbackFailedMsg)),
         );
       }
     } finally {
@@ -161,7 +162,7 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Góp Ý & Phản Hồi',
+          context.l10n.supportFeedbackTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 17,
@@ -191,7 +192,7 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
                   children: [
                     // Type Selection
                     Text(
-                      'Loại góp ý / phản hồi *',
+                      context.l10n.supportFeedbackTopic,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -451,9 +452,9 @@ class _SupportFeedbackViewState extends State<SupportFeedbackView> {
                         width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text(
-                        'Gửi Phản Hồi',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    : Text(
+                        context.l10n.supportFeedbackSubmit,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
               ),
             ],

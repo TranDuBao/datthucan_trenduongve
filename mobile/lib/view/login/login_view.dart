@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common/globs.dart';
 import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
@@ -12,7 +13,6 @@ import 'package:provider/provider.dart';
 
 import '../../common/service_call.dart';
 import '../../common_widget/google_login_button.dart';
-import '../../providers/language_provider.dart';
 import '../../common/user_role_helper.dart';
 import '../../providers/notification_provider.dart';
 import '../restaurant_owner/restaurant_owner_main_view.dart';
@@ -50,7 +50,6 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -71,7 +70,7 @@ class _LoginViewState extends State<LoginView> {
                 children: [
                   // Title & Subtitle
                   Text(
-                    "Chào mừng trở lại",
+                    context.l10n.authWelcomeBack,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 24,
@@ -81,7 +80,7 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Đăng nhập để khám phá hàng ngàn quán ngon",
+                    context.l10n.authLoginSubtitle,
                     style: TextStyle(
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                       fontSize: 13,
@@ -92,7 +91,7 @@ class _LoginViewState extends State<LoginView> {
 
                   // Email/Account Field
                   AuthTextfield(
-                    label: "Tài khoản hoặc Email",
+                    label: context.l10n.authAccountOrEmail,
                     hintText: "foodroute@gmail.com",
                     controller: txtEmail,
                     prefixIcon: Icons.mail_outline_rounded,
@@ -102,7 +101,7 @@ class _LoginViewState extends State<LoginView> {
 
                   // Password Field
                   AuthTextfield(
-                    label: "Mật khẩu",
+                    label: context.l10n.authPassword,
                     hintText: "••••••••••••",
                     controller: txtPassword,
                     prefixIcon: Icons.lock_outline_rounded,
@@ -154,7 +153,7 @@ class _LoginViewState extends State<LoginView> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "Ghi nhớ đăng nhập",
+                              context.l10n.authRememberMe,
                               style: TextStyle(
                                 color: isDark
                                     ? const Color(0xFFD1D5DB)
@@ -177,9 +176,9 @@ class _LoginViewState extends State<LoginView> {
                             ),
                           );
                         },
-                        child: const Text(
-                          "Quên mật khẩu?",
-                          style: TextStyle(
+                        child: Text(
+                          context.l10n.authForgotPassword,
+                          style: const TextStyle(
                             color: Color(0xFFFF5216),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -201,7 +200,7 @@ class _LoginViewState extends State<LoginView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          color: const Color(0xFFFF5216).withValues(alpha: 0.32),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -216,9 +215,9 @@ class _LoginViewState extends State<LoginView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        "Đăng nhập",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.authLogin,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -241,7 +240,7 @@ class _LoginViewState extends State<LoginView> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          "HOẶC ĐĂNG NHẬP VỚI",
+                          context.l10n.authOrLoginWith,
                           style: TextStyle(
                             color: isDark ? const Color(0xFF8E95A5) : const Color(0xFF9CA3AF),
                             fontSize: 11,
@@ -362,16 +361,16 @@ class _LoginViewState extends State<LoginView> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: "Chưa có tài khoản? ",
+                                text: context.l10n.authDontHaveAccount,
                                 style: TextStyle(
                                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const TextSpan(
-                                text: "Đăng ký ngay",
-                                style: TextStyle(
+                              TextSpan(
+                                text: context.l10n.authRegisterNow,
+                                style: const TextStyle(
                                   color: Color(0xFFFF5216),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
@@ -398,7 +397,7 @@ class _LoginViewState extends State<LoginView> {
     final passStr = txtPassword.text.trim();
 
     if (accountStr.isEmpty || passStr.isEmpty) {
-      mdShowAlert("Thông báo", "Vui lòng nhập đầy đủ tài khoản và mật khẩu", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authAccountAndPasswordRequired, () {}, isError: true);
       return;
     }
 

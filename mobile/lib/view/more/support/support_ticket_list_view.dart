@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/format_utils.dart';
 import '../../../providers/support_provider.dart';
 import '../../../widgets/skeleton/support_skeleton.dart';
 import 'support_chat_view.dart';
@@ -54,16 +55,16 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
     }
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
     switch (status) {
       case 'MOI':
-        return 'Mới';
+        return context.l10n.supportStatusNew;
       case 'DANG_XU_LY':
-        return 'Đang xử lý';
+        return context.l10n.supportStatusProcessing;
       case 'DA_GIAI_QUYET':
-        return 'Đã giải quyết';
+        return context.l10n.supportStatusResolved;
       case 'DA_DONG':
-        return 'Đã đóng';
+        return context.l10n.supportStatusClosed;
       default:
         return status;
     }
@@ -94,7 +95,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Phiếu Hỗ Trợ Của Bạn',
+          context.l10n.supportMyTicketsTitle,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 17,
@@ -111,9 +112,9 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
         },
         backgroundColor: TColor.primary,
         icon: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 20),
-        label: const Text(
-          'Báo Cáo Mới',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        label: Text(
+          context.l10n.supportNewReportBtn,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -127,10 +128,10 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _buildFilterChip('Tất cả', 'ALL', isDark),
-                _buildFilterChip('Mới', 'MOI', isDark),
-                _buildFilterChip('Đang xử lý', 'DANG_XU_LY', isDark),
-                _buildFilterChip('Đã giải quyết', 'CLOSED', isDark),
+                _buildFilterChip(context.l10n.commonAll, 'ALL', isDark),
+                _buildFilterChip(context.l10n.supportStatusNew, 'MOI', isDark),
+                _buildFilterChip(context.l10n.supportStatusProcessing, 'DANG_XU_LY', isDark),
+                _buildFilterChip(context.l10n.supportStatusResolved, 'CLOSED', isDark),
               ],
             ),
           ),
@@ -151,7 +152,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                               Icon(Icons.inbox_rounded, size: 56, color: isDark ? Colors.white30 : const Color(0xFFCBD5E1)),
                               const SizedBox(height: 12),
                               Text(
-                                'Chưa có phiếu hỗ trợ nào',
+                                context.l10n.supportNoTicketsTitle,
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -160,7 +161,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Nếu gặp sự cố về đơn hàng hoặc ứng dụng, hãy bấm nút "Báo Cáo Mới" bên dưới để được hỗ trợ trực tiếp.',
+                                context.l10n.supportNoTicketsDesc,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 12,
@@ -250,7 +251,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
-                                            _getStatusText(t.trangThai),
+                                            _getStatusText(context, t.trangThai),
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
@@ -295,7 +296,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                                               borderRadius: BorderRadius.circular(10),
                                             ),
                                             child: Text(
-                                              '${t.soTinChuaDocUser} tin mới',
+                                              context.l10n.supportNewMessagesCount(t.soTinChuaDocUser),
                                               style: const TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,

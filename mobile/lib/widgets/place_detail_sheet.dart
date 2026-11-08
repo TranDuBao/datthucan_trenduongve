@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../common/format_utils.dart';
 import '../models/place_model.dart';
 import '../providers/map_provider.dart';
 import '../config/api_config.dart';
-import '../common_widget/custom_modal_alert.dart';
 
 class PlaceDetailSheet extends StatefulWidget {
   final PlaceModel place;
@@ -56,6 +56,19 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
   void dispose() {
     _animCtrl.dispose();
     super.dispose();
+  }
+
+  String _getPlaceTypeLabel(BuildContext context, String? type) {
+    final t = type?.toLowerCase() ?? '';
+    if (t.contains('restaurant') || t.contains('food')) return context.l10n.placeTypeRestaurant;
+    if (t.contains('hotel') || t.contains('lodging')) return context.l10n.placeTypeHotel;
+    if (t.contains('hospital')) return context.l10n.placeTypeHospital;
+    if (t.contains('school') || t.contains('university')) return context.l10n.placeTypeSchool;
+    if (t.contains('cafe') || t.contains('coffee')) return context.l10n.placeTypeCafe;
+    if (t.contains('bank')) return context.l10n.placeTypeBank;
+    if (t.contains('park')) return context.l10n.placeTypePark;
+    if (t.contains('airport')) return context.l10n.placeTypeAirport;
+    return context.l10n.placeTypeLocation;
   }
 
   @override
@@ -166,7 +179,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  widget.place.typeLabel.isNotEmpty ? widget.place.typeLabel : 'Địa điểm',
+                  _getPlaceTypeLabel(context, widget.place.type),
                   style: GoogleFonts.outfit(
                     color: const Color(0xFFFC6011),
                     fontSize: 10,
@@ -218,7 +231,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
               Clipboard.setData(ClipboardData(text: coord));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Đã sao chép tọa độ: $coord'),
+                  content: Text(context.l10n.mapCopiedCoordinates(coord)),
                   duration: const Duration(seconds: 2),
                   backgroundColor: const Color(0xFFFC6011),
                 ),
@@ -297,7 +310,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Chỉ đường đến đây',
+                    context.l10n.mapDirectionsHere,
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 15,
@@ -332,7 +345,7 @@ class _PlaceDetailSheetState extends State<PlaceDetailSheet>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Đặt làm điểm bắt đầu',
+                    context.l10n.mapSetAsStart,
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontSize: 15,

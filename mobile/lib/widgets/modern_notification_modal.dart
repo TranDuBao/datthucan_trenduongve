@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 
 enum NotificationModalType {
   success,
@@ -32,11 +33,10 @@ class ModernNotificationModal extends StatefulWidget {
   /// Hiển thị modal thông báo thành công với animation đẹp mắt
   static Future<void> showSuccess({
     required BuildContext context,
-    String title = 'Cảm ơn bạn!',
-    String message =
-        'Góp ý của bạn đã được ghi nhận. Đội ngũ Food Route sẽ luôn nỗ lực cải thiện để mang đến dịch vụ tốt nhất!',
-    String? badgeText = 'ĐÃ GHI NHẬN GÓP Ý',
-    String buttonText = 'Đóng',
+    String? title,
+    String? message,
+    String? badgeText,
+    String? buttonText,
     VoidCallback? onConfirm,
   }) {
     return showGeneralDialog<void>(
@@ -46,10 +46,10 @@ class ModernNotificationModal extends StatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 380),
       pageBuilder: (ctx, anim1, anim2) => ModernNotificationModal(
-        title: title,
-        message: message,
-        badgeText: badgeText,
-        buttonText: buttonText,
+        title: title ?? context.l10n.modalFeedbackThanksTitle,
+        message: message ?? context.l10n.modalFeedbackThanksMessage,
+        badgeText: badgeText ?? context.l10n.modalFeedbackBadge,
+        buttonText: buttonText ?? context.l10n.commonClose,
         type: NotificationModalType.success,
         onConfirm: onConfirm,
       ),

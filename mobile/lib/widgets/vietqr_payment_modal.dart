@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 import '../common/globs.dart';
 import '../common/locator.dart';
 import '../services/order_service.dart';
@@ -338,9 +339,9 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
               const SizedBox(height: 16),
 
               // Tieu de
-              const Text(
-                'Hủy đơn hàng?',
-                style: TextStyle(
+              Text(
+                context.l10n.vietqrCancelDialogTitle,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1E2022),
@@ -349,29 +350,13 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
               const SizedBox(height: 8),
 
               // Mo ta chi tiet don hang
-              RichText(
+              Text(
+                context.l10n.vietqrCancelDialogDesc(orderId.toString(), formattedAmount),
                 textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.45,
-                    color: Color(0xFF6B7280),
-                  ),
-                  children: [
-                    const TextSpan(text: 'Đơn hàng '),
-                    TextSpan(
-                      text: '#DH-$orderId',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F2937),
-                      ),
-                    ),
-                    TextSpan(
-                      text: totalAmount > 0
-                          ? ' ($formattedAmountđ) sẽ bị hủy và không thể khôi phục.'
-                          : ' sẽ bị hủy và không thể khôi phục.',
-                    ),
-                  ],
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: Color(0xFF6B7280),
                 ),
               ),
               const SizedBox(height: 22),
@@ -427,9 +412,9 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text(
-                    'Xác nhận hủy',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.vietqrConfirmCancelBtn,
+                    style: const TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF5A6275),
@@ -608,7 +593,7 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Thanh toán VietQR / PayOS",
+              context.l10n.vietqrPaymentTitle,
               style: TextStyle(
                 color: TColor.primaryTextOf(context),
                 fontSize: 18,
@@ -624,7 +609,7 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
         ),
         const SizedBox(height: 6),
         Text(
-          "Mã đơn hàng: #DH-$orderId • $formattedAmountđ",
+          context.l10n.vietqrOrderCodeAmount(orderId.toString(), formattedAmount),
           style: TextStyle(
             color: TColor.primary,
             fontSize: 16,
@@ -688,20 +673,20 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           ),
           child: Column(
             children: [
-              _buildDetailRow(context, "Ngân hàng", bankName, null),
+              _buildDetailRow(context, context.l10n.vietqrBank, bankName, null),
               const Divider(height: 12),
               _buildDetailRow(
                 context,
-                "Số tài khoản",
+                context.l10n.vietqrAccountNumber,
                 accountNumber,
                 () => _copyToClipboard(accountNumber, "số tài khoản"),
               ),
               const Divider(height: 12),
-              _buildDetailRow(context, "Chủ tài khoản", accountName, null),
+              _buildDetailRow(context, context.l10n.vietqrAccountName, accountName, null),
               const Divider(height: 12),
               _buildDetailRow(
                 context,
-                "Nội dung CK",
+                context.l10n.vietqrTransferContent,
                 transferContent,
                 () => _copyToClipboard(transferContent, "nội dung chuyển khoản"),
                 isHighlight: true,
@@ -718,7 +703,7 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                "Vui lòng giữ chính xác nội dung chuyển khoản để hệ thống tự động xác nhận đơn.",
+                context.l10n.vietqrExactMemoNotice,
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 12,
@@ -752,7 +737,7 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
               ),
               const SizedBox(width: 12),
               Text(
-                "Đang tự động nhận diện thanh toán...",
+                context.l10n.vietqrAutoDetecting,
                 style: TextStyle(
                   color: TColor.primary,
                   fontSize: 13,
@@ -773,8 +758,8 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text(
-                  "Hủy đơn hàng",
+              : Text(
+                  context.l10n.vietqrCancelOrderBtn,
                   style: TextStyle(color: Colors.red, fontSize: 13),
                 ),
         ),

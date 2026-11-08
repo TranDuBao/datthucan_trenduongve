@@ -3,6 +3,7 @@ import '../../common_widget/smart_network_image.dart';
 import '../../services/order_service.dart';
 import '../../view/main_tabview/main_tabview.dart';
 import '../../widgets/order_progress_stepper.dart';
+import '../../common/format_utils.dart';
 import 'order_history_widgets.dart';
 
 // Shared Helper: Food Thumbnail + Name + Store
@@ -138,18 +139,18 @@ class ActiveOrderCard extends StatelessWidget {
     final formattedTotal = formatOrderTotal(order.totalAmount);
     final (:qty, :summary) = buildFoodSummary(order.items);
 
-    String stepTitle = 'Bước 1: Đã đặt món';
-    String stepSubText = 'Quán đang tiếp nhận';
+    String stepTitle = context.l10n.orderStepTitlePlaced;
+    String stepSubText = context.l10n.orderStepSubPlaced;
     if (stepNum == 2) {
-      stepTitle = 'Bước 2: Quán đã xác nhận';
+      stepTitle = context.l10n.orderStepTitleConfirmed;
       final formattedPickup = formatPickupTime(order.pickupTime);
-      stepSubText = formattedPickup.isNotEmpty ? 'Dự kiến lấy: $formattedPickup' : 'Quán đã duyệt đơn';
+      stepSubText = formattedPickup.isNotEmpty ? context.l10n.orderStepSubConfirmedPickup(formattedPickup) : context.l10n.orderStepSubConfirmedApproved;
     } else if (stepNum == 3) {
-      stepTitle = 'Bước 3: Đang chuẩn bị';
-      stepSubText = 'Bếp đang thực hiện';
+      stepTitle = context.l10n.orderStepTitlePreparing;
+      stepSubText = context.l10n.orderStepSubPreparing;
     } else if (stepNum == 4) {
-      stepTitle = 'Bước 4: Sẵn sàng ghé lấy';
-      stepSubText = 'Có thể đến lấy ngay';
+      stepTitle = context.l10n.orderStepTitleReady;
+      stepSubText = context.l10n.orderStepSubReady;
     }
 
     return Container(
@@ -208,7 +209,7 @@ class ActiveOrderCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Tổng tiền ',
+                    '${context.l10n.orderTotalLabel} ',
                     style: TextStyle(
                       color: isDark ? const Color(0xFF707688) : const Color(0xFF98A2B3),
                       fontSize: 11,
@@ -245,8 +246,8 @@ class ActiveOrderCard extends StatelessWidget {
                 color: const Color(0xFFECFDF3),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'Tự ghé lấy',
+              child: Text(
+                context.l10n.orderSelfPickup,
                 style: TextStyle(color: Color(0xFF00A86B), fontSize: 11, fontWeight: FontWeight.w800),
               ),
             ),
@@ -316,7 +317,7 @@ class ActiveOrderCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: Text(
-                        '✕ Hủy đơn',
+                        context.l10n.orderCancelBtn,
                         style: TextStyle(
                           color: isDark ? const Color(0xFFF04438) : const Color(0xFFD92D20),
                           fontSize: 11.5,
@@ -340,8 +341,8 @@ class ActiveOrderCard extends StatelessWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
-                      'Xem chi tiết',
+                    child: Text(
+                      context.l10n.commonViewDetail,
                       style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -458,8 +459,8 @@ class CompletedOrderCard extends StatelessWidget {
                       color: const Color(0xFFFFF2EB),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      '● Đã lấy',
+                    child: Text(
+                      context.l10n.orderStatusBadgePickedUp,
                       style: TextStyle(
                         color: Color(0xFFFC6011),
                         fontSize: 11,
@@ -502,7 +503,7 @@ class CompletedOrderCard extends StatelessWidget {
                       size: 14,
                     ),
                     label: Text(
-                      isReviewed ? 'Đã đánh giá' : 'Đánh giá',
+                      isReviewed ? context.l10n.orderReviewedBtn : context.l10n.orderReviewBtn,
                       style: TextStyle(
                         color: isReviewed ? const Color(0xFF10B981) : const Color(0xFFFFB000),
                         fontSize: 11.5,
@@ -532,8 +533,8 @@ class CompletedOrderCard extends StatelessWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
-                      'Xem chi tiết',
+                    child: Text(
+                      context.l10n.commonViewDetail,
                       style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -659,8 +660,8 @@ class CancelledOrderCard extends StatelessWidget {
                       color: const Color(0xFFFEF3F2),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      '● Đã hủy',
+                    child: Text(
+                      context.l10n.orderStatusBadgeCancelled,
                       style: TextStyle(color: Color(0xFFF04438), fontSize: 11, fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -865,7 +866,7 @@ class UnpaidOrderCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Tổng tiền ',
+                    '${context.l10n.orderTotalLabel} ',
                     style: TextStyle(
                       color: isDark ? const Color(0xFF707688) : const Color(0xFF98A2B3),
                       fontSize: 11,
@@ -975,8 +976,8 @@ class UnpaidOrderCard extends StatelessWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
-                      'Xem chi tiết',
+                    child: Text(
+                      context.l10n.commonViewDetail,
                       style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                     ),
                   ),

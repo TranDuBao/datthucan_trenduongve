@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
+import '../../common/format_utils.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
-import 'package:food_route/providers/language_provider.dart';
 import '../more/my_order_view.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../menu/restaurant_detail_view.dart';
@@ -37,6 +37,33 @@ class _OfferViewState extends State<OfferView> {
 
   List offerArr = [];
   bool isLoading = true;
+
+  String _getLocalizedCategoryName(BuildContext context, String key, String defaultName) {
+    switch (key.toLowerCase()) {
+      case "all":
+        return context.l10n.storeFilterAll;
+      case "phở":
+        return context.l10n.storeFilterPho;
+      case "bún":
+        return context.l10n.storeFilterNoodles;
+      case "cơm":
+        return context.l10n.storeFilterRice;
+      case "cà phê":
+        return context.l10n.storeFilterCoffee;
+      case "trà sữa":
+        return context.l10n.storeFilterMilkTea;
+      case "bánh ngọt":
+        return context.l10n.storeFilterPastry;
+      case "bánh mì":
+        return context.l10n.storeFilterBanhMi;
+      case "bánh sinh nhật":
+        return context.l10n.storeFilterBirthdayCake;
+      case "kem":
+        return context.l10n.storeFilterIceCream;
+      default:
+        return defaultName;
+    }
+  }
 
   @override
   void initState() {
@@ -139,7 +166,6 @@ class _OfferViewState extends State<OfferView> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = context.watch<LanguageProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final displayList = filteredOfferArr;
@@ -168,7 +194,7 @@ class _OfferViewState extends State<OfferView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "CỬA HÀNG LỘ TRÌNH",
+                          context.l10n.storeRouteHeader,
                           style: TextStyle(
                             color: TColor.primary,
                             fontSize: 11,
@@ -180,7 +206,7 @@ class _OfferViewState extends State<OfferView> {
                         Row(
                           children: [
                             Text(
-                              "Cửa hàng gần bạn",
+                              context.l10n.storeNearbyTitle,
                               style: TextStyle(
                                 color: TColor.primaryTextOf(context),
                                 fontSize: 24,
@@ -324,7 +350,7 @@ class _OfferViewState extends State<OfferView> {
                             ],
                             Flexible(
                               child: Text(
-                                item["name"].toString(),
+                                _getLocalizedCategoryName(context, item["key"].toString(), item["name"].toString()),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -359,11 +385,11 @@ class _OfferViewState extends State<OfferView> {
                                 Icon(
                                   Icons.storefront_outlined,
                                   size: 40,
-                                  color: TColor.secondaryTextOf(context).withOpacity(0.4),
+                                  color: TColor.secondaryTextOf(context).withValues(alpha: 0.4),
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  "Không tìm thấy cửa hàng nào thuộc danh mục này",
+                                  context.l10n.storeNoFound,
                                   style: TextStyle(
                                     color: TColor.secondaryTextOf(context),
                                     fontSize: 14,
@@ -373,7 +399,7 @@ class _OfferViewState extends State<OfferView> {
                                 ElevatedButton.icon(
                                   onPressed: _loadRealRestaurantsFromDB,
                                   icon: const Icon(Icons.refresh, size: 16),
-                                  label: const Text("Tải lại danh sách quán"),
+                                  label: Text(context.l10n.storeReloadButton),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: TColor.primary,
                                     foregroundColor: Colors.white,
@@ -395,6 +421,31 @@ class _OfferViewState extends State<OfferView> {
                           itemBuilder: (context, index) {
                             var pObj = displayList[index] as Map? ?? {};
                             final featuredItems = pObj["featured_items"] as List? ?? [];
+
+                            final rawDiscount = pObj["discount"].toString();
+                            final discountText = rawDiscount == "ƯU ĐÃI LỘ TRÌNH 10K"
+                                ? context.l10n.storeBadgeRouteDiscount10k
+                                : rawDiscount;
+
+                            final rawTime = pObj["time"].toString();
+                            final timeText = rawTime == "15-20 phút"
+                                ? context.l10n.storePrepTime15to20
+                                : (Localizations.localeOf(context).languageCode == 'en'
+                                    ? rawTime.replaceAll('phút', 'mins')
+                                    : rawTime);
+
+                            final String rawStatus = (pObj["trangThai"] ?? "mở cửa").toString().toLowerCase().trim();
+                            final bool isStoreClosed = rawStatus == 'đóng cửa' || rawStatus == 'ngưng kinh doanh' || rawStatus == 'closed';
+
+                            final ratingCount = int.tryParse((pObj["rating"] ?? 0).toString()) ?? 0;
+                            final ratingsText = context.l10n.storeRatingsCount(ratingCount);
+                            final cuisineText = pObj["type"] == "Món Việt" ? context.l10n.storeCuisineVietnamese : pObj["type"].toString();
+                            final foodTypeText = pObj["food_type"] == "Đặc sản lộ trình" ? context.l10n.storeRouteSpecialty : pObj["food_type"].toString();
+
+                            final rawGift = pObj["gift"].toString();
+                            final giftText = rawGift == "Đặt trước ghé lấy tiện đường"
+                                ? context.l10n.storeGiftRoutePickup
+                                : rawGift;
 
                             return GestureDetector(
                               onTap: () {
@@ -458,7 +509,7 @@ class _OfferViewState extends State<OfferView> {
                                               borderRadius: BorderRadius.circular(10),
                                             ),
                                             child: Text(
-                                              "${pObj["discount"].toString()}",
+                                              discountText,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 11,
@@ -504,7 +555,7 @@ class _OfferViewState extends State<OfferView> {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  pObj["time"].toString(),
+                                                  timeText,
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 11,
@@ -543,13 +594,13 @@ class _OfferViewState extends State<OfferView> {
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFF00C853).withOpacity(0.18),
+                                                  color: (isStoreClosed ? const Color(0xFFFF5252) : const Color(0xFF00C853)).withValues(alpha: 0.18),
                                                   borderRadius: BorderRadius.circular(6),
                                                 ),
-                                                child: const Text(
-                                                  "Đang mở",
+                                                child: Text(
+                                                  isStoreClosed ? context.l10n.storeStatusClosed : context.l10n.storeStatusOpen,
                                                   style: TextStyle(
-                                                    color: Color(0xFF00E676),
+                                                    color: isStoreClosed ? const Color(0xFFFF5252) : const Color(0xFF00E676),
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w700,
                                                   ),
@@ -573,7 +624,7 @@ class _OfferViewState extends State<OfferView> {
                                               const SizedBox(width: 4),
                                               Expanded(
                                                 child: Text(
-                                                  "(${pObj["rating"]} Ratings) • ${pObj["type"]} • ${pObj["food_type"]}",
+                                                  "$ratingsText • $cuisineText • $foodTypeText",
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: TextStyle(
@@ -591,7 +642,7 @@ class _OfferViewState extends State<OfferView> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  "Món nổi bật:",
+                                                  context.l10n.storeFeaturedDishes,
                                                   style: TextStyle(
                                                     color: TColor.primary,
                                                     fontSize: 11,
@@ -609,7 +660,7 @@ class _OfferViewState extends State<OfferView> {
                                                 itemBuilder: (context, fIdx) {
                                                   final item = featuredItems[fIdx];
                                                   final imgUrl = item["image"].toString();
-                                                  final formattedPrice = "${(item["price"] as num? ?? 0).toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ";
+                                                  final formattedPrice = FormatUtils.formatCurrency(item["price"], locale: Localizations.localeOf(context));
 
                                                   return Container(
                                                     margin: const EdgeInsets.only(right: 8),
@@ -682,7 +733,7 @@ class _OfferViewState extends State<OfferView> {
                                                 const SizedBox(width: 6),
                                                 Expanded(
                                                   child: Text(
-                                                    pObj["gift"].toString(),
+                                                    giftText,
                                                     style: TextStyle(
                                                       color: TColor.secondaryTextOf(context),
                                                       fontSize: 11,
@@ -691,7 +742,7 @@ class _OfferViewState extends State<OfferView> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  "Xem menu",
+                                                  context.l10n.storeViewMenu,
                                                   style: TextStyle(
                                                     color: TColor.primary,
                                                     fontSize: 11,
