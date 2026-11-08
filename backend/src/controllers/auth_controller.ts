@@ -25,6 +25,21 @@ export class AuthController {
       }
 
       const result = await this.authService.register({ email, password, fullName, phone });
+      try {
+        const clientIp = req.ip || req.headers['x-forwarded-for']?.toString() || req.socket.remoteAddress || '127.0.0.1';
+        this.auditLogService.logAction({
+          maTaiKhoan: result?.user?.id,
+          tenNguoiThucHien: fullName,
+          actorEmail: email,
+          actorRole: 'USER',
+          loaiHanhDong: 'DANG_KY_TAI_KHOAN_MOI',
+          moTa: `Tài khoản người dùng mới vừa đăng ký: ${fullName} (${email})`,
+          doiTuong: 'TAI_KHOAN',
+          maDoiTuong: result?.user?.id,
+          result: 'success',
+          ipAddress: clientIp,
+        }).catch(() => {});
+      } catch (e) {}
       return res.status(201).json({
         statusCode: 201,
         status: "1",

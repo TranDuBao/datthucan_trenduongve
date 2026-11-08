@@ -96,7 +96,7 @@ export class AuditLogService {
     if (query.category && query.category !== 'ALL') {
       if (query.category === 'SECURITY') {
         qb.andWhere(
-          "(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN') OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%')"
+          "(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN', 'DANG_KY_TAI_KHOAN_MOI') OR nk.doiTuong = 'TAI_KHOAN' OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%' OR nk.loaiHanhDong LIKE '%MAT_KHAU%' OR nk.loaiHanhDong LIKE '%DANG_KY%')"
         );
       } else if (query.category === 'STORE_APPROVAL') {
         qb.andWhere(
@@ -162,7 +162,7 @@ export class AuditLogService {
 
     // Category breakdown counts
     const securityCount = await this.logRepo.createQueryBuilder('nk')
-      .where("(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN') OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%')")
+      .where("(nk.loaiHanhDong IN ('DANG_NHAP_ADMIN_THANH_CONG', 'CANH_BAO_DANG_NHAP', 'DOI_MAT_KHAU', 'KHOA_USER', 'MO_KHOA_USER', 'KHOA_TAI_KHOAN', 'MO_KHOA_TAI_KHOAN', 'TAO_TAI_KHOAN', 'XOA_TAI_KHOAN', 'PHAN_QUYEN', 'DANG_KY_TAI_KHOAN_MOI') OR nk.doiTuong = 'TAI_KHOAN' OR nk.loaiHanhDong LIKE '%PASSWORD%' OR nk.loaiHanhDong LIKE '%KHOA%' OR nk.loaiHanhDong LIKE '%AUTH%' OR nk.loaiHanhDong LIKE '%MAT_KHAU%' OR nk.loaiHanhDong LIKE '%DANG_KY%')")
       .getCount();
 
     const storeApprovalCount = await this.logRepo.createQueryBuilder('nk')

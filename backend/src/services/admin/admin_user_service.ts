@@ -147,6 +147,13 @@ export class AdminUserService {
       savedStore = await this.storeRepo.save(newStore);
     }
 
+    this.dashboardService.logActivity({
+      loaiHanhDong: 'TAO_TAI_KHOAN',
+      moTa: `Tạo tài khoản người dùng mới: ${data.hoTen || data.tenDangNhap} (@${data.tenDangNhap}) vai trò ${data.loaiTaiKhoan || 'USER'}`,
+      doiTuong: 'TAI_KHOAN',
+      maDoiTuong: savedAccount.maTaiKhoan,
+    }).catch(() => {});
+
     return { taiKhoan: savedAccount, khachHang: savedProfile, cuaHang: savedStore };
   }
 
@@ -359,6 +366,14 @@ export class AdminUserService {
       await this.khachHangRepo.remove(profile);
     }
     await this.userRepo.remove(account);
+
+    this.dashboardService.logActivity({
+      loaiHanhDong: 'XOA_TAI_KHOAN',
+      moTa: `Xóa tài khoản người dùng @${account.tenDangNhap} (Mã #${account.maTaiKhoan})`,
+      doiTuong: 'TAI_KHOAN',
+      maDoiTuong: account.maTaiKhoan,
+    }).catch(() => {});
+
     return { message: 'Đã xóa người dùng thành công!' };
   }
 }
