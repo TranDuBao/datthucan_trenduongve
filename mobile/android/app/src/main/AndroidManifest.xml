@@ -16,7 +16,7 @@
             android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.codeforany.food_delivery.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
