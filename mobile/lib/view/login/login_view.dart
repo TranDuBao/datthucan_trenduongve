@@ -31,7 +31,7 @@ class _LoginViewState extends State<LoginView> {
   bool _rememberMe = true;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '963558323583-t3295k9m03vpbrqjaimfp7d8o3gsaaqd.apps.googleusercontent.com',
+    serverClientId: '963558323583-c9ivhkqjq8os5tlc2c6v2tjdco3uuiuo.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
 

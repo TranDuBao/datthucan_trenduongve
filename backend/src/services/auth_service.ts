@@ -129,18 +129,32 @@ export class AuthService {
       throw new Error('Google ID Token không được để trống');
     }
 
-    const configuredClientId = process.env.GOOGLE_CLIENT_ID?.trim();
-    if (!configuredClientId) {
+    const envClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    const envList = envClientId ? envClientId.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    // Chấp nhận tất cả OAuth 2.0 Web & Android Client IDs trong Google Cloud Console project 963558323583
+    const knownAudiences = [
+      '963558323583-c9ivhkqjq8os5tlc2c6v2tjdco3uuiuo.apps.googleusercontent.com',
+      '963558323583-t3295k9m03vpbrqjaimfp7d8o3gsaaqd.apps.googleusercontent.com',
+      '963558323583-6a3ebpt9o2q8qjlt397l78qgfar1e3u2.apps.googleusercontent.com',
+      '963558323583-9qvsdihmr51dnqovafpc7sq0oh4a6lv0.apps.googleusercontent.com',
+    ];
+
+    const audiences = Array.from(new Set([...envList, ...knownAudiences])).filter(
+      (id) => !id.includes('your-google-client-id')
+    );
+
+    if (audiences.length === 0) {
       console.error('[AuthService] [Error] GOOGLE_CLIENT_ID environment variable is not configured');
       throw new Error('Chức năng đăng nhập Google chưa được kích hoạt trên hệ thống');
     }
-    const client = new OAuth2Client(configuredClientId);
+    const client = new OAuth2Client(audiences[0]);
 
     let payload;
     try {
       const ticket = await client.verifyIdToken({
         idToken: idToken.trim(),
-        audience: configuredClientId,
+        audience: audiences.length === 1 ? audiences[0] : audiences,
       });
       payload = ticket.getPayload();
     } catch (err: any) {
