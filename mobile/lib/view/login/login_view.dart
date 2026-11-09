@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
 import 'package:food_route/common/format_utils.dart';
@@ -14,7 +15,10 @@ import 'package:provider/provider.dart';
 import '../../common/service_call.dart';
 import '../../common_widget/google_login_button.dart';
 import '../../common/user_role_helper.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/map_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../services/fcm_push_service.dart';
 import '../restaurant_owner/restaurant_owner_main_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -38,7 +42,11 @@ class _LoginViewState extends State<LoginView> {
   @override
   void initState() {
     super.initState();
-    _rememberMe = Globs.udValueBool("remember_me_pref");
+    _rememberMe = Globs.udValueTrueBool(KKey.rememberMe);
+    final savedEmail = Globs.udValueString(KKey.savedEmail);
+    if (savedEmail.isNotEmpty && _rememberMe) {
+      txtEmail.text = savedEmail;
+    }
   }
 
   @override
@@ -89,27 +97,36 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 22),
 
-                  // Email/Account Field
-                  AuthTextfield(
-                    label: context.l10n.authAccountOrEmail,
-                    hintText: "foodroute@gmail.com",
-                    controller: txtEmail,
-                    prefixIcon: Icons.mail_outline_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 16),
+                  // Form Inputs with OS Autofill Support (Google Password Manager / iCloud Keychain)
+                  AutofillGroup(
+                    child: Column(
+                      children: [
+                        // Email/Account Field
+                        AuthTextfield(
+                          label: context.l10n.authAccountOrEmail,
+                          hintText: "foodroute@gmail.com",
+                          controller: txtEmail,
+                          prefixIcon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.username, AutofillHints.email],
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Password Field
-                  AuthTextfield(
-                    label: context.l10n.authPassword,
-                    hintText: "••••••••••••",
-                    controller: txtPassword,
-                    prefixIcon: Icons.lock_outline_rounded,
-                    isPassword: true,
-                    obscureText: _obscurePassword,
-                    onTogglePassword: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
+                        // Password Field
+                        AuthTextfield(
+                          label: context.l10n.authPassword,
+                          hintText: "••••••••••••",
+                          controller: txtPassword,
+                          prefixIcon: Icons.lock_outline_rounded,
+                          isPassword: true,
+                          obscureText: _obscurePassword,
+                          autofillHints: const [AutofillHints.password],
+                          onTogglePassword: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
 
@@ -122,7 +139,10 @@ class _LoginViewState extends State<LoginView> {
                         onTap: () {
                           setState(() {
                             _rememberMe = !_rememberMe;
-                            Globs.udBoolSet(_rememberMe, "remember_me_pref");
+                            Globs.udBoolSet(_rememberMe, KKey.rememberMe);
+                            if (!_rememberMe) {
+                              Globs.udRemove(KKey.savedEmail);
+                            }
                           });
                         },
                         borderRadius: BorderRadius.circular(6),
@@ -457,16 +477,41 @@ class _LoginViewState extends State<LoginView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
+        // Đề nghị trình quản lý mật khẩu của hệ điều hành (Google/iCloud) lưu mật khẩu an toàn
+        TextInput.finishAutofillContext(shouldSave: true);
+
         var payload = responseObj[KKey.payload] as Map? ?? {};
         ServiceCall.userPayload = payload;
         Globs.udSet(payload, Globs.userPayload);
-        if (payload[KKey.authToken] != null || payload['accessToken'] != null) {
-          Globs.udStringSet((payload['accessToken'] ?? payload[KKey.authToken]).toString(), KKey.authToken);
+
+        final accessToken = (payload['accessToken'] ?? payload[KKey.authToken] ?? '').toString();
+        final refreshToken = (payload['refreshToken'] ?? payload['refresh_token'] ?? '').toString();
+
+        if (accessToken.isNotEmpty) {
+          Globs.udStringSet(accessToken, KKey.authToken);
         }
-        Globs.udBoolSet(true, Globs.userLogin);
+        if (refreshToken.isNotEmpty) {
+          Globs.udStringSet(refreshToken, KKey.refreshToken);
+        }
+
+        // Áp dụng cơ chế Ghi nhớ đăng nhập
+        Globs.udBoolSet(_rememberMe, KKey.rememberMe);
+        if (_rememberMe) {
+          Globs.udBoolSet(true, Globs.userLogin);
+          Globs.udStringSet(txtEmail.text.trim(), KKey.savedEmail);
+        } else {
+          // Phiên chỉ giữ trong RAM app hiện tại, tắt app mở lại phải đăng nhập
+          Globs.udBoolSet(false, Globs.userLogin);
+          Globs.udRemove(KKey.savedEmail);
+        }
 
         if (mounted) {
+          context.read<MapProvider>().clearAll();
+          context.read<CartProvider>().clearCart();
+          context.read<NotificationProvider>().clearAllData();
           context.read<NotificationProvider>().initialize();
+          FcmPushService.instance.registerTokenWithBackend();
+          FcmPushService.instance.showPermissionPromptIfNeeded(context);
         }
 
         final isStoreOwner = UserRoleHelper.isMerchant;
@@ -510,13 +555,37 @@ class _LoginViewState extends State<LoginView> {
         payload["loginType"] = "google";
         ServiceCall.userPayload = payload;
         Globs.udSet(payload, Globs.userPayload);
-        if (payload[KKey.authToken] != null || payload['accessToken'] != null) {
-          Globs.udStringSet((payload['accessToken'] ?? payload[KKey.authToken]).toString(), KKey.authToken);
+
+        final accessToken = (payload['accessToken'] ?? payload[KKey.authToken] ?? '').toString();
+        final refreshToken = (payload['refreshToken'] ?? payload['refresh_token'] ?? '').toString();
+
+        if (accessToken.isNotEmpty) {
+          Globs.udStringSet(accessToken, KKey.authToken);
         }
-        Globs.udBoolSet(true, Globs.userLogin);
+        if (refreshToken.isNotEmpty) {
+          Globs.udStringSet(refreshToken, KKey.refreshToken);
+        }
+
+        // Đăng nhập Google cũng đi qua cùng cơ chế ghi nhớ phiên
+        Globs.udBoolSet(_rememberMe, KKey.rememberMe);
+        if (_rememberMe) {
+          Globs.udBoolSet(true, Globs.userLogin);
+          final email = (payload['email'] ?? '').toString();
+          if (email.isNotEmpty) {
+            Globs.udStringSet(email, KKey.savedEmail);
+          }
+        } else {
+          Globs.udBoolSet(false, Globs.userLogin);
+          Globs.udRemove(KKey.savedEmail);
+        }
 
         if (mounted) {
+          context.read<MapProvider>().clearAll();
+          context.read<CartProvider>().clearCart();
+          context.read<NotificationProvider>().clearAllData();
           context.read<NotificationProvider>().initialize();
+          FcmPushService.instance.registerTokenWithBackend();
+          FcmPushService.instance.showPermissionPromptIfNeeded(context);
         }
 
         Navigator.pushAndRemoveUntil(

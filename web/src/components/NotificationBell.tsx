@@ -71,14 +71,15 @@ export const NotificationBell: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await apiFetch<{
-        notifications: NotificationItem[];
+        notifications?: NotificationItem[];
+        items?: NotificationItem[];
         total: number;
         unreadCount: number;
         totalPages: number;
       }>(`/notifications?page=${targetPage}&limit=15`);
 
       if (res?.data) {
-        const items = res.data.notifications || [];
+        const items = res.data.notifications || res.data.items || [];
         setNotifications((prev) => (append ? [...prev, ...items] : items));
         setUnreadCount(res.data.unreadCount ?? 0);
         setHasMore(targetPage < (res.data.totalPages || 1));
@@ -206,6 +207,10 @@ export const NotificationBell: React.FC = () => {
       navigate(isAdmin ? '/admin/dashboard' : '/restaurant/vouchers');
     } else if (item.type.includes('restaurant')) {
       navigate(isAdmin ? '/admin/restaurants' : '/restaurant/profile');
+    } else if (item.type.includes('refund')) {
+      navigate(isAdmin ? '/admin/orders' : '/restaurant/orders');
+    } else if (item.type.includes('system') || item.type.includes('update')) {
+      navigate(isAdmin ? '/admin/notifications' : '/restaurant/profile');
     }
   };
 

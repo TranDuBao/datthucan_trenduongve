@@ -325,10 +325,66 @@ function removeVietnameseTones(str: string): string {
   return str.toLowerCase().trim();
 }
 
+function hasVietnameseDiacritics(str: string): boolean {
+  return str !== removeVietnameseTones(str);
+}
+
+function matchFoodQuery(targetText: string, query: string): boolean {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return false;
+
+  const targetLower = (targetText || '').toLowerCase();
+  if (!targetLower) return false;
+
+  // 1. If user typed WITH diacritics (e.g. 'phở', 'bún bò', 'cơm tấm', 'bánh mì')
+  if (hasVietnameseDiacritics(q)) {
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|[\\s,.-])${escaped}([\\s,.-]|$)`, 'i');
+    return regex.test(targetLower);
+  }
+
+  // 2. User typed WITHOUT diacritics (e.g. 'pho', 'bun', 'com', 'banh mi')
+  const qNoTone = removeVietnameseTones(q);
+  const targetNoTone = removeVietnameseTones(targetLower);
+
+  const cleanTargetNoTone = targetNoTone.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanQNoTone = qNoTone.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Word boundary regex
+  const escapedQ = cleanQNoTone.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const wordRegex = new RegExp(`(^|\\s)${escapedQ}(\\s|$)`, 'i');
+
+  if (!wordRegex.test(cleanTargetNoTone)) {
+    return false;
+  }
+
+  // Vietnamese culinary precision filters for unaccented keywords:
+  // 'pho' -> strictly 'phở' (exclude 'phô mai', 'phố cổ', 'phố tây')
+  if (cleanQNoTone === 'pho') {
+    return /(^|[\s,.-])phở([\s,.-]|$)/i.test(targetLower);
+  }
+
+  // 'com' -> strictly 'cơm' (exclude 'chả cốm')
+  if (cleanQNoTone === 'com') {
+    return /(^|[\s,.-])cơm([\s,.-]|$)/i.test(targetLower);
+  }
+
+  // 'bun' -> strictly 'bún'
+  if (cleanQNoTone === 'bun') {
+    return /(^|[\s,.-])bún([\s,.-]|$)/i.test(targetLower);
+  }
+
+  // 'kem' -> strictly 'kem' (exclude 'ăn kèm')
+  if (cleanQNoTone === 'kem') {
+    return /(^|[\s,.-])kem([\s,.-]|$)/i.test(targetLower);
+  }
+
+  return true;
+}
+
     // Filter by keyword if provided
     const matchingFoodsMap = new Map<number, any[]>();
     const cleanKw = (keyword || '').trim().toLowerCase();
-    const cleanKwNoTone = removeVietnameseTones(cleanKw);
 
     if (cleanKw.length > 0) {
       const allActiveFoods = await this.monAnRepo
@@ -339,9 +395,7 @@ function removeVietnameseTones(str: string): string {
         .getMany();
 
       const foods = allActiveFoods.filter((f) => {
-        const nameLower = (f.tenMonAn || '').toLowerCase();
-        const nameNoTone = removeVietnameseTones(nameLower);
-        return nameLower.includes(cleanKw) || nameNoTone.includes(cleanKwNoTone);
+        return matchFoodQuery(f.tenMonAn || '', cleanKw);
       });
 
       for (const f of foods) {
@@ -363,17 +417,17 @@ function removeVietnameseTones(str: string): string {
           soLuotDanhGia: Number(f.soLuotDanhGia || 0),
           chuaCoDanhGia: Number(f.soLuotDanhGia || 0) === 0,
           trangThaiMon: f.trangThaiMon || 'DANG_BAN',
+          moTa: f.moTa || '',
+          mota: f.moTa || '',
+          dacTinh: f.dacTinh || '',
+          dactinh: f.dacTinh || '',
         });
         matchingFoodsMap.set(f.maQuan, list);
       }
 
-      // Also support matching store names directly
+      // Also support matching store names directly (e.g., "Bún Bò O Phượng", "Phở Hòa Pasteur")
       const matchingStoreIds = validStores
-        .filter((s) => {
-          const sNameLower = (s.tenQuan || '').toLowerCase();
-          const sNameNoTone = removeVietnameseTones(sNameLower);
-          return sNameLower.includes(cleanKw) || sNameNoTone.includes(cleanKwNoTone);
-        })
+        .filter((s) => matchFoodQuery(s.tenQuan || '', cleanKw))
         .map((s) => s.maQuan);
 
       if (matchingStoreIds.length > 0) {
@@ -505,7 +559,7 @@ function removeVietnameseTones(str: string): string {
 
     const matchedStores: any[] = [];
 
-    for (const store of candidateStores) {
+    for (const store of validStores) {
       const sLat = Number(store.lat);
       const sLng = Number(store.lng);
       let minDistance = Infinity;
@@ -531,6 +585,10 @@ function removeVietnameseTones(str: string): string {
 
       if (minDistance <= maxDistanceMeters) {
         const matchedFoods = matchingFoodsMap.get(store.maQuan) || [];
+        // Strict guard: if user searches for a food keyword, discard stores with 0 matching dishes
+        if (cleanKw.length > 0 && matchedFoods.length === 0) {
+          continue;
+        }
         const tienIchStr = String(store.tienIch || (store as any).tienich || '').toLowerCase();
         const hasDineIn = tableStoreIds.has(Number(store.maQuan)) ||
                           tienIchStr.includes('chỗ ngồi') ||

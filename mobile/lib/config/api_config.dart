@@ -29,15 +29,25 @@ class ApiConfig {
   static const String tomTomReverseBase =
       'https://api.tomtom.com/search/2/reverseGeocode';
 
-  // ── Map Tiles (OpenStreetMap & Compliant Tile Servers) ──────────────────
-  static const String lightTileUrl =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  // ── Map Tiles (OpenStreetMap Mirror & Display) ──────────────────────────
+  static String get lightTileUrl {
+    final key = tomTomApiKey;
+    if (key.isNotEmpty) {
+      return 'https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=$key';
+    }
+    return 'https://tile.openstreetmap.de/{z}/{x}/{y}.png';
+  }
 
   static const String fallbackTileUrl =
-      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
-
-  static const String darkTileUrl =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+  static String get darkTileUrl {
+    final key = tomTomApiKey;
+    if (key.isNotEmpty) {
+      return 'https://api.tomtom.com/map/1/tile/basic/night/{z}/{x}/{y}.png?key=$key';
+    }
+    return 'https://tile.openstreetmap.de/{z}/{x}/{y}.png';
+  }
 
   // ── Default location (Trần Quý Cáp, Bình Thạnh, TP. Hồ Chí Minh) ────────
   static const double defaultLat = 10.8038;

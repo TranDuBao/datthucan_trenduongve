@@ -11,6 +11,7 @@ class AuthTextfield extends StatelessWidget {
   final bool obscureText;
   final VoidCallback? onTogglePassword;
   final String? Function(String?)? validator;
+  final Iterable<String>? autofillHints;
 
   const AuthTextfield({
     super.key,
@@ -23,6 +24,7 @@ class AuthTextfield extends StatelessWidget {
     this.obscureText = false,
     this.onTogglePassword,
     this.validator,
+    this.autofillHints,
   });
 
   @override
@@ -36,7 +38,7 @@ class AuthTextfield extends StatelessWidget {
           Text(
             label!,
             style: TextStyle(
-              color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1F2937),
+              color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1F2937),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -68,6 +70,7 @@ class AuthTextfield extends StatelessWidget {
                   controller: controller,
                   obscureText: isPassword ? obscureText : false,
                   keyboardType: keyboardType,
+                  autofillHints: autofillHints,
                   autocorrect: false,
                   style: TextStyle(
                     color: TColor.primaryTextOf(context),

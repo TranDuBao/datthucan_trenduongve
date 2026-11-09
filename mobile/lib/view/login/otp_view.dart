@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/view/login/new_password_view.dart';
 import 'package:otp_pin_field/otp_pin_field.dart';
@@ -44,7 +45,7 @@ class _OTPViewState extends State<OTPView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Xác thực mã OTP",
+                    context.l10n.authOtpTitle,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 24,
@@ -54,7 +55,7 @@ class _OTPViewState extends State<OTPView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Mã xác thực đã được gửi tới email ${widget.email}.\nVui lòng nhập mã gồm 6 chữ số bên dưới:",
+                    context.l10n.authOtpSubtitle(widget.email),
                     style: TextStyle(
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                       fontSize: 13,
@@ -112,7 +113,7 @@ class _OTPViewState extends State<OTPView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          color: const Color(0xFFFF5216).withValues(alpha: 0.32),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -127,9 +128,9 @@ class _OTPViewState extends State<OTPView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        "Xác nhận mã",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.authOtpConfirm,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -152,16 +153,16 @@ class _OTPViewState extends State<OTPView> {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: "Chưa nhận được mã? ",
+                                text: context.l10n.authOtpDidNotReceive,
                                 style: TextStyle(
                                   color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const TextSpan(
-                                text: "Gửi lại",
-                                style: TextStyle(
+                              TextSpan(
+                                text: context.l10n.authOtpResend,
+                                style: const TextStyle(
                                   color: Color(0xFFFF5216),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
@@ -185,7 +186,7 @@ class _OTPViewState extends State<OTPView> {
 
   void btnSubmit() {
     if (code.length != 6) {
-      mdShowAlert("Thông báo", "Vui lòng nhập đủ 6 chữ số mã OTP", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authOtpInput6Digits, () {}, isError: true);
       return;
     }
 
@@ -209,11 +210,11 @@ class _OTPViewState extends State<OTPView> {
           ),
         );
       } else {
-        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Mã xác thực không hợp lệ", () {}, isError: true);
+        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.commonError, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 
@@ -224,13 +225,13 @@ class _OTPViewState extends State<OTPView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-        mdShowAlert("Thông báo", "Đã gửi lại mã xác thực tới email của bạn", () {}, isError: false);
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authOtpResentSuccess, () {}, isError: false);
       } else {
-        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Gửi lại thất bại", () {}, isError: true);
+        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.commonError, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 }

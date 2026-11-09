@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../view/more/order_history_view.dart';
 
@@ -198,7 +199,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                   child: Column(
                     children: [
                       Text(
-                        "Thanh toán thành công!",
+                        context.l10n.paymentSuccessTitle,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.outfit(
                           color: TColor.primaryTextOf(context),
@@ -209,7 +210,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Giao dịch của bạn đã được xác nhận. Cửa hàng sẽ sớm chuẩn bị món ăn.",
+                        context.l10n.paymentSuccessSubtitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: TColor.secondaryTextOf(context),
@@ -234,7 +235,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                           children: [
                             _buildInfoRow(
                               context,
-                              label: "Mã đơn hàng",
+                              label: context.l10n.paymentSuccessOrderId,
                               value: "#DH-$orderId",
                               isBold: true,
                               badgeColor: TColor.primary.withOpacity(0.12),
@@ -243,7 +244,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                             const Divider(height: 18, thickness: 0.8),
                             _buildInfoRow(
                               context,
-                              label: "Số tiền thanh toán",
+                              label: context.l10n.paymentSuccessAmount,
                               value: "$formattedAmount đ",
                               valueColor: const Color(0xFF10B981),
                               isBold: true,
@@ -252,14 +253,16 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                             const Divider(height: 18, thickness: 0.8),
                             _buildInfoRow(
                               context,
-                              label: "Thời gian",
+                              label: context.l10n.paymentSuccessTime,
                               value: formattedDateTime,
                             ),
                             const Divider(height: 18, thickness: 0.8),
                             _buildInfoRow(
                               context,
-                              label: "Phương thức",
-                              value: "VietQR / Ngân hàng",
+                              label: context.l10n.paymentSuccessMethod,
+                              value: (widget.orderData['phuongThucThanhToan'] ?? '').toString().toUpperCase() == 'COD'
+                                  ? context.l10n.paymentSuccessCashMethod
+                                  : context.l10n.paymentSuccessVietQRMethod,
                             ),
                           ],
                         ),
@@ -285,7 +288,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                             ),
                           ),
                           icon: const Icon(Icons.navigation_rounded, size: 18),
-                          label: const Text("Xem đường đi đến quán"),
+                          label: Text(context.l10n.paymentSuccessViewRoute),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -305,7 +308,7 @@ class _PaymentSuccessModalState extends State<PaymentSuccessModal>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          child: const Text("Xem chi tiết đơn hàng"),
+                          child: Text(context.l10n.paymentSuccessViewOrderDetails),
                         ),
                       ),
                     ],

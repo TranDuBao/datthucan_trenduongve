@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_route/common_widget/auth_language_toggle.dart';
 import 'package:food_route/view/login/login_view.dart';
 import 'package:food_route/view/login/sing_up_view.dart';
 
@@ -33,6 +34,11 @@ class _WelcomeViewState extends State<WelcomeView> {
                   width: media.width * 0.55,
                   height: media.width * 0.55,
                   fit: BoxFit.contain,
+                ),
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 10,
+                  right: 16,
+                  child: const AuthLanguageToggle(isDarkHeader: true),
                 ),
               ],
             ),

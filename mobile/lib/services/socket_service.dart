@@ -137,6 +137,7 @@ class SocketService {
 
   void listenToNotifications(void Function(dynamic data) onNotification) {
     subscribe('notification:new', onNotification);
+    subscribe('notification:broadcast', onNotification);
   }
 
   void listenToVoucherUpdates(void Function(dynamic data) onVoucherUpdate) {
@@ -158,6 +159,7 @@ class SocketService {
 
   void offNotifications([void Function(dynamic data)? listener]) {
     unsubscribe('notification:new', listener);
+    unsubscribe('notification:broadcast', listener);
   }
 
   void offVoucherUpdates([void Function(dynamic data)? listener]) {

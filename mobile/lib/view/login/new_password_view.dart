@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
 import 'package:food_route/view/login/login_view.dart';
@@ -52,7 +53,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Mật khẩu mới",
+                    context.l10n.authNewPasswordTitle,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 24,
@@ -62,7 +63,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Vui lòng nhập mật khẩu mới cho tài khoản của bạn",
+                    context.l10n.authNewPasswordSubtitle,
                     style: TextStyle(
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                       fontSize: 13,
@@ -73,7 +74,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
 
                   // New Password
                   AuthTextfield(
-                    label: "Mật khẩu mới",
+                    label: context.l10n.authNewPasswordLabel,
                     hintText: "••••••••••••",
                     controller: txtPassword,
                     prefixIcon: Icons.lock_outline_rounded,
@@ -87,7 +88,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
 
                   // Confirm Password
                   AuthTextfield(
-                    label: "Xác nhận mật khẩu mới",
+                    label: context.l10n.authConfirmNewPasswordLabel,
                     hintText: "••••••••••••",
                     controller: txtConfirmPassword,
                     prefixIcon: Icons.lock_outline_rounded,
@@ -110,7 +111,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          color: const Color(0xFFFF5216).withValues(alpha: 0.32),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -125,9 +126,9 @@ class _NewPasswordViewState extends State<NewPasswordView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        "Đổi mật khẩu",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.authChangePasswordButton,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -148,12 +149,12 @@ class _NewPasswordViewState extends State<NewPasswordView> {
 
   void btnSubmit() {
     if (txtPassword.text.length < 6) {
-      mdShowAlert("Thông báo", "Mật khẩu mới phải có ít nhất 6 ký tự", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authPasswordMinLength, () {}, isError: true);
       return;
     }
 
     if (txtPassword.text != txtConfirmPassword.text) {
-      mdShowAlert("Thông báo", "Mật khẩu xác nhận không khớp", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authPasswordMismatch, () {}, isError: true);
       return;
     }
 
@@ -173,7 +174,7 @@ class _NewPasswordViewState extends State<NewPasswordView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-        mdShowAlert("Thông báo", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", () {
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authChangePasswordSuccess, () {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const LoginView()),
@@ -181,11 +182,11 @@ class _NewPasswordViewState extends State<NewPasswordView> {
           );
         }, isError: false);
       } else {
-        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Đổi mật khẩu thất bại", () {}, isError: true);
+        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.authChangePasswordFailed, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 }

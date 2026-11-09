@@ -15,7 +15,7 @@ import 'order_history_cards.dart';
 import 'order_history_widgets.dart';
 import 'order_review_view.dart';
 import '../main_tabview/main_tabview.dart';
-import '../../widgets/order_cancelled_modal.dart';
+import '../../widgets/order_cancel_confirm_dialog.dart';
 
 class OrderHistoryView extends StatefulWidget {
   const OrderHistoryView({super.key});
@@ -164,51 +164,25 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(context.l10n.orderConfirmCancelTitle),
-        content: Text(
-            'Bạn có chắc chắn muốn hủy đơn hàng #DH${order.orderId} tại ${order.restaurantName} không?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.commonCancel, style: const TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD92D20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(context.l10n.orderCancelButton, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    final confirm = await OrderCancelConfirmDialog.show(context, order);
 
     if (confirm == true) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.orderCancellingProgress), duration: const Duration(seconds: 1)),
+        SnackBar(
+          content: Text(context.l10n.orderCancellingProgress),
+          duration: const Duration(seconds: 1),
+        ),
       );
+
       final res = await OrderService.cancelOrder(order.orderId);
       final success = res['success'] == true;
-      final msg = res['message'] ?? (success ? 'Đã hủy đơn hàng thành công!' : 'Không thể hủy đơn hàng');
+      final serverMsg = res['message'];
+
       if (!mounted) return;
+
       if (success) {
-        OrderCancelledModal.show(context: context, orderId: order.orderId);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-      if (success) {
-        // Cập nhật trạng thái tức thì không cần reload lại màn hình
+        // Cập nhật trạng thái tức thì tại chỗ không reload lại toàn bộ màn hình
         setState(() {
           order.status = 'DA_HUY';
         });
@@ -227,8 +201,39 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
           }
         } catch (_) {}
 
-        // Đồng bộ ngầm với server không gây giật lag / nháy skeleton
-        _fetchOrdersHistory(silent: true);
+        // Hiển thị thông báo thành công đẹp mắt
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    context.l10n.orderCancelSuccessMsg(order.orderId.toString()),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              serverMsg ?? context.l10n.orderCancelFailedMsg(order.orderId.toString()),
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     }
   }

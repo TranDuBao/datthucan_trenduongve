@@ -20,6 +20,7 @@ import { AdminStoreCategories } from './pages/admin/AdminStoreCategories';
 import { AdminStoreRegistrations } from './pages/admin/AdminStoreRegistrations';
 import { AdminLegalDocuments } from './pages/admin/AdminLegalDocuments';
 import { AdminSupport } from './pages/admin/AdminSupport';
+import { AdminNotifications } from './pages/admin/AdminNotifications';
 
 // Restaurant Pages
 import { RestaurantDashboard } from './pages/restaurant/RestaurantDashboard';
@@ -94,6 +95,7 @@ export const App: React.FC = () => {
             <Route path="/admin/store-registrations" element={<AdminStoreRegistrations />} />
             <Route path="/admin/legal-documents" element={<AdminLegalDocuments />} />
             <Route path="/admin/support" element={<AdminSupport />} />
+            <Route path="/admin/notifications" element={<AdminNotifications />} />
           </Route>
 
           {/* Restaurant Routes - only CUAN_HANG (ADMIN is forbidden) */}

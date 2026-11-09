@@ -81,8 +81,36 @@
   "authPassword": "Password",
   "authConfirmPassword": "Confirm Password",
   "authForgotPassword": "Forgot Password?",
+  "authForgotPasswordSubtitle": "Enter your email to receive a verification code to reset your account password",
+  "authSendVerificationCode": "Send Verification Code",
+  "authBackTo": "Back to ",
+  "authResetCodeSentSuccess": "Password reset code has been sent to your email!",
+  "authRequestFailed": "Request failed",
+  "authOtpTitle": "OTP Verification",
+  "authOtpSubtitle": "A verification code was sent to {email}.\nPlease enter the 6-digit code below:",
+  "@authOtpSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authOtpConfirm": "Verify Code",
+  "authOtpDidNotReceive": "Didn't receive the code? ",
+  "authOtpResend": "Resend",
+  "authOtpInput6Digits": "Please enter all 6 digits of the OTP code",
+  "authOtpResentSuccess": "Verification code has been resent to your email",
+  "authNewPasswordTitle": "New Password",
+  "authNewPasswordSubtitle": "Please enter a new password for your account",
+  "authNewPasswordLabel": "New Password",
+  "authConfirmNewPasswordLabel": "Confirm New Password",
+  "authChangePasswordButton": "Change Password",
+  "authNewPasswordRequired": "Please enter both new password and confirm password",
+  "authChangePasswordSuccess": "Password changed successfully! Please log in again.",
+  "authChangePasswordFailed": "Failed to change password",
   "authResetPassword": "Reset Password",
   "authRememberMe": "Remember me",
+  "authSessionExpired": "Session expired, please log in again.",
   "authOrLoginWith": "OR LOGIN WITH",
   "authLoginGoogle": "Google",
   "authLoginApple": "Apple",
@@ -534,6 +562,36 @@
   "orderConfirmCancelTitle": "Confirm Order Cancellation",
   "orderConfirmCancelContent": "Are you sure you want to cancel order #{id}? This action cannot be undone.",
   "@orderConfirmCancelContent": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderConfirmCancelPrompt": "Are you sure you want to cancel order #{id} at {restaurant}?",
+  "@orderConfirmCancelPrompt": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "restaurant": {
+        "type": "String"
+      }
+    }
+  },
+  "orderConfirmCancelWarning": "This cancellation cannot be undone once confirmed.",
+  "orderKeepOrderBtn": "Keep Order",
+  "orderConfirmCancelAction": "Cancel Order",
+  "orderCancelSuccessMsg": "Order #{id} has been cancelled successfully.",
+  "@orderCancelSuccessMsg": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderCancelFailedMsg": "Failed to cancel order #{id}. Please try again.",
+  "@orderCancelFailedMsg": {
     "placeholders": {
       "id": {
         "type": "String"
@@ -1147,6 +1205,62 @@
   "@voucherDiscountFixed": {
     "placeholders": {
       "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentSuccessTitle": "Payment Successful!",
+  "paymentSuccessSubtitle": "Your transaction has been confirmed. The store will prepare your food shortly.",
+  "paymentSuccessOrderId": "Order ID",
+  "paymentSuccessAmount": "Amount Paid",
+  "paymentSuccessTime": "Time",
+  "paymentSuccessMethod": "Method",
+  "paymentSuccessVietQRMethod": "VietQR / Bank",
+  "paymentSuccessCashMethod": "Cash on pickup",
+  "paymentSuccessViewRoute": "View route to store",
+  "paymentSuccessViewOrderDetails": "View order details",
+  "stopoverDetailsTitle": "STOPOVER ORDER DETAILS",
+  "stopoverOrderCode": "Order #{orderCode}",
+  "@stopoverOrderCode": {
+    "placeholders": {
+      "orderCode": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverLeg1ToStore": "Leg 1: To Restaurant",
+  "stopoverLeg2ToDestination": "Leg 2: To Destination",
+  "stopoverPickupScheduled": "Pickup: {time}",
+  "@stopoverPickupScheduled": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverReturnOriginalRoute": "Return to original route",
+  "stopoverCompleteTrip": "Complete trip",
+  "stopoverPickedUpContinue": "Picked up • Continue",
+  "stopoverPickedUpEnjoy": "● Picked up • Enjoy your meal!",
+  "stopoverToStoreDistance": "To restaurant: {info}",
+  "@stopoverToStoreDistance": {
+    "placeholders": {
+      "info": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverViewDirections": "View directions",
+  "stopoverMarkPickedUp": "Picked up",
+  "stopoverNavigateAgain": "Navigate to store again",
+  "stopoverComplete": "Complete",
+  "stopoverMarkerOrderBadge": "Order #{orderCode} • {storeName}",
+  "@stopoverMarkerOrderBadge": {
+    "placeholders": {
+      "orderCode": {
+        "type": "String"
+      },
+      "storeName": {
         "type": "String"
       }
     }

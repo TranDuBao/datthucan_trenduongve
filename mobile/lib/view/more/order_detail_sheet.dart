@@ -8,6 +8,7 @@ import '../../widgets/custom_toast.dart';
 import '../../widgets/order_progress_stepper.dart';
 import '../main_tabview/main_tabview.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../services/order_route_storage.dart';
 import 'order_history_widgets.dart';
 
 /// Displays the full order detail as a bottom sheet.
@@ -533,13 +534,17 @@ class _OrderDetailSheetContent extends StatelessWidget {
                                     // 3. Chuyển Tab về Home Map (Tab 2)
                                     MainTabView.switchTab(context, 2);
 
-                                    // 4. Kích hoạt tính năng Dẫn đường trên MapProvider
+                                    // 4. Kích hoạt tính năng Dẫn đường trên MapProvider khôi phục cả 2 chặng
                                     final mapProvider = Provider.of<MapProvider>(context, listen: false);
+                                    final routeInfo = await OrderRouteStorage.getOrderRoute(currentOrder.orderId);
                                     await mapProvider.navigateToOrderStore(
                                       orderId: currentOrder.orderId,
                                       storeName: currentOrder.restaurantName,
                                       storeAddress: currentOrder.restaurantAddress,
                                       storeLatLng: storePos,
+                                      destinationLatLng: routeInfo != null ? LatLng(routeInfo.destLat, routeInfo.destLng) : null,
+                                      destinationName: routeInfo?.destName,
+                                      destinationAddress: routeInfo?.destAddress,
                                       pickupTime: currentOrder.pickupTime,
                                       status: currentOrder.status,
                                     );

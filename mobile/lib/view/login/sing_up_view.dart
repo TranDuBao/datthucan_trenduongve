@@ -10,7 +10,11 @@ import 'package:food_route/view/login/login_view.dart';
 import '../../common/format_utils.dart';
 import '../../common/globs.dart';
 import '../../common/service_call.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/map_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../on_boarding/on_boarding_view.dart';
+import 'package:provider/provider.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -352,6 +356,13 @@ class _SignUpViewState extends State<SignUpView> {
           Globs.udStringSet((payload['accessToken'] ?? payload[KKey.authToken]).toString(), KKey.authToken);
         }
         Globs.udBoolSet(true, Globs.userLogin);
+
+        if (context.mounted) {
+          context.read<MapProvider>().clearAll();
+          context.read<CartProvider>().clearCart();
+          context.read<NotificationProvider>().clearAllData();
+          context.read<NotificationProvider>().initialize();
+        }
 
         mdShowAlert(context.l10n.commonNotification, context.l10n.authSignUpSuccess, () {
           Navigator.pushAndRemoveUntil(

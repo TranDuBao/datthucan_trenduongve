@@ -81,8 +81,36 @@
   "authPassword": "Mật khẩu",
   "authConfirmPassword": "Xác nhận mật khẩu",
   "authForgotPassword": "Quên mật khẩu?",
+  "authForgotPasswordSubtitle": "Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu tài khoản",
+  "authSendVerificationCode": "Gửi mã xác thực",
+  "authBackTo": "Quay lại ",
+  "authResetCodeSentSuccess": "Mã đặt lại mật khẩu đã được gửi đến email của bạn!",
+  "authRequestFailed": "Gửi yêu cầu thất bại",
+  "authOtpTitle": "Xác thực mã OTP",
+  "authOtpSubtitle": "Mã xác thực đã được gửi tới email {email}.\nVui lòng nhập mã gồm 6 chữ số bên dưới:",
+  "@authOtpSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authOtpConfirm": "Xác nhận mã",
+  "authOtpDidNotReceive": "Chưa nhận được mã? ",
+  "authOtpResend": "Gửi lại",
+  "authOtpInput6Digits": "Vui lòng nhập đủ 6 chữ số mã OTP",
+  "authOtpResentSuccess": "Mã xác thực đã được gửi lại vào email của bạn",
+  "authNewPasswordTitle": "Mật khẩu mới",
+  "authNewPasswordSubtitle": "Vui lòng nhập mật khẩu mới cho tài khoản của bạn",
+  "authNewPasswordLabel": "Mật khẩu mới",
+  "authConfirmNewPasswordLabel": "Xác nhận mật khẩu mới",
+  "authChangePasswordButton": "Đổi mật khẩu",
+  "authNewPasswordRequired": "Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu",
+  "authChangePasswordSuccess": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+  "authChangePasswordFailed": "Đổi mật khẩu thất bại",
   "authResetPassword": "Đặt lại mật khẩu",
   "authRememberMe": "Ghi nhớ đăng nhập",
+  "authSessionExpired": "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.",
   "authOrLoginWith": "HOẶC ĐĂNG NHẬP VỚI",
   "authLoginGoogle": "Google",
   "authLoginApple": "Apple",
@@ -534,6 +562,36 @@
   "orderConfirmCancelTitle": "Xác nhận hủy đơn hàng",
   "orderConfirmCancelContent": "Bạn có chắc chắn muốn hủy đơn hàng #{id} không? Thao tác này không thể hoàn tác.",
   "@orderConfirmCancelContent": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderConfirmCancelPrompt": "Bạn có chắc chắn muốn hủy đơn hàng #{id} tại {restaurant} không?",
+  "@orderConfirmCancelPrompt": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "restaurant": {
+        "type": "String"
+      }
+    }
+  },
+  "orderConfirmCancelWarning": "Thao tác hủy đơn không thể hoàn tác sau khi xác nhận.",
+  "orderKeepOrderBtn": "Giữ lại đơn",
+  "orderConfirmCancelAction": "Hủy đơn hàng",
+  "orderCancelSuccessMsg": "Đã hủy đơn hàng #{id} thành công!",
+  "@orderCancelSuccessMsg": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "orderCancelFailedMsg": "Không thể hủy đơn hàng #{id}. Vui lòng thử lại.",
+  "@orderCancelFailedMsg": {
     "placeholders": {
       "id": {
         "type": "String"
@@ -1147,6 +1205,62 @@
   "@voucherDiscountFixed": {
     "placeholders": {
       "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentSuccessTitle": "Thanh toán thành công!",
+  "paymentSuccessSubtitle": "Giao dịch của bạn đã được xác nhận. Cửa hàng sẽ sớm chuẩn bị món ăn.",
+  "paymentSuccessOrderId": "Mã đơn hàng",
+  "paymentSuccessAmount": "Số tiền thanh toán",
+  "paymentSuccessTime": "Thời gian",
+  "paymentSuccessMethod": "Phương thức",
+  "paymentSuccessVietQRMethod": "VietQR / Ngân hàng",
+  "paymentSuccessCashMethod": "Tiền mặt khi nhận",
+  "paymentSuccessViewRoute": "Xem đường đi đến quán",
+  "paymentSuccessViewOrderDetails": "Xem chi tiết đơn hàng",
+  "stopoverDetailsTitle": "CHI TIẾT ĐƠN GHÉ QUÁN",
+  "stopoverOrderCode": "Đơn #{orderCode}",
+  "@stopoverOrderCode": {
+    "placeholders": {
+      "orderCode": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverLeg1ToStore": "Chặng 1: Đến quán",
+  "stopoverLeg2ToDestination": "Chặng 2: Đến điểm đích",
+  "stopoverPickupScheduled": "Hẹn lấy: {time}",
+  "@stopoverPickupScheduled": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverReturnOriginalRoute": "Quay lại tuyến gốc",
+  "stopoverCompleteTrip": "Hoàn tất chuyến đi",
+  "stopoverPickedUpContinue": "Đã nhận món • Tiếp tục",
+  "stopoverPickedUpEnjoy": "● Đã lấy món • Chúc bạn ngon miệng!",
+  "stopoverToStoreDistance": "Đến quán: {info}",
+  "@stopoverToStoreDistance": {
+    "placeholders": {
+      "info": {
+        "type": "String"
+      }
+    }
+  },
+  "stopoverViewDirections": "Xem hướng dẫn đi",
+  "stopoverMarkPickedUp": "Đã lấy món",
+  "stopoverNavigateAgain": "Hướng dẫn tới quán lại",
+  "stopoverComplete": "Hoàn tất",
+  "stopoverMarkerOrderBadge": "Đơn #{orderCode} • {storeName}",
+  "@stopoverMarkerOrderBadge": {
+    "placeholders": {
+      "orderCode": {
+        "type": "String"
+      },
+      "storeName": {
         "type": "String"
       }
     }

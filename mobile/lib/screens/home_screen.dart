@@ -12,6 +12,7 @@ import '../widgets/search_bar_widget.dart';
 import '../widgets/route_info_card.dart';
 import '../widgets/food_stopover_sheet.dart';
 import '../widgets/active_stopover_order_card.dart';
+import '../widgets/distant_stores_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,6 +50,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     context.read<MapProvider>().navigationContext = context;
+    final mapP = context.watch<MapProvider>();
+    if (mapP.distantStores.isNotEmpty &&
+        mapP.routeRestaurants.isEmpty &&
+        !mapP.hasShownDistantModal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final p = context.read<MapProvider>();
+        if (p.distantStores.isNotEmpty &&
+            p.routeRestaurants.isEmpty &&
+            !p.hasShownDistantModal) {
+          p.markDistantModalShown();
+          _showDistantStoreDialog(context, p);
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1E),
       body: Stack(
@@ -66,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             builder: (context, provider, _) {
               final bool hasActiveOrder = provider.activeStopoverOrder != null;
               final bool isNavigating = provider.isNavigating;
-              final bool hideSearch = provider.isFocusMode || hasActiveOrder || isNavigating || provider.isOrderPickedUp;
+              final bool hideSearch = provider.isFocusMode || hasActiveOrder || isNavigating;
 
               return AnimatedPositioned(
                 duration: const Duration(milliseconds: 350),
@@ -112,28 +129,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: SafeArea(
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isPickedUp ? const Color(0xFF10B981) : const Color(0xFFFC6011),
-                        width: 1.2,
+                        width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                          color: (isPickedUp ? const Color(0xFF10B981) : const Color(0xFFFC6011)).withValues(alpha: 0.12),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          isPickedUp ? Icons.check_circle_rounded : Icons.navigation_rounded,
-                          color: isPickedUp ? const Color(0xFF10B981) : const Color(0xFFFC6011),
-                          size: 18,
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: (isPickedUp ? const Color(0xFF10B981) : const Color(0xFFFC6011)).withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isPickedUp ? Icons.check_circle_rounded : Icons.navigation_rounded,
+                            color: isPickedUp ? const Color(0xFF10B981) : const Color(0xFFFC6011),
+                            size: 16,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -144,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     ? context.l10n.homeNavigatingWithOrder(storeName.toString(), orderCode)
                                     : context.l10n.homeNavigatingToStore(storeName.toString()),
                             style: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: const Color(0xFF1E293B),
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                             ),
@@ -178,6 +207,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             builder: (context, provider, _) {
                               return Column(
                                 children: [
+                                  if (provider.distantStores.isNotEmpty && provider.routeRestaurants.isEmpty) ...[
+                                    provider.distantStores.length > 1
+                                        ? Badge(
+                                            label: Text('${provider.distantStores.length}'),
+                                            backgroundColor: const Color(0xFFFC6011),
+                                            textColor: Colors.white,
+                                            offset: const Offset(-2, 2),
+                                            child: _buildFab(
+                                              icon: Icons.alt_route_rounded,
+                                              onTap: () => DistantStoresSheet.show(context, provider),
+                                              tooltip: 'Xem ${provider.distantStores.length} quán gợi ý ở xa hơn',
+                                              color: const Color(0xFFFC6011),
+                                            ),
+                                          )
+                                        : _buildFab(
+                                            icon: Icons.alt_route_rounded,
+                                            onTap: () {
+                                              final store = provider.distantStores.first;
+                                              provider.previewDistantStoreRoute(store);
+                                            },
+                                            tooltip: 'Xem lộ trình rẽ đến: ${(provider.distantStoreSuggestion!['tenQuan'] ?? 'quán').toString()}',
+                                            color: const Color(0xFFFC6011),
+                                          ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  if (provider.selectedStopoverStore != null) ...[
+                                    _buildFab(
+                                      icon: Icons.undo_rounded,
+                                      onTap: provider.clearStopover,
+                                      tooltip: 'Quay lại tuyến thẳng ban đầu',
+                                      color: const Color(0xFFF59E0B),
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
                                   _buildFab(
                                     icon: Icons.my_location_rounded,
                                     onTap: provider.goToMyLocation,
@@ -202,12 +265,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   Consumer<MapProvider>(
                     builder: (context, provider, _) {
-                      // Nếu có đơn đang ghé quán và chưa nhận món: hiện thẻ ghé quán
-                      if (provider.activeStopoverOrder != null && !provider.isOrderPickedUp) {
+                      // Nếu có đơn đang ghé quán (kể cả đã đánh dấu lấy món): hiện thẻ ghé quán
+                      if (provider.activeStopoverOrder != null) {
                         return const ActiveStopoverOrderCard();
                       }
-                      // Nếu đã lấy món hoặc đang dẫn đường chặng 2 tới điểm đến: bỏ phần ở dưới đi theo yêu cầu người dùng
-                      if (provider.isOrderPickedUp || provider.isNavigating) {
+                      // Nếu đang dẫn đường chặng 2 tới điểm đến (đơn đã hoàn tất xóa): ẩn
+                      if (provider.isNavigating) {
                         return const SizedBox.shrink();
                       }
                       return const RouteInfoCard();
@@ -407,6 +470,161 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  void _showDistantStoreDialog(BuildContext context, MapProvider provider) {
+    final stores = provider.distantStores;
+    if (stores.isEmpty) return;
+    final store = stores.first;
+    final storeName = (store['tenQuan'] ?? store['name'] ?? 'Quán ăn').toString();
+    final dist = (store['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
+    final foodKw = provider.foodKeyword;
+    final bool hasMultiple = stores.length > 1;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF0E6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.alt_route_rounded,
+                  color: Color(0xFFFC6011),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Không có quán trong 800m',
+                style: GoogleFonts.outfit(
+                  color: const Color(0xFF1E293B),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF64748B),
+                    fontSize: 13.5,
+                    height: 1.45,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Không tìm thấy quán có món '),
+                    TextSpan(
+                      text: '"$foodKw"',
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                    ),
+                    const TextSpan(text: ' tiện đường (≤ 800m).\n\n'),
+                    if (hasMultiple) ...[
+                      const TextSpan(text: 'Tìm thấy '),
+                      TextSpan(
+                        text: '${stores.length} quán',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                      ),
+                      const TextSpan(text: ' ở xa hơn (gần nhất lệch tuyến '),
+                      TextSpan(
+                        text: '${dist}m',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                      ),
+                      const TextSpan(text: '). Bạn có muốn xem danh sách để cân nhắc lộ trình không?'),
+                    ] else ...[
+                      const TextSpan(text: 'Có quán '),
+                      TextSpan(
+                        text: storeName,
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                      ),
+                      const TextSpan(text: ' ở xa hơn (lệch tuyến '),
+                      TextSpan(
+                        text: '${dist}m',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                      ),
+                      const TextSpan(text: '). Bạn có muốn xem lộ trình rẽ vào quán không?'),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFF8FAFC),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                      child: Text(
+                        'Để sau',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        if (hasMultiple) {
+                          DistantStoresSheet.show(context, provider);
+                        } else {
+                          provider.previewDistantStoreRoute(store);
+                        }
+                      },
+                      icon: Icon(
+                        hasMultiple ? Icons.list_alt_rounded : Icons.alt_route_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        hasMultiple ? 'Xem danh sách' : 'Xem lộ trình rẽ',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFC6011),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 2,
+                        shadowColor: const Color(0xFFFC6011).withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
 
 }
@@ -558,114 +776,117 @@ class _OptimizedMapWidget extends StatelessWidget {
     }
 
     // Along-route restaurant markers (Foodie badges with dish name)
-    for (final res in routeRestaurants) {
-      final double? lat = (res['lat'] as num?)?.toDouble();
-      final double? lng = (res['lng'] as num?)?.toDouble();
-      final String storeName = (res['tenQuan'] ?? res['name'] ?? 'Quán tiện đường').toString();
-      final int dist = (res['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
+    // Chỉ hiển thị khi người dùng tìm kiếm, ẩn hoàn toàn khi đang điều hướng đơn ghé quán
+    if (activeStopoverOrder == null) {
+      for (final res in routeRestaurants) {
+        final double? lat = (res['lat'] as num?)?.toDouble();
+        final double? lng = (res['lng'] as num?)?.toDouble();
+        final String storeName = (res['tenQuan'] ?? res['name'] ?? 'Quán tiện đường').toString();
+        final int dist = (res['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
 
-      final matchedFoods = (res['matchedFoods'] as List?) ?? [];
-      final primaryFood = res['primaryFood'] ?? (matchedFoods.isNotEmpty ? matchedFoods[0] : null);
-      final String labelName = storeName;
+        final matchedFoods = (res['matchedFoods'] as List?) ?? [];
+        final primaryFood = res['primaryFood'] ?? (matchedFoods.isNotEmpty ? matchedFoods[0] : null);
+        final String labelName = storeName;
 
-      final bool isStopover = selectedStopoverStore != null && selectedStopoverStore['maQuan'] == res['maQuan'];
+        final bool isStopover = selectedStopoverStore != null && selectedStopoverStore['maQuan'] == res['maQuan'];
 
-      if (lat != null && lng != null) {
-        markers.add(
-          Marker(
-            point: LatLng(lat, lng),
-            width: isStopover ? 160 : 145,
-            height: isStopover ? 60 : 54,
-            child: GestureDetector(
-              onTap: () {
-                FoodStopoverSheet.show(
-                  context,
-                  restaurant: res as Map<String, dynamic>,
-                  selectedFood: primaryFood as Map<String, dynamic>?,
-                );
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: isStopover ? const Color(0xFFEA580C) : const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
-                        width: isStopover ? 2.0 : 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isStopover ? const Color(0xFFFC6011).withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.35),
-                          blurRadius: isStopover ? 10 : 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isStopover ? Icons.star_rounded : Icons.storefront_rounded,
+        if (lat != null && lng != null) {
+          markers.add(
+            Marker(
+              point: LatLng(lat, lng),
+              width: isStopover ? 160 : 145,
+              height: isStopover ? 60 : 54,
+              child: GestureDetector(
+                onTap: () {
+                  FoodStopoverSheet.show(
+                    context,
+                    restaurant: res as Map<String, dynamic>,
+                    selectedFood: primaryFood as Map<String, dynamic>?,
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isStopover ? const Color(0xFFEA580C) : const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
                           color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
-                          size: 13,
+                          width: isStopover ? 2.0 : 1.2,
                         ),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            labelName,
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (dist > 0) ...[
-                          const SizedBox(width: 3),
-                          Text(
-                            '• ${dist}m',
-                            style: GoogleFonts.outfit(
-                              color: isStopover ? Colors.white70 : const Color(0xFF94A3B8),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isStopover ? const Color(0xFFFC6011).withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.35),
+                            blurRadius: isStopover ? 10 : 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isStopover ? Icons.star_rounded : Icons.storefront_rounded,
+                            color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
+                            size: 13,
+                          ),
+                          const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              labelName,
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (dist > 0) ...[
+                            const SizedBox(width: 3),
+                            Text(
+                              '• ${dist}m',
+                              style: GoogleFonts.outfit(
+                                color: isStopover ? Colors.white70 : const Color(0xFF94A3B8),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    width: isStopover ? 22 : 18,
-                    height: isStopover ? 22 : 18,
-                    decoration: BoxDecoration(
-                      color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+                    const SizedBox(height: 2),
+                    Container(
+                      width: isStopover ? 22 : 18,
+                      height: isStopover ? 22 : 18,
+                      decoration: BoxDecoration(
+                        color: isStopover ? const Color(0xFFFFD54F) : const Color(0xFFFC6011),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Icon(
+                        isStopover ? Icons.check_rounded : Icons.fastfood_rounded,
+                        color: isStopover ? const Color(0xFF1E293B) : Colors.white,
+                        size: isStopover ? 13 : 10,
+                      ),
                     ),
-                    child: Icon(
-                      isStopover ? Icons.check_rounded : Icons.fastfood_rounded,
-                      color: isStopover ? const Color(0xFF1E293B) : Colors.white,
-                      size: isStopover ? 13 : 10,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
 
     // Active Stopover Order marker (nếu có đơn hàng đang dẫn đường ghé quán)
     if (activeStopoverOrder != null && activeStopoverLatLng != null) {
-      final sName = activeStopoverOrder['tenQuan'] ?? 'Quán ghé lấy';
-      final sCode = activeStopoverOrder['maDonHang'] ?? '';
+      final sName = activeStopoverOrder['tenQuan'] ?? activeStopoverOrder['restaurantName'] ?? 'Quán ghé lấy';
+      final sCode = activeStopoverOrder['maDonHang'] ?? activeStopoverOrder['id'] ?? '';
       markers.add(
         Marker(
           point: activeStopoverLatLng,
@@ -689,7 +910,7 @@ class _OptimizedMapWidget extends StatelessWidget {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        'Đơn #$sCode • $sName',
+                        context.l10n.stopoverMarkerOrderBadge(sCode.toString(), sName.toString()),
                         style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -750,6 +971,22 @@ class _OptimizedMapWidget extends StatelessWidget {
           fallbackUrl: ApiConfig.fallbackTileUrl,
           subdomains: const ['0', '1', '2', '3'],
           userAgentPackageName: 'com.codeforany.food_delivery',
+          maxZoom: 19,
+          maxNativeZoom: 19,
+          tileBuilder: (context, tileWidget, tile) {
+            // Bộ lọc làm mờ mạng lưới đường viền xám chằng chịt,
+            // nâng sáng nhẹ nền bản đồ để tuyến đường và quán ăn nổi bật tối đa,
+            // đồng thời giữ trọn vẹn tên đường và ngõ hẻm ở mọi mức zoom.
+            return ColorFiltered(
+              colorFilter: const ColorFilter.matrix(<double>[
+                0.22, 0.35, 0.05, 0, 95,
+                0.10, 0.47, 0.05, 0, 95,
+                0.10, 0.35, 0.22, 0, 95,
+                0,    0,    0,    1, 0,
+              ]),
+              child: tileWidget,
+            );
+          },
           errorTileCallback: (tile, error, stackTrace) {
             debugPrint('[HomeScreen] [Warn] TileLayer load error: $error');
           },
@@ -857,13 +1094,20 @@ class _OptimizedMapWidget extends StatelessWidget {
             activeStopoverLatLng: p.activeStopoverLatLng,
           ),
           builder: (context, data, _) {
+            final storesToRender = data.activeStopoverOrder != null
+                ? []
+                : [
+                    ...data.routeRestaurants,
+                    if (data.routeRestaurants.isEmpty && context.read<MapProvider>().distantStores.isNotEmpty)
+                      ...context.read<MapProvider>().distantStores,
+                  ];
             return MarkerLayer(
               markers: _buildMarkers(
                 context,
                 data.position,
                 data.origin,
                 data.destination,
-                data.routeRestaurants,
+                storesToRender,
                 data.selectedStopoverStore,
                 data.activeStopoverOrder,
                 data.activeStopoverLatLng,

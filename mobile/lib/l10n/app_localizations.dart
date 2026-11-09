@@ -584,6 +584,126 @@ abstract class AppLocalizations {
   /// **'Quên mật khẩu?'**
   String get authForgotPassword;
 
+  /// No description provided for @authForgotPasswordSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu tài khoản'**
+  String get authForgotPasswordSubtitle;
+
+  /// No description provided for @authSendVerificationCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi mã xác thực'**
+  String get authSendVerificationCode;
+
+  /// No description provided for @authBackTo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại '**
+  String get authBackTo;
+
+  /// No description provided for @authResetCodeSentSuccess.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã đặt lại mật khẩu đã được gửi đến email của bạn!'**
+  String get authResetCodeSentSuccess;
+
+  /// No description provided for @authRequestFailed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi yêu cầu thất bại'**
+  String get authRequestFailed;
+
+  /// No description provided for @authOtpTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xác thực mã OTP'**
+  String get authOtpTitle;
+
+  /// No description provided for @authOtpSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã xác thực đã được gửi tới email {email}.\nVui lòng nhập mã gồm 6 chữ số bên dưới:'**
+  String authOtpSubtitle(String email);
+
+  /// No description provided for @authOtpConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xác nhận mã'**
+  String get authOtpConfirm;
+
+  /// No description provided for @authOtpDidNotReceive.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa nhận được mã? '**
+  String get authOtpDidNotReceive;
+
+  /// No description provided for @authOtpResend.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại'**
+  String get authOtpResend;
+
+  /// No description provided for @authOtpInput6Digits.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng nhập đủ 6 chữ số mã OTP'**
+  String get authOtpInput6Digits;
+
+  /// No description provided for @authOtpResentSuccess.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã xác thực đã được gửi lại vào email của bạn'**
+  String get authOtpResentSuccess;
+
+  /// No description provided for @authNewPasswordTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới'**
+  String get authNewPasswordTitle;
+
+  /// No description provided for @authNewPasswordSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng nhập mật khẩu mới cho tài khoản của bạn'**
+  String get authNewPasswordSubtitle;
+
+  /// No description provided for @authNewPasswordLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới'**
+  String get authNewPasswordLabel;
+
+  /// No description provided for @authConfirmNewPasswordLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xác nhận mật khẩu mới'**
+  String get authConfirmNewPasswordLabel;
+
+  /// No description provided for @authChangePasswordButton.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu'**
+  String get authChangePasswordButton;
+
+  /// No description provided for @authNewPasswordRequired.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu'**
+  String get authNewPasswordRequired;
+
+  /// No description provided for @authChangePasswordSuccess.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'**
+  String get authChangePasswordSuccess;
+
+  /// No description provided for @authChangePasswordFailed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu thất bại'**
+  String get authChangePasswordFailed;
+
   /// No description provided for @authResetPassword.
   ///
   /// In vi, this message translates to:
@@ -595,6 +715,12 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Ghi nhớ đăng nhập'**
   String get authRememberMe;
+
+  /// No description provided for @authSessionExpired.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'**
+  String get authSessionExpired;
 
   /// No description provided for @authOrLoginWith.
   ///
@@ -2222,6 +2348,42 @@ abstract class AppLocalizations {
   /// **'Bạn có chắc chắn muốn hủy đơn hàng #{id} không? Thao tác này không thể hoàn tác.'**
   String orderConfirmCancelContent(String id);
 
+  /// No description provided for @orderConfirmCancelPrompt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn có chắc chắn muốn hủy đơn hàng #{id} tại {restaurant} không?'**
+  String orderConfirmCancelPrompt(String id, String restaurant);
+
+  /// No description provided for @orderConfirmCancelWarning.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thao tác hủy đơn không thể hoàn tác sau khi xác nhận.'**
+  String get orderConfirmCancelWarning;
+
+  /// No description provided for @orderKeepOrderBtn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ lại đơn'**
+  String get orderKeepOrderBtn;
+
+  /// No description provided for @orderConfirmCancelAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hủy đơn hàng'**
+  String get orderConfirmCancelAction;
+
+  /// No description provided for @orderCancelSuccessMsg.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã hủy đơn hàng #{id} thành công!'**
+  String orderCancelSuccessMsg(String id);
+
+  /// No description provided for @orderCancelFailedMsg.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không thể hủy đơn hàng #{id}. Vui lòng thử lại.'**
+  String orderCancelFailedMsg(String id);
+
   /// No description provided for @orderCancelNotAllowed.
   ///
   /// In vi, this message translates to:
@@ -3703,6 +3865,156 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Giảm {amount}'**
   String voucherDiscountFixed(String amount);
+
+  /// No description provided for @paymentSuccessTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thanh toán thành công!'**
+  String get paymentSuccessTitle;
+
+  /// No description provided for @paymentSuccessSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giao dịch của bạn đã được xác nhận. Cửa hàng sẽ sớm chuẩn bị món ăn.'**
+  String get paymentSuccessSubtitle;
+
+  /// No description provided for @paymentSuccessOrderId.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã đơn hàng'**
+  String get paymentSuccessOrderId;
+
+  /// No description provided for @paymentSuccessAmount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số tiền thanh toán'**
+  String get paymentSuccessAmount;
+
+  /// No description provided for @paymentSuccessTime.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thời gian'**
+  String get paymentSuccessTime;
+
+  /// No description provided for @paymentSuccessMethod.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phương thức'**
+  String get paymentSuccessMethod;
+
+  /// No description provided for @paymentSuccessVietQRMethod.
+  ///
+  /// In vi, this message translates to:
+  /// **'VietQR / Ngân hàng'**
+  String get paymentSuccessVietQRMethod;
+
+  /// No description provided for @paymentSuccessCashMethod.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiền mặt khi nhận'**
+  String get paymentSuccessCashMethod;
+
+  /// No description provided for @paymentSuccessViewRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem đường đi đến quán'**
+  String get paymentSuccessViewRoute;
+
+  /// No description provided for @paymentSuccessViewOrderDetails.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem chi tiết đơn hàng'**
+  String get paymentSuccessViewOrderDetails;
+
+  /// No description provided for @stopoverDetailsTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHI TIẾT ĐƠN GHÉ QUÁN'**
+  String get stopoverDetailsTitle;
+
+  /// No description provided for @stopoverOrderCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đơn #{orderCode}'**
+  String stopoverOrderCode(String orderCode);
+
+  /// No description provided for @stopoverLeg1ToStore.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chặng 1: Đến quán'**
+  String get stopoverLeg1ToStore;
+
+  /// No description provided for @stopoverLeg2ToDestination.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chặng 2: Đến điểm đích'**
+  String get stopoverLeg2ToDestination;
+
+  /// No description provided for @stopoverPickupScheduled.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hẹn lấy: {time}'**
+  String stopoverPickupScheduled(String time);
+
+  /// No description provided for @stopoverReturnOriginalRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại tuyến gốc'**
+  String get stopoverReturnOriginalRoute;
+
+  /// No description provided for @stopoverCompleteTrip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tất chuyến đi'**
+  String get stopoverCompleteTrip;
+
+  /// No description provided for @stopoverPickedUpContinue.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã nhận món • Tiếp tục'**
+  String get stopoverPickedUpContinue;
+
+  /// No description provided for @stopoverPickedUpEnjoy.
+  ///
+  /// In vi, this message translates to:
+  /// **'● Đã lấy món • Chúc bạn ngon miệng!'**
+  String get stopoverPickedUpEnjoy;
+
+  /// No description provided for @stopoverToStoreDistance.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đến quán: {info}'**
+  String stopoverToStoreDistance(String info);
+
+  /// No description provided for @stopoverViewDirections.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem hướng dẫn đi'**
+  String get stopoverViewDirections;
+
+  /// No description provided for @stopoverMarkPickedUp.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lấy món'**
+  String get stopoverMarkPickedUp;
+
+  /// No description provided for @stopoverNavigateAgain.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hướng dẫn tới quán lại'**
+  String get stopoverNavigateAgain;
+
+  /// No description provided for @stopoverComplete.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tất'**
+  String get stopoverComplete;
+
+  /// No description provided for @stopoverMarkerOrderBadge.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đơn #{orderCode} • {storeName}'**
+  String stopoverMarkerOrderBadge(String orderCode, String storeName);
 }
 
 class _AppLocalizationsDelegate

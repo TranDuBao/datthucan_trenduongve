@@ -20,6 +20,7 @@ import {
   Layers,
   FileText,
   Headphones,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,6 +40,7 @@ export const Sidebar: React.FC = () => {
     { title: 'Đánh Giá & Kiểm Duyệt', path: '/admin/reviews', icon: Star },
     { title: 'Về Chúng Tôi', path: '/admin/about-us', icon: Info },
     { title: 'Điều Khoản & Chính Sách', path: '/admin/legal-documents', icon: FileText },
+    { title: 'Thông Báo Hệ Thống', path: '/admin/notifications', icon: Bell },
     { title: 'Hỗ Trợ', path: '/admin/support', icon: Headphones },
     { title: 'Nhật Ký', path: '/admin/logs', icon: ShieldAlert },
   ];

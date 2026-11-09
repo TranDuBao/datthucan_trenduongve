@@ -2,6 +2,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/format_utils.dart';
+import 'package:food_route/common/globs.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/language_provider.dart';
@@ -327,24 +328,141 @@ class _NotificationsViewState extends State<NotificationsView> {
             ],
           ),
         ),
-        InkWell(
-          onTap: _markAllAsRead,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2330) : const Color(0xFFF2F3F5),
-              shape: BoxShape.circle,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: _showNotificationSettingsSheet,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2330) : const Color(0xFFF2F3F5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  LucideIcons.settings2,
+                  size: 19,
+                  color: TColor.secondaryTextOf(context),
+                ),
+              ),
             ),
-            child: Icon(
-              Icons.done_all_rounded,
-              size: 20,
-              color: unreadCount > 0 ? TColor.primary : TColor.secondaryTextOf(context),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: _markAllAsRead,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E2330) : const Color(0xFFF2F3F5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.done_all_rounded,
+                  size: 20,
+                  color: unreadCount > 0 ? TColor.primary : TColor.secondaryTextOf(context),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
+    );
+  }
+
+  void _showNotificationSettingsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        bool systemNotif = Globs.udValueTrueBool('pref_system_notif');
+        bool updateNotif = Globs.udValueTrueBool('pref_update_notif');
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+              decoration: BoxDecoration(
+                color: TColor.bgOf(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cài đặt thông báo',
+                    style: TextStyle(
+                      color: TColor.primaryTextOf(context),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tùy chỉnh các loại thông báo bạn muốn nhận',
+                    style: TextStyle(
+                      color: TColor.secondaryTextOf(context),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // 1. Đơn hàng (Khuyến nghị luôn bật)
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: true,
+                    onChanged: null,
+                    activeColor: TColor.primary,
+                    title: const Text('Thông báo đơn hàng', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: const Text('Nhận tin khi món đã sẵn sàng hoặc hoàn tiền (Luôn bật)', style: TextStyle(fontSize: 12)),
+                  ),
+                  const Divider(height: 16),
+                  // 2. Hệ thống
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: systemNotif,
+                    activeColor: TColor.primary,
+                    onChanged: (val) {
+                      setSheetState(() => systemNotif = val);
+                      Globs.udBoolSet(val, 'pref_system_notif');
+                      NotificationService.updateNotificationSettings(systemNotif: val);
+                    },
+                    title: const Text('Thông báo hệ thống', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: const Text('Tin bảo trì, điều chỉnh dịch vụ từ ban quản trị', style: TextStyle(fontSize: 12)),
+                  ),
+                  const Divider(height: 16),
+                  // 3. Cập nhật
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: updateNotif,
+                    activeColor: TColor.primary,
+                    onChanged: (val) {
+                      setSheetState(() => updateNotif = val);
+                      Globs.udBoolSet(val, 'pref_update_notif');
+                      NotificationService.updateNotificationSettings(updateNotif: val);
+                    },
+                    title: const Text('Cập nhật phiên bản', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: const Text('Thông tin phiên bản mới và các tính năng nâng cấp', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -532,7 +650,30 @@ class _NotificationsViewState extends State<NotificationsView> {
     Color iconColor;
     IconData iconData;
 
-    if (item.statusTag == 'ĐANG GIAO') {
+    final typeLower = item.type.toLowerCase();
+    final statusLower = (item.statusTag ?? '').toLowerCase();
+
+    if (typeLower == 'order_ready' || statusLower.contains('sẵn sàng') || statusLower.contains('san_sang') || statusLower.contains('hoan_tat')) {
+      // 1. Đơn sẵn sàng / hoàn thành -> Xanh lá
+      iconBgColor = const Color(0xFFE8F5E9);
+      iconColor = const Color(0xFF2E7D32);
+      iconData = LucideIcons.checkCircle;
+    } else if (typeLower == 'order_cancelled' || statusLower.contains('hủy') || statusLower.contains('huy')) {
+      // 2. Đơn bị hủy -> Đỏ
+      iconBgColor = const Color(0xFFFFEBEE);
+      iconColor = const Color(0xFFD32F2F);
+      iconData = LucideIcons.xCircle;
+    } else if (typeLower == 'refund' || statusLower.contains('hoàn') || statusLower.contains('refund')) {
+      // 3. Hoàn tiền -> Cam
+      iconBgColor = const Color(0xFFFFF3E0);
+      iconColor = const Color(0xFFFF9800);
+      iconData = LucideIcons.badgePercent;
+    } else if (typeLower == 'update' || statusLower.contains('phiên bản') || statusLower.contains('version')) {
+      // 4. Cập nhật phiên bản -> Tím
+      iconBgColor = const Color(0xFFF3E5F5);
+      iconColor = const Color(0xFF7B1FA2);
+      iconData = LucideIcons.sparkles;
+    } else if (item.statusTag == 'ĐANG GIAO') {
       iconBgColor = const Color(0xFFFFECE5);
       iconColor = const Color(0xFFFF5722);
       iconData = Icons.two_wheeler_rounded;
@@ -540,18 +681,11 @@ class _NotificationsViewState extends State<NotificationsView> {
       iconBgColor = const Color(0xFFFFF8E1);
       iconColor = const Color(0xFFFFB300);
       iconData = Icons.soup_kitchen_outlined;
-    } else if (item.statusTag == 'THÀNH CÔNG' || item.statusTag == 'HOÀN TẤT') {
-      iconBgColor = const Color(0xFFE8F5E9);
-      iconColor = const Color(0xFF2E7D32);
-      iconData = Icons.check_circle_outline_rounded;
-    } else if (item.type == 'PROMO') {
-      iconBgColor = const Color(0xFFFFF3E0);
-      iconColor = const Color(0xFFFB8C00);
-      iconData = Icons.card_giftcard_rounded;
     } else {
+      // 5. Hệ thống / Thông báo chung -> Xanh dương
       iconBgColor = const Color(0xFFE3F2FD);
-      iconColor = const Color(0xFF1E88E5);
-      iconData = Icons.account_balance_wallet_outlined;
+      iconColor = const Color(0xFF1976D2);
+      iconData = LucideIcons.info;
     }
 
     if (isDark) {
@@ -663,7 +797,9 @@ class _NotificationsViewState extends State<NotificationsView> {
 
                       // Title
                       Text(
-                        _getLocalizedTitle(context, item.title),
+                        (item.titleEn != null && item.titleEn!.isNotEmpty)
+                            ? item.getLocalizedTitle(Localizations.localeOf(context).languageCode)
+                            : _getLocalizedTitle(context, item.title),
                         style: TextStyle(
                           color: TColor.primaryTextOf(context),
                           fontSize: 14,
@@ -674,7 +810,9 @@ class _NotificationsViewState extends State<NotificationsView> {
 
                       // Body
                       Text(
-                        _getLocalizedBody(context, item),
+                        (item.bodyEn != null && item.bodyEn!.isNotEmpty)
+                            ? item.getLocalizedBody(Localizations.localeOf(context).languageCode)
+                            : _getLocalizedBody(context, item),
                         style: TextStyle(
                           color: TColor.secondaryTextOf(context),
                           fontSize: 12,

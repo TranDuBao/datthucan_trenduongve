@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/fcm_push_service.dart';
 
 class LanguageProvider extends ChangeNotifier {
   static const String _prefKey = 'user_language_code';
@@ -44,6 +45,7 @@ class LanguageProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, code);
+    FcmPushService.instance.updateLanguage(code);
   }
 
   String tr(String key) {

@@ -23,12 +23,16 @@ import 'l10n/app_localizations.dart';
 import 'view/login/welcome_view.dart';
 import 'view/main_tabview/main_tabview.dart';
 import 'view/on_boarding/startup_view.dart';
+import 'services/fcm_push_service.dart';
 
 SharedPreferences? prefs;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setUpLocator();
+
+  // Initialize Firebase and Push notification services
+  await FcmPushService.instance.initialize();
 
   // Only bypass self-signed / local certificates in debug mode
   if (kDebugMode) {
@@ -54,7 +58,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => ReservationProvider()),
         ChangeNotifierProvider(create: (_) => SupportProvider()),
       ],

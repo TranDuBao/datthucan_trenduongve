@@ -26,7 +26,7 @@ class OrderCancelledModal extends StatefulWidget {
       context: context,
       barrierDismissible: false,
       barrierLabel: 'OrderCancelled',
-      barrierColor: Colors.black.withOpacity(0.65),
+      barrierColor: Colors.black.withValues(alpha: 0.65),
       transitionDuration: const Duration(milliseconds: 350),
       pageBuilder: (ctx, anim1, anim2) => OrderCancelledModal(
         orderId: orderId,
@@ -99,7 +99,7 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.5 : 0.15),
+                      color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.15),
                       blurRadius: 28,
                       offset: const Offset(0, 10),
                     ),
@@ -227,17 +227,21 @@ class _OrderCancelledModalState extends State<OrderCancelledModal>
                                 try {
                                   context.read<MapProvider>().cancelStopoverOrder();
                                 } catch (_) {}
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                    builder: (_) => const MainTabView(initialTab: 2),
-                                  ),
-                                  (route) => false,
-                                );
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const OrderHistoryView(),
-                                  ),
-                                );
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (_) => const MainTabView(initialTab: 2),
+                                    ),
+                                    (route) => false,
+                                  );
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const OrderHistoryView(),
+                                    ),
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFC6011),

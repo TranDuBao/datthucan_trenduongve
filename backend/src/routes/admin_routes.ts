@@ -7,6 +7,7 @@ import { requireRole } from '../middlewares/role_middleware';
 
 import { AuditLogController } from '../controllers/audit_log_controller';
 import { ReviewController } from '../controllers/review_controller';
+import { AdminNotificationController } from '../controllers/admin_notification_controller';
 
 const router = Router();
 const controller = new AdminController();
@@ -14,6 +15,7 @@ const auditLogController = new AuditLogController();
 const storeCatController = new StoreCategoryController();
 const systemInfoController = new SystemInfoController();
 const reviewController = new ReviewController();
+const adminNotifController = new AdminNotificationController();
 
 
 // All Admin routes require Auth & ADMIN Role
@@ -81,5 +83,13 @@ router.patch('/reviews/:id/visibility', reviewController.updateVisibility as any
 // System Info / About Us Management
 router.get('/about-us', systemInfoController.getAboutUs as any);
 router.put('/about-us', systemInfoController.updateAboutUs as any);
+
+// System & Update Notifications (Broadcast & Version Management)
+router.get('/notifications', adminNotifController.getNotifications as any);
+router.post('/notifications', adminNotifController.createNotification as any);
+router.post('/notifications/:id/cancel', adminNotifController.cancelScheduled as any);
+router.post('/notifications/:id/test', adminNotifController.sendTest as any);
+router.get('/app-versions', adminNotifController.getAppVersions as any);
+router.put('/app-versions/:platform', adminNotifController.updateAppVersion as any);
 
 export default router;

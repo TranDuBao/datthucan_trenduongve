@@ -6,6 +6,15 @@ import 'package:latlong2/latlong.dart';
 
 enum TrafficStatus { smooth, slow, moderate, heavy }
 
+/// Điều chỉnh thời gian di chuyển phù hợp với vận tốc thực tế đô thị Việt Nam (TP.HCM / Hà Nội):
+/// Vận tốc trung bình trong phố ~25 km/h do mật độ xe máy, giao lộ và đèn đỏ.
+int adjustDurationForVietnamTraffic(int distanceMeters, int rawDurationSeconds) {
+  if (distanceMeters <= 0) return rawDurationSeconds;
+  final int realisticSec = (distanceMeters / (25.0 * 1000.0 / 3600.0)).round();
+  final int scaledSec = (rawDurationSeconds * 1.85).round();
+  return scaledSec > realisticSec ? scaledSec : realisticSec;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // RouteStep
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,8 +44,9 @@ class RouteStep {
         ? message
         : _buildInstructionFromManeuver(maneuver, street);
 
-    final distM = (json['routeOffsetInMeters'] as num? ?? 0);
-    final durS = (json['travelTimeInSeconds'] as num? ?? 0);
+    final distM = (json['routeOffsetInMeters'] as num? ?? 0).toInt();
+    final rawDurS = (json['travelTimeInSeconds'] as num? ?? 0).toInt();
+    final durS = adjustDurationForVietnamTraffic(distM, rawDurS);
 
     return RouteStep(
       instruction: instruction,
@@ -52,8 +62,9 @@ class RouteStep {
 
   // ── OSRM Instruction (legacy) ────────────────────────────────────────────
   factory RouteStep.fromJson(Map<String, dynamic> json) {
-    final distM = json['distance'] as num? ?? 0;
-    final durS = json['duration'] as num? ?? 0;
+    final distM = (json['distance'] as num? ?? 0).toInt();
+    final rawDurS = (json['duration'] as num? ?? 0).toInt();
+    final durS = adjustDurationForVietnamTraffic(distM, rawDurS);
 
     final maneuverObj = json['maneuver'] as Map<String, dynamic>? ?? {};
     final type = maneuverObj['type']?.toString() ?? '';
@@ -303,8 +314,9 @@ class RouteModel {
 
     final int distM =
         (routeSummary['lengthInMeters'] as num? ?? 0).toInt();
-    final int durS =
+    final int rawDurS =
         (routeSummary['travelTimeInSeconds'] as num? ?? 0).toInt();
+    final int durS = adjustDurationForVietnamTraffic(distM, rawDurS);
     final int trafficDelay =
         (routeSummary['trafficDelayInSeconds'] as num? ?? 0).toInt();
     final int trafficLen =
@@ -319,7 +331,8 @@ class RouteModel {
         final leg = legObj as Map<String, dynamic>;
         final legSummary = leg['summary'] as Map<String, dynamic>? ?? {};
         final int lDistM = (legSummary['lengthInMeters'] as num? ?? 0).toInt();
-        final int lDurS = (legSummary['travelTimeInSeconds'] as num? ?? 0).toInt();
+        final int rawLDurS = (legSummary['travelTimeInSeconds'] as num? ?? 0).toInt();
+        final int lDurS = adjustDurationForVietnamTraffic(lDistM, rawLDurS);
         final List<LatLng> legPoints = [];
         final points = leg['points'] as List?;
         if (points != null) {
@@ -395,7 +408,8 @@ class RouteModel {
 
     final route = routes[0] as Map<String, dynamic>;
     final distM = (route['distance'] as num? ?? 0).toInt();
-    final durS = (route['duration'] as num? ?? 0).toInt();
+    final rawDurS = (route['duration'] as num? ?? 0).toInt();
+    final durS = adjustDurationForVietnamTraffic(distM, rawDurS);
 
     List<RouteStep> steps = [];
     final List<RouteLeg> legsList = [];
@@ -404,7 +418,8 @@ class RouteModel {
       for (final legObj in legs) {
         final leg = legObj as Map<String, dynamic>;
         final int lDistM = (leg['distance'] as num? ?? 0).toInt();
-        final int lDurS = (leg['duration'] as num? ?? 0).toInt();
+        final int rawLDurS = (leg['duration'] as num? ?? 0).toInt();
+        final int lDurS = adjustDurationForVietnamTraffic(lDistM, rawLDurS);
         final String lDistStr = lDistM >= 1000
             ? '${(lDistM / 1000).toStringAsFixed(1)} km'
             : '$lDistM m';

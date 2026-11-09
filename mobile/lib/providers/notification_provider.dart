@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/locator.dart';
 import '../common/sound_helper.dart';
+import '../services/fcm_push_service.dart';
 import '../services/notification_service.dart';
 import '../services/socket_service.dart';
 
@@ -51,10 +52,8 @@ class NotificationProvider extends ChangeNotifier {
   Future<void> fetchUnreadCount() async {
     try {
       final count = await NotificationService.fetchUnreadCount();
-      if (count > 0 || _unreadCount == 0) {
-        _unreadCount = count;
-        notifyListeners();
-      }
+      _unreadCount = count;
+      notifyListeners();
     } catch (_) {}
   }
 
@@ -67,10 +66,7 @@ class NotificationProvider extends ChangeNotifier {
     try {
       final items = await NotificationService.fetchNotificationsFromDB(page: 1, limit: 30);
       _notifications = items;
-      final unreadFromList = items.where((n) => n.isUnread).length;
-      if (unreadFromList > 0 || _unreadCount == 0) {
-        _unreadCount = unreadFromList;
-      }
+      _unreadCount = items.where((n) => n.isUnread).length;
     } catch (e) {
       _errorMessage = 'Không thể tải danh sách thông báo';
     } finally {
@@ -87,6 +83,18 @@ class NotificationProvider extends ChangeNotifier {
       _notifications.insert(0, newNotif);
       _latestBannerNotification = newNotif;
       notifyListeners();
+
+      // Hiển thị ngay lên thanh thông báo hệ thống của Android / iOS
+      FcmPushService.instance.showLocalNotification(
+        id: newNotif.id,
+        title: newNotif.title,
+        body: newNotif.body,
+        type: newNotif.type,
+        data: newNotif.rawData ?? {
+          'id': newNotif.id.toString(),
+          'type': newNotif.type,
+        },
+      );
     } else {
       fetchUnreadCount();
     }
@@ -97,16 +105,49 @@ class NotificationProvider extends ChangeNotifier {
     SoundHelper.playNotificationSound();
     fetchUnreadCount();
     fetchNotifications(refresh: true);
+
+    if (data is Map<String, dynamic>) {
+      final title = data['title'] ?? 'Cập nhật đơn hàng';
+      final body = data['body'] ?? data['message'] ?? 'Đơn hàng của bạn vừa có cập nhật mới';
+      FcmPushService.instance.showLocalNotification(
+        title: title.toString(),
+        body: body.toString(),
+        type: 'order',
+        data: data,
+      );
+    }
   }
 
   void _handleReservationEvent(dynamic data) {
     SoundHelper.playNotificationSound();
     fetchUnreadCount();
     fetchNotifications(refresh: true);
+
+    if (data is Map<String, dynamic>) {
+      final title = data['title'] ?? 'Cập nhật đặt bàn';
+      final body = data['body'] ?? data['message'] ?? 'Lịch đặt bàn của bạn vừa có cập nhật mới';
+      FcmPushService.instance.showLocalNotification(
+        title: title.toString(),
+        body: body.toString(),
+        type: 'system',
+        data: data,
+      );
+    }
   }
 
   void clearBanner() {
     _latestBannerNotification = null;
+    notifyListeners();
+  }
+
+  /// Dọn sạch toàn bộ dữ liệu thông báo trong bộ nhớ khi người dùng đăng xuất
+  void clearAllData() {
+    _notifications = [];
+    _unreadCount = 0;
+    _latestBannerNotification = null;
+    _isLoading = false;
+    _errorMessage = null;
+    _isInitialized = false;
     notifyListeners();
   }
 

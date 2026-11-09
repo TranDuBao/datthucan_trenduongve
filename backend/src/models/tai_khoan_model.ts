@@ -31,6 +31,15 @@ export class TaiKhoanModel {
   @Column({ name: 'trangthai', length: 30, default: 'HOAT_DONG' })
   trangThai: string;
 
+  @Column({ name: 'preferred_language', length: 10, default: 'vi' })
+  preferredLanguage: string;
+
+  @Column({ name: 'settings_system_notif', default: true })
+  settingsSystemNotif: boolean;
+
+  @Column({ name: 'settings_update_notif', default: true })
+  settingsUpdateNotif: boolean;
+
   @Column({ name: 'khoadenngay', type: 'timestamp', nullable: true })
   khoaDenNgay?: Date | null;
 

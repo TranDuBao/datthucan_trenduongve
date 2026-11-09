@@ -15,6 +15,7 @@ import '../../widgets/single_restaurant_warning_modal.dart';
 import 'checkout_message_view.dart';
 import 'order_history_view.dart';
 import '../main_tabview/main_tabview.dart';
+import '../../services/order_route_storage.dart';
 
 class CheckoutView extends StatefulWidget {
   const CheckoutView({super.key});
@@ -30,6 +31,7 @@ class _CheckoutViewState extends State<CheckoutView> {
 
   int selectMethod = 0;
   bool isSubmitting = false;
+  bool _orderCompleted = false;
 
   String _fmt(int v) => v
       .toString()
@@ -45,7 +47,7 @@ class _CheckoutViewState extends State<CheckoutView> {
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
+        if (didPop && !_orderCompleted) {
           try {
             context.read<MapProvider>().cancelStopoverOrder();
           } catch (_) {}
@@ -66,9 +68,11 @@ class _CheckoutViewState extends State<CheckoutView> {
                   children: [
                     IconButton(
                       onPressed: () {
-                        try {
-                          context.read<MapProvider>().cancelStopoverOrder();
-                        } catch (_) {}
+                        if (!_orderCompleted) {
+                          try {
+                            context.read<MapProvider>().cancelStopoverOrder();
+                          } catch (_) {}
+                        }
                         Navigator.pop(context);
                       },
                       icon: Icon(Icons.arrow_back_ios_new_rounded, color: TColor.primaryTextOf(context), size: 20),
@@ -477,7 +481,9 @@ class _CheckoutViewState extends State<CheckoutView> {
     void showNext() => _showOrderResults(remaining);
 
     void showSuccessModal([Map<String, dynamic>? updatedData]) async {
-      final store = context.read<MapProvider>().selectedStopoverStore;
+      _orderCompleted = true;
+      final mapProv = context.read<MapProvider>();
+      final store = mapProv.selectedStopoverStore;
       final finalOrderData = {
         if (store != null) ...store,
         ...orderData,
@@ -485,7 +491,21 @@ class _CheckoutViewState extends State<CheckoutView> {
       };
 
       try {
-        await context.read<MapProvider>().setActiveStopoverOrder(finalOrderData);
+        await mapProv.setActiveStopoverOrder(finalOrderData);
+        final rawId = finalOrderData['id'] ?? finalOrderData['maDonHang'] ?? finalOrderData['orderId'];
+        final oId = int.tryParse(rawId?.toString() ?? '');
+        if (oId != null && mapProv.destinationPlace != null) {
+          await OrderRouteStorage.saveOrderRoute(OrderRouteInfo(
+            orderId: oId,
+            destLat: mapProv.destinationPlace!.latLng.latitude,
+            destLng: mapProv.destinationPlace!.latLng.longitude,
+            destName: mapProv.destinationPlace!.name,
+            destAddress: mapProv.destinationPlace!.address,
+            originLat: mapProv.originPlace?.latLng.latitude,
+            originLng: mapProv.originPlace?.latLng.longitude,
+            originName: mapProv.originPlace?.name,
+          ));
+        }
       } catch (_) {}
 
       final action = await PaymentSuccessModal.show(
@@ -514,6 +534,9 @@ class _CheckoutViewState extends State<CheckoutView> {
           Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
         }
         mainTabState?.changeTab(2, popToRoot: true);
+        try {
+          mapProv.setActiveStopoverOrder(finalOrderData);
+        } catch (_) {}
       }
     }
 

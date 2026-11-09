@@ -1,5 +1,5 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'auth_language_toggle.dart';
 
 class CurvedHeaderClipper extends CustomClipper<Path> {
   @override
@@ -24,24 +24,31 @@ class CurvedHeaderClipper extends CustomClipper<Path> {
 
 class AuthHeaderWidget extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final String? imageAsset;
   final bool showBackButton;
   final VoidCallback? onBack;
+  final bool showLanguageButton;
 
   const AuthHeaderWidget({
     super.key,
     this.title = "FoodRoute",
-    this.subtitle = "Món ngon dọc đường đi,\nĐặt món trước, ghé là có.",
+    this.subtitle,
     this.imageAsset,
     this.showBackButton = false,
     this.onBack,
+    this.showLanguageButton = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final headerHeight = 220.0 + topPadding;
+    final isVi = (Localizations.maybeLocaleOf(context)?.languageCode ?? 'vi') == 'vi';
+    final resolvedSubtitle = subtitle ??
+        (isVi
+            ? "Món ngon dọc đường đi,\nĐặt món trước, ghé là có."
+            : "Delicious food along your way,\nOrder ahead, pick up on the go.");
 
     return ClipPath(
       clipper: CurvedHeaderClipper(),
@@ -70,7 +77,7 @@ class AuthHeaderWidget extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
+                  color: Colors.white.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -84,7 +91,7 @@ class AuthHeaderWidget extends StatelessWidget {
                 height: 220,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -101,7 +108,7 @@ class AuthHeaderWidget extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: Colors.white.withValues(alpha: 0.25),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -111,6 +118,14 @@ class AuthHeaderWidget extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+
+            // Language Selector Toggle (VI / EN)
+            if (showLanguageButton)
+              Positioned(
+                right: 16,
+                top: topPadding + 10,
+                child: const AuthLanguageToggle(),
               ),
 
             // Main Content Row
@@ -156,9 +171,9 @@ class AuthHeaderWidget extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          subtitle,
+                          resolvedSubtitle,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.92),
+                            color: Colors.white.withValues(alpha: 0.92),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             height: 1.35,
@@ -183,7 +198,7 @@ class AuthHeaderWidget extends StatelessWidget {
                           height: 115,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                           ),
                         ),
 
@@ -198,7 +213,7 @@ class AuthHeaderWidget extends StatelessWidget {
                                 width: 18,
                                 height: 3,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.75),
+                                  color: Colors.white.withValues(alpha: 0.75),
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
@@ -207,7 +222,7 @@ class AuthHeaderWidget extends StatelessWidget {
                                 width: 10,
                                 height: 3,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: Colors.white.withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),

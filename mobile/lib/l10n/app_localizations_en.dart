@@ -257,10 +257,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authForgotPassword => 'Forgot Password?';
 
   @override
+  String get authForgotPasswordSubtitle =>
+      'Enter your email to receive a verification code to reset your account password';
+
+  @override
+  String get authSendVerificationCode => 'Send Verification Code';
+
+  @override
+  String get authBackTo => 'Back to ';
+
+  @override
+  String get authResetCodeSentSuccess =>
+      'Password reset code has been sent to your email!';
+
+  @override
+  String get authRequestFailed => 'Request failed';
+
+  @override
+  String get authOtpTitle => 'OTP Verification';
+
+  @override
+  String authOtpSubtitle(String email) {
+    return 'A verification code was sent to $email.\nPlease enter the 6-digit code below:';
+  }
+
+  @override
+  String get authOtpConfirm => 'Verify Code';
+
+  @override
+  String get authOtpDidNotReceive => 'Didn\'t receive the code? ';
+
+  @override
+  String get authOtpResend => 'Resend';
+
+  @override
+  String get authOtpInput6Digits => 'Please enter all 6 digits of the OTP code';
+
+  @override
+  String get authOtpResentSuccess =>
+      'Verification code has been resent to your email';
+
+  @override
+  String get authNewPasswordTitle => 'New Password';
+
+  @override
+  String get authNewPasswordSubtitle =>
+      'Please enter a new password for your account';
+
+  @override
+  String get authNewPasswordLabel => 'New Password';
+
+  @override
+  String get authConfirmNewPasswordLabel => 'Confirm New Password';
+
+  @override
+  String get authChangePasswordButton => 'Change Password';
+
+  @override
+  String get authNewPasswordRequired =>
+      'Please enter both new password and confirm password';
+
+  @override
+  String get authChangePasswordSuccess =>
+      'Password changed successfully! Please log in again.';
+
+  @override
+  String get authChangePasswordFailed => 'Failed to change password';
+
+  @override
   String get authResetPassword => 'Reset Password';
 
   @override
   String get authRememberMe => 'Remember me';
+
+  @override
+  String get authSessionExpired => 'Session expired, please log in again.';
 
   @override
   String get authOrLoginWith => 'OR LOGIN WITH';
@@ -1210,6 +1281,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String orderConfirmCancelPrompt(String id, String restaurant) {
+    return 'Are you sure you want to cancel order #$id at $restaurant?';
+  }
+
+  @override
+  String get orderConfirmCancelWarning =>
+      'This cancellation cannot be undone once confirmed.';
+
+  @override
+  String get orderKeepOrderBtn => 'Keep Order';
+
+  @override
+  String get orderConfirmCancelAction => 'Cancel Order';
+
+  @override
+  String orderCancelSuccessMsg(String id) {
+    return 'Order #$id has been cancelled successfully.';
+  }
+
+  @override
+  String orderCancelFailedMsg(String id) {
+    return 'Failed to cancel order #$id. Please try again.';
+  }
+
+  @override
   String orderCancelNotAllowed(int stepNum) {
     return 'Order is at Step $stepNum (Kitchen preparing). Cannot cancel at this stage!';
   }
@@ -2085,5 +2181,89 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String voucherDiscountFixed(String amount) {
     return '$amount off';
+  }
+
+  @override
+  String get paymentSuccessTitle => 'Payment Successful!';
+
+  @override
+  String get paymentSuccessSubtitle =>
+      'Your transaction has been confirmed. The store will prepare your food shortly.';
+
+  @override
+  String get paymentSuccessOrderId => 'Order ID';
+
+  @override
+  String get paymentSuccessAmount => 'Amount Paid';
+
+  @override
+  String get paymentSuccessTime => 'Time';
+
+  @override
+  String get paymentSuccessMethod => 'Method';
+
+  @override
+  String get paymentSuccessVietQRMethod => 'VietQR / Bank';
+
+  @override
+  String get paymentSuccessCashMethod => 'Cash on pickup';
+
+  @override
+  String get paymentSuccessViewRoute => 'View route to store';
+
+  @override
+  String get paymentSuccessViewOrderDetails => 'View order details';
+
+  @override
+  String get stopoverDetailsTitle => 'STOPOVER ORDER DETAILS';
+
+  @override
+  String stopoverOrderCode(String orderCode) {
+    return 'Order #$orderCode';
+  }
+
+  @override
+  String get stopoverLeg1ToStore => 'Leg 1: To Restaurant';
+
+  @override
+  String get stopoverLeg2ToDestination => 'Leg 2: To Destination';
+
+  @override
+  String stopoverPickupScheduled(String time) {
+    return 'Pickup: $time';
+  }
+
+  @override
+  String get stopoverReturnOriginalRoute => 'Return to original route';
+
+  @override
+  String get stopoverCompleteTrip => 'Complete trip';
+
+  @override
+  String get stopoverPickedUpContinue => 'Picked up • Continue';
+
+  @override
+  String get stopoverPickedUpEnjoy => '● Picked up • Enjoy your meal!';
+
+  @override
+  String stopoverToStoreDistance(String info) {
+    return 'To restaurant: $info';
+  }
+
+  @override
+  String get stopoverViewDirections => 'View directions';
+
+  @override
+  String get stopoverMarkPickedUp => 'Picked up';
+
+  @override
+  String get stopoverNavigateAgain => 'Navigate to store again';
+
+  @override
+  String get stopoverComplete => 'Complete';
+
+  @override
+  String stopoverMarkerOrderBadge(String orderCode, String storeName) {
+    return 'Order #$orderCode • $storeName';
   }
 }

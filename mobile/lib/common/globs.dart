@@ -115,6 +115,7 @@ class SVKey {
   static String get svSignUp => '${baseUrl}register';
   static String get svGoogleAuth => '${baseUrl}google';
   static String get svLogout => '${baseUrl}logout';
+  static String get svRefreshToken => '${baseUrl}refresh-token';
   static String get svGetProfile => '${baseUrl}me';
 
   static String get svForgotPasswordRequest => '${baseUrl}forgot_password_request';
@@ -165,10 +166,16 @@ class KKey {
   static const status = "status";
   static const message = "message";
   static const authToken = "auth_token";
+  static const refreshToken = "refresh_token";
+  static const savedEmail = "saved_remember_email";
+  static const rememberMe = "remember_me_pref";
   static const name = "name";
   static const email = "email";
   static const userId = "user_id";
   static const resetCode = "reset_code";
+  static const fcmDeviceToken = "fcm_device_token";
+  static const hasPromptedNotificationPermission = "has_prompted_notif_permission";
+  static const snoozeVersionCheckTime = "snooze_version_check_time";
 }
 
 class MSG {

@@ -255,10 +255,82 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authForgotPassword => 'Quên mật khẩu?';
 
   @override
+  String get authForgotPasswordSubtitle =>
+      'Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu tài khoản';
+
+  @override
+  String get authSendVerificationCode => 'Gửi mã xác thực';
+
+  @override
+  String get authBackTo => 'Quay lại ';
+
+  @override
+  String get authResetCodeSentSuccess =>
+      'Mã đặt lại mật khẩu đã được gửi đến email của bạn!';
+
+  @override
+  String get authRequestFailed => 'Gửi yêu cầu thất bại';
+
+  @override
+  String get authOtpTitle => 'Xác thực mã OTP';
+
+  @override
+  String authOtpSubtitle(String email) {
+    return 'Mã xác thực đã được gửi tới email $email.\nVui lòng nhập mã gồm 6 chữ số bên dưới:';
+  }
+
+  @override
+  String get authOtpConfirm => 'Xác nhận mã';
+
+  @override
+  String get authOtpDidNotReceive => 'Chưa nhận được mã? ';
+
+  @override
+  String get authOtpResend => 'Gửi lại';
+
+  @override
+  String get authOtpInput6Digits => 'Vui lòng nhập đủ 6 chữ số mã OTP';
+
+  @override
+  String get authOtpResentSuccess =>
+      'Mã xác thực đã được gửi lại vào email của bạn';
+
+  @override
+  String get authNewPasswordTitle => 'Mật khẩu mới';
+
+  @override
+  String get authNewPasswordSubtitle =>
+      'Vui lòng nhập mật khẩu mới cho tài khoản của bạn';
+
+  @override
+  String get authNewPasswordLabel => 'Mật khẩu mới';
+
+  @override
+  String get authConfirmNewPasswordLabel => 'Xác nhận mật khẩu mới';
+
+  @override
+  String get authChangePasswordButton => 'Đổi mật khẩu';
+
+  @override
+  String get authNewPasswordRequired =>
+      'Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu';
+
+  @override
+  String get authChangePasswordSuccess =>
+      'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.';
+
+  @override
+  String get authChangePasswordFailed => 'Đổi mật khẩu thất bại';
+
+  @override
   String get authResetPassword => 'Đặt lại mật khẩu';
 
   @override
   String get authRememberMe => 'Ghi nhớ đăng nhập';
+
+  @override
+  String get authSessionExpired =>
+      'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.';
 
   @override
   String get authOrLoginWith => 'HOẶC ĐĂNG NHẬP VỚI';
@@ -1173,6 +1245,31 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String orderConfirmCancelPrompt(String id, String restaurant) {
+    return 'Bạn có chắc chắn muốn hủy đơn hàng #$id tại $restaurant không?';
+  }
+
+  @override
+  String get orderConfirmCancelWarning =>
+      'Thao tác hủy đơn không thể hoàn tác sau khi xác nhận.';
+
+  @override
+  String get orderKeepOrderBtn => 'Giữ lại đơn';
+
+  @override
+  String get orderConfirmCancelAction => 'Hủy đơn hàng';
+
+  @override
+  String orderCancelSuccessMsg(String id) {
+    return 'Đã hủy đơn hàng #$id thành công!';
+  }
+
+  @override
+  String orderCancelFailedMsg(String id) {
+    return 'Không thể hủy đơn hàng #$id. Vui lòng thử lại.';
+  }
+
+  @override
   String orderCancelNotAllowed(int stepNum) {
     return 'Đơn hàng đang ở Bước $stepNum (Bếp đang chuẩn bị). Không thể hủy đơn lúc này!';
   }
@@ -2027,5 +2124,89 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String voucherDiscountFixed(String amount) {
     return 'Giảm $amount';
+  }
+
+  @override
+  String get paymentSuccessTitle => 'Thanh toán thành công!';
+
+  @override
+  String get paymentSuccessSubtitle =>
+      'Giao dịch của bạn đã được xác nhận. Cửa hàng sẽ sớm chuẩn bị món ăn.';
+
+  @override
+  String get paymentSuccessOrderId => 'Mã đơn hàng';
+
+  @override
+  String get paymentSuccessAmount => 'Số tiền thanh toán';
+
+  @override
+  String get paymentSuccessTime => 'Thời gian';
+
+  @override
+  String get paymentSuccessMethod => 'Phương thức';
+
+  @override
+  String get paymentSuccessVietQRMethod => 'VietQR / Ngân hàng';
+
+  @override
+  String get paymentSuccessCashMethod => 'Tiền mặt khi nhận';
+
+  @override
+  String get paymentSuccessViewRoute => 'Xem đường đi đến quán';
+
+  @override
+  String get paymentSuccessViewOrderDetails => 'Xem chi tiết đơn hàng';
+
+  @override
+  String get stopoverDetailsTitle => 'CHI TIẾT ĐƠN GHÉ QUÁN';
+
+  @override
+  String stopoverOrderCode(String orderCode) {
+    return 'Đơn #$orderCode';
+  }
+
+  @override
+  String get stopoverLeg1ToStore => 'Chặng 1: Đến quán';
+
+  @override
+  String get stopoverLeg2ToDestination => 'Chặng 2: Đến điểm đích';
+
+  @override
+  String stopoverPickupScheduled(String time) {
+    return 'Hẹn lấy: $time';
+  }
+
+  @override
+  String get stopoverReturnOriginalRoute => 'Quay lại tuyến gốc';
+
+  @override
+  String get stopoverCompleteTrip => 'Hoàn tất chuyến đi';
+
+  @override
+  String get stopoverPickedUpContinue => 'Đã nhận món • Tiếp tục';
+
+  @override
+  String get stopoverPickedUpEnjoy => '● Đã lấy món • Chúc bạn ngon miệng!';
+
+  @override
+  String stopoverToStoreDistance(String info) {
+    return 'Đến quán: $info';
+  }
+
+  @override
+  String get stopoverViewDirections => 'Xem hướng dẫn đi';
+
+  @override
+  String get stopoverMarkPickedUp => 'Đã lấy món';
+
+  @override
+  String get stopoverNavigateAgain => 'Hướng dẫn tới quán lại';
+
+  @override
+  String get stopoverComplete => 'Hoàn tất';
+
+  @override
+  String stopoverMarkerOrderBadge(String orderCode, String storeName) {
+    return 'Đơn #$orderCode • $storeName';
   }
 }

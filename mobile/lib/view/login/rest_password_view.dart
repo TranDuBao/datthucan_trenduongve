@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
+import 'package:food_route/common/format_utils.dart';
 import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
 import 'package:food_route/view/login/otp_view.dart';
 import '../../common/globs.dart';
 import '../../common/service_call.dart';
-import 'new_password_view.dart';
 
 class ResetPasswordView extends StatefulWidget {
   const ResetPasswordView({super.key});
@@ -49,7 +49,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                 children: [
                   // Title & Subtitle
                   Text(
-                    "Quên mật khẩu?",
+                    context.l10n.authForgotPassword,
                     style: TextStyle(
                       color: TColor.primaryTextOf(context),
                       fontSize: 24,
@@ -59,7 +59,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu tài khoản",
+                    context.l10n.authForgotPasswordSubtitle,
                     style: TextStyle(
                       color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                       fontSize: 13,
@@ -71,7 +71,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
 
                   // Email Input Field
                   AuthTextfield(
-                    label: "Tài khoản hoặc Email",
+                    label: context.l10n.authAccountOrEmail,
                     hintText: "foodroute@gmail.com",
                     controller: txtEmail,
                     prefixIcon: Icons.mail_outline_rounded,
@@ -90,7 +90,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF5216).withOpacity(0.32),
+                          color: const Color(0xFFFF5216).withValues(alpha: 0.32),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -105,9 +105,9 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        "Gửi mã xác thực",
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.authSendVerificationCode,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -134,16 +134,16 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              "Quay lại ",
+                              context.l10n.authBackTo,
                               style: TextStyle(
                                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const Text(
-                              "Đăng nhập",
-                              style: TextStyle(
+                            Text(
+                              context.l10n.authLogin,
+                              style: const TextStyle(
                                 color: Color(0xFFFF5216),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
@@ -167,7 +167,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
   void btnSubmit() {
     final email = txtEmail.text.trim();
     if (!email.isEmail) {
-      mdShowAlert("Thông báo", "Vui lòng nhập email hợp lệ", () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, context.l10n.authEmailInvalid, () {}, isError: true);
       return;
     }
 
@@ -185,7 +185,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
         withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-        mdShowAlert("Thông báo", "Mã đặt lại mật khẩu đã được gửi đến email của bạn!", () {
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authResetCodeSentSuccess, () {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -194,11 +194,11 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
           );
         }, isError: false);
       } else {
-        mdShowAlert("Thông báo", responseObj[KKey.message] as String? ?? "Gửi yêu cầu thất bại", () {}, isError: true);
+        mdShowAlert(context.l10n.commonNotification, responseObj[KKey.message] as String? ?? context.l10n.authRequestFailed, () {}, isError: true);
       }
     }, failure: (err) async {
       Globs.hideHUD();
-      mdShowAlert("Thông báo", err.toString(), () {}, isError: true);
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 }
