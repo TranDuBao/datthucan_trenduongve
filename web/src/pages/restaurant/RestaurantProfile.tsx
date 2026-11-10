@@ -9,6 +9,7 @@ import { BankSelector } from '../../components/BankSelector';
 import { DatePickerInput } from '../../components/DatePickerInput';
 import { parseCCCDImage, formatDateVN, toISODate } from '../../utils/ocrService';
 import { fetchVietQRBanks, BankItem } from '../../utils/bankService';
+import { getSocket, joinRestaurantRoom } from '../../api/socketClient';
 
 const AMENITIES_LIST = [
   'Take-away',
@@ -143,6 +144,48 @@ export const RestaurantProfile: React.FC = () => {
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+  // Realtime Socket listener for profile updates from Admin or other sessions
+  useEffect(() => {
+    if (!profile?.maQuan) return;
+    const socket = getSocket();
+    if (socket) {
+      joinRestaurantRoom(profile.maQuan);
+      const handleProfileUpdated = (payload: any) => {
+        if (!payload?.data) return;
+        if (Number(payload.maQuan) === Number(profile.maQuan)) {
+          const p = payload.data;
+          setProfile(p);
+          setForm((prev) => ({
+            ...prev,
+            tenQuan: p.tenQuan !== undefined ? p.tenQuan : prev.tenQuan,
+            diaChi: p.diaChi !== undefined ? p.diaChi : prev.diaChi,
+            sdt: p.sdt !== undefined ? p.sdt : prev.sdt,
+            email: p.email !== undefined ? p.email : prev.email,
+            moTa: p.moTa !== undefined ? p.moTa : prev.moTa,
+            danhMuc: p.danhMuc !== undefined ? p.danhMuc : prev.danhMuc,
+            img: p.img !== undefined ? p.img : prev.img,
+            trangThai: p.trangThai !== undefined ? p.trangThai : prev.trangThai,
+            lat: p.lat ?? prev.lat,
+            lng: p.lng ?? prev.lng,
+            hoTenChuQuan: p.hoTenChuQuan !== undefined ? p.hoTenChuQuan : prev.hoTenChuQuan,
+            diaChiThuongTru: p.diaChiThuongTru !== undefined ? p.diaChiThuongTru : prev.diaChiThuongTru,
+            ngaySinhChuQuan: p.ngaySinhChuQuan ? formatDateVN(String(p.ngaySinhChuQuan)) : prev.ngaySinhChuQuan,
+            soCCCD: p.soCCCD !== undefined ? p.soCCCD : prev.soCCCD,
+            tenNganHang: p.tenNganHang !== undefined ? p.tenNganHang : prev.tenNganHang,
+            soTaiKhoanNganHang: p.soTaiKhoanNganHang !== undefined ? p.soTaiKhoanNganHang : prev.soTaiKhoanNganHang,
+            tenChuTaiKhoan: p.tenChuTaiKhoan !== undefined ? p.tenChuTaiKhoan : prev.tenChuTaiKhoan,
+            cccdMatTruoc: p.cccdMatTruoc !== undefined ? p.cccdMatTruoc : prev.cccdMatTruoc,
+            cccdMatSau: p.cccdMatSau !== undefined ? p.cccdMatSau : prev.cccdMatSau,
+          }));
+        }
+      };
+      socket.on('restaurant:profile_updated', handleProfileUpdated);
+      return () => {
+        socket.off('restaurant:profile_updated', handleProfileUpdated);
+      };
+    }
+  }, [profile?.maQuan]);
 
   const handleScanCCCD = async () => {
     const fImg = form.cccdMatTruoc;

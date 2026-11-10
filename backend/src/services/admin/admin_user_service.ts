@@ -5,6 +5,7 @@ import { KhachHangModel } from '../../models/khach_hang_model';
 import { CuaHangModel } from '../../models/cua_hang_model';
 import { DonHangModel } from '../../models/don_hang_model';
 import { AdminDashboardService } from './admin_dashboard_service';
+import { RealtimeService } from '../realtime_service';
 
 export class AdminUserService {
   private userRepo = AppDataSource.getRepository(TaiKhoanModel);
@@ -239,7 +240,14 @@ export class AdminUserService {
       if (data.cccdMatTruoc !== undefined) store.cccdMatTruoc = data.cccdMatTruoc;
       if (data.cccdMatSau !== undefined) store.cccdMatSau = data.cccdMatSau;
       if (data.sdt !== undefined) store.sdt = data.sdt;
-      await this.storeRepo.save(store);
+      const savedStore = await this.storeRepo.save(store);
+      try {
+        if (savedStore?.maQuan) {
+          RealtimeService.getInstance().emitStoreProfileUpdated(savedStore.maQuan, savedStore);
+        }
+      } catch (e) {
+        console.error('[AdminUserService] Failed to emit store profile updated:', e);
+      }
     }
 
     return await this.getUserDetail(maTaiKhoan);

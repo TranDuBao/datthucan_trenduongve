@@ -14,6 +14,7 @@ import { RestaurantDetailView } from './restaurants/RestaurantDetailView';
 import { AdminCategories } from './AdminCategories';
 import { AdminStoreCategories } from './AdminStoreCategories';
 import { UnderlineTabs, TabItem } from '../../components/UnderlineTabs';
+import { getSocket, joinAdminRoom } from '../../api/socketClient';
 
 export const AdminRestaurants: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0 });
@@ -147,6 +148,28 @@ export const AdminRestaurants: React.FC = () => {
 
   useEffect(() => {
     fetchStores();
+
+    const socket = getSocket();
+    if (socket) {
+      joinAdminRoom();
+      const handleProfileUpdated = (payload: any) => {
+        if (!payload?.data) return;
+        const updated = payload.data;
+        setData((prev: any) => {
+          if (!prev?.items) return prev;
+          return {
+            ...prev,
+            items: prev.items.map((item: any) =>
+              Number(item.maQuan) === Number(updated.maQuan) ? { ...item, ...updated } : item
+            ),
+          };
+        });
+      };
+      socket.on('restaurant:profile_updated', handleProfileUpdated);
+      return () => {
+        socket.off('restaurant:profile_updated', handleProfileUpdated);
+      };
+    }
   }, [search]);
 
   const handleOpenAdd = () => {
@@ -200,7 +223,7 @@ export const AdminRestaurants: React.FC = () => {
     try {
       const payload = {
         ...form,
-        maTaiKhoan: form.maTaiKhoan ? Number(form.maTaiKhoan) : undefined,
+        maTaiKhoan: form.maTaiKhoan ? Number(form.maTaiKhoan) : null,
         ngaySinhChuQuan: toISODate(form.ngaySinhChuQuan),
       };
 
@@ -555,14 +578,19 @@ export const AdminRestaurants: React.FC = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">Tài Khoản Quản Lý (Mã Tài Khoản)</label>
-              <input
-                type="text"
+              <label className="form-label">Tài Khoản Quản Lý (Mã Tài Khoản Chủ Quán)</label>
+              <select
                 className="form-control"
-                value={form.maTaiKhoan ? `Mã Tài Khoản #${form.maTaiKhoan}` : 'Tự Động Khởi Tạo (Auto-Generated)'}
-                disabled
-                style={{ backgroundColor: '#f1f5f9', color: '#64748b', cursor: 'not-allowed', fontWeight: 600 }}
-              />
+                value={form.maTaiKhoan}
+                onChange={(e) => setForm({ ...form, maTaiKhoan: e.target.value })}
+              >
+                <option value="">-- Chưa gán tài khoản chủ quán --</option>
+                {merchantUsers.map((u: any) => (
+                  <option key={u.maTaiKhoan} value={u.maTaiKhoan}>
+                    #{u.maTaiKhoan} - {u.tenDangNhap} ({u.khachHang?.hoTen || u.cuaHang?.tenQuan || u.sdt || 'Chủ quán'})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <ImageCropUpload

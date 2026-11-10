@@ -6,6 +6,7 @@ import { MonAnModel } from '../../models/mon_an_model';
 import { DonHangModel } from '../../models/don_hang_model';
 import { DanhMucModel } from '../../models/danh_muc_model';
 import { AuditLogService } from './audit_log_service';
+import { RealtimeService } from '../realtime_service';
 
 export class AdminRestaurantService {
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
@@ -122,8 +123,16 @@ export class AdminRestaurantService {
       });
     }
 
+    let linkedUser = null;
+    if (store.maTaiKhoan) {
+      linkedUser = await this.userRepo.findOne({ where: { maTaiKhoan: store.maTaiKhoan } });
+    }
+
     return {
-      store,
+      store: {
+        ...store,
+        taiKhoanLienKet: linkedUser ? { maTaiKhoan: linkedUser.maTaiKhoan, tenDangNhap: linkedUser.tenDangNhap } : null,
+      },
       stats: {
         totalRevenue,
         todayRevenue,
@@ -142,8 +151,17 @@ export class AdminRestaurantService {
     const store = await this.storeRepo.findOne({ where: { maQuan } });
     if (!store) throw new Error('Không tìm thấy nhà hàng');
 
-    if (!data.ngaySinhChuQuan || (typeof data.ngaySinhChuQuan === 'string' && !(data.ngaySinhChuQuan as string).trim())) {
-      data.ngaySinhChuQuan = null;
+    if (data.ngaySinhChuQuan !== undefined) {
+      if (!data.ngaySinhChuQuan || data.ngaySinhChuQuan === 'Invalid Date' || data.ngaySinhChuQuan === '') {
+        store.ngaySinhChuQuan = null;
+      } else {
+        const parsed = new Date(data.ngaySinhChuQuan);
+        store.ngaySinhChuQuan = isNaN(parsed.getTime()) ? null : parsed;
+      }
+    }
+
+    if (data.maTaiKhoan !== undefined) {
+      store.maTaiKhoan = data.maTaiKhoan ? Number(data.maTaiKhoan) : null as any;
     }
 
     Object.assign(store, data);
@@ -158,6 +176,12 @@ export class AdminRestaurantService {
         if (data.img !== undefined) kh.avatar = data.img;
         await this.khachHangRepo.save(kh);
       }
+    }
+
+    try {
+      RealtimeService.getInstance().emitStoreProfileUpdated(maQuan, savedStore);
+    } catch (e) {
+      console.error('[AdminRestaurantService] Failed to emit store profile updated:', e);
     }
 
     return savedStore;

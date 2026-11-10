@@ -7,6 +7,7 @@ import { NotificationModal } from '../../../components/NotificationModal';
 import { ImageCropUpload } from '../../../components/ImageCropUpload';
 import { formatDateVN } from '../../../utils/ocrService';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../../utils/imageUtils';
+import { getSocket, joinAdminRoom } from '../../../api/socketClient';
 
 interface RestaurantDetailViewProps {
   restaurantId: number;
@@ -173,6 +174,27 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
     apiFetch<any>('/admin/categories')
       .then((res) => setCategories(res.data || []))
       .catch(() => {});
+
+    const socket = getSocket();
+    if (socket) {
+      joinAdminRoom();
+      const handleProfileUpdated = (payload: any) => {
+        if (!payload?.data) return;
+        if (Number(payload.maQuan) === Number(restaurantId)) {
+          setDetailData((prev: any) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              store: { ...prev.store, ...payload.data },
+            };
+          });
+        }
+      };
+      socket.on('restaurant:profile_updated', handleProfileUpdated);
+      return () => {
+        socket.off('restaurant:profile_updated', handleProfileUpdated);
+      };
+    }
   }, [restaurantId]);
 
   const handleOpenEditFood = (food: any) => {

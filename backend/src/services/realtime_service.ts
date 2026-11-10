@@ -411,6 +411,7 @@ export class RealtimeService {
         data: store,
       };
       this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.STORE_PROFILE_UPDATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.STORE_PROFILE_UPDATED, payload);
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (restaurant:profile_updated):', e);
     }
