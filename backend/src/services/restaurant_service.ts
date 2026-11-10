@@ -79,6 +79,13 @@ export class RestaurantService {
   private getValidFoodImageUrl(img: string | undefined | null): string {
     if (img && typeof img === 'string') {
       const trimmed = img.trim();
+      // Loại bỏ triệt để các URL ảnh mẫu Unsplash cũ còn sót
+      if (
+        trimmed.includes('images.unsplash.com') ||
+        trimmed.includes('photo-1582878826629-29b7ad1cdc43')
+      ) {
+        return '';
+      }
       if (
         trimmed.startsWith('/uploads/') ||
         trimmed.startsWith('uploads/') ||
