@@ -7,7 +7,10 @@ import {
   XCircle,
   Eye,
   Send,
-  Sparkles,
+  ArrowUpCircle,
+  Bell,
+  Megaphone,
+  Gift,
   Info,
   RefreshCw,
   Ban,
@@ -161,14 +164,52 @@ export const NotificationHistoryTable: React.FC<{ refreshTrigger: number }> = ({
             borderRadius: '6px',
             fontSize: '11px',
             fontWeight: 700,
-            backgroundColor: '#f5f3ff',
-            color: '#7c3aed',
+            backgroundColor: '#eff6ff',
+            color: '#2563eb',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
           }}
         >
-          <Sparkles size={12} /> Cập nhật
+          <ArrowUpCircle size={12} /> Cập nhật
+        </span>
+      );
+    }
+    if (itemType === 'alert') {
+      return (
+        <span
+          style={{
+            padding: '4px 8px',
+            borderRadius: '6px',
+            fontSize: '11px',
+            fontWeight: 700,
+            backgroundColor: '#fef2f2',
+            color: '#dc2626',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Megaphone size={12} /> Khẩn cấp
+        </span>
+      );
+    }
+    if (itemType === 'promo') {
+      return (
+        <span
+          style={{
+            padding: '4px 8px',
+            borderRadius: '6px',
+            fontSize: '11px',
+            fontWeight: 700,
+            backgroundColor: '#f0fdf4',
+            color: '#16a34a',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Gift size={12} /> Ưu đãi
         </span>
       );
     }
@@ -179,14 +220,14 @@ export const NotificationHistoryTable: React.FC<{ refreshTrigger: number }> = ({
           borderRadius: '6px',
           fontSize: '11px',
           fontWeight: 700,
-          backgroundColor: '#eff6ff',
-          color: '#2563eb',
+          backgroundColor: '#fff7ed',
+          color: '#fc6011',
           display: 'inline-flex',
           alignItems: 'center',
           gap: '4px',
         }}
       >
-        <Info size={12} /> Hệ thống
+        <Bell size={12} /> Hệ thống
       </span>
     );
   };
@@ -220,8 +261,10 @@ export const NotificationHistoryTable: React.FC<{ refreshTrigger: number }> = ({
             }}
           >
             <option value="all">Tất cả loại thông báo</option>
-            <option value="system">Chỉ thông báo hệ thống</option>
-            <option value="update">Chỉ cập nhật phiên bản</option>
+            <option value="system">🔔 Thông báo hệ thống</option>
+            <option value="update">🚀 Cập nhật phiên bản</option>
+            <option value="alert">📢 Khẩn cấp / Cảnh báo</option>
+            <option value="promo">🎁 Ưu đãi lộ trình</option>
           </select>
 
           <button

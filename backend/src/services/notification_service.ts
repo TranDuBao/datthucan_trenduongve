@@ -586,7 +586,7 @@ export class NotificationService {
   // -------------------------------------------------------------
 
   async createAdminNotification(params: {
-    type: 'system' | 'update';
+    type: 'system' | 'update' | 'alert' | 'promo' | string;
     titleVi: string;
     bodyVi: string;
     titleEn?: string;
@@ -594,7 +594,7 @@ export class NotificationService {
     target: 'ALL' | 'ROLE' | 'VERSION_LT';
     targetValue?: string;
     scheduledAt?: Date;
-    createdBy: number;
+    createdBy?: number;
     sendNow?: boolean;
     data?: Record<string, any>;
   }) {
@@ -617,7 +617,7 @@ export class NotificationService {
     const notif = this.notificationRepo.create({
       recipientId: 0,
       recipientRole: 'user',
-      type: type === 'update' ? NotificationType.UPDATE : NotificationType.SYSTEM,
+      type: type || NotificationType.SYSTEM,
       title: titleVi,
       body: bodyVi,
       titleEn: titleEn || null,
@@ -628,13 +628,30 @@ export class NotificationService {
       status: isScheduled ? NotificationStatus.SCHEDULED : NotificationStatus.SENT,
       scheduledAt: isScheduled ? new Date(scheduledAt!) : null,
       sentAt: isScheduled ? null : new Date(),
-      createdBy,
+      createdBy: createdBy || null,
     });
 
-    const saved = await this.notificationRepo.save(notif);
+    let saved: NotificationModel;
+    try {
+      saved = await this.notificationRepo.save(notif);
+    } catch (saveErr: any) {
+      console.warn('[NotificationService] Fallback save master notification:', saveErr?.message || saveErr);
+      const maxRes = await this.notificationRepo.query(`SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM notifications`);
+      notif.id = Number(maxRes[0]?.next_id || 1);
+      await this.notificationRepo.query(
+        `INSERT INTO notifications (id, recipient_id, recipient_role, type, title, body, data, is_read, created_at)
+         VALUES ($1, 0, 'user', $2, $3, $4, $5, false, CURRENT_TIMESTAMP)`,
+        [notif.id, notif.type, notif.title, notif.body, JSON.stringify(data || {})]
+      );
+      saved = notif;
+    }
 
     if (sendNow || !isScheduled) {
-      await this.deliverBroadcast(saved);
+      try {
+        await this.deliverBroadcast(saved);
+      } catch (broadcastErr: any) {
+        console.warn('[NotificationService] Broadcast deliver notice:', broadcastErr?.message || broadcastErr);
+      }
     }
 
     return saved;

@@ -5,7 +5,10 @@ import {
   Calendar,
   Smartphone,
   Info,
-  Sparkles,
+  Bell,
+  ArrowUpCircle,
+  Megaphone,
+  Gift,
   Users,
   ShieldCheck,
   Clock,
@@ -19,7 +22,7 @@ interface NotificationComposerProps {
 }
 
 export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNotificationCreated }) => {
-  const [type, setType] = useState<'system' | 'update'>('system');
+  const [type, setType] = useState<'system' | 'update' | 'alert' | 'promo'>('system');
   const [titleVi, setTitleVi] = useState('');
   const [bodyVi, setBodyVi] = useState('');
   const [titleEn, setTitleEn] = useState('');
@@ -35,6 +38,20 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const getTypePreviewInfo = () => {
+    switch (type) {
+      case 'update':
+        return { label: 'Cập Nhật App', icon: <ArrowUpCircle size={12} />, bg: '#2563eb' };
+      case 'alert':
+        return { label: 'Khẩn Cấp', icon: <Megaphone size={12} />, bg: '#dc2626' };
+      case 'promo':
+        return { label: 'Ưu Đãi Lộ Trình', icon: <Gift size={12} />, bg: '#16a34a' };
+      case 'system':
+      default:
+        return { label: 'Hệ Thống', icon: <Bell size={12} />, bg: '#fc6011' };
+    }
+  };
 
   const handleSendOrSchedule = async () => {
     if (!titleVi.trim() || !bodyVi.trim()) {
@@ -165,16 +182,17 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
         {/* 1. Chọn loại thông báo */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '8px' }}>
-            Loại thông báo (Chỉ gồm 2 loại theo quy định hệ thống)
+            Loại thông báo & Biểu tượng logo hiển thị
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            {/* 1. Hệ thống */}
             <div
               onClick={() => {
                 setType('system');
                 if (target === 'VERSION_LT') setTarget('ALL');
               }}
               style={{
-                padding: '14px',
+                padding: '12px',
                 borderRadius: '12px',
                 border: type === 'system' ? '2px solid #fc6011' : '1px solid #cbd5e1',
                 backgroundColor: type === 'system' ? '#fff7ed' : '#f8fafc',
@@ -182,6 +200,7 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
+                transition: 'all 0.15s ease',
               }}
             >
               <div
@@ -194,27 +213,30 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
-                <Info size={20} />
+                <Bell size={18} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>Thông Báo Hệ Thống</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Bảo trì máy chủ, thông báo quy định chung</div>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>Hệ Thống</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.25 }}>Bảo trì máy chủ, thông báo chung</div>
               </div>
             </div>
 
+            {/* 2. Cập nhật phiên bản */}
             <div
               onClick={() => setType('update')}
               style={{
-                padding: '14px',
+                padding: '12px',
                 borderRadius: '12px',
-                border: type === 'update' ? '2px solid #7c3aed' : '1px solid #cbd5e1',
-                backgroundColor: type === 'update' ? '#f5f3ff' : '#f8fafc',
+                border: type === 'update' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                backgroundColor: type === 'update' ? '#eff6ff' : '#f8fafc',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
+                transition: 'all 0.15s ease',
               }}
             >
               <div
@@ -222,18 +244,97 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
                   width: '36px',
                   height: '36px',
                   borderRadius: '8px',
-                  backgroundColor: type === 'update' ? '#7c3aed' : '#e2e8f0',
+                  backgroundColor: type === 'update' ? '#2563eb' : '#e2e8f0',
                   color: type === 'update' ? '#fff' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
-                <Sparkles size={20} />
+                <ArrowUpCircle size={18} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>Cập Nhật Phiên Bản</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Tính năng mới, phiên bản app bắt buộc</div>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>Cập Nhật App</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.25 }}>Phiên bản mới, tính năng mới</div>
+              </div>
+            </div>
+
+            {/* 3. Khẩn cấp / Cảnh báo */}
+            <div
+              onClick={() => {
+                setType('alert');
+                if (target === 'VERSION_LT') setTarget('ALL');
+              }}
+              style={{
+                padding: '12px',
+                borderRadius: '12px',
+                border: type === 'alert' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                backgroundColor: type === 'alert' ? '#fef2f2' : '#f8fafc',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: type === 'alert' ? '#dc2626' : '#e2e8f0',
+                  color: type === 'alert' ? '#fff' : '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Megaphone size={18} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>Khẩn Cấp</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.25 }}>Cảnh báo thời tiết, gián đoạn</div>
+              </div>
+            </div>
+
+            {/* 4. Ưu đãi / Khuyến mãi */}
+            <div
+              onClick={() => {
+                setType('promo');
+                if (target === 'VERSION_LT') setTarget('ALL');
+              }}
+              style={{
+                padding: '12px',
+                borderRadius: '12px',
+                border: type === 'promo' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                backgroundColor: type === 'promo' ? '#f0fdf4' : '#f8fafc',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: type === 'promo' ? '#16a34a' : '#e2e8f0',
+                  color: type === 'promo' ? '#fff' : '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Gift size={18} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>Ưu Đãi Lộ Trình</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.25 }}>Khuyến mãi quán, voucher tiện đường</div>
               </div>
             </div>
           </div>
@@ -666,19 +767,17 @@ export const NotificationComposer: React.FC<NotificationComposerProps> = ({ onNo
                       width: '20px',
                       height: '20px',
                       borderRadius: '6px',
-                      backgroundColor: '#FF5A0E',
+                      backgroundColor: getTypePreviewInfo().bg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#fff',
-                      fontSize: '10px',
-                      fontWeight: 800,
                     }}
                   >
-                    FR
+                    {getTypePreviewInfo().icon}
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
-                    FOOD ROUTE
+                    FOOD ROUTE • {getTypePreviewInfo().label}
                   </span>
                 </div>
                 <span style={{ fontSize: '10px', color: '#64748b' }}>Vừa xong</span>

@@ -222,7 +222,7 @@ class _ModernNotificationModalState extends State<ModernNotificationModal>
                                 child: Opacity(
                                   opacity: p.clamp(0.0, 1.0),
                                   child: const Icon(
-                                    LucideIcons.sparkle,
+                                    LucideIcons.bell,
                                     size: 16,
                                     color: Color(0xFFF59E0B),
                                   ),
@@ -234,7 +234,7 @@ class _ModernNotificationModalState extends State<ModernNotificationModal>
                                 child: Opacity(
                                   opacity: p.clamp(0.0, 1.0),
                                   child: Icon(
-                                    LucideIcons.sparkle,
+                                    LucideIcons.bellRing,
                                     size: 14,
                                     color: _accentColor,
                                   ),

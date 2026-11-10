@@ -4,7 +4,6 @@ import {
   Send,
   History,
   Smartphone,
-  Sparkles,
   Info,
 } from 'lucide-react';
 import { NotificationComposer } from './notifications/NotificationComposer';

@@ -5,7 +5,7 @@ import {
   Apple,
   Save,
   Radio,
-  Sparkles,
+  ArrowUpCircle,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
@@ -340,7 +340,7 @@ export const AppVersionManager: React.FC<{ onVersionUpdated: () => void }> = ({ 
                 boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
               }}
             >
-              <Sparkles size={16} />
+              <ArrowUpCircle size={16} />
               {saving ? 'Đang lưu & phát...' : 'Lưu & Phát Thông Báo Cập Nhật'}
             </button>
           </div>

@@ -537,7 +537,7 @@ class FcmPushService {
             title: Row(
               children: [
                 Icon(
-                  isMandatory ? LucideIcons.alertTriangle : LucideIcons.sparkles,
+                  isMandatory ? LucideIcons.alertTriangle : LucideIcons.arrowUpCircle,
                   color: isMandatory ? const Color(0xFFD32F2F) : TColor.primary,
                   size: 24,
                 ),

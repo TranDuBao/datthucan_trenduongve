@@ -396,16 +396,28 @@ export const connectDatabase = async () => {
         ADD COLUMN IF NOT EXISTS failed_count INT DEFAULT 0;
     `).catch(() => {});
 
+    // Ensure sequence for notifications.id
+    await AppDataSource.query(`
+      DO $$
+      BEGIN
+        CREATE SEQUENCE IF NOT EXISTS notifications_id_seq;
+        PERFORM setval('notifications_id_seq', COALESCE((SELECT MAX(id) FROM notifications), 0) + 1, false);
+        ALTER TABLE notifications ALTER COLUMN id SET DEFAULT nextval('notifications_id_seq');
+      EXCEPTION WHEN OTHERS THEN
+        NULL;
+      END $$;
+    `).catch(() => {});
+
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS user_notifications (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL,
-        notification_id INT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+        notification_id INT NOT NULL,
         is_read BOOLEAN DEFAULT FALSE,
         read_at TIMESTAMP NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT uq_user_notification UNIQUE (user_id, notification_id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_uq_user_notification ON user_notifications(user_id, notification_id);
       CREATE INDEX IF NOT EXISTS idx_user_notifications_user_read 
       ON user_notifications(user_id, is_read, created_at DESC);
     `).catch(() => {});

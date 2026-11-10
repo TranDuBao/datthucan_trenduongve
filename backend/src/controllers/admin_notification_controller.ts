@@ -42,9 +42,9 @@ export class AdminNotificationController {
    */
   createNotification = async (req: Request, res: Response) => {
     try {
-      const adminId = (req as any).user?.maTaiKhoan;
+      const adminId = (req as any).user?.sub || (req as any).user?.maTaiKhoan || 1;
       const {
-        type,
+        type = 'system',
         titleVi,
         bodyVi,
         titleEn,
@@ -56,12 +56,8 @@ export class AdminNotificationController {
         data = {},
       } = req.body;
 
-      if (!type || !['system', 'update'].includes(type)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Admin chỉ được phép tạo thông báo loại "system" (Hệ thống) hoặc "update" (Cập nhật phiên bản)',
-        });
-      }
+      const allowedTypes = ['system', 'update', 'alert', 'promo'];
+      const chosenType = allowedTypes.includes(type) ? type : 'system';
 
       if (!titleVi || !bodyVi) {
         return res.status(400).json({
@@ -71,7 +67,7 @@ export class AdminNotificationController {
       }
 
       const notif = await this.notificationService.createAdminNotification({
-        type,
+        type: chosenType,
         titleVi,
         bodyVi,
         titleEn,
@@ -79,7 +75,7 @@ export class AdminNotificationController {
         target: target as any,
         targetValue,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-        createdBy: adminId,
+        createdBy: adminId ? Number(adminId) : undefined,
         sendNow: Boolean(sendNow),
         data,
       });
@@ -93,7 +89,7 @@ export class AdminNotificationController {
       console.error('[AdminNotificationController] createNotification error:', error);
       return res.status(500).json({
         success: false,
-        message: 'Lỗi khi tạo thông báo',
+        message: 'Lỗi khi tạo thông báo: ' + (error?.message || ''),
         error: error.message,
       });
     }

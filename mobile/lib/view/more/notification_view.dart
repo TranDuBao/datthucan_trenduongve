@@ -669,10 +669,20 @@ class _NotificationsViewState extends State<NotificationsView> {
       iconColor = const Color(0xFFFF9800);
       iconData = LucideIcons.badgePercent;
     } else if (typeLower == 'update' || statusLower.contains('phiên bản') || statusLower.contains('version')) {
-      // 4. Cập nhật phiên bản -> Tím
-      iconBgColor = const Color(0xFFF3E5F5);
-      iconColor = const Color(0xFF7B1FA2);
-      iconData = LucideIcons.sparkles;
+      // 4. Cập nhật phiên bản -> Xanh dương
+      iconBgColor = const Color(0xFFEFF6FF);
+      iconColor = const Color(0xFF2563EB);
+      iconData = LucideIcons.arrowUpCircle;
+    } else if (typeLower == 'alert' || statusLower.contains('khẩn cấp') || statusLower.contains('cảnh báo')) {
+      // 5. Cảnh báo khẩn cấp -> Đỏ
+      iconBgColor = const Color(0xFFFEF2F2);
+      iconColor = const Color(0xFFDC2626);
+      iconData = LucideIcons.megaphone;
+    } else if (typeLower == 'promo' || statusLower.contains('ưu đãi') || statusLower.contains('khuyến mãi') || statusLower.contains('voucher')) {
+      // 6. Ưu đãi lộ trình -> Xanh lá
+      iconBgColor = const Color(0xFFF0FDF4);
+      iconColor = const Color(0xFF16A34A);
+      iconData = LucideIcons.gift;
     } else if (item.statusTag == 'ĐANG GIAO') {
       iconBgColor = const Color(0xFFFFECE5);
       iconColor = const Color(0xFFFF5722);
@@ -682,10 +692,10 @@ class _NotificationsViewState extends State<NotificationsView> {
       iconColor = const Color(0xFFFFB300);
       iconData = Icons.soup_kitchen_outlined;
     } else {
-      // 5. Hệ thống / Thông báo chung -> Xanh dương
-      iconBgColor = const Color(0xFFE3F2FD);
-      iconColor = const Color(0xFF1976D2);
-      iconData = LucideIcons.info;
+      // 7. Hệ thống / Thông báo chung -> Cam thương hiệu
+      iconBgColor = const Color(0xFFFFF7ED);
+      iconColor = const Color(0xFFFC6011);
+      iconData = LucideIcons.bell;
     }
 
     if (isDark) {
