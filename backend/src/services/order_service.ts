@@ -177,17 +177,21 @@ export class OrderService {
         phuongThucThanhToan: dto.phuongThucThanhToan || 'PAYOS',
       });
 
-      // Bảo vệ đa tầng: Nếu database chưa có sequence tự tăng cho madonhang, chủ động lấy next id
+      let savedOrder: DonHangModel;
       try {
-        const seqRes = await manager.query(`SELECT nextval('donhang_madonhang_seq') as next_id`).catch(async () => {
-          return await manager.query(`SELECT COALESCE(MAX(madonhang), 0) + 1 as next_id FROM donhang`);
-        });
-        if (seqRes && seqRes[0]?.next_id) {
-          donHang.maDonHang = Number(seqRes[0].next_id);
-        }
-      } catch (_) {}
-
-      const savedOrder = await manager.save(donHang);
+        savedOrder = await manager.save(donHang);
+      } catch (saveErr: any) {
+        // Phòng hộ: Nếu database bị mất sequence DEFAULT trên cột madonhang
+        const maxRes = await manager.query(`SELECT COALESCE(MAX(madonhang), 0) + 1 as next_id FROM donhang`);
+        const manualId = Number(maxRes[0]?.next_id || 1);
+        donHang.maDonHang = manualId;
+        await manager.createQueryBuilder()
+          .insert()
+          .into(DonHangModel)
+          .values(donHang)
+          .execute();
+        savedOrder = donHang;
+      }
 
       let nextChiTietId = 0;
       try {

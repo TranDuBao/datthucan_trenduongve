@@ -151,6 +151,38 @@ export const connectDatabase = async () => {
     `).catch(() => {});
     await AppDataSource.query(`ALTER TABLE banner ADD COLUMN IF NOT EXISTS loaibanner VARCHAR(50) DEFAULT 'TRAN_VIEN';`).catch(() => {});
 
+    // Store Categories Table (loai_hinh_quan)
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS loai_hinh_quan (
+        maloai SERIAL PRIMARY KEY,
+        tenloai VARCHAR(100) UNIQUE NOT NULL,
+        mota TEXT NULL,
+        hinhanh TEXT NULL,
+        icon VARCHAR(50) DEFAULT 'Store',
+        thutu INT DEFAULT 0,
+        trangthai VARCHAR(30) DEFAULT 'ACTIVE',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_loaihinhquan_trangthai ON loai_hinh_quan(trangthai);
+    `).catch((err) => console.warn('[Database] loai_hinh_quan table creation error:', err));
+
+    // Seed default standard store categories if empty
+    await AppDataSource.query(`
+      INSERT INTO loai_hinh_quan (tenloai, mota, icon, thutu, trangthai)
+      VALUES 
+        ('Phở', 'Phở bò, phở gà truyền thống', 'Beef', 1, 'ACTIVE'),
+        ('Cơm tấm', 'Cơm tấm sườn bì chả, cơm văn phòng', 'UtensilsCrossed', 2, 'ACTIVE'),
+        ('Bún bò', 'Bún bò Huế, bún riêu, bún các loại', 'Beef', 3, 'ACTIVE'),
+        ('Cà phê & Trà', 'Cà phê, trà trái cây, thức uống', 'Coffee', 4, 'ACTIVE'),
+        ('Trà sữa', 'Trà sữa trân châu, macchiato', 'CupSoda', 5, 'ACTIVE'),
+        ('Bánh ngọt & Tráng miệng', 'Bánh kem, croissant, chè, kem', 'Cake', 6, 'ACTIVE'),
+        ('Đồ ăn nhanh', 'Burger, gà rán, khoai tây chiên', 'Sandwich', 7, 'ACTIVE'),
+        ('Lẩu & Nướng', 'Lẩu gia đình, đồ nướng BBQ', 'Flame', 8, 'ACTIVE'),
+        ('Hải sản', 'Món ốc, tôm, mực tươi sống', 'Fish', 9, 'ACTIVE'),
+        ('Healthy & Đồ chay', 'Salad, đồ chay, eat clean', 'Salad', 10, 'ACTIVE')
+      ON CONFLICT (tenloai) DO NOTHING;
+    `).catch(() => {});
+
     // Activity / Audit Logs Table
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS nhatkyhoatdong (
