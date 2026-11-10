@@ -56,10 +56,15 @@ class _MoreViewState extends State<MoreView> {
   Future<void> _fetchAboutUsVersion() async {
     final info = await SystemInfoService.fetchAboutUs();
     if (mounted && info != null) {
-      final pb = info['phienban']?.toString();
+      final pb = info['phienban']?.toString().trim();
       if (pb != null && pb.isNotEmpty) {
+        final termsText = context.read<LanguageProvider>().languageCode == 'vi' ? 'Điều khoản' : 'Terms';
         setState(() {
-          _aboutUsSubtitle = "$pb • ${context.read<LanguageProvider>().languageCode == 'vi' ? 'Điều khoản' : 'Terms'}";
+          if (pb.toLowerCase().contains('điều khoản') || pb.toLowerCase().contains('terms')) {
+            _aboutUsSubtitle = pb;
+          } else {
+            _aboutUsSubtitle = "$pb • $termsText";
+          }
         });
       }
     }

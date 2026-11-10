@@ -116,19 +116,25 @@ class _AboutUsViewState extends State<AboutUsView> {
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(context, lang, isDark),
-              const SizedBox(height: 16),
-
-              // Hero Card (Dark vs Light style from screenshots 1 & 2)
-              _buildHeroCard(isDark),
-              const SizedBox(height: 16),
+        child: Column(
+          children: [
+            // Cố định thanh tiêu đề "Về chúng tôi" ở trên cùng khi cuộn
+            Container(
+              color: TColor.bgOf(context),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: _buildHeader(context, lang, isDark),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    // Hero Card (Dark vs Light style from screenshots 1 & 2)
+                    _buildHeroCard(isDark),
+                    const SizedBox(height: 16),
 
               // Stats Row (500K+, 4.9, 98% / 25phút)
               _buildStatsRow(isDark),
@@ -224,8 +230,11 @@ class _AboutUsViewState extends State<AboutUsView> {
           ),
         ),
       ),
-    );
-  }
+    ],
+  ),
+),
+);
+}
 
   Widget _buildHeader(BuildContext context, LanguageProvider lang, bool isDark) {
     return Row(
@@ -316,7 +325,7 @@ class _AboutUsViewState extends State<AboutUsView> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.sparkles, size: 12, color: isDark ? TColor.primary : Colors.white),
+              Icon(LucideIcons.mapPin, size: 12, color: isDark ? TColor.primary : Colors.white),
               const SizedBox(width: 4),
               Text(
                 badge,

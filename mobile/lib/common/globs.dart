@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -95,17 +93,9 @@ class SVKey {
       }
     } catch (_) {}
 
-    // In production/release builds, connect directly to Render backend URL
-    const isRelease = bool.fromEnvironment('dart.vm.product');
+    // Default to production Render API URL for live synchronization across web and app
     const prodUrl = String.fromEnvironment('PROD_API_URL', defaultValue: 'https://foodroute-backend.onrender.com');
-    if (isRelease) {
-      return prodUrl;
-    }
-
-    if (!kIsWeb && Platform.isAndroid) {
-      return "http://10.0.2.2:3000";
-    }
-    return "http://localhost:3000";
+    return prodUrl;
   }
 
   static String get baseUrl => '${mainUrl}/api/v1/auth/';
