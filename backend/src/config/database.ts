@@ -308,7 +308,7 @@ export const connectDatabase = async () => {
         telegram TEXT NULL DEFAULT '',
         gmail TEXT NULL DEFAULT '',
         diachi TEXT NOT NULL,
-        phienban VARCHAR(50) DEFAULT 'Phiên bản 2.5.0 • FoodRoute Official',
+        phienban VARCHAR(50) DEFAULT 'Phiên bản 1.0.0 • FoodRoute Official',
         banquyen VARCHAR(255) DEFAULT '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.',
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -343,7 +343,7 @@ export const connectDatabase = async () => {
         'support@foodroute.vn',
         'https://foodroute.vn',
         'Khu Công Nghệ Cao, TP. Thủ Đức, TP. Hồ Chí Minh',
-        'Phiên bản 2.5.0 • FoodRoute Official',
+        'Phiên bản 1.0.0 • FoodRoute Official',
         '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.'
       )
       ON CONFLICT (id) DO NOTHING;

@@ -200,7 +200,7 @@ class _AboutUsViewState extends State<AboutUsView> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _systemInfo?['phienban']?.toString() ?? context.l10n.aboutVersionPrefix("2.5.0"),
+                          _systemInfo?['phienban']?.toString() ?? context.l10n.aboutVersionPrefix("1.0.0"),
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 11,

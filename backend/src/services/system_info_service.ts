@@ -33,7 +33,7 @@ export class SystemInfoService {
         email: 'support@foodroute.vn',
         website: 'https://foodroute.vn',
         diachi: 'Khu Công Nghệ Cao, TP. Thủ Đức, TP. Hồ Chí Minh',
-        phienban: 'Phiên bản 2.5.0 • FoodRoute Official',
+        phienban: 'Phiên bản 1.0.0 • FoodRoute Official',
         banquyen: '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.',
       });
       await this.repo.save(info);

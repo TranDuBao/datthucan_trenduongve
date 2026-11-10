@@ -717,7 +717,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moreAboutUs => 'About Us';
 
   @override
-  String get moreAboutUsSubtitle => 'Version v2.4.0 • Terms';
+  String get moreAboutUsSubtitle => 'Version v1.0.0 • Terms';
 
   @override
   String get moreLogout => 'Logout';

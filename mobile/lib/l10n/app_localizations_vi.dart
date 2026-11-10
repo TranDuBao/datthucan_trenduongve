@@ -720,7 +720,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get moreAboutUs => 'Về chúng tôi';
 
   @override
-  String get moreAboutUsSubtitle => 'Phiên bản v2.4.0 • Điều khoản';
+  String get moreAboutUsSubtitle => 'Phiên bản v1.0.0 • Điều khoản';
 
   @override
   String get moreLogout => 'Đăng xuất';

@@ -22,6 +22,7 @@ import '../reservation/reservation_list_view.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
 import '../../services/store_registration_service.dart';
+import '../../services/system_info_service.dart';
 import 'store_registration_view.dart';
 import 'support/support_center_view.dart';
 import 'widgets/store_approval_celebration_dialog.dart';
@@ -38,11 +39,30 @@ class MoreView extends StatefulWidget {
 
 class _MoreViewState extends State<MoreView> {
   int _activeOrdersCount = 0;
+  String? _aboutUsSubtitle;
+
   @override
   void dispose() {
     locator<SocketService>().unsubscribe('store_registration_approved', _onStoreApprovedRealtime);
     locator<SocketService>().unsubscribe('store_registration_rejected', _onStoreRejectedRealtime);
+    locator<SocketService>().unsubscribe('about_us:updated', _onAboutUsUpdatedRealtime);
     super.dispose();
+  }
+
+  void _onAboutUsUpdatedRealtime(dynamic _) {
+    _fetchAboutUsVersion();
+  }
+
+  Future<void> _fetchAboutUsVersion() async {
+    final info = await SystemInfoService.fetchAboutUs();
+    if (mounted && info != null) {
+      final pb = info['phienban']?.toString();
+      if (pb != null && pb.isNotEmpty) {
+        setState(() {
+          _aboutUsSubtitle = "$pb • ${context.read<LanguageProvider>().languageCode == 'vi' ? 'Điều khoản' : 'Terms'}";
+        });
+      }
+    }
   }
 
   void _onStoreApprovedRealtime(dynamic data) async {
@@ -95,8 +115,10 @@ class _MoreViewState extends State<MoreView> {
     super.initState();
     locator<SocketService>().subscribe('store_registration_approved', _onStoreApprovedRealtime);
     locator<SocketService>().subscribe('store_registration_rejected', _onStoreRejectedRealtime);
+    locator<SocketService>().subscribe('about_us:updated', _onAboutUsUpdatedRealtime);
 
     _fetchActiveOrdersCount();
+    _fetchAboutUsVersion();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<NotificationProvider>().refreshAll();
@@ -316,7 +338,7 @@ class _MoreViewState extends State<MoreView> {
       {
         "index": "5",
         "name": l10n.moreAboutUs,
-        "subtitle": l10n.moreAboutUsSubtitle,
+        "subtitle": _aboutUsSubtitle ?? l10n.moreAboutUsSubtitle,
         "icon": Icons.info_outline_rounded,
         "iconBg": const Color(0xFF222638),
         "iconColor": const Color(0xFF7E57C2),

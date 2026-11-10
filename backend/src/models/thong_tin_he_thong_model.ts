@@ -74,7 +74,7 @@ export class ThongTinHeThongModel {
   @Column({ name: 'diachi', type: 'text' })
   diachi: string;
 
-  @Column({ name: 'phienban', length: 50, default: 'Phiên bản 2.5.0 • FoodRoute Official' })
+  @Column({ name: 'phienban', length: 50, default: 'Phiên bản 1.0.0 • FoodRoute Official' })
   phienban: string;
 
   @Column({ name: 'banquyen', length: 255, default: '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.' })

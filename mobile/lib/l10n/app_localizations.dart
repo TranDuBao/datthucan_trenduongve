@@ -1463,7 +1463,7 @@ abstract class AppLocalizations {
   /// No description provided for @moreAboutUsSubtitle.
   ///
   /// In vi, this message translates to:
-  /// **'Phiên bản v2.4.0 • Điều khoản'**
+  /// **'Phiên bản v1.0.0 • Điều khoản'**
   String get moreAboutUsSubtitle;
 
   /// No description provided for @moreLogout.
