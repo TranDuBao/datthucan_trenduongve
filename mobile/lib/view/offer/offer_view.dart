@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
 import '../../common/format_utils.dart';
+import '../../common/food_image_helper.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
 import '../more/my_order_view.dart';
@@ -84,10 +85,11 @@ class _OfferViewState extends State<OfferView> {
           for (var cat in menu) {
             final items = cat["items"] as List? ?? [];
             for (var item in items) {
+              final fName = (item["name"] ?? "").toString();
               featuredItems.add({
-                "name": item["name"] ?? "",
+                "name": fName,
                 "price": item["price"] ?? 0,
-                "image": item["image"] ?? "",
+                "image": FoodImageHelper.getFoodImage(item["image"] ?? item["img"], fName, id: item["id"] ?? item["maMonAn"] ?? 0),
               });
             }
           }
@@ -107,11 +109,12 @@ class _OfferViewState extends State<OfferView> {
           final double rateVal = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
           final String formattedRate = (ratingCount > 0 && rateVal > 0) ? rateVal.toStringAsFixed(1) : "0.0";
 
+          final resName = res["tenQuan"] ?? "Quán ăn lộ trình";
           return {
             "id": maQuan,
             "maQuan": maQuan,
-            "name": res["tenQuan"] ?? "Quán ăn lộ trình",
-            "tenQuan": res["tenQuan"] ?? "Quán ăn lộ trình",
+            "name": resName,
+            "tenQuan": resName,
             "address": res["diaChi"] ?? "",
             "rate": formattedRate,
             "rating": ratingCount.toString(),
@@ -126,7 +129,12 @@ class _OfferViewState extends State<OfferView> {
             "discount": "ƯU ĐÃI LỘ TRÌNH 10K",
             "time": "15-20 phút",
             "gift": "Đặt trước ghé lấy tiện đường",
-            "image": res["img"] ?? "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500",
+            "image": FoodImageHelper.getRestaurantImage(
+              res["img"] ?? res["image"],
+              resName,
+              id: maQuan,
+              category: res["danhMuc"],
+            ),
             "featured_items": featuredItems.take(3).toList(),
           };
         }));

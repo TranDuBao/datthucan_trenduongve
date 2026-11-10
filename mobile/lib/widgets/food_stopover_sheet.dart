@@ -5,6 +5,7 @@ import '../providers/map_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
 import '../common_widget/smart_network_image.dart';
+import '../common/food_image_helper.dart';
 import '../view/menu/restaurant_detail_view.dart';
 import '../view/menu/item_details_view.dart';
 import '../view/more/checkout_view.dart';
@@ -311,7 +312,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                   final fId = (food['id'] as num? ?? food['maMonAn'] as num? ?? idx).toInt();
                   final fName = (food['name'] ?? food['tenMonAn'] ?? 'Món ngon').toString();
                   final fPrice = (food['price'] as num?)?.toDouble() ?? (food['giaMonAn'] as num?)?.toDouble() ?? 0.0;
-                  final fImg = (food['image'] ?? food['img'] ?? '').toString();
+                  final fImg = FoodImageHelper.getFoodImage(food['image'] ?? food['img'], fName, id: fId);
                   final stock = int.tryParse((food['quantity'] ?? food['soLuongMon'] ?? 0).toString()) ?? 0;
                   final status = (food['trangThaiMon'] ?? 'DANG_BAN').toString().toUpperCase();
                   final isSoldOut = stock <= 0 || status == 'HET_HANG' || status == 'TAM_NGUNG';

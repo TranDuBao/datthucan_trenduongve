@@ -14,6 +14,7 @@ import '../more/restaurant_reviews_sheet.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../common/locator.dart';
 import '../../common/format_utils.dart';
+import '../../common/food_image_helper.dart';
 import '../../services/socket_service.dart';
 import 'item_details_view.dart';
 import '../reservation/reservation_booking_view.dart';
@@ -394,10 +395,15 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     final cart = context.watch<CartProvider>();
 
     final resName = widget.restaurantObj['tenQuan'] ?? widget.restaurantObj['name'] ?? 'Phở Bò Gia Truyền Hà Nội - Nguyễn Trãi';
-    final resImg = widget.restaurantObj['img'] ?? widget.restaurantObj['image'] ?? 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500';
-    final resAddress = widget.restaurantObj['diaChi'] ?? widget.restaurantObj['address'] ?? '235 Nguyễn Trãi, Quận 1, TP.HCM';
     final resIdRaw = widget.restaurantObj['maQuan'] ?? widget.restaurantObj['id'] ?? 1;
     final int resId = resIdRaw is int ? resIdRaw : (int.tryParse(resIdRaw.toString()) ?? 1);
+    final resImg = FoodImageHelper.getRestaurantImage(
+      widget.restaurantObj['img'] ?? widget.restaurantObj['image'],
+      resName,
+      id: resId,
+      category: widget.restaurantObj['danhMuc'],
+    );
+    final resAddress = widget.restaurantObj['diaChi'] ?? widget.restaurantObj['address'] ?? '235 Nguyễn Trãi, Quận 1, TP.HCM';
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
@@ -803,7 +809,8 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                       itemBuilder: (context, itemIdx) {
                                         final item = items[itemIdx];
                                         final price = double.tryParse((item['price'] ?? item['giaMonAn'] ?? 0).toString()) ?? 0.0;
-                                        final img = item['image'] ?? item['img'] ?? '';
+                                        final dishName = (item['name'] ?? item['tenMonAn'] ?? '').toString();
+final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName, id: item['id'] ?? item['maMonAn'] ?? 0);
                                         final int stockQty = int.tryParse((item['soLuongMon'] ?? item['quantity'] ?? item['soLuong'] ?? 0).toString()) ?? 0;
                                         final String status = (item['trangThaiMon'] ?? item['status'] ?? '').toString().toUpperCase();
                                         final bool isSoldOut = stockQty <= 0 || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG';

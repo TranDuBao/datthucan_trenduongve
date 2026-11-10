@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
 import 'smart_network_image.dart';
+import '../common/food_image_helper.dart';
 
 class MenuItemRow extends StatelessWidget {
   final Map mObj;
@@ -39,7 +40,8 @@ class MenuItemRow extends StatelessWidget {
         : null;
 
     final rawImg = mObj["image"]?.toString() ?? mObj["img"]?.toString() ?? mObj["hinhAnh"]?.toString();
-    final imgUrl = (rawImg != null && rawImg.trim().isNotEmpty) ? rawImg.trim() : "assets/img/menu_1.png";
+    final foodName = (mObj["name"] ?? mObj["tenMonAn"] ?? "").toString();
+    final imgUrl = FoodImageHelper.getFoodImage(rawImg, foodName, id: mObj["id"] ?? mObj["maMonAn"] ?? 0);
 
     final int stockQty = int.tryParse((mObj["soLuongMon"] ?? mObj["quantity"] ?? mObj["soLuong"] ?? 0).toString()) ?? 0;
     final String status = (mObj["trangThaiMon"] ?? mObj["status"] ?? "").toString().toUpperCase();

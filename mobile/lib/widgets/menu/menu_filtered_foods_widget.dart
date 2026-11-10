@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
 import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../common/food_image_helper.dart';
 import '../../view/menu/item_details_view.dart';
 import 'quick_categories_widget.dart';
 
@@ -134,7 +135,7 @@ class MenuFilteredFoodsWidget extends StatelessWidget {
                 final name = item["name"] ?? item["tenMonAn"] ?? "Món ngon";
                 final storeName = item["tenQuan"] ?? item["storeName"] ?? "Cửa hàng";
                 final price = (item["price"] ?? item["gia"] ?? 0) as num;
-                final img = item["image"] ?? item["hinhAnh"] ?? "";
+                final img = FoodImageHelper.getFoodImage(item["image"] ?? item["hinhAnh"] ?? item["img"], name.toString(), id: item["id"] ?? item["maMonAn"] ?? 0);
                 final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
                 final double ratingNum = double.tryParse(rateVal) ?? 0.0;
                 final int ratingCount = int.tryParse((item["soLuotDanhGia"] ?? item["ratingCount"] ?? 0).toString()) ?? 0;

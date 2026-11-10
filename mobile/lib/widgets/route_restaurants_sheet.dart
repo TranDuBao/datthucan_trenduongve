@@ -6,6 +6,7 @@ import '../providers/map_provider.dart';
 import '../view/menu/restaurant_detail_view.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../common_widget/smart_network_image.dart';
+import '../common/food_image_helper.dart';
 
 int _safeInt(dynamic val, {int fallback = 0}) {
   if (val == null) return fallback;
@@ -189,7 +190,12 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                   clipBehavior: Clip.none,
                                   children: [
                                     SmartNetworkImage(
-                                      imageUrl: (r['img'] ?? r['image'] ?? r['hinhAnh'] ?? '').toString(),
+                                      imageUrl: FoodImageHelper.getRestaurantImage(
+                                        r['img'] ?? r['image'] ?? r['hinhAnh'],
+                                        r['tenQuan'] ?? r['name'] ?? '',
+                                        id: _safeInt(r['maQuan'] ?? r['id']),
+                                        category: r['danhMuc']?.toString(),
+                                      ),
                                       width: 76,
                                       height: 76,
                                       borderRadius: BorderRadius.circular(12),

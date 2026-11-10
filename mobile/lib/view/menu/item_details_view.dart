@@ -11,6 +11,7 @@ import '../../services/review_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/dish_reviews_section.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../common/food_image_helper.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
@@ -391,7 +392,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final foodName = itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn lộ trình";
-    final imgUrl = itemData["image"] ?? itemData["img"] ?? itemData["hinhAnh"] ?? "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500";
+    final imgUrl = FoodImageHelper.getFoodImage(itemData["image"] ?? itemData["img"] ?? itemData["hinhAnh"], foodName, id: itemData["id"] ?? itemData["maMonAn"] ?? 0);
     final rawDesc = itemData["moTa"] ?? itemData["mota"] ?? itemData["description"];
     final foodDesc = (rawDesc != null && rawDesc.toString().trim().isNotEmpty)
         ? rawDesc.toString().trim()

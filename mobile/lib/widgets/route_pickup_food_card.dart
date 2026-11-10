@@ -7,6 +7,7 @@ import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
 import '../view/menu/item_details_view.dart';
 import '../common_widget/smart_network_image.dart';
+import '../common/food_image_helper.dart';
 import 'custom_toast.dart';
 import 'single_restaurant_warning_modal.dart';
 
@@ -76,7 +77,7 @@ class RoutePickupFoodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = item["name"] ?? item["tenMonAn"] ?? "Món tiện đường";
     final price = int.tryParse((item["price"] ?? item["giaMonAn"] ?? 45000).toString()) ?? 45000;
-    final img = item["image"] ?? item["img"] ?? "";
+    final img = FoodImageHelper.getFoodImage(item["image"] ?? item["img"], name.toString(), id: item["id"] ?? item["maMonAn"] ?? 0);
 
     final int stockQty = int.tryParse((item["soLuongMon"] ?? item["quantity"] ?? item["soLuong"] ?? 0).toString()) ?? 0;
     final String status = (item["trangThaiMon"] ?? item["status"] ?? "").toString().toUpperCase();

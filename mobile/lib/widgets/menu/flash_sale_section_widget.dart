@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
 import '../../common/format_utils.dart';
 import '../../common_widget/smart_network_image.dart';
+import '../../common/food_image_helper.dart';
 import '../../view/menu/item_details_view.dart';
 import '../skeleton/skeleton_shimmer.dart';
 import '../skeleton/skeleton_box.dart';
@@ -147,7 +148,8 @@ class FlashSaleSectionWidget extends StatelessWidget {
                     final oldPrice = roundedOld > price ? roundedOld : (price + 5000);
                     final actualPercent = (((oldPrice - price) / oldPrice) * 100).round();
 
-                    final img = (item["image"] ?? item["img"] ?? item["hinhAnh"] ?? "").toString();
+                    final int foodId = int.tryParse((item["id"] ?? item["maMonAn"] ?? item["mamonan"] ?? index + 1).toString()) ?? (index + 1);
+                    final img = FoodImageHelper.getFoodImage(item["image"] ?? item["img"] ?? item["hinhAnh"], name, id: foodId);
                     final rateVal = (item["rating"] ?? item["diemDanhGiaTB"] ?? item["rate"] ?? 0.0).toString();
                     final double rawRating = double.tryParse(rateVal) ?? 0.0;
                     final double displayRating = rawRating > 0 ? rawRating : 5.0;
