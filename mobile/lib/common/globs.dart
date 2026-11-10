@@ -95,9 +95,9 @@ class SVKey {
       }
     } catch (_) {}
 
-    // In production/release builds, never use Android emulator loopback 10.0.2.2
+    // In production/release builds, connect directly to Render backend URL
     const isRelease = bool.fromEnvironment('dart.vm.product');
-    const prodUrl = String.fromEnvironment('PROD_API_URL', defaultValue: 'https://api.foodroute.vn');
+    const prodUrl = String.fromEnvironment('PROD_API_URL', defaultValue: 'https://foodroute-backend.onrender.com');
     if (isRelease) {
       return prodUrl;
     }
