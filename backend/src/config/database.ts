@@ -321,6 +321,36 @@ export const connectDatabase = async () => {
         ADD COLUMN IF NOT EXISTS settings_update_notif BOOLEAN DEFAULT TRUE;
     `).catch(() => {});
 
+    // Đảm bảo sequence và DEFAULT auto-increment cho các bảng đơn hàng & chi tiết đơn & thanh toán
+    try {
+      await AppDataSource.query(`
+        DO $$
+        BEGIN
+          -- 1. donhang (madonhang)
+          CREATE SEQUENCE IF NOT EXISTS donhang_madonhang_seq;
+          PERFORM setval('donhang_madonhang_seq', COALESCE((SELECT MAX(madonhang) FROM donhang), 0) + 1, false);
+          ALTER TABLE donhang ALTER COLUMN madonhang SET DEFAULT nextval('donhang_madonhang_seq');
+          ALTER SEQUENCE donhang_madonhang_seq OWNED BY donhang.madonhang;
+
+          -- 2. chitietdonhang (machitietdon)
+          CREATE SEQUENCE IF NOT EXISTS chitietdonhang_machitietdon_seq;
+          PERFORM setval('chitietdonhang_machitietdon_seq', COALESCE((SELECT MAX(machitietdon) FROM chitietdonhang), 0) + 1, false);
+          ALTER TABLE chitietdonhang ALTER COLUMN machitietdon SET DEFAULT nextval('chitietdonhang_machitietdon_seq');
+          ALTER SEQUENCE chitietdonhang_machitietdon_seq OWNED BY chitietdonhang.machitietdon;
+
+          -- 3. thanhtoan (mathanhtoan)
+          CREATE SEQUENCE IF NOT EXISTS thanhtoan_mathanhtoan_seq;
+          PERFORM setval('thanhtoan_mathanhtoan_seq', COALESCE((SELECT MAX(mathanhtoan) FROM thanhtoan), 0) + 1, false);
+          ALTER TABLE thanhtoan ALTER COLUMN mathanhtoan SET DEFAULT nextval('thanhtoan_mathanhtoan_seq');
+          ALTER SEQUENCE thanhtoan_mathanhtoan_seq OWNED BY thanhtoan.mathanhtoan;
+        EXCEPTION WHEN OTHERS THEN
+          RAISE NOTICE 'Order sequence setup: %', SQLERRM;
+        END $$;
+      `);
+    } catch (seqErr) {
+      console.warn('[Database] [Warn] Sequence setup warning:', seqErr);
+    }
+
     // Auto add customer & store owner fields
     await AppDataSource.query(`ALTER TABLE khachhang ADD COLUMN IF NOT EXISTS ngaysinh DATE NULL;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS hotenchuquan VARCHAR(100) NULL;`).catch(() => {});

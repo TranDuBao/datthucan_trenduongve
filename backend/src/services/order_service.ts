@@ -166,41 +166,65 @@ export class OrderService {
       const isOnlineMethod = method === 'PAYOS' || method === 'VIETQR' || method === 'MOMO' || method === 'VNPAY';
       const initialStatus = isOnlineMethod ? OrderStatus.UNPAID : OrderStatus.PENDING;
 
-      const donHang = manager.create(DonHangModel, {
-        maKhachHang: validKhachHangId,
-        maQuan: dto.maQuan,
-        maVoucher: appliedVoucherId,
-        trangThai: initialStatus,
-        tongTien: finalTotal,
-        thoiGianHenNhan: pickupDate,
-        loaiDonHang: 'PRE_ORDER',
-        phuongThucThanhToan: dto.phuongThucThanhToan || 'PAYOS',
-      });
-
-      const savedOrder = await manager.save(donHang);
-
-      const itemEntities = validatedItems.map((item) =>
-        manager.create(ChiTietDonHangModel, {
-          maDonHang: savedOrder.maDonHang,
-          maMonAn: item.maMonAn,
-          tenMonAn: item.tenMonAn,
-          gia: item.gia,
-          soLuong: item.soLuong,
-          trangThaiMon: 'chưa làm',
-        })
-      );
-
-      await manager.save(itemEntities);
-
-      const thanhToan = manager.create(ThanhToanModel, {
-        maDonHang: savedOrder.maDonHang,
-        soTien: finalTotal,
-        trangThai: 'CHO_THANH_TOAN',
-        loaiThanhToan: dto.phuongThucThanhToan || 'PAYOS',
-        noiDung: `Khởi tạo thanh toán cho đơn pre-order #${savedOrder.maDonHang}`,
-      });
-
-      await manager.save(thanhToan);
+      const donHang = manager.create(DonHangModel, {
+        maKhachHang: validKhachHangId,
+        maQuan: dto.maQuan,
+        maVoucher: appliedVoucherId,
+        trangThai: initialStatus,
+        tongTien: finalTotal,
+        thoiGianHenNhan: pickupDate,
+        loaiDonHang: 'PRE_ORDER',
+        phuongThucThanhToan: dto.phuongThucThanhToan || 'PAYOS',
+      });
+
+      // Bảo vệ đa tầng: Nếu database chưa có sequence tự tăng cho madonhang, chủ động lấy next id
+      try {
+        const seqRes = await manager.query(`SELECT nextval('donhang_madonhang_seq') as next_id`).catch(async () => {
+          return await manager.query(`SELECT COALESCE(MAX(madonhang), 0) + 1 as next_id FROM donhang`);
+        });
+        if (seqRes && seqRes[0]?.next_id) {
+          donHang.maDonHang = Number(seqRes[0].next_id);
+        }
+      } catch (_) {}
+
+      const savedOrder = await manager.save(donHang);
+
+      let nextChiTietId = 0;
+      try {
+        const ctRes = await manager.query(`SELECT COALESCE(MAX(machitietdon), 0) as max_id FROM chitietdonhang`);
+        nextChiTietId = Number(ctRes[0]?.max_id || 0);
+      } catch (_) {}
+
+      const itemEntities = validatedItems.map((item, idx) =>
+        manager.create(ChiTietDonHangModel, {
+          ...(nextChiTietId > 0 ? { maChiTietDon: nextChiTietId + idx + 1 } : {}),
+          maDonHang: savedOrder.maDonHang,
+          maMonAn: item.maMonAn,
+          tenMonAn: item.tenMonAn,
+          gia: item.gia,
+          soLuong: item.soLuong,
+          trangThaiMon: 'chưa làm',
+        })
+      );
+
+      await manager.save(itemEntities);
+
+      let nextThanhToanId;
+      try {
+        const ttRes = await manager.query(`SELECT COALESCE(MAX(mathanhtoan), 0) + 1 as next_id FROM thanhtoan`);
+        if (ttRes && ttRes[0]?.next_id) nextThanhToanId = Number(ttRes[0].next_id);
+      } catch (_) {}
+
+      const thanhToan = manager.create(ThanhToanModel, {
+        ...(nextThanhToanId ? { maThanhToan: nextThanhToanId } : {}),
+        maDonHang: savedOrder.maDonHang,
+        soTien: finalTotal,
+        trangThai: 'CHO_THANH_TOAN',
+        loaiThanhToan: dto.phuongThucThanhToan || 'PAYOS',
+        noiDung: `Khởi tạo thanh toán cho đơn pre-order #${savedOrder.maDonHang}`,
+      });
+
+      await manager.save(thanhToan);
 
       // Gom số lượng cần trừ theo maMonAn và sắp xếp tăng dần theo ID để loại trừ hoàn toàn nguy cơ Deadlock giữa các transaction
       const itemQtyMap = new Map<number, { maMonAn: number; tenMonAn: string; totalQty: number }>();
