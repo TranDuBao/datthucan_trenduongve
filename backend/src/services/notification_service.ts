@@ -669,19 +669,73 @@ export class NotificationService {
     const limit = Math.max(1, Math.min(50, Number(options.limit) || 20));
     const skip = (page - 1) * limit;
 
-    const query = this.notificationRepo
-      .createQueryBuilder('n')
-      .where('n.type IN (:...types)', { types: ['system', 'update'] })
-      .orderBy('n.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
+    const allowedTypes = ['system', 'update', 'alert', 'promo'];
 
-    if (options.type) {
-      query.andWhere('n.type = :type', { type: options.type });
+    try {
+      const query = this.notificationRepo
+        .createQueryBuilder('n')
+        .where('n.type IN (:...types)', { types: allowedTypes })
+        .orderBy('n.created_at', 'DESC')
+        .skip(skip)
+        .take(limit);
+
+      if (options.type && options.type !== 'all') {
+        query.andWhere('n.type = :type', { type: options.type });
+      }
+
+      const [items, total] = await query.getManyAndCount();
+      return { items, total, page, limit };
+    } catch (queryErr: any) {
+      console.warn('[NotificationService] Fallback getAdminNotificationHistory direct SQL:', queryErr?.message || queryErr);
+
+      let whereClause = `WHERE type IN ('system', 'update', 'alert', 'promo')`;
+      const params: any[] = [];
+      if (options.type && options.type !== 'all') {
+        params.push(options.type);
+        whereClause += ` AND type = $${params.length}`;
+      }
+
+      const countRes = await this.notificationRepo.query(
+        `SELECT COUNT(*)::int as total FROM notifications ${whereClause}`,
+        params
+      );
+      const total = Number(countRes[0]?.total || 0);
+
+      params.push(limit);
+      params.push(skip);
+      const rows = await this.notificationRepo.query(
+        `SELECT 
+           id, 
+           type, 
+           title, 
+           body, 
+           COALESCE(data, '{}'::jsonb) as data, 
+           created_at,
+           is_read
+         FROM notifications 
+         ${whereClause} 
+         ORDER BY created_at DESC 
+         LIMIT $${params.length - 1} OFFSET $${params.length}`,
+        params
+      );
+
+      const items = rows.map((r: any) => ({
+        id: r.id,
+        type: r.type,
+        title: r.title,
+        body: r.body,
+        target: r.target || 'ALL',
+        status: r.status || 'sent',
+        sentCount: r.sent_count || 1,
+        readCount: r.read_count || 0,
+        failedCount: r.failed_count || 0,
+        createdAt: r.created_at,
+        sentAt: r.sent_at || r.created_at,
+        data: r.data,
+      }));
+
+      return { items, total, page, limit };
     }
-
-    const [items, total] = await query.getManyAndCount();
-    return { items, total, page, limit };
   }
 
   async cancelScheduledNotification(id: number) {

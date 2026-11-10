@@ -381,20 +381,23 @@ export const connectDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_device_tokens_user_id ON device_tokens(user_id);
     `).catch(() => {});
 
-    await AppDataSource.query(`
-      ALTER TABLE notifications 
-        ADD COLUMN IF NOT EXISTS title_en VARCHAR(255) NULL,
-        ADD COLUMN IF NOT EXISTS body_en TEXT NULL,
-        ADD COLUMN IF NOT EXISTS target VARCHAR(50) DEFAULT 'USER',
-        ADD COLUMN IF NOT EXISTS target_value VARCHAR(100) NULL,
-        ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'sent',
-        ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP NULL,
-        ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NULL,
-        ADD COLUMN IF NOT EXISTS created_by INT NULL,
-        ADD COLUMN IF NOT EXISTS sent_count INT DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS read_count INT DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS failed_count INT DEFAULT 0;
-    `).catch(() => {});
+    // Ensure notifications table has all extended admin broadcast columns
+    const notifColumns = [
+      "title_en VARCHAR(255) NULL",
+      "body_en TEXT NULL",
+      "target VARCHAR(50) DEFAULT 'USER'",
+      "target_value VARCHAR(100) NULL",
+      "status VARCHAR(20) DEFAULT 'sent'",
+      "scheduled_at TIMESTAMP NULL",
+      "sent_at TIMESTAMP NULL",
+      "created_by INT NULL",
+      "sent_count INT DEFAULT 0",
+      "read_count INT DEFAULT 0",
+      "failed_count INT DEFAULT 0"
+    ];
+    for (const col of notifColumns) {
+      await AppDataSource.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS ${col};`).catch(() => {});
+    }
 
     // Ensure sequence for notifications.id
     await AppDataSource.query(`

@@ -48,10 +48,11 @@ export const NotificationHistoryTable: React.FC<{ refreshTrigger: number }> = ({
     try {
       const typeQuery = filterType !== 'all' ? `&type=${filterType}` : '';
       const res = await apiFetch(`/admin/notifications?page=${page}&limit=${limit}${typeQuery}`);
-      if (res && res.data) {
-        setItems(res.data.items || []);
-        setTotal(res.data.total || 0);
-      }
+      const payload = res?.data || res?.payload || res;
+      const itemList = payload?.items || (Array.isArray(payload) ? payload : []);
+      const totalCount = payload?.total ?? itemList.length;
+      setItems(itemList);
+      setTotal(totalCount);
     } catch (e) {
       console.error('[NotificationHistoryTable] Error:', e);
     } finally {
