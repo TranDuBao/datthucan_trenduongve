@@ -155,7 +155,6 @@ class FlashSaleSectionWidget extends StatelessWidget {
                     final double displayRating = rawRating > 0 ? rawRating : 5.0;
 
                     final int rawSold = int.tryParse((item["soLuongDaBan"] ?? item["soLuotBan"] ?? item["luotBan"] ?? item["soldCount"] ?? item["daBan"] ?? 0).toString()) ?? 0;
-                    final int foodId = int.tryParse((item["id"] ?? item["maMonAn"] ?? item["mamonan"] ?? index + 1).toString()) ?? (index + 1);
                     final int soldCount = rawSold > 0 ? rawSold : ((foodId.abs() % 28) + 12);
 
                     final rawPrep = item["thoiGianChuanBi"] ?? item["prepTime"] ?? 5;
