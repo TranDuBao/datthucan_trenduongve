@@ -391,7 +391,7 @@ export class StoreRegistrationService {
           soGiayPhepKinhDoanh: reg.soGiayPhepKinhDoanh,
           soGiayAttp: reg.soGiayAttp,
           trangThai: 'mở cửa',
-          img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500',
+          img: (reg as any).img || null,
         });
       } else {
         store.tenQuan = reg.tenQuan;

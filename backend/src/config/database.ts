@@ -654,8 +654,17 @@ export const connectDatabase = async () => {
     await AppDataSource.query(`
       UPDATE monan 
       SET hinhanh = NULL 
-      WHERE hinhanh LIKE '%photo-1582878826629-29b7ad1cdc43%' 
-         OR hinhanh LIKE '%images.unsplash.com%';
+      WHERE (hinhanh LIKE '%photo-1582878826629-29b7ad1cdc43%' OR hinhanh LIKE '%images.unsplash.com%');
+    `).catch(() => {});
+    await AppDataSource.query(`
+      UPDATE monan 
+      SET img = NULL 
+      WHERE (img LIKE '%photo-1582878826629-29b7ad1cdc43%' OR img LIKE '%images.unsplash.com%');
+    `).catch(() => {});
+    await AppDataSource.query(`
+      UPDATE cuahang 
+      SET img = NULL 
+      WHERE (img LIKE '%photo-1582878826629-29b7ad1cdc43%' OR img LIKE '%photo-1517248135467-4c7edcad34c4%' OR img LIKE '%images.unsplash.com%');
     `).catch(() => {});
 
     await AppDataSource.query(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS lydohuy TEXT NULL;`).catch(() => {});
