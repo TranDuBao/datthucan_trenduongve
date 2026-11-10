@@ -128,9 +128,81 @@ export class AdminRestaurantService {
       linkedUser = await this.userRepo.findOne({ where: { maTaiKhoan: store.maTaiKhoan } });
     }
 
+    // Real ratings strictly from actual user reviews in danhgia & danhgia_mon
+    const dishIds = foods.map((f) => f.maMonAn);
+    const realRatingsByDish = new Map<number, { avgRating: number; count: number }>();
+    if (dishIds.length > 0) {
+      try {
+        const realDishReviews = await AppDataSource.query(`
+          WITH dish_reviews_combined AS (
+            SELECT 
+              dgm.mamon as mamonan,
+              dg.madanhgia,
+              COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+            FROM danhgia_mon dgm
+            JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+            WHERE dgm.mamon = ANY($1) AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+
+            UNION
+
+            SELECT 
+              ct.mamonan,
+              dg.madanhgia,
+              dg.soluongsao as stars
+            FROM chitietdonhang ct
+            JOIN danhgia dg ON dg.madonhang = ct.madonhang
+            WHERE ct.mamonan = ANY($1) AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          )
+          SELECT mamonan, COUNT(DISTINCT madanhgia) as total_count, ROUND(AVG(stars)::numeric, 1) as avg_rating
+          FROM dish_reviews_combined
+          GROUP BY mamonan
+        `, [dishIds]);
+
+        for (const r of realDishReviews) {
+          realRatingsByDish.set(Number(r.mamonan), {
+            avgRating: Number(r.avg_rating || 0),
+            count: Number(r.total_count || 0),
+          });
+        }
+      } catch (e) {
+        console.warn('[AdminRestaurantService] Could not aggregate real dish reviews:', e);
+      }
+    }
+
+    const enrichedFoods = foods.map((f) => {
+      const real = realRatingsByDish.get(f.maMonAn);
+      const count = real ? real.count : 0;
+      const avg = real ? real.avgRating : 0;
+      return {
+        ...f,
+        diemDanhGiaTB: avg,
+        soLuotDanhGia: count,
+        chuaCoDanhGia: count === 0,
+      };
+    });
+
+    let realStoreCount = 0;
+    let realStoreAvg = 0.0;
+    try {
+      const storeReviewAgg = await AppDataSource.query(`
+        SELECT 
+          ROUND(AVG(soluongsao)::numeric, 2) as avg_score,
+          COUNT(madanhgia) as total_reviews
+        FROM danhgia
+        WHERE maquan = $1 AND (is_hidden IS NOT TRUE OR is_hidden IS NULL)
+      `, [maQuan]);
+      if (storeReviewAgg && storeReviewAgg[0] && Number(storeReviewAgg[0].total_reviews) > 0) {
+        realStoreAvg = Number(storeReviewAgg[0].avg_score) || 0;
+        realStoreCount = Number(storeReviewAgg[0].total_reviews) || 0;
+      }
+    } catch (_) {}
+
     return {
       store: {
         ...store,
+        danhGiaTrungBinh: realStoreAvg,
+        soLuongDanhGia: realStoreCount,
+        chuaCoDanhGia: realStoreCount === 0,
         taiKhoanLienKet: linkedUser ? { maTaiKhoan: linkedUser.maTaiKhoan, tenDangNhap: linkedUser.tenDangNhap } : null,
       },
       stats: {
@@ -142,7 +214,7 @@ export class AdminRestaurantService {
         completedOrders,
       },
       chartData,
-      foods,
+      foods: enrichedFoods,
       recentOrders: orders,
     };
   }

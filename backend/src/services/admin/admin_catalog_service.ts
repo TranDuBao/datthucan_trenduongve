@@ -133,14 +133,56 @@ export class AdminCatalogService {
     const [items, total] = await qb.getManyAndCount();
     const categories = await this.categoryRepo.find();
 
+    const dishIds = items.map((f) => f.maMonAn);
+    const realRatingsByDish = new Map<number, { avgRating: number; count: number }>();
+    if (dishIds.length > 0) {
+      try {
+        const realDishReviews = await AppDataSource.query(`
+          WITH dish_reviews_combined AS (
+            SELECT 
+              dgm.mamon as mamonan,
+              dg.madanhgia,
+              COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+            FROM danhgia_mon dgm
+            JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+            WHERE dgm.mamon = ANY($1) AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+
+            UNION
+
+            SELECT 
+              ct.mamonan,
+              dg.madanhgia,
+              dg.soluongsao as stars
+            FROM chitietdonhang ct
+            JOIN danhgia dg ON dg.madonhang = ct.madonhang
+            WHERE ct.mamonan = ANY($1) AND (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          )
+          SELECT mamonan, COUNT(DISTINCT madanhgia) as total_count, ROUND(AVG(stars)::numeric, 1) as avg_rating
+          FROM dish_reviews_combined
+          GROUP BY mamonan
+        `, [dishIds]);
+
+        for (const r of realDishReviews) {
+          realRatingsByDish.set(Number(r.mamonan), {
+            avgRating: Number(r.avg_rating || 0),
+            count: Number(r.total_count || 0),
+          });
+        }
+      } catch (e) {
+        console.warn('[AdminCatalogService] Could not aggregate real dish reviews:', e);
+      }
+    }
+
     const enrichedItems = items.map((f) => {
       const cat = categories.find((c) => Number(c.maDanhMuc) === Number(f.maDanhMuc));
-      const count = Number(f.soLuotDanhGia || 0);
+      const real = realRatingsByDish.get(f.maMonAn);
+      const count = real ? real.count : 0;
+      const avg = real ? real.avgRating : 0;
       const isUnrated = count === 0;
       return {
         ...f,
         tenDanhMuc: cat ? cat.tenDanhMuc : null,
-        diemDanhGiaTB: isUnrated ? 0 : Number(f.diemDanhGiaTB || 0),
+        diemDanhGiaTB: isUnrated ? 0 : avg,
         soLuotDanhGia: count,
         chuaCoDanhGia: isUnrated,
       };

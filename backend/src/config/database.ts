@@ -470,8 +470,68 @@ export const connectDatabase = async () => {
       );
     `).catch(() => {});
 
-    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS danhgiatrungbinh NUMERIC(3,2) DEFAULT 5.00;`).catch(() => {});
+    await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS danhgiatrungbinh NUMERIC(3,2) DEFAULT 0.00;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS soluongdanhgia INT DEFAULT 0;`).catch(() => {});
+
+    // Ensure all ratings in monan and cuahang strictly reflect real user reviews in danhgia & danhgia_mon
+    await AppDataSource.query(`
+      UPDATE monan
+      SET diemdanhgiatb = 0.0, soluotdanhgia = 0
+      WHERE mamonan NOT IN (
+        SELECT DISTINCT mamon FROM danhgia_mon
+        UNION
+        SELECT DISTINCT ct.mamonan FROM chitietdonhang ct JOIN danhgia dg ON dg.madonhang = ct.madonhang
+      );
+
+      WITH real_dish_stats AS (
+        SELECT 
+          mamonan,
+          COUNT(DISTINCT madanhgia) as cnt,
+          ROUND(AVG(stars)::numeric, 1) as avg_stars
+        FROM (
+          SELECT dgm.mamon as mamonan, dg.madanhgia, COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+          FROM danhgia_mon dgm
+          JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+          WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          UNION
+          SELECT ct.mamonan, dg.madanhgia, dg.soluongsao as stars
+          FROM chitietdonhang ct
+          JOIN danhgia dg ON dg.madonhang = ct.madonhang
+          WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+        ) sub
+        GROUP BY mamonan
+      )
+      UPDATE monan m
+      SET 
+        diemdanhgiatb = r.avg_stars,
+        soluotdanhgia = r.cnt
+      FROM real_dish_stats r
+      WHERE m.mamonan = r.mamonan;
+
+      UPDATE cuahang
+      SET danhgiatrungbinh = 0.0, soluongdanhgia = 0
+      WHERE maquan NOT IN (
+        SELECT DISTINCT maquan FROM danhgia WHERE maquan IS NOT NULL AND (is_hidden IS NOT TRUE OR is_hidden IS NULL)
+      );
+
+      WITH real_store_stats AS (
+        SELECT 
+          maquan,
+          COUNT(madanhgia) as cnt,
+          ROUND(AVG(soluongsao)::numeric, 2) as avg_stars
+        FROM danhgia
+        WHERE (is_hidden IS NOT TRUE OR is_hidden IS NULL) AND maquan IS NOT NULL
+        GROUP BY maquan
+      )
+      UPDATE cuahang c
+      SET 
+        danhgiatrungbinh = r.avg_stars,
+        soluongdanhgia = r.cnt
+      FROM real_store_stats r
+      WHERE c.maquan = r.maquan;
+    `).catch((err) => {
+      console.warn('[Database] Rating reconciliation notice:', err?.message || err);
+    });
 
     // Notifications Table & Indexes (Safe additive creation)
     await AppDataSource.query(`

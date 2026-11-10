@@ -352,7 +352,16 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
                       <td style={{ fontWeight: 700, color: '#0f172a' }}>{f.tenMonAn}</td>
                       <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
                       <td><span className="badge badge-info">{f.soLuongMon || 100} phần</span></td>
-                      <td><Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />{f.diemDanhGiaTB && Number(f.diemDanhGiaTB) > 0 ? Number(f.diemDanhGiaTB).toFixed(1) : 'Chưa có'}</td>
+                      <td>
+                        {!f.chuaCoDanhGia && Number(f.soLuotDanhGia) > 0 && Number(f.diemDanhGiaTB) > 0 ? (
+                          <>
+                            <Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />
+                            <span>{Number(f.diemDanhGiaTB).toFixed(1)}</span>
+                          </>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>Chưa có</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
