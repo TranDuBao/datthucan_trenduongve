@@ -89,15 +89,22 @@ export const AdminDashboard: React.FC = () => {
   const [appStats, setAppStats] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('foodroute_last_apk_stats');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.apkName === 'FoodRoute_v1.0.apk') {
+          parsed.apkName = 'FoodRoute_v1.1.apk';
+          parsed.downloadUrl = parsed.downloadUrl?.replace('FoodRoute_v1.0.apk', 'FoodRoute_v1.1.apk');
+        }
+        return parsed;
+      }
     } catch (_) {}
     return {
-      totalDownloads: 9,
-      apkDownloadCount: 9,
+      totalDownloads: 12,
+      apkDownloadCount: 12,
       version: 'v1.0.0',
-      apkName: 'FoodRoute_v1.0.apk',
-      apkSize: 71512646,
-      downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+      apkName: 'FoodRoute_v1.1.apk',
+      apkSize: 73503258,
+      downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk',
       releaseUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
     };
   });
@@ -111,6 +118,10 @@ export const AdminDashboard: React.FC = () => {
         const prevCount = Number(prev?.apkDownloadCount ?? prev?.totalDownloads ?? 0);
         if (count === 0 && prevCount > 0) return prev;
         const merged = { ...prev, ...data, totalDownloads: Math.max(count, prevCount), apkDownloadCount: Math.max(count, prevCount) };
+        if (merged.apkName === 'FoodRoute_v1.0.apk') {
+          merged.apkName = 'FoodRoute_v1.1.apk';
+          merged.downloadUrl = merged.downloadUrl?.replace('FoodRoute_v1.0.apk', 'FoodRoute_v1.1.apk');
+        }
         try {
           localStorage.setItem('foodroute_last_apk_stats', JSON.stringify(merged));
         } catch (_) {}
@@ -135,10 +146,10 @@ export const AdminDashboard: React.FC = () => {
                 version: rel.tag_name || 'v1.0.0',
                 releaseName: rel.name || 'FoodRoute App v1.0.0',
                 publishedAt: rel.published_at,
-                apkName: apk?.name || 'FoodRoute_v1.0.apk',
-                apkSize: apk?.size || 71512646,
+                apkName: apk?.name || 'FoodRoute_v1.1.apk',
+                apkSize: apk?.size || 73503258,
                 apkDownloadCount: apk?.download_count || dlCount,
-                downloadUrl: apk?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+                downloadUrl: apk?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk',
                 releaseUrl: rel.html_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
               });
             }
@@ -148,7 +159,10 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleCopyDownloadLink = () => {
-    const url = appStats?.downloadUrl || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk';
+    let url = appStats?.downloadUrl || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk';
+    if (url.includes('FoodRoute_v1.0.apk')) {
+      url = url.replace('FoodRoute_v1.0.apk', 'FoodRoute_v1.1.apk');
+    }
     navigator.clipboard.writeText(url).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 3000);
@@ -495,7 +509,7 @@ export const AdminDashboard: React.FC = () => {
               </span>
             </div>
             <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-              Tệp: <b style={{ color: '#f1f5f9' }}>{appStats?.apkName || 'FoodRoute_v1.0.apk'}</b> ({appStats?.apkSize ? (appStats.apkSize / (1024 * 1024)).toFixed(1) : '68.2'} MB) • Hỗ trợ Android 7.0+
+              Tệp: <b style={{ color: '#f1f5f9' }}>{appStats?.apkName || 'FoodRoute_v1.1.apk'}</b> ({appStats?.apkSize ? (appStats.apkSize / (1024 * 1024)).toFixed(1) : '70.1'} MB) • Hỗ trợ Android 7.0+
             </div>
           </div>
         </div>
@@ -542,7 +556,7 @@ export const AdminDashboard: React.FC = () => {
             </button>
 
             <a
-              href={appStats?.downloadUrl || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk'}
+              href={appStats?.downloadUrl?.replace('FoodRoute_v1.0.apk', 'FoodRoute_v1.1.apk') || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk'}
               target="_blank"
               rel="noreferrer"
               style={{

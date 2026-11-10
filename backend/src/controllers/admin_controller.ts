@@ -368,14 +368,14 @@ export class AdminController {
   };
 
   private static lastKnownStats: any = {
-    totalDownloads: 9,
+    totalDownloads: 12,
     version: 'v1.0.0',
     releaseName: 'FoodRoute App v1.0.0',
     publishedAt: '2026-11-08T14:41:36Z',
-    apkName: 'FoodRoute_v1.0.apk',
-    apkSize: 71512646,
-    apkDownloadCount: 9,
-    downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+    apkName: 'FoodRoute_v1.1.apk',
+    apkSize: 73503258,
+    apkDownloadCount: 12,
+    downloadUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk',
     releaseUrl: 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
   };
 
@@ -425,10 +425,10 @@ export class AdminController {
         version: latestRelease?.tag_name || 'v1.0.0',
         releaseName: latestRelease?.name || 'FoodRoute App v1.0.0',
         publishedAt: latestRelease?.published_at || new Date().toISOString(),
-        apkName: apkAsset?.name || 'FoodRoute_v1.0.apk',
-        apkSize: apkAsset?.size || 71512646,
+        apkName: apkAsset?.name || 'FoodRoute_v1.1.apk',
+        apkSize: apkAsset?.size || 73503258,
         apkDownloadCount: (apkAsset?.download_count != null && apkAsset.download_count > 0) ? apkAsset.download_count : AdminController.lastKnownStats.apkDownloadCount,
-        downloadUrl: apkAsset?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.0.apk',
+        downloadUrl: apkAsset?.browser_download_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/download/v1.0.0/FoodRoute_v1.1.apk',
         releaseUrl: latestRelease?.html_url || 'https://github.com/TranDuBao/datthucan_trenduongve/releases/tag/v1.0.0',
       };
 

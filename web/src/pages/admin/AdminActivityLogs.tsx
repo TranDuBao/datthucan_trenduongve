@@ -109,7 +109,7 @@ export const AdminActivityLogs: React.FC = () => {
         environment: res?.data?.environment || 'production (Render Cloud)',
         socketGateway: 'KẾT NỐI SẴN SÀNG (Engine v4)',
         cloudinary: 'KẾT NỐI THÀNH CÔNG (qla1kfvo)',
-        mobileRelease: 'v1.0.0 (FoodRoute_v1.0.apk - 68.2 MB)',
+        mobileRelease: 'v1.0.0 (FoodRoute_v1.1.apk - 70.1 MB)',
         checkedAt: new Date().toLocaleTimeString('vi-VN'),
       });
       fetchLogs();
@@ -127,7 +127,7 @@ export const AdminActivityLogs: React.FC = () => {
         environment: 'production',
         socketGateway: 'KẾT NỐI SẴN SÀNG (Socket.io Cluster)',
         cloudinary: 'KẾT NỐI THÀNH CÔNG (Cloud: qla1kfvo)',
-        mobileRelease: 'v1.0.0 (Release APK 68.2 MB)',
+        mobileRelease: 'v1.0.0 (Release APK 70.1 MB)',
         checkedAt: new Date().toLocaleTimeString('vi-VN'),
       });
     } finally {
