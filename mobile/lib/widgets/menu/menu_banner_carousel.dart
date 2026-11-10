@@ -373,7 +373,7 @@ class _MenuBannerCarouselState extends State<MenuBannerCarousel> {
                 ),
                 child: ClipOval(
                   child: SmartNetworkImage(
-                    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",
+                    imageUrl: "",
                     width: 80,
                     height: 80,
                     fit: BoxFit.cover,

@@ -650,6 +650,14 @@ export const connectDatabase = async () => {
       console.warn('[Database] Rating reconciliation notice:', err?.message || err);
     });
 
+    // Dọn dẹp triệt để các URL ảnh mẫu Unsplash cũ còn sót trong DB để chỉ giữ ảnh thật người dùng upload
+    await AppDataSource.query(`
+      UPDATE monan 
+      SET hinhanh = NULL 
+      WHERE hinhanh LIKE '%photo-1582878826629-29b7ad1cdc43%' 
+         OR hinhanh LIKE '%images.unsplash.com%';
+    `).catch(() => {});
+
     await AppDataSource.query(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS lydohuy TEXT NULL;`).catch(() => {});
 
     // Support System Safe Migrations (Giai đoạn A)
