@@ -281,7 +281,92 @@ export const connectDatabase = async () => {
     await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS sogiayphepkinhdoanh VARCHAR(100) NULL;`).catch(() => {});
     await AppDataSource.query(`ALTER TABLE cuahang ADD COLUMN IF NOT EXISTS sogiayattp VARCHAR(100) NULL;`).catch(() => {});
 
+    // Table for System Information ("About Us" - Về Chúng Tôi)
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS thongtin_hethong (
+        id INT PRIMARY KEY DEFAULT 1,
+        badge VARCHAR(150) DEFAULT 'ẨM THỰC TRÊN LỘ TRÌNH',
+        tieude VARCHAR(255) DEFAULT 'Đặt Món Tiện Đường - Ghé Lấy Nóng Hổi',
+        mota TEXT NOT NULL,
+        sub_badge VARCHAR(150) DEFAULT 'Hơn 500+ quán ngon trên mọi cung đường',
+        hinhanh TEXT NULL,
+        sumenh_tieude VARCHAR(255) DEFAULT 'SỨ MỆNH & TÂM NHÌN',
+        sumenh_phude VARCHAR(255) DEFAULT 'Kiến tạo phong cách ẩm thực di chuyển thông minh',
+        sumenh_noidung TEXT NOT NULL,
+        stat1_val VARCHAR(50) DEFAULT '500K+',
+        stat1_label VARCHAR(100) DEFAULT 'Lộ trình phục vụ',
+        stat2_val VARCHAR(50) DEFAULT '4.9★',
+        stat2_label VARCHAR(100) DEFAULT 'Đánh giá cao',
+        stat3_val VARCHAR(50) DEFAULT '99%',
+        stat3_label VARCHAR(100) DEFAULT 'Khách hài lòng',
+        giatricotloi JSONB NULL,
+        hotline VARCHAR(50) DEFAULT '1900 6868',
+        email VARCHAR(100) DEFAULT 'support@foodroute.vn',
+        website VARCHAR(150) DEFAULT 'https://foodroute.vn',
+        facebook TEXT NULL DEFAULT '',
+        instagram TEXT NULL DEFAULT '',
+        telegram TEXT NULL DEFAULT '',
+        gmail TEXT NULL DEFAULT '',
+        diachi TEXT NOT NULL,
+        phienban VARCHAR(50) DEFAULT 'Phiên bản 2.5.0 • FoodRoute Official',
+        banquyen VARCHAR(255) DEFAULT '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `).catch((err) => console.warn('[Database] thongtin_hethong creation error:', err));
+
+    await AppDataSource.query(`
+      INSERT INTO thongtin_hethong (
+        id, badge, tieude, mota, sub_badge, 
+        sumenh_tieude, sumenh_phude, sumenh_noidung,
+        stat1_val, stat1_label, stat2_val, stat2_label, stat3_val, stat3_label,
+        giatricotloi, hotline, email, website, diachi, phienban, banquyen
+      )
+      VALUES (
+        1,
+        'ẨM THỰC TRÊN LỘ TRÌNH',
+        'Đặt Món Tiện Đường - Ghé Lấy Nóng Hổi',
+        'Nền tảng tìm kiếm và đặt món thông minh dọc theo lộ trình di chuyển của bạn. Ghé lấy thức ăn tươi nóng mà không cần chờ đợi, trải nghiệm ẩm thực tiện lợi tối ưu thời gian.',
+        'Hơn 500+ quán ngon trên mọi cung đường',
+        'SỨ MỆNH & TÂM NHÌN',
+        'Kiến tạo phong cách ẩm thực di chuyển thông minh',
+        'Định vị thành giải pháp kết nối ẩm thực lộ trình hàng đầu, giúp tối ưu hóa thời gian di chuyển hàng ngày của người dùng bằng công nghệ gợi ý món ngon thông minh, đặt trước tiện lợi và thanh toán không tiền mặt an toàn.',
+        '500K+', 'Lộ trình phục vụ',
+        '4.9★', 'Đánh giá cao',
+        '99%', 'Khách hài lòng',
+        '[
+          {"icon": "navigation", "title": "Tiện đường ghé lấy", "desc": "Đặt món trước, ghé lấy ngay trên lộ trình di chuyển mà không mất thời gian chờ đợi."},
+          {"icon": "flame", "title": "Nóng hổi chuẩn giờ", "desc": "Quán canh thời gian chuẩn bị để món ăn vừa hoàn thành đúng lúc bạn có mặt."},
+          {"icon": "shield", "title": "Thanh toán an toàn", "desc": "Tích hợp thanh toán tiện lợi qua VietQR, PayOS và MoMo với độ bảo mật tuyệt đối."},
+          {"icon": "store", "title": "Quán ngon chọn lọc", "desc": "Hệ thống nhà hàng, quán ăn dọc tuyến đường được tuyển chọn kỹ lưỡng về vệ sinh an toàn."}
+        ]'::jsonb,
+        '1900 6868',
+        'support@foodroute.vn',
+        'https://foodroute.vn',
+        'Khu Công Nghệ Cao, TP. Thủ Đức, TP. Hồ Chí Minh',
+        'Phiên bản 2.5.0 • FoodRoute Official',
+        '© 2026 FoodRoute Inc. Giữ toàn bộ bản quyền hệ thống.'
+      )
+      ON CONFLICT (id) DO NOTHING;
+    `).catch(() => {});
+
     // Notification System Tables (Safe creation)
+    await AppDataSource.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        recipient_id INT NOT NULL DEFAULT 0,
+        recipient_role VARCHAR(20) NOT NULL DEFAULT 'user',
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        body TEXT NOT NULL,
+        data JSONB NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        read_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_notifications_recipient_read_created 
+      ON notifications(recipient_id, is_read, created_at DESC);
+    `).catch(() => {});
+
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS device_tokens (
         id SERIAL PRIMARY KEY,
@@ -565,25 +650,6 @@ export const connectDatabase = async () => {
       console.warn('[Database] Rating reconciliation notice:', err?.message || err);
     });
 
-    // Notifications Table & Indexes (Safe additive creation)
-    await AppDataSource.query(`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id SERIAL PRIMARY KEY,
-        recipient_id INT NOT NULL,
-        recipient_role VARCHAR(20) NOT NULL,
-        type VARCHAR(50) NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        body TEXT NOT NULL,
-        data JSONB NULL,
-        is_read BOOLEAN DEFAULT FALSE,
-        read_at TIMESTAMP NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `).catch(() => {});
-    await AppDataSource.query(`
-      CREATE INDEX IF NOT EXISTS idx_notifications_recipient_read_created 
-      ON notifications(recipient_id, is_read, created_at DESC);
-    `).catch(() => {});
     await AppDataSource.query(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS lydohuy TEXT NULL;`).catch(() => {});
 
     // Support System Safe Migrations (Giai đoạn A)
