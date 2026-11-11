@@ -67,7 +67,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1E),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0D0F14)
+          : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           const _OptimizedMapWidget(),
@@ -312,22 +314,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildLoadingOverlay() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: const Color(0xFF0F0F1E),
+      color: isDark ? const Color(0xFF0D0F14) : Colors.white,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: Color(0xFF00E5FF),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF171B26) : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const CircularProgressIndicator(
+                color: Color(0xFFFC6011),
+                strokeWidth: 3,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'Đang xác định vị trí...',
               style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Vui lòng chờ trong giây lát',
+              style: GoogleFonts.outfit(
+                color: isDark ? Colors.white60 : const Color(0xFF8E8E93),
+                fontSize: 12,
               ),
             ),
           ],
@@ -337,16 +363,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildRouteLoadingOverlay() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned.fill(
       child: IgnorePointer(
         child: Container(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: Colors.black.withValues(alpha: 0.25),
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E3A),
-                borderRadius: BorderRadius.circular(16),
+                color: isDark ? const Color(0xFF171B26) : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -355,15 +389,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      color: Color(0xFF00E5FF),
-                      strokeWidth: 2,
+                      color: Color(0xFFFC6011),
+                      strokeWidth: 2.5,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Text(
-                    'Đang tìm đường...',
+                    'Đang tìm lộ trình tối ưu...',
                     style: GoogleFonts.outfit(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -407,29 +441,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTapHint() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned(
       bottom: 100,
       left: 0,
       right: 0,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            color: isDark
+                ? const Color(0xFF171B26).withValues(alpha: 0.92)
+                : Colors.white.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFFFC6011).withValues(alpha: 0.25),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.touch_app_rounded,
-                  color: Color(0xFF00E5FF), size: 16),
+                  color: Color(0xFFFC6011), size: 18),
               const SizedBox(width: 8),
               Text(
                 'Chạm bản đồ để đặt điểm A → B',
                 style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
                   fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -443,8 +490,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required IconData icon,
     required VoidCallback onTap,
     required String tooltip,
-    Color color = const Color(0xFF00E5FF),
+    Color color = const Color(0xFFFC6011),
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
@@ -453,13 +501,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E3A),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+            color: isDark ? const Color(0xFF171B26) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF232836) : const Color(0xFFF1F5F9),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],

@@ -585,45 +585,50 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
   }
 
   Widget _buildSuggestionsList(MapProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A35),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        color: isDark ? const Color(0xFF171B26) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF232836) : const Color(0xFFE2E8F0),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       constraints: const BoxConstraints(maxHeight: 300),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: provider.isSearching
-            ? _buildSearchLoadingIndicator()
+            ? _buildSearchLoadingIndicator(isDark)
             : provider.suggestions.isEmpty
-                ? _buildNoResultsPlaceholder()
+                ? _buildNoResultsPlaceholder(isDark)
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shrinkWrap: true,
                     itemCount: provider.suggestions.length,
                     separatorBuilder: (_, __) => Divider(
-                      color: Colors.white.withValues(alpha: 0.04),
+                      color: isDark
+                          ? const Color(0xFF232836)
+                          : const Color(0xFFF1F5F9),
                       height: 1,
                     ),
                     itemBuilder: (context, index) {
                       final place = provider.suggestions[index];
-                      return _buildSuggestionItem(place, provider);
+                      return _buildSuggestionItem(place, provider, isDark);
                     },
                   ),
       ),
     );
   }
 
-  Widget _buildSearchLoadingIndicator() {
+  Widget _buildSearchLoadingIndicator(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Row(
@@ -633,7 +638,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
-              color: Color(0xFF00E5FF),
+              color: Color(0xFFFC6011),
               strokeWidth: 2,
             ),
           ),
@@ -641,8 +646,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
           Text(
             'Đang tìm kiếm...',
             style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: isDark ? Colors.white70 : const Color(0xFF64748B),
               fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -650,7 +656,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     );
   }
 
-  Widget _buildNoResultsPlaceholder() {
+  Widget _buildNoResultsPlaceholder(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
@@ -658,14 +664,14 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
         children: [
           Icon(
             Icons.search_off_rounded,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
             size: 28,
           ),
           const SizedBox(height: 10),
           Text(
             'Không tìm thấy địa điểm nào',
             style: GoogleFonts.outfit(
-              color: Colors.white,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -675,7 +681,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
             'Hãy gõ tiếng Việt có dấu đầy đủ (Ví dụ: Đại học Công nghiệp, Gò Vấp, Quận 1)',
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.45),
+              color: isDark ? Colors.white60 : const Color(0xFF64748B),
               fontSize: 11,
             ),
           ),
@@ -685,19 +691,22 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
   }
 
   Widget _buildQuickOptions(MapProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOriginActive = _originFocused;
     final recentList = provider.recentDestinations;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A35),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        color: isDark ? const Color(0xFF171B26) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF232836) : const Color(0xFFE2E8F0),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -707,7 +716,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
         children: [
           if (isOriginActive)
             InkWell(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
               onTap: () async {
                 await provider.useCurrentLocationAsOrigin();
                 _originFocus.unfocus();
@@ -721,11 +730,11 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.my_location_rounded,
-                          color: Color(0xFF00E5FF), size: 18),
+                          color: Color(0xFFFC6011), size: 18),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -735,7 +744,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                           Text(
                             'Dùng vị trí của tôi',
                             style: GoogleFonts.outfit(
-                              color: const Color(0xFF00E5FF),
+                              color: const Color(0xFFFC6011),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -743,7 +752,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                           Text(
                             'Điểm bắt đầu là vị trí GPS hiện tại',
                             style: GoogleFonts.outfit(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
                               fontSize: 11,
                             ),
                           ),
@@ -764,7 +773,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   Text(
                     '${recentList.length} điểm đến gần nhất',
                     style: GoogleFonts.outfit(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
@@ -776,8 +785,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                     child: Text(
                       'Xóa',
                       style: GoogleFonts.outfit(
-                        color: Colors.white38,
+                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                         fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -797,7 +807,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.place_rounded, color: Color(0xFFFC6011), size: 16),
@@ -812,7 +822,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : const Color(0xFF1E293B),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -822,19 +832,26 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.outfit(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
                               fontSize: 11,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.north_west_rounded, size: 14, color: Colors.white.withValues(alpha: 0.25)),
+                    Icon(
+                      Icons.north_west_rounded,
+                      size: 14,
+                      color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    ),
                   ],
                 ),
               ),
             )),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(
+              color: isDark ? const Color(0xFF232836) : const Color(0xFFF1F5F9),
+              height: 1,
+            ),
           ],
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -845,12 +862,15 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2D2D5E),
+                    color: isDark ? const Color(0xFF232836) : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2E3547) : const Color(0xFFE2E8F0),
+                    ),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.search_rounded,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Color(0xFFFC6011),
                     size: 16,
                   ),
                 ),
@@ -858,7 +878,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 Text(
                   'Gõ tên địa điểm để tìm kiếm...',
                   style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                   ),
@@ -871,7 +891,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     );
   }
 
-  Widget _buildSuggestionItem(PlaceModel place, MapProvider provider) {
+  Widget _buildSuggestionItem(PlaceModel place, MapProvider provider, bool isDark) {
     return InkWell(
       onTap: () {
         _originFocus.unfocus();
@@ -896,7 +916,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: const Color(0xFFFC6011).withValues(alpha: 0.15),
+                color: const Color(0xFFFC6011).withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -913,7 +933,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   Text(
                     place.name,
                     style: GoogleFonts.outfit(
-                      color: const Color(0xFFFC6011),
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -924,7 +944,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   Text(
                     place.address,
                     style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
                       fontSize: 11,
                     ),
                     maxLines: 1,
