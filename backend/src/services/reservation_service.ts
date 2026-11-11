@@ -723,7 +723,7 @@ export class ReservationService {
     return reservation;
   }
 
-  async cancelCustomerReservation(userSub: number, maDatBan: number) {
+  async cancelCustomerReservation(userSub: number, maDatBan: number, reason?: string) {
     const khachHang = await this.khachHangRepo.findOne({ where: { maTaiKhoan: userSub } });
     if (!khachHang) throw new Error('Không tìm thấy thông tin khách hàng');
 
@@ -737,7 +737,7 @@ export class ReservationService {
       throw new Error('Đặt bàn đã hoàn tất hoặc đã hủy, không thể thao tác!');
     }
 
-    return await this.updateReservationStatus(reservation.maQuan, maDatBan, 'DA_HUY', 'Khách hàng tự hủy');
+    return await this.updateReservationStatus(reservation.maQuan, maDatBan, 'DA_HUY', reason || 'Khách hàng tự hủy');
   }
 
 

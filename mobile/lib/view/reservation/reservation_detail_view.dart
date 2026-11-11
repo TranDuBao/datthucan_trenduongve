@@ -5,8 +5,8 @@ import '../../common/color_extension.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
-import '../../widgets/custom_toast.dart';
 import '../../widgets/skeleton/reservation_item_skeleton.dart';
+import 'widgets/cancel_reservation_sheet.dart';
 
 class ReservationDetailView extends StatefulWidget {
   final int reservationId;
@@ -18,8 +18,6 @@ class ReservationDetailView extends StatefulWidget {
 }
 
 class _ReservationDetailViewState extends State<ReservationDetailView> {
-  final TextEditingController _txtCancelReason = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -30,81 +28,19 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
 
   @override
   void dispose() {
-    _txtCancelReason.dispose();
     // Leave room cleanly
     context.read<ReservationProvider>().leaveCurrentReservationRoom();
     super.dispose();
   }
 
-  void _showCancelDialog(ReservationModel resv) {
-    _txtCancelReason.clear();
-    showDialog(
+  Future<void> _showCancelDialog(ReservationModel resv) async {
+    final success = await CancelReservationSheet.show(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: TColor.cardOf(context),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            'Hủy lượt đặt bàn?',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: TColor.primaryTextOf(context),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bạn có chắc chắn muốn hủy lượt đặt bàn #${resv.maDatBan} tại ${resv.cuaHang?.tenQuan ?? "quán"}?',
-                style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _txtCancelReason,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Lý do hủy (không bắt buộc)',
-                  hintStyle: TextStyle(fontSize: 12, color: TColor.secondaryTextOf(context)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Đóng', style: TextStyle(color: TColor.secondaryTextOf(context))),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE53935),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                final provider = context.read<ReservationProvider>();
-                final res = await provider.cancelReservation(
-                  resv.maDatBan,
-                  reason: _txtCancelReason.text.trim(),
-                );
-                if (mounted) {
-                  if (res['success'] == true) {
-                    CustomToast.showSuccess(context, 'Đã hủy đặt bàn thành công');
-                    provider.fetchReservationDetail(resv.maDatBan);
-                  } else {
-                    CustomToast.showError(context, res['message'] ?? 'Không thể hủy đặt bàn');
-                  }
-                }
-              },
-              child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
+      reservation: resv,
     );
+    if (success == true && mounted) {
+      context.read<ReservationProvider>().fetchReservationDetail(resv.maDatBan);
+    }
   }
 
   Widget _buildStepItem({

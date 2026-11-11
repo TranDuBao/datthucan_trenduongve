@@ -137,7 +137,8 @@ export class CustomerReservationController {
         });
       }
 
-      const result = await this.reservationService.cancelCustomerReservation(Number(user.sub), id);
+      const lyDo = req.body?.lyDoHuy || req.body?.reason || 'Khách hàng tự hủy';
+      const result = await this.reservationService.cancelCustomerReservation(Number(user.sub), id, lyDo);
       return res.status(200).json({
         status: 'success',
         message: 'Đã hủy lượt đặt bàn thành công',

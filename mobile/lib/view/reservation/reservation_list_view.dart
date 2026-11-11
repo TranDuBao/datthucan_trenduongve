@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
-import '../../widgets/custom_toast.dart';
 import '../../widgets/skeleton/reservation_item_skeleton.dart';
 import 'reservation_card.dart';
 import 'reservation_detail_view.dart';
+import 'widgets/cancel_reservation_sheet.dart';
 
 class ReservationListView extends StatefulWidget {
   const ReservationListView({super.key});
@@ -17,7 +17,6 @@ class ReservationListView extends StatefulWidget {
 
 class _ReservationListViewState extends State<ReservationListView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final TextEditingController _txtCancelReason = TextEditingController();
 
   @override
   void initState() {
@@ -31,78 +30,17 @@ class _ReservationListViewState extends State<ReservationListView> with SingleTi
   @override
   void dispose() {
     _tabController.dispose();
-    _txtCancelReason.dispose();
     super.dispose();
   }
 
-  void _showCancelDialog(ReservationModel resv) {
-    _txtCancelReason.clear();
-    showDialog(
+  Future<void> _showCancelDialog(ReservationModel resv) async {
+    final success = await CancelReservationSheet.show(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: TColor.cardOf(context),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            'Hủy lượt đặt bàn?',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: TColor.primaryTextOf(context),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bạn có chắc muốn hủy lượt đặt bàn #${resv.maDatBan} tại ${resv.cuaHang?.tenQuan ?? "quán"}?',
-                style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _txtCancelReason,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Lý do hủy (không bắt buộc)',
-                  hintStyle: TextStyle(fontSize: 12, color: TColor.secondaryTextOf(context)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Đóng', style: TextStyle(color: TColor.secondaryTextOf(context))),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE53935),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                final provider = context.read<ReservationProvider>();
-                final res = await provider.cancelReservation(
-                  resv.maDatBan,
-                  reason: _txtCancelReason.text.trim(),
-                );
-                if (mounted) {
-                  if (res['success'] == true) {
-                    CustomToast.showSuccess(context, 'Đã hủy đặt bàn');
-                  } else {
-                    CustomToast.showError(context, res['message'] ?? 'Không thể hủy đặt bàn');
-                  }
-                }
-              },
-              child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
+      reservation: resv,
     );
+    if (success == true && mounted) {
+      context.read<ReservationProvider>().fetchMyReservations(refresh: true);
+    }
   }
 
   Widget _buildEmptyState({required String title, required String subtitle}) {
@@ -116,7 +54,7 @@ class _ReservationListViewState extends State<ReservationListView> with SingleTi
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: TColor.primary.withOpacity(0.1),
+                color: TColor.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.table_restaurant_outlined, size: 40, color: TColor.primary),
