@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? const Color(0xFF0D0F14)
-          : const Color(0xFFF8FAFC),
+          : const Color(0xFFF0F3F7),
       body: Stack(
         children: [
           const _OptimizedMapWidget(),
@@ -316,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildLoadingOverlay() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: isDark ? const Color(0xFF0D0F14) : Colors.white,
+      color: isDark ? const Color(0xFF0D0F14) : const Color(0xFFF0F3F7),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -327,6 +327,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: isDark ? const Color(0xFF171B26) : Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
                   BoxShadow(
                     color: const Color(0xFFFC6011).withValues(alpha: 0.15),
                     blurRadius: 20,
@@ -352,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(
               'Vui lòng chờ trong giây lát',
               style: GoogleFonts.outfit(
-                color: isDark ? Colors.white60 : const Color(0xFF8E8E93),
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 12,
               ),
             ),
