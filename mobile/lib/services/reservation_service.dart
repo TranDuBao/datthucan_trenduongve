@@ -7,6 +7,14 @@ import '../common/service_call.dart';
 import '../models/reservation_model.dart';
 
 class ReservationService {
+  static String _formatDateTimeWithTimezone(DateTime dt) {
+    final offset = dt.timeZoneOffset;
+    final sign = offset.isNegative ? '-' : '+';
+    final hours = offset.inHours.abs().toString().padLeft(2, '0');
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    return '${dt.toIso8601String()}$sign$hours:$minutes';
+  }
+
   /// Tạo lượt đặt bàn mới
   static Future<Map<String, dynamic>> createReservation({
     required int restaurantId,
@@ -23,7 +31,7 @@ class ReservationService {
 
       final Map<String, dynamic> payload = {
         'maQuan': restaurantId,
-        'thoiGianBatDau': startTime.toIso8601String(),
+        'thoiGianBatDau': _formatDateTimeWithTimezone(startTime),
         'soNguoi': guestCount,
       };
 
@@ -258,7 +266,7 @@ class ReservationService {
       final token = Globs.udValueString(KKey.authToken);
       final url = Uri.parse(SVKey.svRestaurantAvailability(restaurantId)).replace(
         queryParameters: {
-          'thoiGianBatDau': startTime.toIso8601String(),
+          'thoiGianBatDau': _formatDateTimeWithTimezone(startTime),
           'soNguoi': guestCount.toString(),
         },
       );

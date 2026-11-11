@@ -135,7 +135,7 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                   color: isCompleted
                       ? activeColor
                       : isCurrent
-                          ? activeColor.withOpacity(0.15)
+                          ? activeColor.withValues(alpha: 0.15)
                           : inactiveColor,
                   border: isCurrent ? Border.all(color: activeColor, width: 2) : null,
                 ),
@@ -392,7 +392,7 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                                       child: resv.cuaHang?.img != null && resv.cuaHang!.img!.isNotEmpty
                                           ? SmartNetworkImage(imageUrl: resv.cuaHang!.img!, width: 56, height: 56, fit: BoxFit.cover)
                                           : Container(
-                                              color: TColor.primary.withOpacity(0.1),
+                                              color: TColor.primary.withValues(alpha: 0.1),
                                               child: Icon(Icons.restaurant_rounded, color: TColor.primary, size: 28),
                                             ),
                                     ),
@@ -460,38 +460,34 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                                 context,
                                 icon: Icons.calendar_today_rounded,
                                 label: 'Thời gian bắt đầu',
-                                value: DateFormat('HH:mm - dd/MM/yyyy').format(resv.thoiGianBatDau.toLocal()),
+                                value: DateFormat('HH:mm • dd/MM/yyyy').format(resv.thoiGianBatDau.toLocal()),
+                                isHighlighted: true,
                               ),
-                              const Divider(height: 20),
                               _buildInfoRow(
                                 context,
                                 icon: Icons.access_time_rounded,
                                 label: 'Dự kiến kết thúc',
-                                value: DateFormat('HH:mm - dd/MM/yyyy').format(resv.thoiGianKetThuc.toLocal()),
+                                value: DateFormat('HH:mm • dd/MM/yyyy').format(resv.thoiGianKetThuc.toLocal()),
                               ),
-                              const Divider(height: 20),
                               _buildInfoRow(
                                 context,
                                 icon: Icons.table_restaurant_rounded,
                                 label: 'Bàn phục vụ',
                                 value: resv.ban?.tenBan ?? 'Quán tự xếp bàn',
                               ),
-                              const Divider(height: 20),
                               _buildInfoRow(
                                 context,
                                 icon: Icons.people_outline_rounded,
                                 label: 'Số lượng khách',
                                 value: '${resv.soNguoi} người',
                               ),
-                              if (resv.ghiChu != null && resv.ghiChu!.isNotEmpty) ...[
-                                const Divider(height: 20),
+                              if (resv.ghiChu != null && resv.ghiChu!.isNotEmpty)
                                 _buildInfoRow(
                                   context,
                                   icon: Icons.note_alt_outlined,
                                   label: 'Ghi chú',
                                   value: resv.ghiChu!,
                                 ),
-                              ],
                             ],
                           ),
                         ),
@@ -523,15 +519,13 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                                 label: 'Họ tên',
                                 value: resv.tenKhachHang ?? 'Khách hàng',
                               ),
-                              if (resv.sdtKhachHang != null) ...[
-                                const Divider(height: 20),
+                              if (resv.sdtKhachHang != null)
                                 _buildInfoRow(
                                   context,
                                   icon: Icons.phone_outlined,
                                   label: 'Số điện thoại',
                                   value: resv.sdtKhachHang!,
                                 ),
-                              ],
                             ],
                           ),
                         ),
@@ -571,29 +565,45 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
     required IconData icon,
     required String label,
     required String value,
+    bool isHighlighted = false,
   }) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: TColor.primary),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
-        ),
-        const Spacer(),
-        Expanded(
-          flex: 2,
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: TColor.primary.withValues(alpha: isDark ? 0.18 : 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 17, color: TColor.primary),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: TColor.primaryTextOf(context),
+              fontWeight: FontWeight.w500,
+              color: TColor.secondaryTextOf(context),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
+                color: isHighlighted ? TColor.primary : TColor.primaryTextOf(context),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

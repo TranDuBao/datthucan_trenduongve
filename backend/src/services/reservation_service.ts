@@ -18,6 +18,23 @@ export interface ReservationFilters {
   limit?: number;
 }
 
+export function parseVietnamDateTime(dateInput: string | Date | any): Date {
+  if (dateInput instanceof Date) return dateInput;
+  if (!dateInput) return new Date();
+  if (typeof dateInput !== 'string') return new Date(dateInput);
+
+  const trimmed = dateInput.trim();
+  // If string already has explicit timezone offset (e.g. ends with 'Z' or '+07:00' or '-05:00')
+  if (trimmed.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    return new Date(trimmed);
+  }
+
+  // If no timezone offset (e.g. '2026-11-11T18:30:00' or '2026-11-11 18:30:00')
+  // Explicitly treat it as Vietnam Time (UTC+07:00 / Asia/Ho_Chi_Minh)
+  const normalized = trimmed.replace(' ', 'T');
+  return new Date(`${normalized}+07:00`);
+}
+
 export class ReservationService {
   private get datBanRepo() {
     return AppDataSource.getRepository(DatBanModel);
@@ -59,7 +76,15 @@ export class ReservationService {
 
       const openMin = parseTime(openStr);
       const closeMin = parseTime(closeStr);
-      const startMin = start.getHours() * 60 + start.getMinutes();
+      // Extract hour & minute strictly in Vietnam Timezone (Asia/Ho_Chi_Minh)
+      const vnTimeStr = start.toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const [vnH, vnM] = vnTimeStr.split(':').map((s) => parseInt(s, 10));
+      const startMin = (isNaN(vnH) ? 0 : vnH) * 60 + (isNaN(vnM) ? 0 : vnM);
 
       if (openMin < closeMin) {
         if (startMin < openMin || startMin >= closeMin) {
@@ -94,11 +119,9 @@ export class ReservationService {
   }
 
   async getDashboardStats(maQuan: number) {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const nowVnStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const todayStart = new Date(`${nowVnStr}T00:00:00.000+07:00`);
+    const todayEnd = new Date(`${nowVnStr}T23:59:59.999+07:00`);
 
     const choXacNhan = await this.datBanRepo.count({
       where: {
@@ -442,7 +465,7 @@ export class ReservationService {
     let timeChanged = false;
 
     if (data.thoiGianBatDau !== undefined) {
-      const parsedStart = new Date(data.thoiGianBatDau);
+      const parsedStart = parseVietnamDateTime(data.thoiGianBatDau);
       if (isNaN(parsedStart.getTime())) {
         throw new Error('Thời gian hẹn không hợp lệ');
       }
@@ -509,7 +532,7 @@ export class ReservationService {
       payload = maQuanOrData;
     }
 
-    const start = new Date(payload.thoiGianBatDau);
+    const start = parseVietnamDateTime(payload.thoiGianBatDau);
     if (isNaN(start.getTime())) {
       throw new Error('Thời gian hẹn không hợp lệ');
     }
@@ -638,8 +661,14 @@ export class ReservationService {
       });
 
       // Notify Restaurant of new reservation
-      const timeStr = new Date(saved.thoiGianBatDau).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      const dateStr = new Date(saved.thoiGianBatDau).toLocaleDateString('vi-VN');
+      const timeStr = new Date(saved.thoiGianBatDau).toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Ho_Chi_Minh',
+      });
+      const dateStr = new Date(saved.thoiGianBatDau).toLocaleDateString('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+      });
       await NotificationService.getInstance().sendNotification({
         recipientId: payload.maQuan,
         recipientRole: 'restaurant',
@@ -718,7 +747,7 @@ export class ReservationService {
       throw new Error('Số lượng khách không hợp lệ (1 - 50 người)');
     }
 
-    const start = new Date(thoiGianBatDauStr);
+    const start = parseVietnamDateTime(thoiGianBatDauStr);
     if (isNaN(start.getTime())) {
       throw new Error('Thời gian hẹn không hợp lệ');
     }

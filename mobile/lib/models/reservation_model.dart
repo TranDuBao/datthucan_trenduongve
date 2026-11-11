@@ -201,10 +201,10 @@ class ReservationModel {
       maKhachHang: json['maKhachHang'] ?? json['makhachhang'],
       maBan: json['maBan'] ?? json['maban'] ?? 0,
       thoiGianBatDau: json['thoiGianBatDau'] != null
-          ? DateTime.parse(json['thoiGianBatDau'].toString())
+          ? DateTime.parse(json['thoiGianBatDau'].toString()).toLocal()
           : DateTime.now(),
       thoiGianKetThuc: json['thoiGianKetThuc'] != null
-          ? DateTime.parse(json['thoiGianKetThuc'].toString())
+          ? DateTime.parse(json['thoiGianKetThuc'].toString()).toLocal()
           : DateTime.now().add(const Duration(hours: 1, minutes: 30)),
       soNguoi: json['soNguoi'] ?? json['songuoi'] ?? 2,
       trangThai: json['trangThai'] ?? json['trangthai'] ?? ReservationStatus.choXacNhan,

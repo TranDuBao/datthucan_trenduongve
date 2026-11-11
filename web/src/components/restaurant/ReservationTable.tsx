@@ -113,10 +113,10 @@ export const ReservationTable: React.FC<ReservationTableProps> = ({
                   </td>
                   <td style={{ padding: '14px 16px', color: '#334155', fontWeight: 600 }}>{res.soNguoi} người</td>
                   <td style={{ padding: '14px 16px', color: '#15803d', fontWeight: 600 }}>
-                    {!isNaN(start.getTime()) ? start.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : 'N/A'}
+                    {!isNaN(start.getTime()) ? start.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : 'N/A'}
                   </td>
                   <td style={{ padding: '14px 16px', color: '#64748b' }}>
-                    {!isNaN(end.getTime()) ? end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                    {!isNaN(end.getTime()) ? end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) : 'N/A'}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
                     <ReservationStatusBadge status={res.trangThai} />

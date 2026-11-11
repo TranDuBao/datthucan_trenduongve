@@ -34,7 +34,7 @@ class ReservationCard extends StatelessWidget {
         border: Border.all(color: TColor.borderOf(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -55,18 +55,25 @@ class ReservationCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Mã đặt bàn: #${reservation.maDatBan}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: TColor.secondaryTextOf(context),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF232836) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '#DB${reservation.maDatBan}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: TColor.primary,
+                        ),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: reservation.statusColor.withOpacity(0.12),
+                        color: reservation.statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -94,16 +101,13 @@ class ReservationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1),
-                ),
+                const SizedBox(height: 12),
                 // Middle row: Store info
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                       child: SizedBox(
                         width: 58,
                         height: 58,
@@ -115,7 +119,7 @@ class ReservationCard extends StatelessWidget {
                                 fit: BoxFit.cover,
                               )
                             : Container(
-                                color: TColor.primary.withOpacity(0.1),
+                                color: TColor.primary.withValues(alpha: 0.1),
                                 child: Icon(Icons.restaurant_rounded, color: TColor.primary, size: 28),
                               ),
                       ),
@@ -136,7 +140,7 @@ class ReservationCard extends StatelessWidget {
                             ),
                           ),
                           if (storeAddress.isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             Text(
                               storeAddress,
                               maxLines: 1,
@@ -150,8 +154,8 @@ class ReservationCard extends StatelessWidget {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(Icons.access_time_rounded, size: 14, color: TColor.primary),
-                              const SizedBox(width: 4),
+                              Icon(Icons.access_time_filled_rounded, size: 14, color: TColor.primary),
+                              const SizedBox(width: 5),
                               Text(
                                 dateStr,
                                 style: TextStyle(
@@ -167,75 +171,76 @@ class ReservationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1),
-                ),
+                const SizedBox(height: 14),
                 // Bottom row: Table & guests info + Action
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF232836) : const Color(0xFFF2F2F2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.table_restaurant_rounded, size: 14, color: TColor.secondaryTextOf(context)),
-                              const SizedBox(width: 4),
-                              Text(
-                                tableName,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: TColor.primaryTextOf(context)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF232836) : const Color(0xFFF2F2F2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.people_outline_rounded, size: 14, color: TColor.secondaryTextOf(context)),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${reservation.soNguoi} khách',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: TColor.primaryTextOf(context)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2330) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2E3547) : const Color(0xFFF1F5F9),
                     ),
-                    if (reservation.canCancel && onCancel != null)
-                      TextButton(
-                        onPressed: onCancel,
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.table_restaurant_rounded, size: 14, color: TColor.primary),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                tableName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: TColor.primaryTextOf(context),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(width: 1, height: 12, color: TColor.borderOf(context)),
+                            const SizedBox(width: 8),
+                            Icon(Icons.people_outline_rounded, size: 14, color: TColor.primary),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${reservation.soNguoi} khách',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: TColor.primaryTextOf(context),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Text(
-                          'Hủy đặt',
-                          style: TextStyle(
-                            color: Color(0xFFE53935),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      if (reservation.canCancel && onCancel != null)
+                        GestureDetector(
+                          onTap: onCancel,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Hủy đặt',
+                              style: TextStyle(
+                                color: Color(0xFFE53935),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                    else
-                      Icon(Icons.arrow_forward_ios_rounded, size: 14, color: TColor.secondaryTextOf(context)),
-                  ],
+                        )
+                      else
+                        Icon(Icons.arrow_forward_ios_rounded, size: 12, color: TColor.secondaryTextOf(context)),
+                    ],
+                  ),
                 ),
               ],
             ),

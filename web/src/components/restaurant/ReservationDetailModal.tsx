@@ -56,12 +56,13 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      timeZone: 'Asia/Ho_Chi_Minh',
     });
   };
 
   const formatTimeOnly = (d: Date) => {
     if (isNaN(d.getTime())) return 'N/A';
-    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
   };
 
   const formatDateOnly = (d: Date) => {
@@ -71,6 +72,7 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      timeZone: 'Asia/Ho_Chi_Minh',
     });
   };
 
