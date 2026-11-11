@@ -115,14 +115,14 @@ class ReservationRestaurantModel {
   factory ReservationRestaurantModel.fromJson(Map<String, dynamic> json) {
     return ReservationRestaurantModel(
       maQuan: json['maQuan'] ?? json['maquan'] ?? 0,
-      tenQuan: json['tenQuan'] ?? json['tenquan'] ?? 'Quán ăn',
-      diaChi: json['diaChi'] ?? json['diachi'] ?? '',
-      img: json['img'],
-      sdt: json['sdt'],
+      tenQuan: json['tenQuan'] ?? json['tenquan'] ?? json['name'] ?? 'Quán ăn',
+      diaChi: json['diaChi'] ?? json['diachi'] ?? json['address'] ?? '',
+      img: json['img'] ?? json['image'] ?? json['hinhAnh'] ?? json['avatar'],
+      sdt: json['sdt'] ?? json['phone'] ?? json['soDienThoai'],
       gioHoatDong: json['gioHoatDong'] ?? json['giohoatdong'],
       coChoDatTruoc: json['coChoDatTruoc'] ?? json['cochodattruoc'] ?? true,
-      danhGiaTrungBinh: double.tryParse((json['danhGiaTrungBinh'] ?? 0).toString()) ?? 0.0,
-      soLuongDanhGia: int.tryParse((json['soLuongDanhGia'] ?? 0).toString()) ?? 0,
+      danhGiaTrungBinh: double.tryParse((json['danhGiaTrungBinh'] ?? json['danhgiatb'] ?? 0).toString()) ?? 0.0,
+      soLuongDanhGia: int.tryParse((json['soLuongDanhGia'] ?? json['soluotdanhgia'] ?? 0).toString()) ?? 0,
     );
   }
 
@@ -221,9 +221,16 @@ class ReservationModel {
       ban: json['ban'] != null && json['ban'] is Map<String, dynamic>
           ? ReservationTableModel.fromJson(json['ban'])
           : null,
-      cuaHang: json['cuaHang'] != null && json['cuaHang'] is Map<String, dynamic>
-          ? ReservationRestaurantModel.fromJson(json['cuaHang'])
-          : null,
+      cuaHang: () {
+        final storeData = json['cuaHang'] ?? json['cuahang'] ?? json['restaurant'];
+        if (storeData != null && storeData is Map<String, dynamic>) {
+          return ReservationRestaurantModel.fromJson(storeData);
+        }
+        if (json['tenQuan'] != null || json['tenquan'] != null) {
+          return ReservationRestaurantModel.fromJson(json);
+        }
+        return null;
+      }(),
     );
   }
 

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { BanModel } from './ban_model';
 import { KhachHangModel } from './khach_hang_model';
+import { CuaHangModel } from './cua_hang_model';
 
 @Entity({ name: 'datban' })
 export class DatBanModel {
@@ -62,4 +63,8 @@ export class DatBanModel {
   @ManyToOne(() => KhachHangModel, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'makhachhang' })
   khachHang?: KhachHangModel;
+
+  @ManyToOne(() => CuaHangModel, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'maquan' })
+  cuaHang?: CuaHangModel;
 }

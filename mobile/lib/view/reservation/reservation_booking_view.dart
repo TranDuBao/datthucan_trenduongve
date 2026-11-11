@@ -235,6 +235,7 @@ class _ReservationBookingViewState extends State<ReservationBookingView> {
       customerName: _txtName.text.trim(),
       customerPhone: _txtPhone.text.trim(),
       note: fullNote,
+      restaurantData: widget.restaurantObj,
     );
 
     if (!mounted) return;

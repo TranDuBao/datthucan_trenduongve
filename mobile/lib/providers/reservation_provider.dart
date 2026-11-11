@@ -223,6 +223,7 @@ class ReservationProvider with ChangeNotifier {
     String? customerName,
     String? customerPhone,
     String? note,
+    Map<dynamic, dynamic>? restaurantData,
   }) async {
     _isSubmitting = true;
     notifyListeners();
@@ -240,7 +241,14 @@ class ReservationProvider with ChangeNotifier {
     _isSubmitting = false;
 
     if (result['success'] == true && result['data'] != null) {
-      final ReservationModel newResv = result['data'];
+      ReservationModel newResv = result['data'];
+      if (newResv.cuaHang == null && restaurantData != null) {
+        newResv = newResv.copyWith(
+          cuaHang: ReservationRestaurantModel.fromJson(
+            Map<String, dynamic>.from(restaurantData),
+          ),
+        );
+      }
       _reservations.insert(0, newResv);
       _currentReservation = newResv;
       _socketService.joinReservationRoom(newResv.maDatBan);

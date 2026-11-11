@@ -691,12 +691,19 @@ export class ReservationService {
       throw new Error('Chưa tìm thấy thông tin khách hàng cho tài khoản này');
     }
 
-    return await this.createReservation({
+    const saved = await this.createReservation({
       ...dto,
       maKhachHang: khachHang.maKhachHang,
       tenKhachHang: dto.tenKhachHang || khachHang.hoTen,
       sdtKhachHang: dto.sdtKhachHang || khachHang.sdt,
     });
+
+    const fullReservation = await this.datBanRepo.findOne({
+      where: { maDatBan: saved.maDatBan },
+      relations: ['cuaHang', 'ban'],
+    });
+
+    return fullReservation || saved;
   }
 
   async getCustomerReservations(userSub: number) {
@@ -737,7 +744,12 @@ export class ReservationService {
       throw new Error('Đặt bàn đã hoàn tất hoặc đã hủy, không thể thao tác!');
     }
 
-    return await this.updateReservationStatus(reservation.maQuan, maDatBan, 'DA_HUY', reason || 'Khách hàng tự hủy');
+    await this.updateReservationStatus(reservation.maQuan, maDatBan, 'DA_HUY', reason || 'Khách hàng tự hủy');
+
+    return await this.datBanRepo.findOne({
+      where: { maDatBan, maKhachHang: khachHang.maKhachHang },
+      relations: ['cuaHang', 'ban'],
+    });
   }
 
 
