@@ -593,7 +593,38 @@ export class ReservationService {
         ghiChu: payload.ghiChu || '',
       });
 
-      return await manager.save(reservation);
+      let savedReservation: DatBanModel;
+      try {
+        savedReservation = await manager.save(reservation);
+      } catch (saveErr: any) {
+        console.warn('[ReservationService] Fallback save datban with explicit id:', saveErr?.message || saveErr);
+        const nextIdRes = await manager.query(`SELECT COALESCE(MAX(madatban), 0) + 1 AS next_id FROM datban`);
+        const nextId = Number(nextIdRes[0]?.next_id || 1);
+        reservation.maDatBan = nextId;
+        try {
+          savedReservation = await manager.save(reservation);
+        } catch (retryErr: any) {
+          await manager.query(
+            `INSERT INTO datban (madatban, maban, makhachhang, maquan, thoigianbatdau, thoigianketthuc, songuoi, trangthai, ghichu, tenkhachhang, sdtkhachhang, createdat, updatedat)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [
+              nextId,
+              reservation.maBan,
+              reservation.maKhachHang || null,
+              reservation.maQuan,
+              reservation.thoiGianBatDau,
+              reservation.thoiGianKetThuc,
+              reservation.soNguoi,
+              reservation.trangThai,
+              reservation.ghiChu || '',
+              reservation.tenKhachHang,
+              reservation.sdtKhachHang,
+            ]
+          );
+          savedReservation = reservation;
+        }
+      }
+      return savedReservation;
     });
 
     try {

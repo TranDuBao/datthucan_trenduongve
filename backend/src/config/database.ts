@@ -537,6 +537,29 @@ export const connectDatabase = async () => {
       );
     `).catch(() => {});
 
+    // Ensure sequence and default nextval for datban.madatban and ban.maban
+    await AppDataSource.query(`
+      DO $$
+      BEGIN
+        CREATE SEQUENCE IF NOT EXISTS datban_madatban_seq;
+        PERFORM setval('datban_madatban_seq', COALESCE((SELECT MAX(madatban) FROM datban), 0) + 1, false);
+        ALTER TABLE datban ALTER COLUMN madatban SET DEFAULT nextval('datban_madatban_seq');
+      EXCEPTION WHEN OTHERS THEN
+        NULL;
+      END $$;
+    `).catch(() => {});
+
+    await AppDataSource.query(`
+      DO $$
+      BEGIN
+        CREATE SEQUENCE IF NOT EXISTS ban_maban_seq;
+        PERFORM setval('ban_maban_seq', COALESCE((SELECT MAX(maban) FROM ban), 0) + 1, false);
+        ALTER TABLE ban ALTER COLUMN maban SET DEFAULT nextval('ban_maban_seq');
+      EXCEPTION WHEN OTHERS THEN
+        NULL;
+      END $$;
+    `).catch(() => {});
+
     // Voucher & KhachHangVoucher safe migrations
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS voucher (

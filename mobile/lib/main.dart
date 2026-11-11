@@ -123,7 +123,15 @@ class _MyAppState extends State<MyApp> {
         }
       },
       builder: (context, child) {
-        return FlutterEasyLoading(child: child);
+        return FlutterEasyLoading(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            child: child,
+          ),
+        );
       },
     );
   }

@@ -414,9 +414,13 @@ class _ReservationBookingViewState extends State<ReservationBookingView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Form(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,8 +598,9 @@ class _ReservationBookingViewState extends State<ReservationBookingView> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTableSelectionSection(ReservationAvailabilityResult? avail, bool isDark) {
     if (avail != null && (!avail.isOpen || !avail.allowReservation)) {
