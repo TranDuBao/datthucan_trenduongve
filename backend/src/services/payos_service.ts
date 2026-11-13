@@ -61,66 +61,75 @@ export class PayOSService {
         const cancelUrl = params.cancelUrl || 'http://localhost:3000/cancel';
         const returnUrl = params.returnUrl || 'http://localhost:3000/success';
 
-        const data: Record<string, any> = {
-          amount,
-          cancelUrl,
-          description,
-          orderCode,
-          returnUrl,
-        };
+        const makeRequest = (targetOrderCode: number, isRetry: boolean = false) => {
+          const data: Record<string, any> = {
+            amount,
+            cancelUrl,
+            description,
+            orderCode: targetOrderCode,
+            returnUrl,
+          };
 
-        const sortedKeys = Object.keys(data).sort();
-        const str = sortedKeys.map((k) => `${k}=${data[k]}`).join('&');
-        const signature = crypto.createHmac('sha256', this.checksumKey).update(str).digest('hex');
+          const sortedKeys = Object.keys(data).sort();
+          const str = sortedKeys.map((k) => `${k}=${data[k]}`).join('&');
+          const signature = crypto.createHmac('sha256', this.checksumKey).update(str).digest('hex');
 
-        const payload = JSON.stringify({ ...data, signature });
+          const payload = JSON.stringify({ ...data, signature });
 
-        const req = https.request(
-          'https://api-merchant.payos.vn/v2/payment-requests',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-client-id': this.clientId,
-              'x-api-key': this.apiKey,
-              'Content-Length': Buffer.byteLength(payload),
+          const req = https.request(
+            'https://api-merchant.payos.vn/v2/payment-requests',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-client-id': this.clientId,
+                'x-api-key': this.apiKey,
+                'Content-Length': Buffer.byteLength(payload),
+              },
+              timeout: 10000,
             },
-            timeout: 10000,
-          },
-          (res) => {
-            let body = '';
-            res.on('data', (chunk) => (body += chunk));
-            res.on('end', () => {
-              try {
-                const json = JSON.parse(body);
-                if (json.code === '00' && json.data) {
-                  console.log(`[PayOSService] [Info] Tạo Payment Link thành công cho đơn #${orderCode}: STK Virtual ${json.data.accountNumber}`);
-                  resolve(json.data as PayOSPaymentLinkResult);
-                } else {
-                  console.error(`[PayOSService] [Error] Lỗi từ PayOS:`, json);
+            (res) => {
+              let body = '';
+              res.on('data', (chunk) => (body += chunk));
+              res.on('end', () => {
+                try {
+                  const json = JSON.parse(body);
+                  if (json.code === '00' && json.data) {
+                    console.log(`[PayOSService] [Info] Tạo Payment Link thành công cho đơn #${orderCode} (PayOS orderCode: ${targetOrderCode}): STK Virtual ${json.data.accountNumber}`);
+                    resolve(json.data as PayOSPaymentLinkResult);
+                  } else if (!isRetry) {
+                    // Tự động thử lại với orderCode duy nhất (tránh lỗi PayOS trùng mã đơn cũ trong lịch sử merchant)
+                    const uniqueCode = Number(`${orderCode}${Date.now().toString().slice(-4)}`);
+                    console.warn(`[PayOSService] [Warn] Lỗi PayOS với mã #${orderCode} (${json.desc || json.code}), đang thử lại với mã duy nhất #${uniqueCode}...`);
+                    makeRequest(uniqueCode, true);
+                  } else {
+                    console.error(`[PayOSService] [Error] Lỗi từ PayOS sau khi thử lại:`, json);
+                    resolve(null);
+                  }
+                } catch (parseErr) {
+                  console.error(`[PayOSService] [Error] Parse error:`, parseErr);
                   resolve(null);
                 }
-              } catch (parseErr) {
-                console.error(`[PayOSService] [Error] Parse error:`, parseErr);
-                resolve(null);
-              }
-            });
-          }
-        );
+              });
+            }
+          );
 
-        req.on('error', (err) => {
-          console.error(`[PayOSService] [Error] Request error:`, err);
-          resolve(null);
-        });
+          req.on('error', (err) => {
+            console.error(`[PayOSService] [Error] Request error:`, err);
+            resolve(null);
+          });
 
-        req.on('timeout', () => {
-          req.destroy();
-          console.error(`[PayOSService] [Error] Request timeout sau 10s`);
-          resolve(null);
-        });
+          req.on('timeout', () => {
+            req.destroy();
+            console.error(`[PayOSService] [Error] Request timeout sau 10s`);
+            resolve(null);
+          });
 
-        req.write(payload);
-        req.end();
+          req.write(payload);
+          req.end();
+        };
+
+        makeRequest(orderCode);
       } catch (err) {
         console.error(`[PayOSService] [Error] Unexpected exception:`, err);
         resolve(null);

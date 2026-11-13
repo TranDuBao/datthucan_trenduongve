@@ -74,7 +74,8 @@ export class PaymentController {
 
       if (isUnpaid && isPayOSMethod) {
         try {
-          const payosInfo = await PayOSService.getPaymentLinkInformation(maDonHang);
+          const payosCode = Number(payment?.taiKhoanThanhToan || maDonHang);
+          const payosInfo = await PayOSService.getPaymentLinkInformation(payosCode);
           if (payosInfo && (payosInfo.status === 'PAID' || (payosInfo.amountPaid > 0 && payosInfo.amountPaid >= Number(order.tongTien)))) {
             console.log(`[PaymentController] [Info] Phát hiện thanh toán thành công từ PayOS cho đơn #${maDonHang}! Cập nhật hệ thống...`);
 
@@ -310,7 +311,16 @@ export class PaymentController {
       const result = await AppDataSource.transaction(async (manager) => {
         let order = await manager.findOne(DonHangModel, { where: { maDonHang: targetOrderId } });
 
-        // If order not found by orderCode, check if description has DH<id>
+        // If order not found by orderCode directly, check if targetOrderId matches payment.taiKhoanThanhToan (unique PayOS orderCode)
+        if (!order) {
+          const matchedPayment = await manager.findOne(ThanhToanModel, { where: { taiKhoanThanhToan: String(targetOrderId) } });
+          if (matchedPayment && matchedPayment.maDonHang) {
+            targetOrderId = matchedPayment.maDonHang;
+            order = await manager.findOne(DonHangModel, { where: { maDonHang: targetOrderId } });
+          }
+        }
+
+        // If still not found, check if description has DH<id>
         if (!order) {
           const desc = String(webhookData.description || req.body?.description || '');
           const match = desc.match(/DH\s*(\d+)/i);
