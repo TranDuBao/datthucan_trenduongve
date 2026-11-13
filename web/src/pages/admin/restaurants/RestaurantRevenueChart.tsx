@@ -96,18 +96,156 @@ export const RestaurantRevenueChart: React.FC<RestaurantRevenueChartProps> = ({
     }
   };
 
+  const isOrderCompleted = (ord: any) => {
+    const st = (ord.trangThai || '').toUpperCase();
+    return (
+      st === 'HOAN_TAT' ||
+      st === 'DA_HOAN_TAT' ||
+      st === 'HOÀN TẤT' ||
+      st === 'COMPLETED' ||
+      st === 'HOAN_THANH' ||
+      st === 'đã hoàn thành' ||
+      st === 'ĐÃ HOÀN THÀNH' ||
+      st === 'DA_HOAN_THANH' ||
+      st === 'PICKED_UP' ||
+      st === 'PAID' ||
+      st === 'DA_THANH_TOAN'
+    ) && !['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st);
+  };
+
   let currentData: TrendItem[] = [];
   if (timeframe === 'single_date' || timeframe === 'date_range') {
     currentData = customTrend || [];
-  } else if (revenueTrend?.[timeframe]) {
+  } else if (revenueTrend?.[timeframe] && revenueTrend[timeframe]!.length > 0) {
     currentData = revenueTrend[timeframe] || [];
-  } else if (timeframe === 'day') {
+  } else if (timeframe === 'day' && chartDataFallback && chartDataFallback.length > 0) {
     currentData = chartDataFallback.map((c) => ({
       label: c.date,
       fullDate: c.fullDate,
       revenue: c.revenue || 0,
       orders: c.ordersCount || 0,
     }));
+  }
+
+  // Self-healing fallback: Synthesize trend directly from real DB allOrders if revenueTrend is missing/empty
+  if (currentData.length === 0 && allOrders && allOrders.length > 0) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    if (timeframe === 'month') {
+      const synthMonths: TrendItem[] = [];
+      for (let m = 0; m < 12; m++) {
+        let rev = 0;
+        let count = 0;
+        const ids: number[] = [];
+        for (const ord of allOrders) {
+          if (!isOrderCompleted(ord)) continue;
+          const d = new Date(ord.thoiGianDat);
+          if (d.getMonth() === m && d.getFullYear() === currentYear) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            ids.push(Number(ord.maDonHang));
+          }
+        }
+        synthMonths.push({
+          label: `T${m + 1}`,
+          fullDate: `Tháng ${m + 1}/${currentYear}`,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: ids,
+        });
+      }
+      currentData = synthMonths;
+    } else if (timeframe === 'week') {
+      const synthWeeks: TrendItem[] = [];
+      for (let i = 3; i >= 0; i--) {
+        const endDay = new Date(now);
+        endDay.setDate(now.getDate() - i * 7);
+        const startDay = new Date(endDay);
+        startDay.setDate(endDay.getDate() - 6);
+        startDay.setHours(0, 0, 0, 0);
+        endDay.setHours(23, 59, 59, 999);
+
+        let rev = 0;
+        let count = 0;
+        const ids: number[] = [];
+        for (const ord of allOrders) {
+          if (!isOrderCompleted(ord)) continue;
+          const d = new Date(ord.thoiGianDat);
+          if (d >= startDay && d <= endDay) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            ids.push(Number(ord.maDonHang));
+          }
+        }
+        synthWeeks.push({
+          label: `Tuần ${4 - i}`,
+          fullDate: `${startDay.getDate()}/${startDay.getMonth() + 1} - ${endDay.getDate()}/${endDay.getMonth() + 1}`,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: ids,
+        });
+      }
+      currentData = synthWeeks;
+    } else if (timeframe === 'year') {
+      const synthYears: TrendItem[] = [];
+      for (let i = 4; i >= 0; i--) {
+        const y = currentYear - i;
+        let rev = 0;
+        let count = 0;
+        const ids: number[] = [];
+        for (const ord of allOrders) {
+          if (!isOrderCompleted(ord)) continue;
+          const d = new Date(ord.thoiGianDat);
+          if (d.getFullYear() === y) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            ids.push(Number(ord.maDonHang));
+          }
+        }
+        synthYears.push({
+          label: `${y}`,
+          fullDate: `Năm ${y}`,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: ids,
+        });
+      }
+      currentData = synthYears;
+    } else if (timeframe === 'day') {
+      const synthDays: TrendItem[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dayStr = d.toISOString().split('T')[0];
+        const displayLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+
+        let rev = 0;
+        let count = 0;
+        const ids: number[] = [];
+        for (const ord of allOrders) {
+          if (!isOrderCompleted(ord)) continue;
+          const ordDate = new Date(ord.thoiGianDat);
+          if (ordDate.toISOString().split('T')[0] === dayStr) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            ids.push(Number(ord.maDonHang));
+          }
+        }
+        synthDays.push({
+          label: displayLabel,
+          fullDate: dayStr,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: ids,
+        });
+      }
+      currentData = synthDays;
+    }
   }
 
   const maxVal = Math.max(

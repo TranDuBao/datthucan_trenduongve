@@ -101,24 +101,35 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
           let completedOrders = 0;
 
           for (const ord of storeOrders) {
+            const st = (ord.trangThai || '').toUpperCase();
             const isCompleted =
-              ord.trangThai === 'COMPLETED' ||
-              ord.trangThai === 'HOAN_THANH' ||
-              ord.trangThai === 'đã hoàn thành' ||
-              ord.trangThai === 'ĐÃ HOÀN THÀNH' ||
-              ord.trangThai === 'PICKED_UP';
+              (st === 'HOAN_TAT' ||
+                st === 'DA_HOAN_TAT' ||
+                st === 'HOÀN TẤT' ||
+                st === 'COMPLETED' ||
+                st === 'HOAN_THANH' ||
+                st === 'đã hoàn thành' ||
+                st === 'ĐÃ HOÀN THÀNH' ||
+                st === 'DA_HOAN_THANH' ||
+                st === 'PICKED_UP' ||
+                st === 'PAID' ||
+                st === 'DA_THANH_TOAN') &&
+              !['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st);
+
             const amount = Number(ord.tongTien || 0);
             const ordDate = new Date(ord.thoiGianDat);
 
-            totalRevenue += amount;
-            if (isCompleted) completedOrders++;
+            if (isCompleted) {
+              totalRevenue += amount;
+              completedOrders++;
 
-            if (ordDate.toISOString().split('T')[0] === todayStr) {
-              todayRevenue += amount;
-            }
+              if (ordDate.toISOString().split('T')[0] === todayStr) {
+                todayRevenue += amount;
+              }
 
-            if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
-              monthRevenue += amount;
+              if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
+                monthRevenue += amount;
+              }
             }
           }
 
@@ -132,20 +143,53 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
 
             let dayRev = 0;
             let dayCount = 0;
+            const dayOrderIds: number[] = [];
 
             for (const ord of storeOrders) {
+              const st = (ord.trangThai || '').toUpperCase();
+              if (['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st)) continue;
               const ordDate = new Date(ord.thoiGianDat);
               if (ordDate.toISOString().split('T')[0] === dayStr) {
                 dayCount++;
                 dayRev += Number(ord.tongTien || 0);
+                dayOrderIds.push(Number(ord.maDonHang));
               }
             }
 
             chartData.push({
+              label: displayLabel,
               date: displayLabel,
               fullDate: dayStr,
               revenue: dayRev,
+              orders: dayCount,
               ordersCount: dayCount,
+              orderIds: dayOrderIds,
+            });
+          }
+
+          // Generate 12-month calendar chart data for fallback
+          const monthTrend = [];
+          for (let m = 0; m < 12; m++) {
+            let mRev = 0;
+            let mCount = 0;
+            const mOrderIds: number[] = [];
+            for (const ord of storeOrders) {
+              const st = (ord.trangThai || '').toUpperCase();
+              if (['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st)) continue;
+              const ordDate = new Date(ord.thoiGianDat);
+              if (ordDate.getMonth() === m && ordDate.getFullYear() === currentYear) {
+                mCount++;
+                mRev += Number(ord.tongTien || 0);
+                mOrderIds.push(Number(ord.maDonHang));
+              }
+            }
+            monthTrend.push({
+              label: `T${m + 1}`,
+              fullDate: `Tháng ${m + 1}/${currentYear}`,
+              revenue: mRev,
+              orders: mCount,
+              ordersCount: mCount,
+              orderIds: mOrderIds,
             });
           }
 
@@ -160,6 +204,10 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
               completedOrders,
             },
             chartData,
+            revenueTrend: {
+              day: chartData,
+              month: monthTrend,
+            },
             foods,
             recentOrders: storeOrders,
           });

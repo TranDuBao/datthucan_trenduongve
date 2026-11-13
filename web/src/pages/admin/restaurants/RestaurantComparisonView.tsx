@@ -123,8 +123,57 @@ export const RestaurantComparisonView: React.FC = () => {
           setComparisonData(res.data);
         }
       })
-      .catch((err) => {
-        console.error('Lỗi tải dữ liệu so sánh quán:', err);
+      .catch(async (err) => {
+        console.error('Lỗi tải dữ liệu so sánh quán từ backend, chuyển sang tổng hợp trực tiếp:', err);
+        try {
+          const res = await apiFetch<any>('/admin/orders?limit=1000');
+          const allOrders = res.data?.items || res.items || [];
+          const now = new Date();
+          const yr = now.getFullYear();
+          const isComp = (o: any) => !['DA_HUY', 'CANCELLED', 'THAT_BAI'].includes((o.trangThai || '').toUpperCase());
+
+          const slots: Array<{ key: string; label: string; fullDate?: string; match: (d: Date) => boolean }> = [];
+          if (timeframe === 'month') {
+            for (let m = 0; m < 12; m++) {
+              slots.push({ key: `m_${m}`, label: `T${m + 1}`, fullDate: `Tháng ${m + 1}/${yr}`, match: (d) => d.getMonth() === m && d.getFullYear() === yr });
+            }
+          } else if (timeframe === 'year') {
+            for (let i = 4; i >= 0; i--) {
+              slots.push({ key: `y_${yr - i}`, label: `${yr - i}`, fullDate: `Năm ${yr - i}`, match: (d) => d.getFullYear() === yr - i });
+            }
+          } else if (timeframe === 'week') {
+            for (let i = 3; i >= 0; i--) {
+              const eD = new Date(now.getTime() - i * 7 * 86400000);
+              const sD = new Date(eD.getTime() - 6 * 86400000);
+              slots.push({ key: `w_${i}`, label: `Tuần ${4 - i}`, fullDate: `${sD.getDate()}/${sD.getMonth() + 1} - ${eD.getDate()}/${eD.getMonth() + 1}`, match: (d) => d >= sD && d <= eD });
+            }
+          } else {
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date(now.getTime() - i * 86400000);
+              const ds = d.toISOString().split('T')[0];
+              slots.push({ key: ds, label: `${d.getDate()}/${d.getMonth() + 1}`, fullDate: ds, match: (dt) => dt.toISOString().split('T')[0] === ds });
+            }
+          }
+
+          const stores = allStores.filter((s) => selectedIds.includes(s.maQuan)).map((store) => {
+            const sOrders = allOrders.filter((o: any) => Number(o.maQuan) === Number(store.maQuan) && isComp(o));
+            let tRev = 0, tOrd = 0;
+            const series = slots.map((sl) => {
+              let rev = 0, ords = 0;
+              for (const ord of sOrders) {
+                if (sl.match(new Date(ord.thoiGianDat))) { ords++; rev += Number(ord.tongTien || 0); }
+              }
+              tRev += rev; tOrd += ords;
+              return { slotKey: sl.key, label: sl.label, fullDate: sl.fullDate, revenue: rev, orders: ords };
+            });
+            return {
+              maQuan: store.maQuan, tenQuan: store.tenQuan, diaChi: store.diaChi || '', img: store.img || '',
+              trangThai: store.trangThai || 'mở cửa', totalRevenue: tRev, totalOrders: tOrd,
+              avgOrderValue: tOrd > 0 ? Math.round(tRev / tOrd) : 0, series,
+            };
+          });
+          setComparisonData({ timeSlots: slots.map(({ key, label, fullDate }) => ({ key, label, fullDate })), restaurants: stores });
+        } catch (_) {}
       })
       .finally(() => {
         setLoading(false);

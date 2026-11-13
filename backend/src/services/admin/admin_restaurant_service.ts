@@ -63,8 +63,8 @@ export class AdminRestaurantService {
     const store = await this.storeRepo.findOne({ where: { maQuan } });
     if (!store) throw new Error('Không tìm thấy nhà hàng');
 
-    const foods = await this.foodRepo.find({ where: { maQuan }, order: { maMonAn: 'DESC' } });
-    const orders = await this.orderRepo.find({ where: { maQuan }, order: { thoiGianDat: 'DESC' } });
+    const foods = await this.foodRepo.find({ where: { maQuan }, order: { maMonAn: 'DESC' } }).catch(() => []);
+    const orders = await this.orderRepo.find({ where: { maQuan }, order: { thoiGianDat: 'DESC' } }).catch(() => []);
 
     const isCompleted = (ord: DonHangModel) => {
       const st = (ord.trangThai || '').toUpperCase();
@@ -417,14 +417,22 @@ export class AdminRestaurantService {
       restaurantIds = topStores.map((s) => s.maQuan);
     }
 
+    if (!restaurantIds || restaurantIds.length === 0) {
+      return {
+        timeSlots: [],
+        restaurants: [],
+        timeframe,
+      };
+    }
+
     const stores = await this.storeRepo.find({
       where: { maQuan: In(restaurantIds) },
-    });
+    }).catch(() => []);
 
     const orders = await this.orderRepo.find({
       where: { maQuan: In(restaurantIds) },
       order: { thoiGianDat: 'ASC' },
-    });
+    }).catch(() => []);
 
     const isCompleted = (ord: DonHangModel) => {
       const st = (ord.trangThai || '').toUpperCase();
