@@ -34,12 +34,15 @@
   padding: 0;
 }
 
-body {
+html, body, #root {
   font-family: var(--font-sans);
   background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 button {
@@ -57,14 +60,15 @@ input, select, textarea {
 /* App Layout */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
 }
 
 .sidebar {
   width: 260px;
-  height: 100vh;
-  position: sticky;
-  top: 0;
+  height: 100%;
   background-color: var(--bg-sidebar);
   color: #f8fafc;
   display: flex;
@@ -72,6 +76,7 @@ input, select, textarea {
   flex-shrink: 0;
   transition: all 0.2s ease;
   z-index: 100;
+  overflow: hidden;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -88,6 +93,7 @@ input, select, textarea {
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--border-dark);
+  flex-shrink: 0;
 }
 
 .sidebar-brand {
@@ -144,13 +150,16 @@ input, select, textarea {
 .sidebar-footer {
   padding: 16px;
   border-top: 1px solid var(--border-dark);
+  flex-shrink: 0;
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-width: 0;
+  overflow: hidden;
 }
 
 .top-navbar {
@@ -161,12 +170,16 @@ input, select, textarea {
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
+  flex-shrink: 0;
+  z-index: 50;
 }
 
 .page-container {
   padding: 28px;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Page Headers & Grids */
@@ -458,3 +471,231 @@ input, select, textarea {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ==========================================================
+   MOBILE-FIRST RESPONSIVE UTILITIES & BREAKPOINTS (sm/md/lg)
+   ========================================================== */
+
+/* Touch Target Standards */
+.btn {
+  min-height: 40px;
+}
+
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive Table Container */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 620px;
+}
+
+/* Responsive grid utilities */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.restaurant-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .restaurant-metric-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+}
+
+/* Mobile Screens (< 768px) */
+@media (max-width: 767px) {
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea, .form-control {
+    font-size: 16px !important;
+  }
+
+  /* Buttons & touch targets */
+  .btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .btn-sm {
+    min-height: 38px;
+    padding: 6px 12px;
+  }
+
+  /* Off-canvas Mobile Drawer Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -290px;
+    width: 280px;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1050;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* Top Navbar */
+  .top-navbar {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex !important;
+  }
+
+  .mobile-close-btn {
+    display: inline-flex !important;
+  }
+
+  .header-system-title {
+    display: none !important;
+  }
+
+  .header-user-info {
+    display: none !important;
+  }
+
+  /* Page Container */
+  .page-container {
+    padding: 14px 12px;
+    overflow-x: hidden;
+  }
+
+  /* Page Header */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Metrics Grid */
+  .grid-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .metric-card {
+    padding: 12px;
+  }
+
+  .metric-value {
+    font-size: 18px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+  }
+
+  .metric-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Search & Filters */
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .search-input-group {
+    width: 100% !important;
+  }
+
+  /* Modal on Mobile */
+  .modal-backdrop {
+    padding: 6px;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-height: 94vh;
+    max-height: 94dvh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-body {
+    padding: 16px 14px;
+  }
+
+  .modal-footer {
+    padding: 12px 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Tablet Screens (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .page-container {
+    padding: 20px 16px;
+  }
+  .grid-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+

@@ -8,7 +8,7 @@ import { UserFormModal } from './users/UserFormModal';
 import { UserLockModal } from './users/UserLockModal';
 import { parseCCCDImage, formatDateVN, toISODate } from '../../utils/ocrService';
 import { getImageUrl, handleImageError, isValidImageUrl } from '../../utils/imageUtils';
-import { Search, Plus, Eye, Edit, Lock, Unlock, Key, Clock, Users, User, Store } from 'lucide-react';
+import { Search, Plus, Edit, Lock, Unlock, Key, Clock, Users, User, Store } from 'lucide-react';
 
 export const AdminUsers: React.FC = () => {
   const [data, setData] = useState<any>({ items: [], total: 0, totalPages: 1 });
@@ -601,10 +601,6 @@ export const AdminUsers: React.FC = () => {
                   <td>{formatLockStatus(u)}</td>
                   <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-outline btn-sm" title="Xem Chi Tiết" onClick={() => handleOpenDetail(u)}>
-                        <Eye size={14} />
-                      </button>
-
                       <button className="btn btn-outline btn-sm" title="Chỉnh Sửa Thông Tin" onClick={() => handleOpenEdit(u)}>
                         <Edit size={14} />
                       </button>

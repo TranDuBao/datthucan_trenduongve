@@ -6,6 +6,7 @@ interface FormData {
   soPhienBan: string;
   tieuDe: string;
   noiDung: string;
+  trangThai: string;
 }
 
 interface LegalDocFormModalProps {
@@ -33,7 +34,7 @@ export const LegalDocFormModal: React.FC<LegalDocFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editingDocId ? `Chỉnh Sửa Bản Nháp v${formData.soPhienBan}` : 'Tạo Bản Nháp Điều Khoản / Chính Sách'}
+      title={editingDocId ? `Chỉnh Sửa Điều Khoản / Chính Sách (v${formData.soPhienBan})` : 'Tạo Mới Điều Khoản / Chính Sách'}
       maxWidth="760px"
     >
       <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -53,13 +54,12 @@ export const LegalDocFormModal: React.FC<LegalDocFormModalProps> = ({
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
               Loại tài liệu *
             </label>
             <select
-              disabled={!!editingDocId}
               value={formData.loaiTaiLieu}
               onChange={(e) => setFormData({ ...formData, loaiTaiLieu: e.target.value })}
               style={{
@@ -68,7 +68,7 @@ export const LegalDocFormModal: React.FC<LegalDocFormModalProps> = ({
                 borderRadius: '8px',
                 border: '1px solid #cbd5e1',
                 fontSize: '13px',
-                backgroundColor: editingDocId ? '#f1f5f9' : '#ffffff',
+                backgroundColor: '#ffffff',
                 color: '#0f172a',
               }}
             >
@@ -96,6 +96,29 @@ export const LegalDocFormModal: React.FC<LegalDocFormModalProps> = ({
                 color: '#0f172a',
               }}
             />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+              Trạng thái *
+            </label>
+            <select
+              value={formData.trangThai || 'NHAP'}
+              onChange={(e) => setFormData({ ...formData, trangThai: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                backgroundColor: '#ffffff',
+                color: '#0f172a',
+              }}
+            >
+              <option value="NHAP">Bản nháp</option>
+              <option value="DANG_HIEU_LUC">Đang hiệu lực (Áp dụng ngay)</option>
+              <option value="DA_LUU_TRU">Đã lưu trữ</option>
+            </select>
           </div>
         </div>
 
@@ -181,7 +204,7 @@ export const LegalDocFormModal: React.FC<LegalDocFormModalProps> = ({
               boxShadow: '0 2px 8px rgba(252, 96, 17, 0.25)',
             }}
           >
-            {saving ? 'Đang lưu...' : editingDocId ? 'Cập Nhật Bản Nháp' : 'Lưu Bản Nháp'}
+            {saving ? 'Đang lưu...' : editingDocId ? 'Lưu Thay Đổi' : 'Lưu Tài Liệu'}
           </button>
         </div>
       </form>

@@ -133,12 +133,12 @@ export const LegalDocDeleteModal: React.FC<DeleteModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Xác Nhận Xóa Bản Nháp"
+      title="Xác Nhận Xóa Tài Liệu"
       maxWidth="480px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6 }}>
-          Bạn có chắc chắn muốn xóa bản nháp <strong>v{target?.soPhienBan}</strong>: "{target?.tieuDe}"? Hành động này không thể hoàn tác.
+          Bạn có chắc chắn muốn xóa tài liệu <strong>v{target?.soPhienBan}</strong>: "{target?.tieuDe}"? Hành động này không thể hoàn tác.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>

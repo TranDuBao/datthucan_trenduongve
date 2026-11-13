@@ -8,6 +8,7 @@ import { ImageCropUpload } from '../../../components/ImageCropUpload';
 import { formatDateVN } from '../../../utils/ocrService';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../../utils/imageUtils';
 import { getSocket, joinAdminRoom } from '../../../api/socketClient';
+import { RestaurantRevenueChart } from './RestaurantRevenueChart';
 
 interface RestaurantDetailViewProps {
   restaurantId: number;
@@ -294,6 +295,8 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
           padding: '12px 18px',
           borderRadius: '12px',
           border: '1px solid #e2e8f0',
+          flexWrap: 'wrap',
+          gap: '12px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -334,7 +337,7 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
       </div>
 
       {/* 4 Clean Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+      <div className="restaurant-metric-grid">
         {/* Metric 1 */}
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -379,43 +382,15 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Revenue & Orders Visual Chart Box */}
-      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <BarChart3 size={16} color="#fc6011" /> Biểu Đồ Doanh Thu 7 Ngày Gần Nhất
-          </div>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>Đơn vị: VNĐ</span>
-        </div>
-
-        {/* SVG/CSS Clean Bar Chart */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '140px', gap: '12px', padding: '10px 10px 0 10px', background: '#f8fafc', borderRadius: '8px' }}>
-          {chartData.map((d: any, idx: number) => {
-            const heightPercent = maxChartRev > 0 ? Math.max((d.revenue / maxChartRev) * 100, 8) : 8;
-            return (
-              <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: d.revenue > 0 ? '#10b981' : '#94a3b8', marginBottom: '4px' }}>
-                  {d.revenue > 0 ? `${(d.revenue / 1000).toFixed(0)}k` : '0đ'}
-                </div>
-                <div
-                  title={`${d.fullDate}: ${formatVND(d.revenue)} (${d.ordersCount} đơn)`}
-                  style={{
-                    width: '60%',
-                    maxWidth: '36px',
-                    height: `${heightPercent}%`,
-                    background: d.revenue > 0 ? 'linear-gradient(180deg, #fc6011 0%, #f97316 100%)' : '#cbd5e1',
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'all 0.3s ease',
-                  }}
-                />
-                <div style={{ fontSize: '11px', color: '#475569', marginTop: '6px', fontWeight: 600 }}>
-                  {d.date}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Revenue & Orders Interactive Chart Box */}
+      <RestaurantRevenueChart
+        restaurantId={restaurantId}
+        revenueTrend={detailData?.revenueTrend}
+        chartDataFallback={chartData}
+        formatVND={formatVND}
+        allOrders={ordersList}
+        onViewOrdersTab={() => setActiveTab('orders')}
+      />
 
       {/* Main Tabs Container */}
       <div className="card-table" style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -483,90 +458,94 @@ export const RestaurantDetailView: React.FC<RestaurantDetailViewProps> = ({
             foodsList.length === 0 ? (
               <div className="empty-state">Chưa có món ăn nào trong thực đơn</div>
             ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
-                    <th>Mã Món</th>
-                    <th>Hình Ảnh</th>
-                    <th>Tên Món Ăn</th>
-                    <th>Giá Bán</th>
-                    <th>Số Lượng Phục Vụ</th>
-                    <th>Đánh Giá</th>
-                    <th>Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {foodsList.map((f: any, idx: number) => (
-                    <tr key={f.maMonAn}>
-                      <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>{idx + 1}</td>
-                      <td style={{ fontWeight: 700 }}>#{f.maMonAn}</td>
-                      <td>
-                        <img
-                          src={getImageUrl(f.img, DEFAULT_IMAGE_PLACEHOLDER)}
-                          alt={f.tenMonAn}
-                          onError={handleImageError}
-                          style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
-                        />
-                      </td>
-                      <td style={{ fontWeight: 700, color: '#0f172a' }}>{f.tenMonAn}</td>
-                      <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
-                      <td><span className="badge badge-info">{f.soLuongMon || 100} phần</span></td>
-                      <td>
-                        {Number(f.soLuotDanhGia) > 0 && Number(f.diemDanhGiaTB) > 0 && !f.chuaCoDanhGia ? (
-                          <>
-                            <Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />
-                            <span style={{ fontWeight: 600 }}>{Number(f.diemDanhGiaTB).toFixed(1)}</span>
-                          </>
-                        ) : (
-                          <span style={{ color: '#94a3b8', fontSize: '13px' }}>Chưa có</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-outline btn-sm"
-                          onClick={() => handleOpenEditFood(f)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}
-                        >
-                          <Edit2 size={13} /> Sửa
-                        </button>
-                      </td>
+              <div className="table-responsive">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
+                      <th>Mã Món</th>
+                      <th>Hình Ảnh</th>
+                      <th>Tên Món Ăn</th>
+                      <th>Giá Bán</th>
+                      <th>Số Lượng Phục Vụ</th>
+                      <th>Đánh Giá</th>
+                      <th>Thao Tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {foodsList.map((f: any, idx: number) => (
+                      <tr key={f.maMonAn}>
+                        <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>{idx + 1}</td>
+                        <td style={{ fontWeight: 700 }}>#{f.maMonAn}</td>
+                        <td>
+                          <img
+                            src={getImageUrl(f.img, DEFAULT_IMAGE_PLACEHOLDER)}
+                            alt={f.tenMonAn}
+                            onError={handleImageError}
+                            style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }}
+                          />
+                        </td>
+                        <td style={{ fontWeight: 700, color: '#0f172a' }}>{f.tenMonAn}</td>
+                        <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
+                        <td><span className="badge badge-info">{f.soLuongMon || 100} phần</span></td>
+                        <td>
+                          {Number(f.soLuotDanhGia) > 0 && Number(f.diemDanhGiaTB) > 0 && !f.chuaCoDanhGia ? (
+                            <>
+                              <Star size={13} style={{ display: 'inline-block', verticalAlign: '-1px', color: '#f59e0b', fill: '#f59e0b', marginRight: '4px' }} />
+                              <span style={{ fontWeight: 600 }}>{Number(f.diemDanhGiaTB).toFixed(1)}</span>
+                            </>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontSize: '13px' }}>Chưa có</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => handleOpenEditFood(f)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}
+                          >
+                            <Edit2 size={13} /> Sửa
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )
           ) : activeTab === 'orders' ? (
             ordersList.length === 0 ? (
               <div className="empty-state">Chưa có đơn hàng nào phát sinh</div>
             ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
-                    <th>Mã Đơn</th>
-                    <th>Khách Hàng</th>
-                    <th>Tổng Tiền</th>
-                    <th>Thời Gian Đặt</th>
-                    <th>Trạng Thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ordersList.map((ord: any, idx: number) => (
-                    <tr key={ord.maDonHang}>
-                      <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>{idx + 1}</td>
-                      <td style={{ fontWeight: 700 }}>#{ord.maDonHang}</td>
-                      <td>{ord.tenKhachHang || `Khách #${ord.maKhachHang}`}</td>
-                      <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(ord.tongTien)}</td>
-                      <td>{new Date(ord.thoiGianDat).toLocaleString('vi-VN')}</td>
-                      <td><StatusBadge status={ord.trangThai} /></td>
+              <div className="table-responsive">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
+                      <th>Mã Đơn</th>
+                      <th>Khách Hàng</th>
+                      <th>Tổng Tiền</th>
+                      <th>Thời Gian Đặt</th>
+                      <th>Trạng Thái</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {ordersList.map((ord: any, idx: number) => (
+                      <tr key={ord.maDonHang}>
+                        <td style={{ textAlign: 'center', fontWeight: 600, color: '#64748b' }}>{idx + 1}</td>
+                        <td style={{ fontWeight: 700 }}>#{ord.maDonHang}</td>
+                        <td>{ord.tenKhachHang || `Khách #${ord.maKhachHang}`}</td>
+                        <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(ord.tongTien)}</td>
+                        <td>{new Date(ord.thoiGianDat).toLocaleString('vi-VN')}</td>
+                        <td><StatusBadge status={ord.trangThai} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="form-grid-2">
               <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <h4 style={{ margin: '0 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
                   <User size={16} color="#fc6011" /> Thông Tin Chủ Sở Hữu

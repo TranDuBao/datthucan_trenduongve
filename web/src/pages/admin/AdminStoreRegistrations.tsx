@@ -195,15 +195,18 @@ export const AdminStoreRegistrations: React.FC = () => {
       const res = await apiFetch<any>(`/admin/store-registrations/${selectedReg.maDon}/approve`, {
         method: 'POST',
       });
-      if (res && res.success) {
+      if (res && (res.success || res.status === '1' || res.statusCode === 200)) {
         setApproveConfirmOpen(false);
         setDetailModalOpen(false);
+        setSelectedReg(null);
         setFeedback({ type: 'success', message: 'Duyệt đơn đăng ký thành công! Cửa hàng đã được tạo.' });
         fetchRegistrations();
       } else {
-        setFeedback({ type: 'error', message: res.message || 'Lỗi khi duyệt đơn' });
+        setApproveConfirmOpen(false);
+        setFeedback({ type: 'error', message: res?.message || 'Lỗi khi duyệt đơn' });
       }
     } catch (err: any) {
+      setApproveConfirmOpen(false);
       setFeedback({ type: 'error', message: err.message || 'Lỗi hệ thống khi duyệt đơn' });
     } finally {
       setActionLoading(false);
@@ -223,18 +226,21 @@ export const AdminStoreRegistrations: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({ lyDoTuChoi: rejectReason.trim() }),
       });
-      if (res && res.success) {
+      if (res && (res.success || res.status === '1' || res.statusCode === 200)) {
         setRejectModalOpen(false);
         setDetailModalOpen(false);
+        setSelectedReg(null);
         setRejectReason('');
         setRejectError('');
         setFeedback({ type: 'success', message: 'Đã từ chối đơn đăng ký thành công' });
         fetchRegistrations();
       } else {
-        setRejectError(res.message || 'Lỗi khi từ chối đơn');
+        setRejectModalOpen(false);
+        setFeedback({ type: 'error', message: res?.message || 'Lỗi khi từ chối đơn' });
       }
     } catch (err: any) {
-      setRejectError(err.message || 'Lỗi hệ thống khi từ chối đơn');
+      setRejectModalOpen(false);
+      setFeedback({ type: 'error', message: err.message || 'Lỗi hệ thống khi từ chối đơn' });
     } finally {
       setActionLoading(false);
       setTimeout(() => setFeedback(null), 5000);

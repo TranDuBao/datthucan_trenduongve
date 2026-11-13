@@ -371,7 +371,22 @@ export class StoreRegistrationService {
       });
 
       if (!store) {
+        // Query next available maquan to guarantee NOT NULL constraint is never violated
+        let nextMaQuan: number | undefined = undefined;
+        try {
+          const seqRes = await manager.query(`SELECT nextval('cuahang_maquan_seq') AS next_val`);
+          if (seqRes && seqRes[0] && seqRes[0].next_val) {
+            nextMaQuan = Number(seqRes[0].next_val);
+          }
+        } catch (_) {
+          const maxRes = await manager.query(`SELECT COALESCE(MAX(maquan), 0) + 1 AS next_val FROM cuahang`);
+          if (maxRes && maxRes[0] && maxRes[0].next_val) {
+            nextMaQuan = Number(maxRes[0].next_val);
+          }
+        }
+
         store = manager.create(CuaHangModel, {
+          maQuan: nextMaQuan,
           maTaiKhoan: reg.maTaiKhoan,
           tenQuan: reg.tenQuan,
           diaChi: reg.diaChi,
@@ -393,6 +408,10 @@ export class StoreRegistrationService {
           trangThai: 'mở cửa',
           img: (reg as any).img || null,
         });
+
+        if (nextMaQuan && !store.maQuan) {
+          store.maQuan = nextMaQuan;
+        }
       } else {
         store.tenQuan = reg.tenQuan;
         store.diaChi = reg.diaChi;
@@ -414,6 +433,11 @@ export class StoreRegistrationService {
       }
 
       createdStore = await manager.save(CuaHangModel, store);
+
+      // Sync sequence with highest maquan
+      await manager.query(`
+        SELECT setval('cuahang_maquan_seq', COALESCE((SELECT MAX(maquan) FROM cuahang), 0), true);
+      `).catch(() => {});
 
       // 3. Update registration status
       reg.trangThai = TrangThaiDonDangKy.DA_DUYET;

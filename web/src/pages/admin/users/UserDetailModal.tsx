@@ -229,7 +229,14 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           <div style={{ display: 'flex', gap: '12px', padding: '12px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0', marginBottom: '20px' }}>
             <div style={{ flex: 1, textAlign: 'center' }}>
               <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600 }}>TỔNG ĐƠN ĐÃ ĐẶT</div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#15803d' }}>{userDetailData.orderStats.totalOrders} đơn</div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: '#15803d' }}>
+                {userDetailData.orderStats.totalOrders || 0} đơn
+              </div>
+              {userDetailData.orderStats.cancelledOrders > 0 && (
+                <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '2px', fontWeight: 500 }}>
+                  ({userDetailData.orderStats.cancelledOrders} đơn đã hủy/chưa thanh toán)
+                </div>
+              )}
             </div>
             <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #cbd5e1' }}>
               <div style={{ fontSize: '11px', color: '#166534', fontWeight: 600 }}>TỔNG CHI TIÊU</div>

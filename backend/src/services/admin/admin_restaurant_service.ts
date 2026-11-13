@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../config/database';
+import { In } from 'typeorm';
 import { CuaHangModel } from '../../models/cua_hang_model';
 import { TaiKhoanModel } from '../../models/tai_khoan_model';
 import { KhachHangModel } from '../../models/khach_hang_model';
@@ -58,12 +59,29 @@ export class AdminRestaurantService {
     return await this.storeRepo.save(newStore);
   }
 
-  async getRestaurantDetail(maQuan: number) {
+  async getRestaurantDetail(maQuan: number, filters?: { singleDate?: string; fromDate?: string; toDate?: string }) {
     const store = await this.storeRepo.findOne({ where: { maQuan } });
     if (!store) throw new Error('Không tìm thấy nhà hàng');
 
     const foods = await this.foodRepo.find({ where: { maQuan }, order: { maMonAn: 'DESC' } });
     const orders = await this.orderRepo.find({ where: { maQuan }, order: { thoiGianDat: 'DESC' } });
+
+    const isCompleted = (ord: DonHangModel) => {
+      const st = (ord.trangThai || '').toUpperCase();
+      return (
+        st === 'HOAN_TAT' ||
+        st === 'DA_HOAN_TAT' ||
+        st === 'HOÀN TẤT' ||
+        st === 'COMPLETED' ||
+        st === 'HOAN_THANH' ||
+        st === 'đã hoàn thành' ||
+        st === 'ĐÃ HOÀN THÀNH' ||
+        st === 'DA_HOAN_THANH' ||
+        st === 'PICKED_UP' ||
+        st === 'PAID' ||
+        st === 'DA_THANH_TOAN'
+      ) && !['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st);
+    };
 
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -76,28 +94,25 @@ export class AdminRestaurantService {
     let completedOrders = 0;
 
     for (const ord of orders) {
-      const isCompleted =
-        ord.trangThai === 'COMPLETED' ||
-        ord.trangThai === 'HOAN_THANH' ||
-        ord.trangThai === 'đã hoàn thành' ||
-        ord.trangThai === 'ĐÃ HOÀN THÀNH' ||
-        ord.trangThai === 'PICKED_UP';
-      const amount = Number(ord.tongTien || 0);
-      const ordDate = new Date(ord.thoiGianDat);
+      if (isCompleted(ord)) {
+        const amount = Number(ord.tongTien || 0);
+        const ordDate = new Date(ord.thoiGianDat);
 
-      totalRevenue += amount;
-      if (isCompleted) completedOrders++;
+        totalRevenue += amount;
+        completedOrders++;
 
-      if (ordDate.toISOString().split('T')[0] === todayStr) {
-        todayRevenue += amount;
-      }
+        if (ordDate.toISOString().split('T')[0] === todayStr) {
+          todayRevenue += amount;
+        }
 
-      if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
-        monthRevenue += amount;
+        if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
+          monthRevenue += amount;
+        }
       }
     }
 
-    const chartData = [];
+    // Build 7-day trend (for backward compat and day tab)
+    const dayTrend = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -106,21 +121,181 @@ export class AdminRestaurantService {
 
       let dayRev = 0;
       let dayCount = 0;
+      const dayOrderIds: number[] = [];
 
       for (const ord of orders) {
+        if (!isCompleted(ord)) continue;
         const ordDate = new Date(ord.thoiGianDat);
         if (ordDate.toISOString().split('T')[0] === dayStr) {
           dayCount++;
           dayRev += Number(ord.tongTien || 0);
+          dayOrderIds.push(Number(ord.maDonHang));
         }
       }
 
-      chartData.push({
+      dayTrend.push({
         date: displayLabel,
+        label: displayLabel,
         fullDate: dayStr,
         revenue: dayRev,
         ordersCount: dayCount,
+        orders: dayCount,
+        orderIds: dayOrderIds,
       });
+    }
+
+    // Build 4-week trend
+    const weekTrend = [];
+    for (let i = 3; i >= 0; i--) {
+      const endDay = new Date(now);
+      endDay.setDate(now.getDate() - i * 7);
+      const startDay = new Date(endDay);
+      startDay.setDate(endDay.getDate() - 6);
+      startDay.setHours(0, 0, 0, 0);
+      endDay.setHours(23, 59, 59, 999);
+
+      let weekRev = 0;
+      let weekCount = 0;
+      const weekOrderIds: number[] = [];
+      for (const ord of orders) {
+        if (!isCompleted(ord)) continue;
+        const ordDate = new Date(ord.thoiGianDat);
+        if (ordDate >= startDay && ordDate <= endDay) {
+          weekCount++;
+          weekRev += Number(ord.tongTien || 0);
+          weekOrderIds.push(Number(ord.maDonHang));
+        }
+      }
+      weekTrend.push({
+        label: `Tuần ${4 - i}`,
+        fullDate: `${startDay.getDate()}/${startDay.getMonth() + 1} - ${endDay.getDate()}/${endDay.getMonth() + 1}`,
+        revenue: weekRev,
+        orders: weekCount,
+        ordersCount: weekCount,
+        orderIds: weekOrderIds,
+      });
+    }
+
+    // Build 12-month trend for the current year (T1 -> T12)
+    const monthTrend = [];
+    for (let m = 0; m < 12; m++) {
+      let mRev = 0;
+      let mCount = 0;
+      const monthOrderIds: number[] = [];
+      for (const ord of orders) {
+        if (!isCompleted(ord)) continue;
+        const ordDate = new Date(ord.thoiGianDat);
+        if (ordDate.getMonth() === m && ordDate.getFullYear() === currentYear) {
+          mCount++;
+          mRev += Number(ord.tongTien || 0);
+          monthOrderIds.push(Number(ord.maDonHang));
+        }
+      }
+      monthTrend.push({
+        label: `T${m + 1}`,
+        fullDate: `Tháng ${m + 1}/${currentYear}`,
+        revenue: mRev,
+        orders: mCount,
+        ordersCount: mCount,
+        orderIds: monthOrderIds,
+      });
+    }
+
+    // Build 5-year trend
+    const yearTrend = [];
+    for (let i = 4; i >= 0; i--) {
+      const y = now.getFullYear() - i;
+      let yRev = 0;
+      let yCount = 0;
+      const yearOrderIds: number[] = [];
+      for (const ord of orders) {
+        if (!isCompleted(ord)) continue;
+        const ordDate = new Date(ord.thoiGianDat);
+        if (ordDate.getFullYear() === y) {
+          yCount++;
+          yRev += Number(ord.tongTien || 0);
+          yearOrderIds.push(Number(ord.maDonHang));
+        }
+      }
+      yearTrend.push({
+        label: `${y}`,
+        fullDate: `Năm ${y}`,
+        revenue: yRev,
+        orders: yCount,
+        ordersCount: yCount,
+        orderIds: yearOrderIds,
+      });
+    }
+
+    // Custom trend if singleDate or fromDate/toDate is provided
+    let customTrend: any[] = [];
+    if (filters?.singleDate) {
+      const targetDate = filters.singleDate;
+      const hours = [
+        { label: '00h - 04h', start: 0, end: 4 },
+        { label: '04h - 08h', start: 4, end: 8 },
+        { label: '08h - 11h', start: 8, end: 11 },
+        { label: '11h - 14h', start: 11, end: 14 },
+        { label: '14h - 17h', start: 14, end: 17 },
+        { label: '17h - 20h', start: 17, end: 20 },
+        { label: '20h - 24h', start: 20, end: 24 },
+      ];
+      for (const h of hours) {
+        let rev = 0;
+        let count = 0;
+        const hourOrderIds: number[] = [];
+        for (const ord of orders) {
+          if (!isCompleted(ord)) continue;
+          const ordDate = new Date(ord.thoiGianDat);
+          const dateStr = ordDate.toISOString().split('T')[0];
+          const hour = ordDate.getHours();
+          if (dateStr === targetDate && hour >= h.start && hour < h.end) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            hourOrderIds.push(Number(ord.maDonHang));
+          }
+        }
+        customTrend.push({
+          label: h.label,
+          fullDate: targetDate,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: hourOrderIds,
+        });
+      }
+    } else if (filters?.fromDate && filters?.toDate) {
+      const start = new Date(filters.fromDate);
+      const end = new Date(filters.toDate);
+      const diffDays = Math.min(Math.max(Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1, 1), 60);
+
+      for (let i = 0; i < diffDays; i++) {
+        const cur = new Date(start);
+        cur.setDate(start.getDate() + i);
+        const curStr = cur.toISOString().split('T')[0];
+        const displayLabel = `${cur.getDate()}/${cur.getMonth() + 1}`;
+
+        let rev = 0;
+        let count = 0;
+        const rangeOrderIds: number[] = [];
+        for (const ord of orders) {
+          if (!isCompleted(ord)) continue;
+          const ordDate = new Date(ord.thoiGianDat);
+          if (ordDate.toISOString().split('T')[0] === curStr) {
+            count++;
+            rev += Number(ord.tongTien || 0);
+            rangeOrderIds.push(Number(ord.maDonHang));
+          }
+        }
+        customTrend.push({
+          label: displayLabel,
+          fullDate: curStr,
+          revenue: rev,
+          orders: count,
+          ordersCount: count,
+          orderIds: rangeOrderIds,
+        });
+      }
     }
 
     let linkedUser = null;
@@ -213,9 +388,209 @@ export class AdminRestaurantService {
         totalOrders: orders.length,
         completedOrders,
       },
-      chartData,
+      chartData: dayTrend,
+      revenueTrend: {
+        day: dayTrend,
+        week: weekTrend,
+        month: monthTrend,
+        year: yearTrend,
+        custom: customTrend.length > 0 ? customTrend : undefined,
+      },
+      customTrend: customTrend.length > 0 ? customTrend : undefined,
       foods: enrichedFoods,
       recentOrders: orders,
+    };
+  }
+
+  async getRestaurantComparison(
+    restaurantIds: number[],
+    timeframe: string = 'day',
+    singleDate?: string,
+    fromDate?: string,
+    toDate?: string
+  ) {
+    if (!restaurantIds || restaurantIds.length === 0) {
+      const topStores = await this.storeRepo.find({
+        where: { isDeleted: false },
+        take: 3,
+      });
+      restaurantIds = topStores.map((s) => s.maQuan);
+    }
+
+    const stores = await this.storeRepo.find({
+      where: { maQuan: In(restaurantIds) },
+    });
+
+    const orders = await this.orderRepo.find({
+      where: { maQuan: In(restaurantIds) },
+      order: { thoiGianDat: 'ASC' },
+    });
+
+    const isCompleted = (ord: DonHangModel) => {
+      const st = (ord.trangThai || '').toUpperCase();
+      return (
+        st === 'HOAN_TAT' ||
+        st === 'DA_HOAN_TAT' ||
+        st === 'HOÀN TẤT' ||
+        st === 'COMPLETED' ||
+        st === 'HOAN_THANH' ||
+        st === 'đã hoàn thành' ||
+        st === 'ĐÃ HOÀN THÀNH' ||
+        st === 'DA_HOAN_THANH' ||
+        st === 'PICKED_UP' ||
+        st === 'PAID' ||
+        st === 'DA_THANH_TOAN'
+      ) && !['DA_HUY', 'CANCELLED', 'THAT_BAI', 'CHO_THANH_TOAN', 'UNPAID'].includes(st);
+    };
+
+    interface Slot {
+      key: string;
+      label: string;
+      fullDate?: string;
+      matches: (date: Date) => boolean;
+    }
+
+    const slots: Slot[] = [];
+    const now = new Date();
+
+    if (singleDate) {
+      const targetDateStr = singleDate;
+      const hours = [
+        { label: '00h - 04h', start: 0, end: 4 },
+        { label: '04h - 08h', start: 4, end: 8 },
+        { label: '08h - 11h', start: 8, end: 11 },
+        { label: '11h - 14h', start: 11, end: 14 },
+        { label: '14h - 17h', start: 14, end: 17 },
+        { label: '17h - 20h', start: 17, end: 20 },
+        { label: '20h - 24h', start: 20, end: 24 },
+      ];
+      for (const h of hours) {
+        slots.push({
+          key: h.label,
+          label: h.label,
+          fullDate: targetDateStr,
+          matches: (d: Date) => {
+            const dateStr = d.toISOString().split('T')[0];
+            const hour = d.getHours();
+            return dateStr === targetDateStr && hour >= h.start && hour < h.end;
+          },
+        });
+      }
+    } else if (fromDate && toDate) {
+      const start = new Date(fromDate);
+      const end = new Date(toDate);
+      const diffDays = Math.min(Math.max(Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1, 1), 60);
+
+      for (let i = 0; i < diffDays; i++) {
+        const cur = new Date(start);
+        cur.setDate(start.getDate() + i);
+        const curStr = cur.toISOString().split('T')[0];
+        const displayLabel = `${cur.getDate()}/${cur.getMonth() + 1}`;
+        slots.push({
+          key: curStr,
+          label: displayLabel,
+          fullDate: curStr,
+          matches: (d: Date) => d.toISOString().split('T')[0] === curStr,
+        });
+      }
+    } else if (timeframe === 'week') {
+      for (let i = 3; i >= 0; i--) {
+        const endDay = new Date(now);
+        endDay.setDate(now.getDate() - i * 7);
+        const startDay = new Date(endDay);
+        startDay.setDate(endDay.getDate() - 6);
+        startDay.setHours(0, 0, 0, 0);
+        endDay.setHours(23, 59, 59, 999);
+
+        slots.push({
+          key: `week_${i}`,
+          label: `Tuần ${4 - i}`,
+          fullDate: `${startDay.getDate()}/${startDay.getMonth() + 1} - ${endDay.getDate()}/${endDay.getMonth() + 1}`,
+          matches: (d: Date) => d >= startDay && d <= endDay,
+        });
+      }
+    } else if (timeframe === 'month') {
+      const currentYear = now.getFullYear();
+      for (let m = 0; m < 12; m++) {
+        slots.push({
+          key: `m_${currentYear}_${m}`,
+          label: `T${m + 1}`,
+          fullDate: `Tháng ${m + 1}/${currentYear}`,
+          matches: (date: Date) => date.getMonth() === m && date.getFullYear() === currentYear,
+        });
+      }
+    } else if (timeframe === 'year') {
+      for (let i = 4; i >= 0; i--) {
+        const y = now.getFullYear() - i;
+        slots.push({
+          key: `year_${y}`,
+          label: `${y}`,
+          fullDate: `Năm ${y}`,
+          matches: (date: Date) => date.getFullYear() === y,
+        });
+      }
+    } else {
+      // Default: 'day' (7 days)
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dayStr = d.toISOString().split('T')[0];
+        const displayLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+        slots.push({
+          key: dayStr,
+          label: displayLabel,
+          fullDate: dayStr,
+          matches: (date: Date) => date.toISOString().split('T')[0] === dayStr,
+        });
+      }
+    }
+
+    const comparisonResults = stores.map((store) => {
+      const storeOrders = orders.filter((o) => o.maQuan === store.maQuan && isCompleted(o));
+      let totalRevenue = 0;
+      let totalOrders = 0;
+
+      const series = slots.map((slot) => {
+        let slotRevenue = 0;
+        let slotOrders = 0;
+
+        for (const ord of storeOrders) {
+          const ordDate = new Date(ord.thoiGianDat);
+          if (slot.matches(ordDate)) {
+            slotOrders++;
+            slotRevenue += Number(ord.tongTien || 0);
+          }
+        }
+
+        totalRevenue += slotRevenue;
+        totalOrders += slotOrders;
+
+        return {
+          slotKey: slot.key,
+          label: slot.label,
+          fullDate: slot.fullDate,
+          revenue: slotRevenue,
+          orders: slotOrders,
+        };
+      });
+
+      return {
+        maQuan: store.maQuan,
+        tenQuan: store.tenQuan,
+        diaChi: store.diaChi,
+        img: store.img,
+        trangThai: store.trangThai,
+        totalRevenue,
+        totalOrders,
+        avgOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+        series,
+      };
+    });
+
+    return {
+      timeSlots: slots.map((s) => ({ key: s.key, label: s.label, fullDate: s.fullDate })),
+      restaurants: comparisonResults,
+      timeframe,
     };
   }
 

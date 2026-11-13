@@ -32,8 +32,13 @@ export class AdminService {
   }
 
   // Dashboard Stats
-  async getDashboardStats(page: number = 1, limit: number = 10, ordersOnly: boolean = false) {
-    return this.dashboardService.getDashboardStats(page, limit, ordersOnly);
+  async getDashboardStats(
+    page: number = 1,
+    limit: number = 10,
+    ordersOnly: boolean = false,
+    filters?: { singleDate?: string; fromDate?: string; toDate?: string }
+  ) {
+    return this.dashboardService.getDashboardStats(page, limit, ordersOnly, filters);
   }
 
   // Users
@@ -78,8 +83,18 @@ export class AdminService {
     return this.restaurantService.createRestaurant(data);
   }
 
-  async getRestaurantDetail(maQuan: number) {
-    return this.restaurantService.getRestaurantDetail(maQuan);
+  async getRestaurantDetail(maQuan: number, filters?: { singleDate?: string; fromDate?: string; toDate?: string }) {
+    return this.restaurantService.getRestaurantDetail(maQuan, filters);
+  }
+
+  async getRestaurantComparison(
+    restaurantIds: number[],
+    timeframe: string = 'day',
+    singleDate?: string,
+    fromDate?: string,
+    toDate?: string
+  ) {
+    return this.restaurantService.getRestaurantComparison(restaurantIds, timeframe, singleDate, fromDate, toDate);
   }
 
   async updateRestaurant(maQuan: number, data: Partial<CuaHangModel>) {

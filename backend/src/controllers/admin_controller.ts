@@ -20,7 +20,15 @@ export class AdminController {
 
       const ordersOnly = req.query.ordersOnly === 'true' || req.query.ordersOnly === '1';
 
-      const stats = await this.adminService.getDashboardStats(page, limit, ordersOnly);
+      const singleDate = req.query.singleDate ? String(req.query.singleDate) : undefined;
+      const fromDate = req.query.fromDate ? String(req.query.fromDate) : undefined;
+      const toDate = req.query.toDate ? String(req.query.toDate) : undefined;
+
+      const stats = await this.adminService.getDashboardStats(page, limit, ordersOnly, {
+        singleDate,
+        fromDate,
+        toDate,
+      });
       return res.status(200).json({
         statusCode: 200,
         status: '1',
@@ -133,10 +141,34 @@ export class AdminController {
   getRestaurantDetail = async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const result = await this.adminService.getRestaurantDetail(id);
+      const singleDate = req.query.singleDate as string | undefined;
+      const fromDate = req.query.fromDate as string | undefined;
+      const toDate = req.query.toDate as string | undefined;
+      const result = await this.adminService.getRestaurantDetail(id, { singleDate, fromDate, toDate });
       return res.status(200).json({ statusCode: 200, status: '1', data: result });
     } catch (error: any) {
       return res.status(404).json({ statusCode: 404, message: error.message });
+    }
+  };
+
+  getRestaurantComparison = async (req: Request, res: Response) => {
+    try {
+      const rawIds = req.query.ids as string | undefined;
+      const ids: number[] = rawIds
+        ? rawIds
+            .split(',')
+            .map((id) => Number(id.trim()))
+            .filter((id) => !isNaN(id) && id > 0)
+        : [];
+      const timeframe = (req.query.timeframe as string) || 'day';
+      const singleDate = req.query.singleDate as string | undefined;
+      const fromDate = req.query.fromDate as string | undefined;
+      const toDate = req.query.toDate as string | undefined;
+
+      const result = await this.adminService.getRestaurantComparison(ids, timeframe, singleDate, fromDate, toDate);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
     }
   };
 

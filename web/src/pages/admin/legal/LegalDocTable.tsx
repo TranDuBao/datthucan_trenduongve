@@ -413,25 +413,23 @@ export const LegalDocTable: React.FC<LegalDocTableProps> = ({
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {isDraft && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(doc);
-                              }}
-                              title="Chỉnh sửa bản nháp"
-                              style={{
-                                padding: '6px',
-                                borderRadius: '6px',
-                                border: '1px solid #fed7aa',
-                                backgroundColor: '#fff7ed',
-                                color: '#ea580c',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <Edit size={15} />
-                            </button>
-                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(doc);
+                            }}
+                            title="Chỉnh sửa tài liệu"
+                            style={{
+                              padding: '6px',
+                              borderRadius: '6px',
+                              border: '1px solid #fed7aa',
+                              backgroundColor: '#fff7ed',
+                              color: '#ea580c',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Edit size={15} />
+                          </button>
 
                           <button
                             onClick={(e) => {
@@ -451,13 +449,13 @@ export const LegalDocTable: React.FC<LegalDocTableProps> = ({
                             <Copy size={15} />
                           </button>
 
-                          {isDraft && (
+                          {doc.trangThai !== 'DANG_HIEU_LUC' && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onPublish(doc);
                               }}
-                              title="Xuất bản để có hiệu lực"
+                              title="Xuất bản để có hiệu lực ngay"
                               style={{
                                 padding: '6px',
                                 borderRadius: '6px',
@@ -471,25 +469,23 @@ export const LegalDocTable: React.FC<LegalDocTableProps> = ({
                             </button>
                           )}
 
-                          {isDraft && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(doc);
-                              }}
-                              title="Xóa bản nháp này"
-                              style={{
-                                padding: '6px',
-                                borderRadius: '6px',
-                                border: '1px solid #fecaca',
-                                backgroundColor: '#fef2f2',
-                                color: '#dc2626',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(doc);
+                            }}
+                            title="Xóa tài liệu này"
+                            style={{
+                              padding: '6px',
+                              borderRadius: '6px',
+                              border: '1px solid #fecaca',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
                       </td>
                     </tr>

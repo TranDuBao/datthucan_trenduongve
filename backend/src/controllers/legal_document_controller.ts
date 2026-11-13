@@ -104,16 +104,16 @@ export class LegalDocumentController {
       return res.status(200).json({
         statusCode: 200,
         status: '1',
-        message: 'Cập nhật bản nháp thành công',
+        message: 'Cập nhật tài liệu thành công',
         data: result,
       });
     } catch (error: any) {
-      return res.status(400).json({ statusCode: 400, message: error.message || 'Lỗi cập nhật bản nháp' });
+      return res.status(400).json({ statusCode: 400, message: error.message || 'Lỗi cập nhật tài liệu' });
     }
   };
 
   /**
-   * Admin: Delete draft
+   * Admin: Delete document
    */
   deleteDraft = async (req: Request, res: Response) => {
     try {
@@ -131,7 +131,7 @@ export class LegalDocumentController {
         message: result.message,
       });
     } catch (error: any) {
-      return res.status(400).json({ statusCode: 400, message: error.message || 'Lỗi xóa bản nháp' });
+      return res.status(400).json({ statusCode: 400, message: error.message || 'Lỗi xóa tài liệu' });
     }
   };
 

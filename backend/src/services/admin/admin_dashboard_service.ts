@@ -161,7 +161,12 @@ export class AdminDashboardService {
     return { recentOrders, recentOrdersPagination };
   }
 
-  async getDashboardStats(page: number = 1, limit: number = 10, ordersOnly: boolean = false) {
+  async getDashboardStats(
+    page: number = 1,
+    limit: number = 10,
+    ordersOnly: boolean = false,
+    filters?: { singleDate?: string; fromDate?: string; toDate?: string }
+  ) {
     const { recentOrders, recentOrdersPagination } = await this.getPaginatedRecentOrders(page, limit);
 
     if (ordersOnly) {
@@ -323,12 +328,9 @@ export class AdminDashboardService {
     }
 
     const monthTrend = [];
-    for (let m = 5; m >= 0; m--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
-      const yearVal = d.getFullYear();
-      const monthVal = d.getMonth();
-      const displayLabel = `Thg ${monthVal + 1}`;
-
+    const currentYear = now.getFullYear();
+    for (let m = 0; m < 12; m++) {
+      const displayLabel = `T${m + 1}`;
       let rev = 0;
       let count = 0;
       for (const ord of allOrders) {
@@ -336,14 +338,19 @@ export class AdminDashboardService {
         const rawAmt = ord.tongTien ?? (ord as any).tongtien ?? 0;
         const amount = parseFloat(String(rawAmt).replace(/[^0-9.]/g, '')) || 0;
         const st = String(ord.trangThai || (ord as any).trangthai || '');
-        if (ordDate.getFullYear() === yearVal && ordDate.getMonth() === monthVal) {
+        if (ordDate.getFullYear() === currentYear && ordDate.getMonth() === m) {
           count++;
           if (checkIsCompleted(st)) {
             rev += amount;
           }
         }
       }
-      monthTrend.push({ label: displayLabel, revenue: rev, orders: count });
+      monthTrend.push({
+        label: displayLabel,
+        fullDate: `Tháng ${m + 1}/${currentYear}`,
+        revenue: rev,
+        orders: count,
+      });
     }
 
     const yearTrend = [];
@@ -366,7 +373,116 @@ export class AdminDashboardService {
       yearTrend.push({ label: `Năm ${targetYear}`, revenue: rev, orders: count });
     }
 
-    let growthPercent = 12.5;
+    // Tính toán tỷ lệ tăng trưởng doanh thu thực tế so với kỳ 30 ngày trước đó
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    let currentPeriodRev = 0;
+    let previousPeriodRev = 0;
+
+    for (const ord of allOrders) {
+      const ordDate = new Date(ord.thoiGianDat || (ord as any).thoigiandat || Date.now());
+      const rawAmt = ord.tongTien ?? (ord as any).tongtien ?? 0;
+      const amount = parseFloat(String(rawAmt).replace(/[^0-9.]/g, '')) || 0;
+      const st = String(ord.trangThai || (ord as any).trangthai || '');
+      if (checkIsCompleted(st)) {
+        if (ordDate >= thirtyDaysAgo) {
+          currentPeriodRev += amount;
+        } else if (ordDate >= sixtyDaysAgo && ordDate < thirtyDaysAgo) {
+          previousPeriodRev += amount;
+        }
+      }
+    }
+
+    let growthPercent = 0;
+    if (previousPeriodRev > 0) {
+      growthPercent = Number((((currentPeriodRev - previousPeriodRev) / previousPeriodRev) * 100).toFixed(1));
+    } else if (currentPeriodRev > 0) {
+      growthPercent = 100;
+    } else {
+      growthPercent = 0;
+    }
+
+    // Biểu đồ tùy chỉnh theo 1 ngày cụ thể hoặc khoảng ngày
+    let customTrend: any[] = [];
+    if (filters?.singleDate) {
+      const targetDay = filters.singleDate.trim();
+      const slots = [
+        { label: '00h - 04h', startH: 0, endH: 3 },
+        { label: '04h - 08h', startH: 4, endH: 7 },
+        { label: '08h - 11h', startH: 8, endH: 10 },
+        { label: '11h - 14h', startH: 11, endH: 13 },
+        { label: '14h - 17h', startH: 14, endH: 16 },
+        { label: '17h - 20h', startH: 17, endH: 19 },
+        { label: '20h - 24h', startH: 20, endH: 23 },
+      ];
+
+      for (const slot of slots) {
+        let rev = 0;
+        let count = 0;
+        for (const ord of allOrders) {
+          const ordDate = new Date(ord.thoiGianDat || (ord as any).thoigiandat || Date.now());
+          const ordDay = ordDate.toISOString().split('T')[0];
+          if (ordDay === targetDay) {
+            const h = ordDate.getHours();
+            if (h >= slot.startH && h <= slot.endH) {
+              count++;
+              const rawAmt = ord.tongTien ?? (ord as any).tongtien ?? 0;
+              const amount = parseFloat(String(rawAmt).replace(/[^0-9.]/g, '')) || 0;
+              const st = String(ord.trangThai || (ord as any).trangthai || '');
+              if (checkIsCompleted(st)) {
+                rev += amount;
+              }
+            }
+          }
+        }
+        customTrend.push({
+          label: slot.label,
+          fullDate: `${slot.label} • ${targetDay}`,
+          revenue: rev,
+          orders: count,
+        });
+      }
+    } else if (filters?.fromDate && filters?.toDate) {
+      const startD = new Date(filters.fromDate);
+      const endD = new Date(filters.toDate);
+      if (!isNaN(startD.getTime()) && !isNaN(endD.getTime()) && startD <= endD) {
+        const cur = new Date(startD);
+        let loopLimit = 0;
+        while (cur <= endD && loopLimit < 60) {
+          const dayStr = cur.toISOString().split('T')[0];
+          const displayLabel = `${cur.getDate()}/${cur.getMonth() + 1}`;
+
+          let rev = 0;
+          let count = 0;
+          for (const ord of allOrders) {
+            const ordDate = new Date(ord.thoiGianDat || (ord as any).thoigiandat || Date.now());
+            const ordDayStr = ordDate.toISOString().split('T')[0];
+            if (ordDayStr === dayStr) {
+              count++;
+              const rawAmt = ord.tongTien ?? (ord as any).tongtien ?? 0;
+              const amount = parseFloat(String(rawAmt).replace(/[^0-9.]/g, '')) || 0;
+              const st = String(ord.trangThai || (ord as any).trangthai || '');
+              if (checkIsCompleted(st)) {
+                rev += amount;
+              }
+            }
+          }
+
+          customTrend.push({
+            label: displayLabel,
+            fullDate: dayStr,
+            revenue: rev,
+            orders: count,
+          });
+
+          cur.setDate(cur.getDate() + 1);
+          loopLimit++;
+        }
+      }
+    }
 
     const topRestaurants = await this.storeRepo.find({ take: 100, order: { maQuan: 'DESC' } });
 
@@ -391,6 +507,7 @@ export class AdminDashboardService {
         week: weekTrend,
         month: monthTrend,
         year: yearTrend,
+        custom: customTrend,
       },
       recentOrders,
       recentOrdersPagination,

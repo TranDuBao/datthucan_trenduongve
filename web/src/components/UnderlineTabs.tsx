@@ -41,6 +41,7 @@ export const UnderlineTabs = <T extends string = string>({
           display: 'flex',
           gap: '8px',
           overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
           maxWidth: '100%',
           scrollbarWidth: 'none',
         }}
@@ -53,9 +54,11 @@ export const UnderlineTabs = <T extends string = string>({
               type="button"
               onClick={() => onChange(tab.key)}
               style={{
-                padding: '12px 20px',
+                padding: '12px 16px',
+                minHeight: '44px',
+                flexShrink: 0,
                 fontWeight: 700,
-                fontSize: '15px',
+                fontSize: '14px',
                 background: 'transparent',
                 border: 'none',
                 borderBottom: isActive ? '3px solid #fc6011' : '3px solid transparent',

@@ -38,6 +38,7 @@ router.delete('/users/:id', controller.deleteUser as any);
 router.post('/scan-cccd', controller.scanCCCD as any);
 
 router.get('/restaurants', controller.getRestaurants as any);
+router.get('/restaurants/compare', controller.getRestaurantComparison as any);
 router.get('/restaurants/:id/detail', controller.getRestaurantDetail as any);
 router.post('/restaurants', controller.createRestaurant as any);
 router.put('/restaurants/:id', controller.updateRestaurant as any);

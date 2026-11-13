@@ -12,6 +12,7 @@ import {
   AlertCircle,
   BarChart2,
   ArrowUpRight,
+  ArrowDownRight,
   UserCheck,
   Building2,
   Sparkles,
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { OrderDetailModal } from '../../components/OrderDetailModal';
+import { RevenueChartSection } from './RevenueChartSection';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../utils/imageUtils';
 
 // Animated Count-Up Number Component
@@ -78,12 +80,6 @@ export const AdminDashboard: React.FC = () => {
 
   // Active Metric Tab State: 'revenue' | 'users' | 'restaurants' | 'orders'
   const [activeCard, setActiveCard] = useState<'revenue' | 'users' | 'restaurants' | 'orders'>('revenue');
-
-  // Revenue Chart Timeframe State: 'day' | 'week' | 'month' | 'year'
-  const [revenueTimeframe, setRevenueTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('day');
-
-  // Hovered Chart Bar State for Tooltip
-  const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
   // Mobile App Download Telemetry & Release Monitor State
   const [appStats, setAppStats] = useState<any>(() => {
@@ -270,10 +266,6 @@ export const AdminDashboard: React.FC = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
   };
 
-  // Extract revenue trend chart data based on selected timeframe
-  const currentChartData = stats?.revenueTrend?.[revenueTimeframe] || [];
-  const maxRevenueInTrend = Math.max(...currentChartData.map((d: any) => d.revenue), 100000);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
@@ -330,8 +322,26 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a', marginTop: '10px' }}>
             <AnimatedNumber value={stats?.totalRevenue || 0} isCurrency={true} />
           </div>
-          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-            <ArrowUpRight size={14} /> +{stats?.growthPercent || 0}% so với kỳ trước
+          <div
+            style={{
+              fontSize: '12px',
+              color: (stats?.growthPercent ?? 0) >= 0 ? '#10b981' : '#ef4444',
+              marginTop: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontWeight: 700,
+            }}
+          >
+            {(stats?.growthPercent ?? 0) >= 0 ? (
+              <>
+                <ArrowUpRight size={14} /> +{stats?.growthPercent ?? 0}% so với kỳ trước
+              </>
+            ) : (
+              <>
+                <ArrowDownRight size={14} /> {stats?.growthPercent ?? 0}% so với kỳ trước
+              </>
+            )}
           </div>
         </div>
 
@@ -611,138 +621,7 @@ export const AdminDashboard: React.FC = () => {
       >
         {/* Dynamic Header based on active card */}
         {activeCard === 'revenue' && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <TrendingUp size={20} color="#fc6011" /> Phân Tích & Biểu Đồ Doanh Thu Hệ Thống
-                </h3>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
-                  Theo dõi biến động doanh thu theo mốc thời gian thực tế
-                </p>
-              </div>
-
-              {/* Timeframe selector controls */}
-              <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
-                {[
-                  { key: 'day', label: 'Ngày' },
-                  { key: 'week', label: 'Tuần' },
-                  { key: 'month', label: 'Tháng' },
-                  { key: 'year', label: 'Năm' },
-                ].map((t) => (
-                  <button
-                    key={t.key}
-                    onClick={() => setRevenueTimeframe(t.key as any)}
-                    style={{
-                      padding: '6px 14px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      borderRadius: '8px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      background: revenueTimeframe === t.key ? '#fc6011' : 'transparent',
-                      color: revenueTimeframe === t.key ? '#ffffff' : '#64748b',
-                      transition: 'all 0.2s ease',
-                      boxShadow: revenueTimeframe === t.key ? '0 2px 6px rgba(252,96,17,0.3)' : 'none',
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* High Resolution SVG/CSS Animated Bar Chart with Tooltips */}
-            <div
-              style={{
-                position: 'relative',
-                background: 'linear-gradient(180deg, #fafafa 0%, #f8fafc 100%)',
-                borderRadius: '14px',
-                padding: '24px 20px 16px 20px',
-                border: '1px solid #f1f5f9',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  height: '220px',
-                  gap: '16px',
-                }}
-              >
-                {currentChartData.map((d: any, idx: number) => {
-                  const heightPercent = maxRevenueInTrend > 0 ? Math.max((d.revenue / maxRevenueInTrend) * 100, 6) : 6;
-                  const isHovered = hoveredBarIndex === idx;
-
-                  return (
-                    <div
-                      key={idx}
-                      onMouseEnter={() => setHoveredBarIndex(idx)}
-                      onMouseLeave={() => setHoveredBarIndex(null)}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        height: '100%',
-                        justifyContent: 'flex-end',
-                        position: 'relative',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {/* Tooltip on Hover */}
-                      {isHovered && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: `${heightPercent + 12}%`,
-                            background: '#0f172a',
-                            color: '#ffffff',
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                            zIndex: 10,
-                            pointerEvents: 'none',
-                          }}
-                        >
-                          <div>{d.fullDate || d.label}</div>
-                          <div style={{ color: '#34d399', marginTop: '2px' }}>Doanh thu: {formatVND(d.revenue)}</div>
-                          <div style={{ color: '#cbd5e1', fontSize: '11px', marginTop: '1px' }}>{d.orders} đơn hàng</div>
-                        </div>
-                      )}
-
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: d.revenue > 0 ? '#fc6011' : '#94a3b8', marginBottom: '6px' }}>
-                        {d.revenue > 0 ? `${(d.revenue / 1000).toFixed(0)}k` : '0đ'}
-                      </div>
-
-                      {/* Animated Column Bar */}
-                      <div
-                        style={{
-                          width: '100%',
-                          maxWidth: '48px',
-                          height: `${heightPercent}%`,
-                          background: isHovered
-                            ? 'linear-gradient(180deg, #ea580c 0%, #fc6011 100%)'
-                            : 'linear-gradient(180deg, #fc6011 0%, #f97316 100%)',
-                          borderRadius: '6px 6px 0 0',
-                          transition: 'height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease',
-                          boxShadow: isHovered ? '0 4px 12px rgba(252,96,17,0.4)' : 'none',
-                        }}
-                      />
-
-                      <div style={{ fontSize: '12px', color: '#475569', marginTop: '8px', fontWeight: 700 }}>
-                        {d.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <RevenueChartSection revenueTrend={stats?.revenueTrend} formatVND={formatVND} />
         )}
 
         {/* Tab Content: Người Dùng */}

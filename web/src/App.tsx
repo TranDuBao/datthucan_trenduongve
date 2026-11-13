@@ -35,6 +35,7 @@ import { RestaurantReviews } from './pages/restaurant/RestaurantReviews';
 
 const ProtectedLayout: React.FC<{ allowedRoles: string[] }> = ({ allowedRoles }) => {
   const { user, token } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   if (!token || !user || isTokenExpired(token)) {
     return <Navigate to="/login" replace />;
@@ -62,9 +63,12 @@ const ProtectedLayout: React.FC<{ allowedRoles: string[] }> = ({ allowedRoles })
 
   return (
     <div className="app-layout">
-      <Sidebar />
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />
+      )}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="main-content">
-        <Header />
+        <Header onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)} />
         <main className="page-container">
           <Outlet />
         </main>

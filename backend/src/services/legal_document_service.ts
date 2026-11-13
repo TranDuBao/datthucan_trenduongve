@@ -9,12 +9,15 @@ export interface CreateDraftDTO {
   tieuDe: string;
   noiDung: string;
   cloneFromId?: number;
+  trangThai?: string;
 }
 
 export interface UpdateDraftDTO {
+  loaiTaiLieu?: string;
   tieuDe?: string;
   noiDung?: string;
   soPhienBan?: string;
+  trangThai?: string;
 }
 
 export class LegalDocumentService {
@@ -240,12 +243,26 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
       throw new Error(`Số phiên bản ${dto.soPhienBan} đã tồn tại cho loại tài liệu này. Vui lòng chọn số phiên bản khác.`);
     }
 
+    const targetStatus = dto.trangThai === TrangThaiPhienBan.DANG_HIEU_LUC
+      ? TrangThaiPhienBan.DANG_HIEU_LUC
+      : dto.trangThai === TrangThaiPhienBan.DA_LUU_TRU
+      ? TrangThaiPhienBan.DA_LUU_TRU
+      : TrangThaiPhienBan.NHAP;
+
+    if (targetStatus === TrangThaiPhienBan.DANG_HIEU_LUC) {
+      await this.docRepo.update(
+        { loaiTaiLieu: dto.loaiTaiLieu, trangThai: TrangThaiPhienBan.DANG_HIEU_LUC },
+        { trangThai: TrangThaiPhienBan.DA_LUU_TRU }
+      );
+    }
+
     const doc = this.docRepo.create({
       loaiTaiLieu: dto.loaiTaiLieu,
       soPhienBan: dto.soPhienBan.trim(),
       tieuDe: dto.tieuDe.trim(),
       noiDung,
-      trangThai: TrangThaiPhienBan.NHAP,
+      trangThai: targetStatus,
+      ngayHieuLuc: targetStatus === TrangThaiPhienBan.DANG_HIEU_LUC ? new Date() : null,
       maTaiKhoanTao: adminUser.maTaiKhoan,
     });
 
@@ -257,8 +274,8 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
       tenNguoiThucHien: adminUser.tenDangNhap || 'Admin',
       actorEmail: adminUser.email,
       actorRole: adminUser.role || 'ADMIN',
-      loaiHanhDong: 'TAO_NHAP_DIEU_KHOAN',
-      moTa: `Tạo bản nháp mới ${saved.loaiTaiLieu} v${saved.soPhienBan}: "${saved.tieuDe}"`,
+      loaiHanhDong: 'TAO_DIEU_KHOAN',
+      moTa: `Tạo tài liệu mới ${saved.loaiTaiLieu} v${saved.soPhienBan}: "${saved.tieuDe}" (${saved.trangThai})`,
       doiTuong: 'dieu_khoan_chinh_sach',
       maDoiTuong: saved.maPhienBan,
     });
@@ -267,7 +284,7 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
   }
 
   /**
-   * Admin: Update draft document (ONLY if in NHAP status)
+   * Admin: Update document (Title, Content, Version, Status)
    */
   public async updateDraft(
     id: number,
@@ -276,16 +293,8 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
   ) {
     const doc = await this.getDocumentById(id);
 
-    if (doc.trangThai !== TrangThaiPhienBan.NHAP) {
-      throw new Error('Không thể chỉnh sửa phiên bản đã xuất bản hoặc đã lưu trữ. Hãy nhân bản thành bản nháp mới.');
-    }
-
-    // Check if referenced by any registration
-    const refCount = await this.regRepo.count({
-      where: [{ maPhienBanDieuKhoan: id }, { maPhienBanChinhSach: id }],
-    });
-    if (refCount > 0) {
-      throw new Error('Phiên bản này đã có đơn đăng ký liên kết đồng ý, không thể chỉnh sửa nội dung.');
+    if (dto.loaiTaiLieu && Object.values(LoaiTaiLieuPhapLy).includes(dto.loaiTaiLieu as any)) {
+      doc.loaiTaiLieu = dto.loaiTaiLieu;
     }
 
     if (dto.soPhienBan && dto.soPhienBan.trim() !== doc.soPhienBan) {
@@ -304,8 +313,24 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
     if (dto.noiDung && dto.noiDung.trim()) {
       doc.noiDung = dto.noiDung.trim();
     }
-    doc.maTaiKhoanCapNhat = adminUser.maTaiKhoan;
 
+    // Handle status change if requested
+    if (dto.trangThai && dto.trangThai !== doc.trangThai) {
+      if (dto.trangThai === TrangThaiPhienBan.DANG_HIEU_LUC) {
+        await this.docRepo.update(
+          { loaiTaiLieu: doc.loaiTaiLieu, trangThai: TrangThaiPhienBan.DANG_HIEU_LUC },
+          { trangThai: TrangThaiPhienBan.DA_LUU_TRU }
+        );
+        doc.trangThai = TrangThaiPhienBan.DANG_HIEU_LUC;
+        doc.ngayHieuLuc = new Date();
+      } else if (dto.trangThai === TrangThaiPhienBan.DA_LUU_TRU) {
+        doc.trangThai = TrangThaiPhienBan.DA_LUU_TRU;
+      } else if (dto.trangThai === TrangThaiPhienBan.NHAP) {
+        doc.trangThai = TrangThaiPhienBan.NHAP;
+      }
+    }
+
+    doc.maTaiKhoanCapNhat = adminUser.maTaiKhoan;
     const updated = await this.docRepo.save(doc);
 
     // Audit Log
@@ -314,8 +339,8 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
       tenNguoiThucHien: adminUser.tenDangNhap || 'Admin',
       actorEmail: adminUser.email,
       actorRole: adminUser.role || 'ADMIN',
-      loaiHanhDong: 'CAP_NHAT_NHAP_DIEU_KHOAN',
-      moTa: `Cập nhật bản nháp ${updated.loaiTaiLieu} v${updated.soPhienBan}`,
+      loaiHanhDong: 'CAP_NHAT_DIEU_KHOAN',
+      moTa: `Cập nhật tài liệu ${updated.loaiTaiLieu} v${updated.soPhienBan}: "${updated.tieuDe}"`,
       doiTuong: 'dieu_khoan_chinh_sach',
       maDoiTuong: updated.maPhienBan,
     });
@@ -324,21 +349,14 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
   }
 
   /**
-   * Admin: Delete draft document (ONLY if in NHAP status and not referenced)
+   * Admin: Delete document
    */
   public async deleteDraft(id: number, adminUser: { maTaiKhoan: number; tenDangNhap?: string; email?: string; role?: string }) {
     const doc = await this.getDocumentById(id);
 
-    if (doc.trangThai !== TrangThaiPhienBan.NHAP) {
-      throw new Error('Chỉ có thể xóa phiên bản ở trạng thái Bản nháp. Phiên bản đã xuất bản không được xóa.');
-    }
-
-    const refCount = await this.regRepo.count({
-      where: [{ maPhienBanDieuKhoan: id }, { maPhienBanChinhSach: id }],
-    });
-    if (refCount > 0) {
-      throw new Error('Phiên bản này đã có đơn đăng ký liên kết đồng ý, không thể xóa.');
-    }
+    // Safely clear registration references if any before deletion
+    await this.regRepo.update({ maPhienBanDieuKhoan: id }, { maPhienBanDieuKhoan: null as any });
+    await this.regRepo.update({ maPhienBanChinhSach: id }, { maPhienBanChinhSach: null as any });
 
     await this.docRepo.remove(doc);
 
@@ -348,13 +366,13 @@ Food Route thu thập các thông tin cá nhân của chủ quán (bao gồm: H�
       tenNguoiThucHien: adminUser.tenDangNhap || 'Admin',
       actorEmail: adminUser.email,
       actorRole: adminUser.role || 'ADMIN',
-      loaiHanhDong: 'XOA_NHAP_DIEU_KHOAN',
-      moTa: `Xóa bản nháp ${doc.loaiTaiLieu} v${doc.soPhienBan}: "${doc.tieuDe}"`,
+      loaiHanhDong: 'XOA_DIEU_KHOAN',
+      moTa: `Xóa tài liệu ${doc.loaiTaiLieu} v${doc.soPhienBan}: "${doc.tieuDe}"`,
       doiTuong: 'dieu_khoan_chinh_sach',
       maDoiTuong: id,
     });
 
-    return { message: 'Đã xóa bản nháp thành công' };
+    return { message: 'Đã xóa tài liệu thành công' };
   }
 
   /**

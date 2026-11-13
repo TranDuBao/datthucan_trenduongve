@@ -21,10 +21,16 @@ import {
   FileText,
   Headphones,
   Bell,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -59,17 +65,34 @@ export const Sidebar: React.FC = () => {
   const navItems = isAdmin ? adminNav : restaurantNav;
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <UtensilsCrossed size={28} color="#fc6011" />
-        <div>
-          <div className="sidebar-brand">
-            Food<span>Route</span>
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-            {isAdmin ? 'ADMIN SYSTEM' : 'RESTAURANT PORTAL'}
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-header" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <UtensilsCrossed size={28} color="#fc6011" />
+          <div>
+            <div className="sidebar-brand">
+              Food<span>Route</span>
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+              {isAdmin ? 'ADMIN SYSTEM' : 'RESTAURANT PORTAL'}
+            </div>
           </div>
         </div>
+        <button
+          onClick={onClose}
+          className="touch-target mobile-close-btn"
+          aria-label="Đóng menu"
+          style={{
+            border: 'none',
+            background: 'transparent',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: '6px',
+            display: 'none',
+          }}
+        >
+          <X size={22} />
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -79,6 +102,7 @@ export const Sidebar: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={onClose}
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
             >
               <Icon size={18} />
@@ -90,7 +114,10 @@ export const Sidebar: React.FC = () => {
 
       <div className="sidebar-footer">
         <button
-          onClick={logout}
+          onClick={() => {
+            onClose?.();
+            logout();
+          }}
           className="sidebar-link"
           style={{ width: '100%', color: '#ef4444', justifyContent: 'flex-start' }}
         >

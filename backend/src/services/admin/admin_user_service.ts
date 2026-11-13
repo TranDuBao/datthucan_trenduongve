@@ -68,11 +68,67 @@ export class AdminUserService {
       storeInfo = await this.storeRepo.findOne({ where: { maTaiKhoan } });
     }
 
-    let orderStats = { totalOrders: 0, totalSpent: 0 };
+    let orderStats = { totalOrders: 0, totalSpent: 0, totalAllOrders: 0, cancelledOrders: 0 };
     if (account.khachHang) {
       const orders = await this.orderRepo.find({ where: { maKhachHang: account.khachHang.maKhachHang } });
-      orderStats.totalOrders = orders.length;
-      orderStats.totalSpent = orders.reduce((sum, o) => sum + Number(o.tongTien || 0), 0);
+
+      const isCancelled = (status: string) => {
+        const st = String(status || '').toLowerCase().trim();
+        return (
+          st === 'da_huy' ||
+          st === 'cancelled' ||
+          st.includes('hủy') ||
+          st.includes('huy') ||
+          st === 'that_bai' ||
+          st === 'thất bại' ||
+          st === 'failed'
+        );
+      };
+
+      const isUnpaid = (status: string) => {
+        const st = String(status || '').toLowerCase().trim();
+        return (
+          st === 'cho_thanh_toan' ||
+          st === 'unpaid' ||
+          st.includes('chờ thanh toán') ||
+          st.includes('chothanhtoan')
+        );
+      };
+
+      const isPaidOrCompleted = (status: string) => {
+        const st = String(status || '').toLowerCase().trim();
+        if (isCancelled(st) || isUnpaid(st)) return false;
+        return (
+          st.includes('hoan_tat') ||
+          st.includes('hoàn tất') ||
+          st.includes('hoan_thanh') ||
+          st.includes('hoàn thành') ||
+          st.includes('completed') ||
+          st.includes('picked_up') ||
+          st.includes('thành công') ||
+          st.includes('đã lấy') ||
+          st.includes('da_thanh_toan') ||
+          st.includes('paid') ||
+          st.includes('cho_nhan_don') ||
+          st.includes('dang_chuan_bi') ||
+          st.includes('san_sang') ||
+          st.includes('dang_giao') ||
+          st.includes('chờ nhận') ||
+          st.includes('đang chuẩn bị') ||
+          st.includes('sẵn sàng')
+        );
+      };
+
+      const validOrders = orders.filter((o) => !isCancelled(o.trangThai) && !isUnpaid(o.trangThai));
+      const completedOrders = orders.filter((o) => isPaidOrCompleted(o.trangThai));
+      const cancelledOrders = orders.filter((o) => isCancelled(o.trangThai) || isUnpaid(o.trangThai));
+
+      orderStats = {
+        totalOrders: validOrders.length,
+        totalSpent: completedOrders.reduce((sum, o) => sum + Number(o.tongTien || 0), 0),
+        totalAllOrders: orders.length,
+        cancelledOrders: cancelledOrders.length,
+      };
     }
 
     return {

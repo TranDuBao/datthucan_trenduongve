@@ -47,11 +47,13 @@ export const AdminLegalDocuments: React.FC = () => {
     soPhienBan: string;
     tieuDe: string;
     noiDung: string;
+    trangThai: string;
   }>({
     loaiTaiLieu: 'DIEU_KHOAN_DOI_TAC',
     soPhienBan: '',
     tieuDe: '',
     noiDung: '',
+    trangThai: 'NHAP',
   });
   const [formError, setFormError] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
@@ -134,6 +136,7 @@ export const AdminLegalDocuments: React.FC = () => {
         soPhienBan: nextVer,
         tieuDe: `${cloneSource.tieuDe} (bản nháp)`,
         noiDung: cloneSource.noiDung || '',
+        trangThai: 'NHAP',
       });
       if (!cloneSource.noiDung) {
         apiFetch<any>(`/admin/legal-documents/${cloneSource.maPhienBan}`).then((res) => {
@@ -148,16 +151,13 @@ export const AdminLegalDocuments: React.FC = () => {
         soPhienBan: '1.1',
         tieuDe: '',
         noiDung: '',
+        trangThai: 'NHAP',
       });
     }
     setFormModalOpen(true);
   };
 
   const handleOpenEdit = async (doc: LegalDocument) => {
-    if (doc.trangThai !== 'NHAP') {
-      showToast('error', 'Chỉ có thể chỉnh sửa các phiên bản ở trạng thái Bản nháp');
-      return;
-    }
     setEditingDocId(doc.maPhienBan);
     setFormError('');
     try {
@@ -168,10 +168,11 @@ export const AdminLegalDocuments: React.FC = () => {
         soPhienBan: data.soPhienBan,
         tieuDe: data.tieuDe,
         noiDung: data.noiDung || '',
+        trangThai: data.trangThai || 'NHAP',
       });
       setFormModalOpen(true);
     } catch (err: any) {
-      showToast('error', 'Lỗi tải nội dung bản nháp');
+      showToast('error', 'Lỗi tải nội dung tài liệu');
     }
   };
 
@@ -198,18 +199,18 @@ export const AdminLegalDocuments: React.FC = () => {
           method: 'PUT',
           body: JSON.stringify(formData),
         });
-        showToast('success', 'Đã cập nhật bản nháp thành công');
+        showToast('success', 'Đã cập nhật tài liệu thành công');
       } else {
         await apiFetch(`/admin/legal-documents`, {
           method: 'POST',
           body: JSON.stringify(formData),
         });
-        showToast('success', 'Đã tạo bản nháp mới thành công');
+        showToast('success', 'Đã tạo tài liệu mới thành công');
       }
       setFormModalOpen(false);
       fetchDocuments();
     } catch (err: any) {
-      setFormError(err.message || 'Lỗi khi lưu bản nháp');
+      setFormError(err.message || 'Lỗi khi lưu tài liệu');
     } finally {
       setSaving(false);
     }
@@ -240,12 +241,12 @@ export const AdminLegalDocuments: React.FC = () => {
       await apiFetch(`/admin/legal-documents/${deleteTarget.maPhienBan}`, {
         method: 'DELETE',
       });
-      showToast('success', 'Đã xóa bản nháp thành công');
+      showToast('success', 'Đã xóa tài liệu thành công');
       setDeleteModalOpen(false);
       setDeleteTarget(null);
       fetchDocuments();
     } catch (err: any) {
-      showToast('error', err.message || 'Lỗi xóa bản nháp');
+      showToast('error', err.message || 'Lỗi xóa tài liệu');
     } finally {
       setDeleting(false);
     }

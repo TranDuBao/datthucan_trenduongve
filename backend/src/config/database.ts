@@ -134,6 +134,11 @@ export const connectDatabase = async () => {
         await safeQuery(`SELECT setval('khachhang_makhachhang_seq', COALESCE((SELECT MAX(makhachhang) FROM khachhang), 0) + 1, false);`);
         await safeQuery(`ALTER TABLE khachhang ALTER COLUMN makhachhang SET DEFAULT nextval('khachhang_makhachhang_seq');`);
 
+        // Ensure auto-increment sequence default for cuahang primary key
+        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS cuahang_maquan_seq;`);
+        await safeQuery(`SELECT setval('cuahang_maquan_seq', COALESCE((SELECT MAX(maquan) FROM cuahang), 0) + 1, false);`);
+        await safeQuery(`ALTER TABLE cuahang ALTER COLUMN maquan SET DEFAULT nextval('cuahang_maquan_seq');`);
+
         await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS banner (

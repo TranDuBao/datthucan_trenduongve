@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../../api/apiClient';
-import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed, Info, Layers, Tag } from 'lucide-react';
+import { Search, Plus, Store, Building, RotateCcw, Trash2, Edit3, Filter, UtensilsCrossed, Info, Layers, Tag, TrendingUp } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { NotificationModal } from '../../components/NotificationModal';
@@ -11,6 +11,7 @@ import { parseCCCDImage, formatDateVN, toISODate } from '../../utils/ocrService'
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../../utils/imageUtils';
 import { VIETNAM_BANKS } from './users/UserFormModal';
 import { RestaurantDetailView } from './restaurants/RestaurantDetailView';
+import { RestaurantComparisonView } from './restaurants/RestaurantComparisonView';
 import { AdminCategories } from './AdminCategories';
 import { AdminStoreCategories } from './AdminStoreCategories';
 import { UnderlineTabs, TabItem } from '../../components/UnderlineTabs';
@@ -29,8 +30,8 @@ export const AdminRestaurants: React.FC = () => {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
   const [merchantUsers, setMerchantUsers] = useState<any[]>([]);
 
-  // Sub-tabs navigation: Danh Sách Nhà Hàng, Loại Hình Quán & Quản Lý Danh Mục Món
-  type TabKey = 'stores' | 'store-types' | 'categories';
+  // Sub-tabs navigation: Danh Sách Nhà Hàng, So Sánh, Loại Hình Quán & Quản Lý Danh Mục Món
+  type TabKey = 'stores' | 'comparison' | 'store-types' | 'categories';
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = (searchParams.get('tab') as TabKey) || 'stores';
 
@@ -258,6 +259,7 @@ export const AdminRestaurants: React.FC = () => {
 
   const tabs: TabItem<TabKey>[] = [
     { key: 'stores', label: 'Danh Sách Nhà Hàng', icon: <Store size={18} />, count: activeStores.length },
+    { key: 'comparison', label: 'So Sánh Doanh Thu & Đơn Hàng', icon: <TrendingUp size={18} /> },
     { key: 'store-types', label: 'Loại Hình Quán Ăn', icon: <Layers size={18} />, count: storeCategories.length },
     { key: 'categories', label: 'Quản Lý Danh Mục Món', icon: <UtensilsCrossed size={18} /> },
   ];
@@ -270,7 +272,9 @@ export const AdminRestaurants: React.FC = () => {
         onChange={handleTabChange}
       />
 
-      {currentTab === 'categories' ? (
+      {currentTab === 'comparison' ? (
+        <RestaurantComparisonView />
+      ) : currentTab === 'categories' ? (
         <AdminCategories />
       ) : currentTab === 'store-types' ? (
         <AdminStoreCategories
@@ -402,7 +406,8 @@ export const AdminRestaurants: React.FC = () => {
         ) : filteredStores.length === 0 ? (
           <div className="empty-state">Không có nhà hàng nào khớp với điều kiện lọc</div>
         ) : (
-          <table className="data-table">
+          <div className="table-responsive">
+            <table className="data-table">
             <thead>
               <tr>
                 <th style={{ width: '60px', textAlign: 'center' }}>STT</th>
@@ -533,6 +538,7 @@ export const AdminRestaurants: React.FC = () => {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -552,7 +558,7 @@ export const AdminRestaurants: React.FC = () => {
             onChange={(val) => setForm({ ...form, diaChi: val })}
             required
           />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Loại Hình / Danh Mục Quán</label>
               <select
@@ -576,7 +582,7 @@ export const AdminRestaurants: React.FC = () => {
               <input type="text" className="form-control" value={form.sdt} onChange={(e) => setForm({ ...form, sdt: e.target.value })} />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Tài Khoản Quản Lý (Mã Tài Khoản Chủ Quán)</label>
               <select
@@ -605,7 +611,7 @@ export const AdminRestaurants: React.FC = () => {
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#0369a1', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Building size={16} /> 2. Thông Tin Chủ Quán & Ngân Hàng
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-grid-2">
               <div className="form-group">
                 <label className="form-label">Họ Tên Chủ Quán</label>
                 <input type="text" className="form-control" value={form.hoTenChuQuan} onChange={(e) => setForm({ ...form, hoTenChuQuan: e.target.value })} />
@@ -624,7 +630,7 @@ export const AdminRestaurants: React.FC = () => {
               value={form.diaChiThuongTru}
               onChange={(val) => setForm({ ...form, diaChiThuongTru: val })}
             />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div className="form-grid-3">
               <div className="form-group">
                 <label className="form-label">Tên Ngân Hàng</label>
                 <select className="form-control" value={form.tenNganHang} onChange={(e) => setForm({ ...form, tenNganHang: e.target.value })}>
