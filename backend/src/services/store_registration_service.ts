@@ -372,67 +372,99 @@ export class StoreRegistrationService {
 
       if (!store) {
         // Query next available maquan to guarantee NOT NULL constraint is never violated
-        let nextMaQuan: number | undefined = undefined;
-        try {
-          const seqRes = await manager.query(`SELECT nextval('cuahang_maquan_seq') AS next_val`);
-          if (seqRes && seqRes[0] && seqRes[0].next_val) {
-            nextMaQuan = Number(seqRes[0].next_val);
-          }
-        } catch (_) {
-          const maxRes = await manager.query(`SELECT COALESCE(MAX(maquan), 0) + 1 AS next_val FROM cuahang`);
-          if (maxRes && maxRes[0] && maxRes[0].next_val) {
-            nextMaQuan = Number(maxRes[0].next_val);
-          }
-        }
+        const maxRes = await manager.query(`SELECT COALESCE(MAX(maquan), 0) + 1 AS next_val FROM cuahang`);
+        const nextMaQuan = Number(maxRes[0]?.next_val || 1);
 
-        store = manager.create(CuaHangModel, {
-          maQuan: nextMaQuan,
-          maTaiKhoan: reg.maTaiKhoan,
-          tenQuan: reg.tenQuan,
-          diaChi: reg.diaChi,
-          lat: reg.lat,
-          lng: reg.lng,
-          sdt: reg.sdt,
-          hoTenChuQuan: reg.hoTenChuQuan,
-          ngaySinhChuQuan: reg.ngaySinhChuQuan,
-          soCCCD: reg.soCCCD,
-          diaChiThuongTru: reg.diaChiThuongTru,
-          tenNganHang: reg.tenNganHang,
-          soTaiKhoanNganHang: reg.soTaiKhoanNganHang,
-          tenChuTaiKhoan: reg.tenChuTaiKhoan,
-          danhMuc: reg.danhMuc || 'Cửa hàng',
-          loaiHinhPhapLy: reg.loaiHinhPhapLy,
-          maSoThue: reg.maSoThue,
-          soGiayPhepKinhDoanh: reg.soGiayPhepKinhDoanh,
-          soGiayAttp: reg.soGiayAttp,
-          trangThai: 'mở cửa',
-          img: (reg as any).img || null,
-        });
+        // Direct SQL INSERT explicitly supplying maquan to guarantee NOT NULL constraint is NEVER violated regardless of DB sequences
+        const insertRes = await manager.query(
+          `INSERT INTO cuahang (
+            maquan, mataikhoan, tenquan, diachi, trangthai,
+            lat, lng, sdt, hotenchuquan, diachithuongtru,
+            ngaysinhchuquan, socccd, tennganhang, sotaikhoannganhang,
+            tenchutaikhoan, danhmuc, loaihinhphaply, masothue,
+            sogiayphepkinhdoanh, sogiayattp, img
+          ) VALUES (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9, $10,
+            $11, $12, $13, $14,
+            $15, $16, $17, $18,
+            $19, $20, $21
+          ) RETURNING *`,
+          [
+            nextMaQuan,
+            reg.maTaiKhoan,
+            reg.tenQuan,
+            reg.diaChi,
+            'mở cửa',
+            reg.lat ?? null,
+            reg.lng ?? null,
+            reg.sdt ?? null,
+            reg.hoTenChuQuan ?? null,
+            reg.diaChiThuongTru ?? null,
+            reg.ngaySinhChuQuan ?? null,
+            reg.soCCCD ?? null,
+            reg.tenNganHang ?? null,
+            reg.soTaiKhoanNganHang ?? null,
+            reg.tenChuTaiKhoan ?? null,
+            reg.danhMuc || 'Cửa hàng',
+            reg.loaiHinhPhapLy ?? null,
+            reg.maSoThue ?? null,
+            reg.soGiayPhepKinhDoanh ?? null,
+            reg.soGiayAttp ?? null,
+            (reg as any).img ?? null,
+          ]
+        );
 
-        if (nextMaQuan && !store.maQuan) {
-          store.maQuan = nextMaQuan;
-        }
+        createdStore = insertRes[0] as CuaHangModel;
+
+        // Also ensure sequence exists and is in sync for any other processes
+        await manager.query(`CREATE SEQUENCE IF NOT EXISTS cuahang_maquan_seq;`).catch(() => {});
+        await manager.query(`SELECT setval('cuahang_maquan_seq', $1, true);`, [nextMaQuan]).catch(() => {});
+        await manager.query(`ALTER TABLE cuahang ALTER COLUMN maquan SET DEFAULT nextval('cuahang_maquan_seq');`).catch(() => {});
       } else {
-        store.tenQuan = reg.tenQuan;
-        store.diaChi = reg.diaChi;
-        if (reg.lat) store.lat = reg.lat;
-        if (reg.lng) store.lng = reg.lng;
-        store.sdt = reg.sdt;
-        store.hoTenChuQuan = reg.hoTenChuQuan;
-        store.ngaySinhChuQuan = reg.ngaySinhChuQuan;
-        store.soCCCD = reg.soCCCD;
-        store.diaChiThuongTru = reg.diaChiThuongTru;
-        store.tenNganHang = reg.tenNganHang;
-        store.soTaiKhoanNganHang = reg.soTaiKhoanNganHang;
-        store.tenChuTaiKhoan = reg.tenChuTaiKhoan;
-        store.danhMuc = reg.danhMuc || store.danhMuc || 'Cửa hàng';
-        if (reg.loaiHinhPhapLy) store.loaiHinhPhapLy = reg.loaiHinhPhapLy;
-        if (reg.maSoThue) store.maSoThue = reg.maSoThue;
-        if (reg.soGiayPhepKinhDoanh) store.soGiayPhepKinhDoanh = reg.soGiayPhepKinhDoanh;
-        if (reg.soGiayAttp) store.soGiayAttp = reg.soGiayAttp;
+        await manager.query(
+          `UPDATE cuahang SET
+            tenquan = $1,
+            diachi = $2,
+            lat = COALESCE($3, lat),
+            lng = COALESCE($4, lng),
+            sdt = $5,
+            hotenchuquan = $6,
+            diachithuongtru = $7,
+            ngaysinhchuquan = $8,
+            socccd = $9,
+            tennganhang = $10,
+            sotaikhoannganhang = $11,
+            tenchutaikhoan = $12,
+            danhmuc = COALESCE($13, danhmuc),
+            loaihinhphaply = COALESCE($14, loaihinhphaply),
+            masothue = COALESCE($15, masothue),
+            sogiayphepkinhdoanh = COALESCE($16, sogiayphepkinhdoanh),
+            sogiayattp = COALESCE($17, sogiayattp)
+          WHERE maquan = $18`,
+          [
+            reg.tenQuan,
+            reg.diaChi,
+            reg.lat ?? null,
+            reg.lng ?? null,
+            reg.sdt ?? null,
+            reg.hoTenChuQuan ?? null,
+            reg.diaChiThuongTru ?? null,
+            reg.ngaySinhChuQuan ?? null,
+            reg.soCCCD ?? null,
+            reg.tenNganHang ?? null,
+            reg.soTaiKhoanNganHang ?? null,
+            reg.tenChuTaiKhoan ?? null,
+            reg.danhMuc || null,
+            reg.loaiHinhPhapLy ?? null,
+            reg.maSoThue ?? null,
+            reg.soGiayPhepKinhDoanh ?? null,
+            reg.soGiayAttp ?? null,
+            store.maQuan,
+          ]
+        );
+        createdStore = store;
       }
-
-      createdStore = await manager.save(CuaHangModel, store);
 
       // Sync sequence with highest maquan
       await manager.query(`
