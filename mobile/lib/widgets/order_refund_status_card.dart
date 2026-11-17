@@ -190,18 +190,36 @@ class OrderRefundStatusCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${VietQrBanks.findByCodeOrBin(order.refundBank).shortName} • ${order.refundAccountNumber}',
-                      style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: textPrimary),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        VietQrBankLogo(
+                          bank: VietQrBanks.findByCodeOrBin(order.refundBank),
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${VietQrBanks.findByCodeOrBin(order.refundBank).shortName} • ${order.refundAccountNumber}',
+                                style: GoogleFonts.outfit(fontSize: 13.5, fontWeight: FontWeight.w800, color: textPrimary),
+                              ),
+                              if (order.refundAccountName != null && order.refundAccountName!.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  order.refundAccountName!.toUpperCase(),
+                                  style: GoogleFonts.outfit(fontSize: 11.5, fontWeight: FontWeight.w600, color: textSecondary),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    if (order.refundAccountName != null && order.refundAccountName!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        order.refundAccountName!.toUpperCase(),
-                        style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary),
-                      ),
-                    ],
                   ],
                 ),
               ),

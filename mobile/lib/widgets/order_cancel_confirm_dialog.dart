@@ -314,12 +314,28 @@ class _OrderCancelConfirmDialogState extends State<OrderCancelConfirmDialog> {
                                 child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
                               )
                             else if (hasBankInfo)
-                              Text(
-                                '${VietQrBanks.findByCodeOrBin(_savedBank).shortName} • $_savedAccountNumber (${_savedAccountName ?? ''})',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimary,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Row(
+                                  children: [
+                                    VietQrBankLogo(
+                                      bank: VietQrBanks.findByCodeOrBin(_savedBank),
+                                      width: 28,
+                                      height: 28,
+                                      borderRadius: 6,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '${VietQrBanks.findByCodeOrBin(_savedBank).shortName} • $_savedAccountNumber (${_savedAccountName ?? ''})',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               )
                             else ...[

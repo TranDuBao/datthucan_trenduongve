@@ -15,6 +15,7 @@ class VietQrBankItem {
   });
 
   String get displayName => '$shortName - $name';
+  String get logoUrl => 'https://cdn.vietqr.io/img/$code.png';
 }
 
 class VietQrBanks {
@@ -100,6 +101,9 @@ class VietQrBanks {
   static VietQrBankItem findByCodeOrBin(String? query) {
     if (query == null || query.trim().isEmpty) return all.first;
     final q = query.trim().toUpperCase();
+    if (q == 'CTG') {
+      return all.firstWhere((b) => b.code == 'ICB', orElse: () => all.first);
+    }
     for (final b in all) {
       if (b.code.toUpperCase() == q || b.bin == q || b.shortName.toUpperCase() == q) {
         return b;
@@ -307,29 +311,12 @@ class _VietQrBankPickerSheetState extends State<VietQrBankPickerSheet> {
                         onTap: () => Navigator.pop(context, item),
                         dense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        leading: Container(
+                        leading: VietQrBankLogo(
+                          bank: item,
                           width: 44,
                           height: 44,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFFFC6011).withValues(alpha: 0.15)
-                                : (isDark ? const Color(0xFF262E3D) : const Color(0xFFF8FAFC)),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected ? const Color(0xFFFC6011) : borderColor,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              item.code.length > 5 ? item.code.substring(0, 4) : item.code,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.outfit(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: isSelected ? const Color(0xFFFC6011) : const Color(0xFFFC6011),
-                              ),
-                            ),
-                          ),
+                          isSelected: isSelected,
+                          borderColor: isSelected ? const Color(0xFFFC6011) : borderColor,
                         ),
                         title: Text(
                           item.shortName,
@@ -356,6 +343,68 @@ class _VietQrBankPickerSheetState extends State<VietQrBankPickerSheet> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Widget hiển thị Logo chính thức của ngân hàng từ CDN VietQR với cơ chế fallback thông minh
+class VietQrBankLogo extends StatelessWidget {
+  final VietQrBankItem bank;
+  final double width;
+  final double height;
+  final double borderRadius;
+  final bool isSelected;
+  final Color? borderColor;
+
+  const VietQrBankLogo({
+    super.key,
+    required this.bank,
+    this.width = 44,
+    this.height = 44,
+    this.borderRadius = 10,
+    this.isSelected = false,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: borderColor ?? (isSelected ? const Color(0xFFFC6011) : const Color(0xFFE2E8F0)),
+          width: isSelected ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius > 4 ? borderRadius - 2 : borderRadius),
+        child: Image.network(
+          bank.logoUrl,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Center(
+            child: Text(
+              bank.code.length > 5 ? bank.code.substring(0, 4) : bank.code,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFFFC6011),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

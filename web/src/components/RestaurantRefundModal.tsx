@@ -21,37 +21,68 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [qrImgError, setQrImgError] = useState(false);
 
+  const [overrideBankCode, setOverrideBankCode] = useState<string | null>(null);
+  const [isEditingBank, setIsEditingBank] = useState(false);
+
   if (!isOpen || !order) return null;
 
   const refund = order.refundInfo || order.refund || {};
   const maHoanTien = refund.maHoanTien || refund.id;
   const amount = Number(refund.soTienHoan || order.tongTien || 0);
-  const bankName = (refund.nganHangNhan || '').trim();
+  const rawBankName = (refund.nganHangNhan || '').trim();
   const accountNumber = (refund.soTaiKhoanNhan || '').trim();
   const accountHolder = (refund.tenChuTaiKhoanNhan || order.tenKhachHang || '').trim();
   const isCompleted = refund.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG';
-  const hasBankInfo = bankName.length > 0 && accountNumber.length > 0;
+  const hasBankInfo = (rawBankName.length > 0 || overrideBankCode !== null) && accountNumber.length > 0;
 
-  const normalizeBankCode = (b: string) => {
-    const clean = b.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (clean.includes('VIETCOMBANK')) return 'VCB';
-    if (clean.includes('TECHCOMBANK')) return 'TCB';
-    if (clean.includes('VIETINBANK')) return 'CTG';
-    if (clean.includes('AGRIBANK')) return 'VBA';
-    if (clean.includes('SACOMBANK')) return 'STB';
-    if (clean.includes('MBBANK')) return 'MB';
-    if (clean.includes('VPBANK')) return 'VPB';
-    if (clean.includes('TPBANK')) return 'TPB';
-    if (clean.includes('HDBANK')) return 'HDB';
-    return clean || 'MB';
+  const POPULAR_VIETQR_BANKS = [
+    { code: 'ICB', bin: '970415', shortName: 'VietinBank', name: 'Ngân hàng TMCP Công thương Việt Nam' },
+    { code: 'VCB', bin: '970436', shortName: 'Vietcombank', name: 'Ngân hàng TMCP Ngoại Thương Việt Nam' },
+    { code: 'BIDV', bin: '970418', shortName: 'BIDV', name: 'Ngân hàng TMCP Đầu tư & Phát triển Việt Nam' },
+    { code: 'VBA', bin: '970405', shortName: 'Agribank', name: 'Ngân hàng Nông nghiệp & PTNT Việt Nam' },
+    { code: 'MB', bin: '970422', shortName: 'MBBank', name: 'Ngân hàng TMCP Quân đội' },
+    { code: 'TCB', bin: '970407', shortName: 'Techcombank', name: 'Ngân hàng TMCP Kỹ thương Việt Nam' },
+    { code: 'ACB', bin: '970416', shortName: 'ACB', name: 'Ngân hàng TMCP Á Châu' },
+    { code: 'VPB', bin: '970432', shortName: 'VPBank', name: 'Ngân hàng TMCP Việt Nam Thịnh Vượng' },
+    { code: 'TPB', bin: '970423', shortName: 'TPBank', name: 'Ngân hàng TMCP Tiên Phong' },
+    { code: 'STB', bin: '970403', shortName: 'Sacombank', name: 'Ngân hàng TMCP Sài Gòn Thương Tín' },
+    { code: 'HDB', bin: '970437', shortName: 'HDBank', name: 'Ngân hàng TMCP Phát triển TP.HCM' },
+    { code: 'OCB', bin: '970448', shortName: 'OCB', name: 'Ngân hàng TMCP Phương Đông' },
+    { code: 'VIB', bin: '970441', shortName: 'VIB', name: 'Ngân hàng TMCP Quốc tế Việt Nam' },
+    { code: 'SHB', bin: '970443', shortName: 'SHB', name: 'Ngân hàng TMCP Sài Gòn - Hà Nội' },
+    { code: 'MSB', bin: '970426', shortName: 'MSB', name: 'Ngân hàng TMCP Hàng Hải' },
+    { code: 'CAKE', bin: '546034', shortName: 'CAKE', name: 'TMCP Việt Nam Thịnh Vượng - Số CAKE' },
+    { code: 'TIMO', bin: '963388', shortName: 'Timo', name: 'Ngân hàng số Timo by Ban Viet Bank' },
+    { code: 'momo', bin: '971025', shortName: 'MoMo', name: 'Ví điện tử MoMo' },
+    { code: 'ZALOPAY', bin: '971101', shortName: 'ZaloPay', name: 'Ví điện tử ZaloPay' },
+  ];
+
+  const resolveBank = (b: string) => {
+    if (!b) return POPULAR_VIETQR_BANKS[0];
+    const q = b.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (q === 'CTG' || q.includes('VIETINBANK') || q === '970415' || q === 'ICB' || q === '623817') {
+      return POPULAR_VIETQR_BANKS[0]; // VietinBank
+    }
+    for (const item of POPULAR_VIETQR_BANKS) {
+      if (item.code.toUpperCase() === q || item.bin === q || item.shortName.toUpperCase() === q) {
+        return item;
+      }
+    }
+    for (const item of POPULAR_VIETQR_BANKS) {
+      if (item.shortName.toUpperCase().includes(q) || item.name.toUpperCase().includes(q)) {
+        return item;
+      }
+    }
+    return { code: q || 'ICB', bin: '', shortName: b, name: b };
   };
-  const cleanBank = normalizeBankCode(bankName);
+
+  const activeBank = resolveBank(overrideBankCode || rawBankName);
   const cleanAcc = accountNumber.replace(/[^0-9A-Za-z]/g, '');
 
   // VietQR QuickLink standard format
   const transferContent = `Hoan tien don #${order.maDonHang}`;
   const qrUrl = hasBankInfo
-    ? `https://img.vietqr.io/image/${cleanBank}-${cleanAcc}-compact2.png?amount=${Math.round(amount)}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountHolder)}`
+    ? `https://img.vietqr.io/image/${activeBank.code}-${cleanAcc}-compact2.png?amount=${Math.round(amount)}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountHolder)}`
     : '';
 
   const handleCopy = (text: string, type: 'acc' | 'amount') => {
@@ -300,12 +331,68 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', flexWrap: 'wrap', gap: '6px' }}>
                     <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Building size={14} color="#94a3b8" /> Ngân hàng:
                     </span>
-                    <strong style={{ color: '#0f172a' }}>{bankName}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <img
+                        src={`https://cdn.vietqr.io/img/${activeBank.code}.png`}
+                        alt={activeBank.shortName}
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        style={{ width: '22px', height: '22px', objectFit: 'contain', background: '#fff', borderRadius: '4px', border: '1px solid #e2e8f0', padding: '1px' }}
+                      />
+                      <strong style={{ color: '#0f172a' }}>{activeBank.shortName} ({activeBank.code})</strong>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingBank(!isEditingBank)}
+                        style={{
+                          background: '#fff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#ea580c',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isEditingBank ? 'Đóng' : 'Đổi ngân hàng'}
+                      </button>
+                    </div>
                   </div>
+
+                  {isEditingBank && (
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRadius: '8px', border: '1px solid #fed7aa', marginTop: '4px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#9a3412', marginBottom: '4px' }}>
+                        Chọn ngân hàng thụ hưởng đúng để hiển thị mã VietQR:
+                      </div>
+                      <select
+                        value={activeBank.code}
+                        onChange={(e) => {
+                          setOverrideBankCode(e.target.value);
+                          setQrImgError(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          color: '#0f172a',
+                          background: '#fff',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {POPULAR_VIETQR_BANKS.map((b) => (
+                          <option key={b.code} value={b.code}>
+                            {b.shortName} ({b.code}) - {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
                     <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -373,13 +460,32 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                   }}
                 >
                   {qrImgError ? (
-                    <div style={{ padding: '24px 16px', textAlign: 'center', color: '#64748b' }}>
-                      <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#b45309' }}>
-                        ⚠️ Không thể tải ảnh mã QR
+                    <div style={{ padding: '20px 16px', textAlign: 'center', color: '#64748b' }}>
+                      <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#b45309' }}>
+                        ⚠️ Không thể tải ảnh mã QR với ngân hàng "{activeBank.shortName}"
                       </p>
-                      <p style={{ margin: 0, fontSize: '12px' }}>
-                        Vui lòng sao chép STK bên cạnh và chuyển khoản thủ công trên App ngân hàng.
+                      <p style={{ margin: '0 0 12px 0', fontSize: '12px' }}>
+                        Vui lòng thử chọn lại ngân hàng thụ hưởng khác hoặc chuyển khoản thủ công theo STK.
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingBank(true);
+                          setQrImgError(false);
+                        }}
+                        style={{
+                          background: '#ea580c',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Chọn lại ngân hàng thụ hưởng
+                      </button>
                     </div>
                   ) : (
                     <img

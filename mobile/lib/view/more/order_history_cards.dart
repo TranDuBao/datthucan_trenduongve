@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../services/order_service.dart';
-import '../../view/main_tabview/main_tabview.dart';
 import '../../widgets/order_progress_stepper.dart';
 import '../../common/format_utils.dart';
 import 'order_history_widgets.dart';
@@ -554,6 +553,7 @@ class CancelledOrderCard extends StatelessWidget {
   final bool isDark;
   final VoidCallback onShowDetail;
   final void Function(dynamic item, OrderServiceModel order) onNavigateToItem;
+  final void Function(OrderServiceModel order)? onReorder;
 
   const CancelledOrderCard({
     super.key,
@@ -561,20 +561,8 @@ class CancelledOrderCard extends StatelessWidget {
     required this.isDark,
     required this.onShowDetail,
     required this.onNavigateToItem,
+    this.onReorder,
   });
-
-  void _reorder(BuildContext context) {
-    final mainTab = context.findAncestorStateOfType<MainTabViewState>();
-    if (mainTab != null) {
-      mainTab.changeTab(0, popToRoot: true);
-    } else {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainTabView(initialTab: 0)),
-        (route) => false,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -766,7 +754,9 @@ class CancelledOrderCard extends StatelessWidget {
                 child: SizedBox(
                   height: 38,
                   child: ElevatedButton(
-                    onPressed: () => _reorder(context),
+                    onPressed: () => onReorder != null
+                        ? onReorder!(order)
+                        : onNavigateToItem(order.items.isNotEmpty ? order.items[0] : null, order),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       backgroundColor: const Color(0xFFFC6011),

@@ -180,6 +180,113 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => ItemDetailsView(itemObj: itemObj)));
   }
 
+  void _handleReorder(OrderServiceModel order, bool isDark) {
+    if (order.items.isEmpty) {
+      _navigateToItemDetails(null, order);
+      return;
+    }
+    if (order.items.length == 1) {
+      _navigateToItemDetails(order.items.first, order);
+      return;
+    }
+    _showReorderItemPicker(order, isDark);
+  }
+
+  void _showReorderItemPicker(OrderServiceModel order, bool isDark) {
+    final cardBg = isDark ? const Color(0xFF1E2430) : Colors.white;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3B4052) : const Color(0xFFD0D4E0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Chọn món để đặt lại',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textPrimary),
+            ),
+            if (order.restaurantName.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                order.restaurantName,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFFFC6011)),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: order.items.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: isDark ? const Color(0xFF2C3240) : const Color(0xFFF1F5F9),
+                ),
+                itemBuilder: (c, idx) {
+                  final it = order.items[idx];
+                  final name = it is Map ? (it['tenMonAn'] ?? it['name'] ?? it['foodName'] ?? 'Món ăn') : 'Món ăn';
+                  final price = it is Map ? (it['gia'] ?? it['price'] ?? 0) : 0;
+                  final img = it is Map ? (it['hinhAnh'] ?? it['image'] ?? it['img'] ?? '') : '';
+                  final qty = it is Map ? (it['soLuong'] ?? 1) : 1;
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: isDark ? const Color(0xFF262E3D) : const Color(0xFFF8FAFC),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: img.toString().isNotEmpty
+                            ? Image.network(img.toString(), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.fastfood_rounded, color: Color(0xFFFC6011), size: 20))
+                            : const Icon(Icons.fastfood_rounded, color: Color(0xFFFC6011), size: 20),
+                      ),
+                    ),
+                    title: Text(
+                      '$qty x $name',
+                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: textPrimary),
+                    ),
+                    subtitle: Text(
+                      FormatUtils.formatCurrency(price),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                    ),
+                    trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _navigateToItemDetails(it, order);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ───────────────────────── Order actions ──────────────────────────────────
   Future<void> _handleCancelOrder(OrderServiceModel order) async {
     final stepNum = OrderProgressStepper.getStepFromStatus(order.status);
@@ -474,6 +581,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                           isDark: isDark,
                                           onShowDetail: () => _openDetailSheet(order, isDark),
                                           onNavigateToItem: _navigateToItemDetails,
+                                          onReorder: (ord) => _handleReorder(ord, isDark),
                                         )),
                                     const SizedBox(height: 16),
                                   ] else if (selectedTabIndex == 3) ...[

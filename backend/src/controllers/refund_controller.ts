@@ -227,7 +227,12 @@ export class RefundController {
         });
       }
 
-      refund.nganHangNhan = nganHang.trim();
+      let cleanBank = nganHang.trim();
+      const upperBank = cleanBank.toUpperCase();
+      if (upperBank === 'CTG' || upperBank.includes('VIETINBANK')) {
+        cleanBank = 'ICB';
+      }
+      refund.nganHangNhan = cleanBank;
       refund.soTaiKhoanNhan = soTaiKhoan.trim();
       if (tenChuTaiKhoan && typeof tenChuTaiKhoan === 'string') {
         refund.tenChuTaiKhoanNhan = tenChuTaiKhoan.trim();

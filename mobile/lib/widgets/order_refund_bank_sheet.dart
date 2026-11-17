@@ -264,20 +264,11 @@ class _OrderRefundBankSheetState extends State<OrderRefundBankSheet> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFC6011).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        VietQrBanks.findByCodeOrBin(_selectedBank).code,
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFFFC6011),
-                        ),
-                      ),
+                    VietQrBankLogo(
+                      bank: VietQrBanks.findByCodeOrBin(_selectedBank),
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
