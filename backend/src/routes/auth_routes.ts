@@ -23,6 +23,9 @@ router.post('/me', authMiddleware as any, authController.getProfile);
 router.post('/update_profile', authMiddleware as any, authController.updateProfile);
 router.put('/update_profile', authMiddleware as any, authController.updateProfile);
 router.post('/change_password', authMiddleware as any, authController.changePassword);
+router.post('/forgot_password_request', authLimiter as any, authController.forgotPasswordRequest);
+router.post('/forgot_password_verify', authLimiter as any, authController.forgotPasswordVerify);
+router.post('/forgot_password_set_new', authLimiter as any, authController.forgotPasswordSetNew);
 router.post('/scan-cccd', authController.scanCCCD);
 
 export default router;

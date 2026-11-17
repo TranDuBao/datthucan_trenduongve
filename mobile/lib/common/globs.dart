@@ -135,20 +135,39 @@ class SVKey {
 
   static String formatImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) return '';
-    final trimmed = rawUrl.trim();
+    var trimmed = rawUrl.trim();
     if (trimmed.startsWith('data:image')) {
       return trimmed;
     }
+    if (trimmed.startsWith('//')) {
+      return 'https:$trimmed';
+    }
+
+    final serverHost = mainUrl.replaceAll(RegExp(r'/+$'), '');
+
+    // Normalize any legacy local IP or localhost URLs from development to current mainUrl
+    if (trimmed.contains('localhost:3000')) {
+      trimmed = trimmed.replaceAll('http://localhost:3000', serverHost).replaceAll('https://localhost:3000', serverHost);
+    }
+    if (trimmed.contains('127.0.0.1:3000')) {
+      trimmed = trimmed.replaceAll('http://127.0.0.1:3000', serverHost).replaceAll('https://127.0.0.1:3000', serverHost);
+    }
+    if (trimmed.contains('10.0.2.2:3000')) {
+      trimmed = trimmed.replaceAll('http://10.0.2.2:3000', serverHost).replaceAll('https://10.0.2.2:3000', serverHost);
+    }
+
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
     }
-    // Handle local uploaded images containing /uploads/
-    if (trimmed.contains('/uploads/')) {
-      final fileName = trimmed.split('/uploads/').last;
-      return '${mainUrl}/uploads/$fileName';
+
+    // Handle relative uploads path
+    if (trimmed.contains('uploads/')) {
+      final fileName = trimmed.split('uploads/').last;
+      return '$serverHost/uploads/$fileName';
     }
+
     final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
-    return '${mainUrl}$cleanPath';
+    return '$serverHost$cleanPath';
   }
 }
 

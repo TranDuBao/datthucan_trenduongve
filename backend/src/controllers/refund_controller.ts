@@ -144,16 +144,25 @@ export class RefundController {
         }
       }
 
-      const { trangThai, maGiaoDich, ghiChu } = req.body;
+      const { trangThai, maGiaoDich, maGiaoDichNganHang, anhBienLai, ghiChu } = req.body;
 
       if (!trangThai) {
         return res.status(400).json({ status: 'error', message: 'Thiếu trạng thái hoàn tiền mới' });
+      }
+
+      if (trangThai === RefundStatus.WAITING_CUSTOMER && !anhBienLai) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Vui lòng tải lên ảnh chụp biên lai chuyển tiền thành công trước khi gửi cho khách hàng',
+        });
       }
 
       const updated = await this.refundService.updateRefundStatus({
         maHoanTien,
         newStatus: trangThai,
         maGiaoDich,
+        maGiaoDichNganHang,
+        anhBienLai,
         ghiChu,
         adminSub: Number(user.sub),
       });
@@ -259,6 +268,56 @@ export class RefundController {
       return res.status(500).json({
         status: 'error',
         message: error.message || 'Lỗi khi cập nhật thông tin tài khoản ngân hàng',
+      });
+    }
+  };
+
+  /**
+   * Khách hàng xác nhận đã nhận tiền hoặc gửi khiếu nại (TRANH_CHAP)
+   */
+  customerConfirmRefund = async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ status: 'error', message: 'Bạn chưa đăng nhập' });
+      }
+
+      const maHoanTien = Number(req.params.id);
+      if (isNaN(maHoanTien) || maHoanTien <= 0) {
+        return res.status(400).json({ status: 'error', message: 'Mã hoàn tiền không hợp lệ' });
+      }
+
+      const { confirmed, lyDoKhieuNai } = req.body;
+      if (typeof confirmed !== 'boolean') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Vui lòng cung cấp trạng thái xác nhận (confirmed: true/false)',
+        });
+      }
+      if (!confirmed && (!lyDoKhieuNai || !String(lyDoKhieuNai).trim())) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Vui lòng nhập lý do khiếu nại chưa nhận được tiền',
+        });
+      }
+
+      const updated = await this.refundService.customerConfirmRefund({
+        maHoanTien,
+        userSub: Number(user.sub),
+        confirmed,
+        lyDoKhieuNai: lyDoKhieuNai ? String(lyDoKhieuNai).trim() : undefined,
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        message: confirmed ? 'Xác nhận đã nhận tiền hoàn tất' : 'Đã ghi nhận khiếu nại chưa nhận được tiền',
+        data: updated,
+      });
+    } catch (error: any) {
+      const statusCode = error.status || 400;
+      return res.status(statusCode).json({
+        status: 'error',
+        message: error.message || 'Lỗi khi xử lý xác nhận hoàn tiền',
       });
     }
   };

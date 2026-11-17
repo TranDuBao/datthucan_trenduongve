@@ -279,12 +279,16 @@ export class RefundService {
     maHoanTien: number;
     newStatus: string;
     maGiaoDich?: string;
+    maGiaoDichNganHang?: string;
+    anhBienLai?: string;
     ghiChu?: string;
     adminSub?: number;
   }) {
-    const { maHoanTien, newStatus, maGiaoDich, ghiChu } = params;
+    const { maHoanTien, newStatus, maGiaoDich, maGiaoDichNganHang, anhBienLai, ghiChu } = params;
     const hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
     const thanhToanRepo = AppDataSource.getRepository(ThanhToanModel);
+    const donHangRepo = AppDataSource.getRepository(DonHangModel);
+    const khachHangRepo = AppDataSource.getRepository(KhachHangModel);
 
     const refund = await hoanTienRepo.findOne({ where: { maHoanTien } });
     if (!refund) {
@@ -293,6 +297,8 @@ export class RefundService {
 
     refund.trangThaiHoanTien = newStatus;
     if (maGiaoDich) refund.maGiaoDichPayOS = maGiaoDich;
+    if (maGiaoDichNganHang) refund.maGiaoDichNganHang = maGiaoDichNganHang;
+    if (anhBienLai) refund.anhBienLai = anhBienLai;
     if (ghiChu) refund.ghiChu = ghiChu;
 
     if (newStatus === RefundStatus.REFUNDED) {
@@ -309,45 +315,175 @@ export class RefundService {
 
     await hoanTienRepo.save(refund);
 
+    // Lấy thông tin đơn hàng để realtime & thông báo
+    const order = await donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+    const maQuan = order?.maQuan || 0;
+    const maKhachHang = order?.maKhachHang;
+
     // Bắn sự kiện realtime
-    RealtimeService.getInstance().getIO()?.emit('refund:status_changed', {
-      maHoanTien: refund.maHoanTien,
-      maDonHang: refund.maDonHang,
-      trangThai: refund.trangThaiHoanTien,
-    });
+    RealtimeService.getInstance().emitRefundStatusChanged(maQuan, refund, maKhachHang);
+
+    // Notify customer when store uploaded receipt and waiting for customer confirmation
+    if (newStatus === RefundStatus.WAITING_CUSTOMER && order && maKhachHang) {
+      try {
+        const kh = await khachHangRepo.findOne({ where: { maKhachHang } });
+        const targetUserId = kh?.maTaiKhoan || maKhachHang;
+        const amountStr = `${Number(refund.soTienHoan).toLocaleString('vi-VN')}đ`;
+
+        await NotificationService.getInstance().sendNotification({
+          recipientId: targetUserId,
+          recipientRole: 'user',
+          type: 'refund',
+          title: 'Quán đã gửi biên lai hoàn tiền',
+          body: `Quán đã chuyển khoản hoàn ${amountStr} cho đơn hàng #${refund.maDonHang}. Vui lòng kiểm tra tài khoản và xác nhận.`,
+          titleEn: 'Refund receipt sent',
+          bodyEn: `Store has refunded ${amountStr} for order #${refund.maDonHang}. Please check your account and confirm.`,
+          data: {
+            orderId: String(refund.maDonHang),
+            maHoanTien: String(refund.maHoanTien),
+            soTienHoan: String(refund.soTienHoan),
+            anhBienLai: refund.anhBienLai || '',
+            action: 'CONFIRM_REFUND',
+          },
+          idempotencyKey: `refund_receipt:${refund.maHoanTien}_${Date.now()}`,
+        });
+      } catch (err) {
+        console.error('[RefundService] Failed to send receipt notification:', err);
+      }
+    }
 
     // Notify customer about successful refund
-    if (newStatus === RefundStatus.REFUNDED) {
+    if (newStatus === RefundStatus.REFUNDED && order && maKhachHang) {
       try {
-        const donHangRepo = AppDataSource.getRepository(DonHangModel);
-        const khachHangRepo = AppDataSource.getRepository(KhachHangModel);
-        const order = await donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
-        if (order && order.maKhachHang) {
-          const kh = await khachHangRepo.findOne({ where: { maKhachHang: order.maKhachHang } });
-          const targetUserId = kh?.maTaiKhoan || order.maKhachHang;
-          const amountStr = `${Number(refund.soTienHoan).toLocaleString('vi-VN')}đ`;
-          const methodStr = refund.phuongThucHoan || 'Tài khoản gốc';
+        const kh = await khachHangRepo.findOne({ where: { maKhachHang } });
+        const targetUserId = kh?.maTaiKhoan || maKhachHang;
+        const amountStr = `${Number(refund.soTienHoan).toLocaleString('vi-VN')}đ`;
+        const methodStr = refund.phuongThucHoan || 'Tài khoản gốc';
 
-          await NotificationService.getInstance().sendNotification({
-            recipientId: targetUserId,
-            recipientRole: 'user',
-            type: 'refund',
-            title: 'Hoàn tiền thành công',
-            body: `Số tiền ${amountStr} cho đơn hàng #${refund.maDonHang} đã được hoàn tất qua ${methodStr}.`,
-            titleEn: 'Refund successful',
-            bodyEn: `A refund of ${amountStr} for order #${refund.maDonHang} has been successfully processed via ${methodStr}.`,
-            data: {
-              orderId: String(refund.maDonHang),
-              maHoanTien: String(refund.maHoanTien),
-              soTienHoan: String(refund.soTienHoan),
-              phuongThucHoan: methodStr,
-            },
-            idempotencyKey: `refund_success:${refund.maHoanTien}`,
-          });
-        }
+        await NotificationService.getInstance().sendNotification({
+          recipientId: targetUserId,
+          recipientRole: 'user',
+          type: 'refund',
+          title: 'Hoàn tiền thành công',
+          body: `Số tiền ${amountStr} cho đơn hàng #${refund.maDonHang} đã được hoàn tất qua ${methodStr}.`,
+          titleEn: 'Refund successful',
+          bodyEn: `A refund of ${amountStr} for order #${refund.maDonHang} has been successfully processed via ${methodStr}.`,
+          data: {
+            orderId: String(refund.maDonHang),
+            maHoanTien: String(refund.maHoanTien),
+            soTienHoan: String(refund.soTienHoan),
+            phuongThucHoan: methodStr,
+          },
+          idempotencyKey: `refund_success:${refund.maHoanTien}`,
+        });
       } catch (refundNotifErr) {
         console.error('[RefundService] Failed to send refund notification:', refundNotifErr);
       }
+    }
+
+    return refund;
+  }
+
+  /**
+   * Khách hàng xác nhận đã nhận tiền hoặc gửi khiếu nại tranh chấp
+   */
+  async customerConfirmRefund(params: {
+    maHoanTien: number;
+    userSub: number;
+    confirmed: boolean;
+    lyDoKhieuNai?: string;
+  }) {
+    const { maHoanTien, userSub, confirmed, lyDoKhieuNai } = params;
+    const hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
+    const donHangRepo = AppDataSource.getRepository(DonHangModel);
+    const khachHangRepo = AppDataSource.getRepository(KhachHangModel);
+    const thanhToanRepo = AppDataSource.getRepository(ThanhToanModel);
+    const cuaHangRepo = AppDataSource.getRepository(CuaHangModel);
+
+    const refund = await hoanTienRepo.findOne({ where: { maHoanTien } });
+    if (!refund) {
+      const err: any = new Error('Không tìm thấy yêu cầu hoàn tiền');
+      err.status = 404;
+      throw err;
+    }
+
+    const order = await donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+    if (!order) {
+      const err: any = new Error('Không tìm thấy đơn hàng tương ứng');
+      err.status = 404;
+      throw err;
+    }
+
+    // Kiểm tra quyền sở hữu BOLA/IDOR
+    const khachHang = await khachHangRepo.findOne({ where: { maTaiKhoan: userSub } });
+    if (!khachHang || order.maKhachHang !== khachHang.maKhachHang) {
+      const err: any = new Error('Không tìm thấy yêu cầu hoàn tiền');
+      err.status = 404;
+      throw err;
+    }
+
+    if (refund.trangThaiHoanTien === RefundStatus.REFUNDED) {
+      throw new Error('Yêu cầu hoàn tiền này đã hoàn tất trước đó.');
+    }
+
+    if (confirmed) {
+      refund.trangThaiHoanTien = RefundStatus.REFUNDED;
+      refund.thoiGianKhachXacNhan = new Date();
+      refund.thoiGianHoan = new Date();
+
+      // Đồng bộ sang bảng thanh toán
+      const payment = await thanhToanRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+      if (payment) {
+        payment.trangThai = 'DA_HOAN_TIEN';
+        await thanhToanRepo.save(payment);
+      }
+    } else {
+      refund.trangThaiHoanTien = RefundStatus.DISPUTED;
+      refund.lyDoKhieuNai = lyDoKhieuNai || 'Khách hàng báo chưa nhận được tiền';
+      refund.thoiGianKhieuNai = new Date();
+    }
+
+    await hoanTienRepo.save(refund);
+
+    // Bắn realtime cho Cửa hàng, Admin và Khách hàng
+    RealtimeService.getInstance().emitRefundStatusChanged(order.maQuan, refund, order.maKhachHang);
+
+    // Gửi thông báo cho Quán
+    try {
+      const store = await cuaHangRepo.findOne({ where: { maQuan: order.maQuan } });
+      if (store && store.maTaiKhoan) {
+        const amountStr = `${Number(refund.soTienHoan).toLocaleString('vi-VN')}đ`;
+        if (confirmed) {
+          await NotificationService.getInstance().sendNotification({
+            recipientId: store.maTaiKhoan,
+            recipientRole: 'restaurant',
+            type: 'refund',
+            title: 'Khách hàng đã nhận được tiền hoàn',
+            body: `Khách hàng đơn #${order.maDonHang} đã xác nhận nhận đủ ${amountStr}. Giao dịch hoàn tất!`,
+            data: {
+              orderId: String(order.maDonHang),
+              maHoanTien: String(refund.maHoanTien),
+              status: RefundStatus.REFUNDED,
+            },
+          });
+        } else {
+          await NotificationService.getInstance().sendNotification({
+            recipientId: store.maTaiKhoan,
+            recipientRole: 'restaurant',
+            type: 'refund_dispute',
+            title: 'Khiếu nại: Khách chưa nhận được tiền',
+            body: `Khách hàng đơn #${order.maDonHang} báo chưa nhận được tiền (${amountStr}). Lý do: ${refund.lyDoKhieuNai}`,
+            data: {
+              orderId: String(order.maDonHang),
+              maHoanTien: String(refund.maHoanTien),
+              status: RefundStatus.DISPUTED,
+              lyDoKhieuNai: refund.lyDoKhieuNai,
+            },
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.error('[RefundService] Failed to notify store about customer refund confirmation:', notifErr);
     }
 
     return refund;

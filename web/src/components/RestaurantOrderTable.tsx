@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag, MessageSquare, QrCode, CheckCircle2 } from 'lucide-react';
+import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag, MessageSquare, QrCode, CheckCircle2, AlertTriangle } from 'lucide-react';
 import {
   OrderStatusBadge,
   normalizeOrderStatus,
@@ -377,7 +377,9 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
             if (rf) {
               if (rf.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG') {
                 return (
-                  <span
+                  <button
+                    onClick={() => onOpenRefund?.(ord)}
+                    title="Xem chi tiết hoàn tiền & biên lai"
                     style={{
                       background: '#f0fdf4',
                       color: '#16a34a',
@@ -390,10 +392,60 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
                       alignItems: 'center',
                       gap: '4px',
                       whiteSpace: 'nowrap',
+                      cursor: 'pointer',
                     }}
                   >
-                    <CheckCircle2 size={12} /> Đã hoàn tiền
-                  </span>
+                    <CheckCircle2 size={12} /> Đã hoàn tất
+                  </button>
+                );
+              }
+              if (rf.trangThaiHoanTien === 'CHO_KHACH_XAC_NHAN') {
+                return (
+                  <button
+                    onClick={() => onOpenRefund?.(ord)}
+                    title="Quán đã gửi biên lai, đang chờ khách xác nhận"
+                    style={{
+                      background: '#f0f9ff',
+                      color: '#0284c7',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '8px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Clock size={12} /> Chờ khách xác nhận
+                  </button>
+                );
+              }
+              if (rf.trangThaiHoanTien === 'TRANH_CHAP') {
+                return (
+                  <button
+                    onClick={() => onOpenRefund?.(ord)}
+                    title="Khách hàng báo chưa nhận được tiền"
+                    style={{
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      animation: 'pulse 2s infinite',
+                    }}
+                  >
+                    <AlertTriangle size={12} /> Khách khiếu nại
+                  </button>
                 );
               }
               if (rf.soTaiKhoanNhan) {

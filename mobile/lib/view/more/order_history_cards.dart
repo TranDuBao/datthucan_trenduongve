@@ -674,49 +674,37 @@ class CancelledOrderCard extends StatelessWidget {
 
           if (order.refundStatus != null) ...[
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                    ? (isDark ? const Color(0xFF0F291E) : const Color(0xFFECFDF3))
-                    : (isDark ? const Color(0xFF2E200C) : const Color(0xFFFFF6ED)),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                      ? const Color(0xFF6CE9A6)
-                      : const Color(0xFFFDB022),
-                  width: 0.8,
+            () {
+              final isDone = order.refundStatus == 'HOAN_TIEN_THANH_CONG';
+              final isWait = order.refundStatus == 'CHO_KHACH_XAC_NHAN';
+              final isDisp = order.refundStatus == 'TRANH_CHAP';
+              final amt = formatOrderTotal(order.refundAmount ?? 0);
+              final bg = isDone ? (isDark ? const Color(0xFF0F291E) : const Color(0xFFECFDF3))
+                  : isWait ? (isDark ? const Color(0xFF0C243B) : const Color(0xFFF0F9FF))
+                  : isDisp ? (isDark ? const Color(0xFF2E1715) : const Color(0xFFFEF2F2))
+                  : (isDark ? const Color(0xFF2E200C) : const Color(0xFFFFF6ED));
+              final border = isDone ? const Color(0xFF6CE9A6) : isWait ? const Color(0xFF7DD3FC) : isDisp ? const Color(0xFFFDA29B) : const Color(0xFFFDB022);
+              final fg = isDone ? (isDark ? const Color(0xFF6CE9A6) : const Color(0xFF027A48))
+                  : isWait ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
+                  : isDisp ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626))
+                  : (isDark ? const Color(0xFFFDB022) : const Color(0xFFB54708));
+              final text = isDone ? 'Đã hoàn $amt vào TK ngân hàng'
+                  : isWait ? 'Quán đã gửi biên lai hoàn $amt - Chờ xác nhận'
+                  : isDisp ? 'Đang khiếu nại hoàn tiền: $amt' : 'Đang hoàn tiền: $amt';
+              final icon = isDone ? Icons.check_circle_rounded : isWait ? Icons.receipt_long_rounded : isDisp ? Icons.warning_amber_rounded : Icons.hourglass_top_rounded;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: border, width: 0.8)),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 14, color: fg),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(text, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: fg))),
+                  ],
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                        ? Icons.check_circle_rounded
-                        : Icons.hourglass_top_rounded,
-                    size: 14,
-                    color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                        ? const Color(0xFF027A48)
-                        : const Color(0xFFB54708),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                          ? 'Đã hoàn ${formatOrderTotal(order.refundAmount ?? 0)} vào TK ngân hàng'
-                          : 'Đang hoàn tiền: ${formatOrderTotal(order.refundAmount ?? 0)}',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: order.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                            ? (isDark ? const Color(0xFF6CE9A6) : const Color(0xFF027A48))
-                            : (isDark ? const Color(0xFFFDB022) : const Color(0xFFB54708)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              );
+            }(),
           ],
 
           const SizedBox(height: 12),

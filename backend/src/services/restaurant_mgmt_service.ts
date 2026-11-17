@@ -315,6 +315,11 @@ export class RestaurantMgmtService {
           thoiGianYeuCau: rf.thoiGianYeuCau,
           thoiGianHoan: rf.thoiGianHoan,
           lyDoHoan: rf.lyDoHoan,
+          anhBienLai: rf.anhBienLai,
+          maGiaoDichNganHang: rf.maGiaoDichNganHang,
+          lyDoKhieuNai: rf.lyDoKhieuNai,
+          thoiGianKhieuNai: rf.thoiGianKhieuNai,
+          thoiGianKhachXacNhan: rf.thoiGianKhachXacNhan,
           vietQrUrl,
         };
       }

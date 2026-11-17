@@ -1,9 +1,16 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 import { AuthService } from '../services/auth_service';
 import { UserService } from '../services/user_service';
 import { AdminService } from '../services/admin_service';
+import { EmailService } from '../services/email_service';
 import { AuthenticatedRequest } from '../middlewares/auth_middleware';
 import { sanitizeErrorMessage } from '../utils/error_sanitizer';
+import { AppDataSource } from '../config/database';
+import { OtpModel } from '../models/otp_model';
+import { TaiKhoanModel } from '../models/tai_khoan_model';
+import { KhachHangModel } from '../models/khach_hang_model';
+import { TokenBlacklistService } from '../services/token_blacklist_service';
 
 export class AuthController {
   private authService = new AuthService();
@@ -382,6 +389,249 @@ export class AuthController {
       return res.status(200).json({ statusCode: 200, status: '1', data: result });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: sanitizeErrorMessage(error, 'Quét CCCD thất bại, vui lòng thử lại') });
+    }
+  };
+
+  forgotPasswordRequest = async (req: Request, res: Response) => {
+    try {
+      const email = (req.body.email || '').trim().toLowerCase();
+      if (!email) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Vui lòng cung cấp địa chỉ email hợp lệ!',
+        });
+      }
+
+      // Kiểm tra tài khoản có tồn tại không
+      const user = await this.userService.findByTenDangNhapOrEmail(email);
+      if (!user) {
+        return res.status(404).json({
+          statusCode: 404,
+          status: '0',
+          message: 'Không tìm thấy tài khoản nào gắn với email này!',
+        });
+      }
+
+      // Tạo mã OTP ngẫu nhiên 6 chữ số
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Lưu mã OTP vào CSDL (hết hạn sau 5 phút)
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      // Vô hiệu hóa các OTP cũ chưa sử dụng của email này
+      await otpRepo.update({ email, daSuDung: false, loai: 'FORGOT_PASSWORD' }, { daSuDung: true });
+
+      const hetHanLuc = new Date(Date.now() + 5 * 60 * 1000);
+      const otpEntity = otpRepo.create({
+        email,
+        otpCode,
+        loai: 'FORGOT_PASSWORD',
+        daSuDung: false,
+        hetHanLuc,
+      });
+      await otpRepo.save(otpEntity);
+
+      // Gửi email OTP
+      const recipientName = user.khachHang?.hoTen || user.taiKhoan.tenDangNhap;
+      const sendResult = await EmailService.getInstance().sendOtpEmail({
+        toEmail: email,
+        otpCode,
+        recipientName,
+      });
+
+      if (!sendResult.success) {
+        return res.status(500).json({
+          statusCode: 500,
+          status: '0',
+          message: sendResult.message || 'Không thể gửi email OTP lúc này. Vui lòng thử lại sau!',
+        });
+      }
+
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Mã xác thực OTP đã được gửi đến email của bạn!',
+        payload: { email },
+        data: { email },
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        statusCode: 500,
+        status: '0',
+        message: sanitizeErrorMessage(error, 'Lỗi hệ thống khi gửi mã OTP'),
+      });
+    }
+  };
+
+  forgotPasswordVerify = async (req: Request, res: Response) => {
+    try {
+      const email = (req.body.email || '').trim().toLowerCase();
+      const resetCode = (req.body.reset_code || req.body.otp || '').trim();
+
+      if (!email || !resetCode) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Vui lòng nhập đầy đủ email và mã xác thực OTP (6 chữ số)!',
+        });
+      }
+
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      const otpRecord = await otpRepo.findOne({
+        where: { email, otpCode: resetCode, daSuDung: false, loai: 'FORGOT_PASSWORD' },
+        order: { ngayTao: 'DESC' },
+      });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Mã OTP không chính xác hoặc đã được sử dụng!',
+        });
+      }
+
+      if (new Date() > new Date(otpRecord.hetHanLuc)) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Mã OTP đã hết hiệu lực (chỉ có giá trị trong 5 phút). Vui lòng yêu cầu gửi lại!',
+        });
+      }
+
+      const user = await this.userService.findByTenDangNhapOrEmail(email);
+      if (!user) {
+        return res.status(404).json({
+          statusCode: 404,
+          status: '0',
+          message: 'Không tìm thấy tài khoản người dùng tương ứng!',
+        });
+      }
+
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Xác thực OTP thành công!',
+        payload: {
+          user_id: user.taiKhoan.maTaiKhoan,
+          reset_code: resetCode,
+          email,
+        },
+        data: {
+          user_id: user.taiKhoan.maTaiKhoan,
+          reset_code: resetCode,
+          email,
+        },
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        statusCode: 500,
+        status: '0',
+        message: sanitizeErrorMessage(error, 'Lỗi hệ thống khi xác thực OTP'),
+      });
+    }
+  };
+
+  forgotPasswordSetNew = async (req: Request, res: Response) => {
+    try {
+      const userId = Number(req.body.user_id);
+      const resetCode = (req.body.reset_code || '').trim();
+      const newPassword = req.body.new_password;
+
+      if (!userId || !resetCode || !newPassword) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Vui lòng cung cấp đầy đủ thông tin đặt lại mật khẩu!',
+        });
+      }
+
+      if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Mật khẩu mới phải có tối thiểu 6 ký tự!',
+        });
+      }
+
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      const otpRecord = await otpRepo.findOne({
+        where: { otpCode: resetCode, daSuDung: false, loai: 'FORGOT_PASSWORD' },
+        order: { ngayTao: 'DESC' },
+      });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Mã xác thực không hợp lệ hoặc đã qua sử dụng!',
+        });
+      }
+
+      if (new Date() > new Date(otpRecord.hetHanLuc)) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Phiên xác thực đã hết hạn. Vui lòng thực hiện lại từ đầu!',
+        });
+      }
+
+      const taiKhoanRepo = AppDataSource.getRepository(TaiKhoanModel);
+      const taiKhoan = await taiKhoanRepo.findOne({
+        where: { maTaiKhoan: userId },
+      });
+
+      if (!taiKhoan) {
+        return res.status(404).json({
+          statusCode: 404,
+          status: '0',
+          message: 'Không tìm thấy tài khoản người dùng!',
+        });
+      }
+
+      // Hash mật khẩu mới với bcrypt
+      const saltRounds = 10;
+      taiKhoan.matKhau = await bcrypt.hash(newPassword, saltRounds);
+      await taiKhoanRepo.save(taiKhoan);
+
+      // Đánh dấu OTP đã sử dụng
+      otpRecord.daSuDung = true;
+      await otpRepo.save(otpRecord);
+
+      // Thu hồi tất cả phiên đăng nhập cũ của tài khoản để đảm bảo an toàn
+      try {
+        TokenBlacklistService.getInstance().revokeAllUserTokens(userId);
+      } catch (_) {}
+
+      // Ghi audit log
+      try {
+        const clientIp = req.ip || req.headers['x-forwarded-for']?.toString() || req.socket.remoteAddress || '127.0.0.1';
+        this.auditLogService.logAction({
+          maTaiKhoan: userId,
+          tenNguoiThucHien: taiKhoan.tenDangNhap,
+          actorEmail: otpRecord.email,
+          actorRole: taiKhoan.loaiTaiKhoan,
+          loaiHanhDong: 'DAT_LAI_MAT_KHAU_OTP',
+          moTa: `Người dùng đặt lại mật khẩu thành công qua Email OTP (${otpRecord.email})`,
+          doiTuong: 'TAI_KHOAN',
+          maDoiTuong: userId,
+          result: 'success',
+          ipAddress: clientIp,
+        }).catch(() => {});
+      } catch (_) {}
+
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.',
+        payload: {},
+        data: {},
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        statusCode: 500,
+        status: '0',
+        message: sanitizeErrorMessage(error, 'Lỗi hệ thống khi cập nhật mật khẩu mới'),
+      });
     }
   };
 }

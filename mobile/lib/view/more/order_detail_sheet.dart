@@ -81,6 +81,7 @@ void showOrderDetailSheet({
                 setSheetState(() {});
               }
             },
+            onStatusUpdated: () => setSheetState(() {}),
           );
         },
       );
@@ -101,6 +102,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
   final void Function(OrderServiceModel) onCancelOrder;
   final void Function(dynamic item, OrderServiceModel order) onNavigateToItem;
   final VoidCallback onEditBank;
+  final VoidCallback? onStatusUpdated;
 
   const _OrderDetailSheetContent({
     required this.currentOrder,
@@ -112,6 +114,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
     required this.onCancelOrder,
     required this.onNavigateToItem,
     required this.onEditBank,
+    this.onStatusUpdated,
   });
 
   @override
@@ -240,6 +243,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
                       order: currentOrder,
                       isDark: isDark,
                       onEditBank: onEditBank,
+                      onStatusUpdated: onStatusUpdated,
                     )
                   else
                     _buildCard(

@@ -89,6 +89,19 @@ app.use(
   express.static(uploadsDir, {
     setHeaders: (res) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  })
+);
+app.use(
+  '/api/v1/uploads',
+  blockKycStatic,
+  express.static(uploadsDir, {
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     },
   })
 );
@@ -100,6 +113,19 @@ if (fs.existsSync(fallbackUploadsDir)) {
     express.static(fallbackUploadsDir, {
       setHeaders: (res) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      },
+    })
+  );
+  app.use(
+    '/api/v1/uploads',
+    blockKycStatic,
+    express.static(fallbackUploadsDir, {
+      setHeaders: (res) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       },
     })
   );

@@ -82,20 +82,30 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
         setState(() {
           for (var order in ordersList) {
             if (order.orderId == orderId) {
-              if (data['status'] != null || data['trangThai'] != null) {
-                order.refundStatus = (data['status'] ?? data['trangThai']).toString();
+              final refObj = data['refund'] is Map ? data['refund'] : null;
+              if (data['status'] != null || data['trangThai'] != null || refObj?['trangThaiHoanTien'] != null) {
+                order.refundStatus = (data['status'] ?? data['trangThai'] ?? refObj?['trangThaiHoanTien']).toString();
               }
-              if (data['refundAmount'] != null || data['soTienHoan'] != null) {
-                order.refundAmount = (data['refundAmount'] ?? data['soTienHoan'] as num?)?.toDouble();
+              if (data['refundAmount'] != null || data['soTienHoan'] != null || refObj?['soTienHoan'] != null) {
+                order.refundAmount = (data['refundAmount'] ?? data['soTienHoan'] ?? refObj?['soTienHoan'] as num?)?.toDouble();
               }
-              if (data['nganHang'] != null || data['nganHangNhan'] != null) {
-                order.refundBank = (data['nganHang'] ?? data['nganHangNhan']).toString();
+              if (data['maHoanTien'] != null || data['refundId'] != null || refObj?['maHoanTien'] != null) {
+                order.refundId = int.tryParse((data['maHoanTien'] ?? data['refundId'] ?? refObj?['maHoanTien']).toString());
               }
-              if (data['soTaiKhoan'] != null || data['soTaiKhoanNhan'] != null) {
-                order.refundAccountNumber = (data['soTaiKhoan'] ?? data['soTaiKhoanNhan']).toString();
+              if (data['anhBienLai'] != null || refObj?['anhBienLai'] != null) {
+                order.refundReceiptUrl = (data['anhBienLai'] ?? refObj?['anhBienLai']).toString();
               }
-              if (data['tenChuTaiKhoan'] != null || data['tenChuTaiKhoanNhan'] != null) {
-                order.refundAccountName = (data['tenChuTaiKhoan'] ?? data['tenChuTaiKhoanNhan']).toString();
+              if (data['lyDoKhieuNai'] != null || refObj?['lyDoKhieuNai'] != null) {
+                order.refundDisputeReason = (data['lyDoKhieuNai'] ?? refObj?['lyDoKhieuNai']).toString();
+              }
+              if (data['nganHang'] != null || data['nganHangNhan'] != null || refObj?['nganHangNhan'] != null) {
+                order.refundBank = (data['nganHang'] ?? data['nganHangNhan'] ?? refObj?['nganHangNhan']).toString();
+              }
+              if (data['soTaiKhoan'] != null || data['soTaiKhoanNhan'] != null || refObj?['soTaiKhoanNhan'] != null) {
+                order.refundAccountNumber = (data['soTaiKhoan'] ?? data['soTaiKhoanNhan'] ?? refObj?['soTaiKhoanNhan']).toString();
+              }
+              if (data['tenChuTaiKhoan'] != null || data['tenChuTaiKhoanNhan'] != null || refObj?['tenChuTaiKhoanNhan'] != null) {
+                order.refundAccountName = (data['tenChuTaiKhoan'] ?? data['tenChuTaiKhoanNhan'] ?? refObj?['tenChuTaiKhoanNhan']).toString();
               }
             }
           }

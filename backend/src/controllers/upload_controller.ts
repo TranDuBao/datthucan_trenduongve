@@ -83,10 +83,10 @@ export class UploadController {
         }
       }
 
-      // Security check: Validate maximum file size limit (5MB max)
-      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      // Security check: Validate maximum file size limit (10MB max)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
       if (buffer.length > MAX_FILE_SIZE) {
-        return res.status(400).json({ statusCode: 400, message: 'Dung lượng tệp hình ảnh không được vượt quá 5MB' });
+        return res.status(400).json({ statusCode: 400, message: 'Dung lượng tệp hình ảnh không được vượt quá 10MB' });
       }
 
       // Security check: Validate actual image magic bytes

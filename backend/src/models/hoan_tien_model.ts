@@ -6,6 +6,8 @@ export enum RefundStatus {
   REFUNDED = 'HOAN_TIEN_THANH_CONG',
   FAILED = 'THAT_BAI',
   REVIEW_REQUIRED = 'CAN_DUYET_THU_CONG',
+  WAITING_CUSTOMER = 'CHO_KHACH_XAC_NHAN',
+  DISPUTED = 'TRANH_CHAP',
 }
 
 @Entity({ name: 'hoantien' })
@@ -54,4 +56,19 @@ export class HoanTienModel {
 
   @Column({ name: 'ghichu', type: 'text', nullable: true })
   ghiChu?: string;
+
+  @Column({ name: 'anhbienlai', type: 'text', nullable: true })
+  anhBienLai?: string;
+
+  @Column({ name: 'magiaodichnganhang', length: 100, nullable: true })
+  maGiaoDichNganHang?: string;
+
+  @Column({ name: 'lydokhieunai', type: 'text', nullable: true })
+  lyDoKhieuNai?: string;
+
+  @Column({ name: 'thoigiankhieunai', type: 'timestamp', nullable: true })
+  thoiGianKhieuNai?: Date;
+
+  @Column({ name: 'thoigiankhachxacnhan', type: 'timestamp', nullable: true })
+  thoiGianKhachXacNhan?: Date;
 }

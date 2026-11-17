@@ -541,6 +541,9 @@ export class OrderService {
     const foodMap = new Map<number, MonAnModel>();
     for (const f of foods) foodMap.set(f.maMonAn, f);
 
+    const hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
+    const ref = await hoanTienRepo.findOne({ where: { maDonHang } });
+
     return {
       ...order,
       tenQuan: cuaHang?.tenQuan ?? 'Nhà hàng lộ trình',
@@ -548,6 +551,9 @@ export class OrderService {
       lat: cuaHang?.lat ? Number(cuaHang.lat) : undefined,
       lng: cuaHang?.lng ? Number(cuaHang.lng) : undefined,
       sdt: cuaHang?.sdt || undefined,
+      refund: ref || null,
+      refundStatus: ref?.trangThaiHoanTien || null,
+      refundAmount: ref?.soTienHoan ? Number(ref.soTienHoan) : null,
       items: items.map((item) => {
         const food = foodMap.get(item.maMonAn);
         return {

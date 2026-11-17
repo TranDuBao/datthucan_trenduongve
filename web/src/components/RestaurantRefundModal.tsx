@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
-import { X, QrCode, Copy, Check, AlertCircle, ArrowUpRight, CheckCircle2, Building, User, CreditCard } from 'lucide-react';
-import { apiFetch } from '../api/apiClient';
+import {
+  X,
+  QrCode,
+  Copy,
+  Check,
+  AlertCircle,
+  CheckCircle2,
+  Building,
+  User,
+  CreditCard,
+  Upload,
+  Eye,
+  Clock,
+  AlertTriangle,
+} from 'lucide-react';
+import { apiFetch, API_HOST } from '../api/apiClient';
 
 interface RestaurantRefundModalProps {
   isOpen: boolean;
@@ -24,6 +38,12 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
   const [overrideBankCode, setOverrideBankCode] = useState<string | null>(null);
   const [isEditingBank, setIsEditingBank] = useState(false);
 
+  const [receiptImage, setReceiptImage] = useState<string>('');
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+  const [bankTxCode, setBankTxCode] = useState('');
+  const [showFullReceipt, setShowFullReceipt] = useState(false);
+  const [receiptUrlToView, setReceiptUrlToView] = useState<string>('');
+
   if (!isOpen || !order) return null;
 
   const refund = order.refundInfo || order.refund || {};
@@ -32,8 +52,18 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
   const rawBankName = (refund.nganHangNhan || '').trim();
   const accountNumber = (refund.soTaiKhoanNhan || '').trim();
   const accountHolder = (refund.tenChuTaiKhoanNhan || order.tenKhachHang || '').trim();
+
   const isCompleted = refund.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG';
+  const isWaitingCustomer = refund.trangThaiHoanTien === 'CHO_KHACH_XAC_NHAN';
+  const isDisputed = refund.trangThaiHoanTien === 'TRANH_CHAP';
+  const currentReceipt = receiptImage || refund.anhBienLai || '';
   const hasBankInfo = (rawBankName.length > 0 || overrideBankCode !== null) && accountNumber.length > 0;
+
+  const getFullImageUrl = (path?: string) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${API_HOST}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
 
   const POPULAR_VIETQR_BANKS = [
     { code: 'ICB', bin: '970415', shortName: 'VietinBank', name: 'Ngân hàng TMCP Công thương Việt Nam' },
@@ -96,9 +126,83 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
     }
   };
 
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      setErrorMsg('Ảnh biên lai không được vượt quá 15MB');
+      return;
+    }
+
+    setIsUploadingReceipt(true);
+    setErrorMsg('');
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setErrorMsg('Không thể đọc tệp ảnh từ thiết bị');
+      setIsUploadingReceipt(false);
+    };
+
+    reader.onload = () => {
+      const rawBase64 = reader.result as string;
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          // Auto compress & resize with canvas if dimensions exceed 1600px
+          const maxDim = 1600;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Trình duyệt không hỗ trợ canvas');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88);
+
+          const res = await apiFetch<{ url: string }>('/upload', {
+            method: 'POST',
+            body: JSON.stringify({ image: compressedBase64 }),
+          });
+
+          const url = res.url || (res as any).data?.url;
+          if (url) {
+            setReceiptImage(url);
+          } else {
+            setErrorMsg('Không nhận được đường dẫn ảnh từ máy chủ');
+          }
+        } catch (err: any) {
+          setErrorMsg(err.message || 'Lỗi tải ảnh biên lai lên máy chủ');
+        } finally {
+          setIsUploadingReceipt(false);
+        }
+      };
+      img.onerror = () => {
+        setErrorMsg('Tệp hình ảnh không hợp lệ hoặc bị lỗi');
+        setIsUploadingReceipt(false);
+      };
+      img.src = rawBase64;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleConfirmRefund = async () => {
     if (!maHoanTien) {
       setErrorMsg('Không tìm thấy mã yêu cầu hoàn tiền');
+      return;
+    }
+    const activeReceipt = receiptImage || refund.anhBienLai;
+    if (!activeReceipt) {
+      setErrorMsg('Vui lòng tải lên ảnh chụp biên lai chuyển tiền thành công trước khi gửi cho khách');
       return;
     }
     try {
@@ -107,8 +211,10 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
       const res = await apiFetch<any>(`/refunds/${maHoanTien}/status`, {
         method: 'PATCH',
         body: JSON.stringify({
-          trangThai: 'HOAN_TIEN_THANH_CONG',
-          ghiChu: 'Cửa hàng đã quét VietQR chuyển khoản trực tiếp cho khách',
+          trangThai: 'CHO_KHACH_XAC_NHAN',
+          anhBienLai: activeReceipt,
+          maGiaoDichNganHang: bankTxCode.trim() || undefined,
+          ghiChu: 'Cửa hàng đã quét VietQR chuyển khoản và gửi biên lai đối soát',
         }),
       });
 
@@ -291,10 +397,129 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                 Đã hoàn tiền thành công
               </div>
               <div style={{ fontSize: '13px', color: '#15803d', marginTop: '4px' }}>
-                Cửa hàng đã xác nhận hoàn trả {amount.toLocaleString('vi-VN')} đ về tài khoản của khách hàng.
+                Khách hàng đã xác nhận nhận đủ {amount.toLocaleString('vi-VN')} đ về tài khoản ngân hàng.
               </div>
+              {currentReceipt && (
+                <div style={{ marginTop: '14px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReceiptUrlToView(getFullImageUrl(currentReceipt));
+                      setShowFullReceipt(true);
+                    }}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #86efac',
+                      borderRadius: '8px',
+                      padding: '7px 14px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#166534',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Eye size={14} /> Xem ảnh biên lai chuyển tiền
+                  </button>
+                </div>
+              )}
             </div>
-          ) : !hasBankInfo ? (
+          ) : isWaitingCustomer ? (
+            <div
+              style={{
+                background: '#f0f9ff',
+                border: '1.5px solid #bae6fd',
+                borderRadius: '14px',
+                padding: '22px',
+                textAlign: 'center',
+                marginBottom: '16px',
+              }}
+            >
+              <Clock size={42} color="#0284c7" style={{ margin: '0 auto 8px' }} />
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#0369a1' }}>
+                Đã gửi biên lai - Chờ khách xác nhận
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#0369a1', marginTop: '6px', lineHeight: 1.5 }}>
+                Quán đã hoàn tiền và tải lên biên lai chuyển khoản. Hệ thống đã gửi thông báo đến ứng dụng của khách hàng để đối soát và bấm xác nhận nhận tiền.
+              </div>
+              {currentReceipt && (
+                <div style={{ marginTop: '14px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReceiptUrlToView(getFullImageUrl(currentReceipt));
+                      setShowFullReceipt(true);
+                    }}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #7dd3fc',
+                      borderRadius: '8px',
+                      padding: '7px 14px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#0284c7',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Eye size={14} /> Xem lại biên lai đã gửi
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : isDisputed ? (
+            <div
+              style={{
+                background: '#fef2f2',
+                border: '1.5px solid #fecaca',
+                borderRadius: '14px',
+                padding: '18px',
+                marginBottom: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 800, fontSize: '15px' }}>
+                <AlertTriangle size={20} color="#dc2626" /> Khách hàng khiếu nại chưa nhận được tiền!
+              </div>
+              <div style={{ marginTop: '8px', padding: '10px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '13px', color: '#7f1d1d' }}>
+                <strong>Lý do khiếu nại:</strong> {refund.lyDoKhieuNai || 'Khách hàng báo tài khoản chưa nhận được tiền hoàn.'}
+              </div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#991b1b', lineHeight: 1.5 }}>
+                Vui lòng kiểm tra lại tài khoản trích tiền hoặc quét lại mã VietQR bên dưới để chuyển khoản đúng STK. Sau đó tải lên ảnh biên lai mới để gửi lại cho khách.
+              </div>
+              {currentReceipt && (
+                <div style={{ marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReceiptUrlToView(getFullImageUrl(currentReceipt));
+                      setShowFullReceipt(true);
+                    }}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '8px',
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: '#b91c1c',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Eye size={14} /> Xem biên lai cũ
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {!isCompleted && !isWaitingCustomer && !hasBankInfo ? (
             <div
               style={{
                 background: '#fffbeb',
@@ -314,7 +539,7 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                 Mã VietQR sẽ tự động xuất hiện tại đây ngay khi khách gửi STK (đồng bộ Realtime).
               </div>
             </div>
-          ) : (
+          ) : (!isCompleted && (!isWaitingCustomer || isDisputed)) && (
             <>
               {/* Bank Info Cards */}
               <div
@@ -503,6 +728,126 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Receipt Upload Box */}
+              <div
+                style={{
+                  marginTop: '18px',
+                  padding: '16px',
+                  background: '#faf5ff',
+                  border: '1.5px dashed #c084fc',
+                  borderRadius: '14px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 800, color: '#581c87', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Upload size={15} color="#9333ea" /> Ảnh biên lai chuyển tiền <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  {receiptImage && (
+                    <button
+                      type="button"
+                      onClick={() => setReceiptImage('')}
+                      style={{ background: 'none', border: 'none', color: '#9333ea', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Đổi ảnh khác
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontSize: '11.5px', color: '#6b21a8', marginBottom: '10px', lineHeight: 1.4 }}>
+                  Sau khi quét mã VietQR và chuyển tiền thành công, chụp màn hình biên lai và tải lên đây để làm bằng chứng gửi khách hàng đối soát.
+                </div>
+
+                {receiptImage ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e9d5ff' }}>
+                    <img
+                      src={getFullImageUrl(receiptImage)}
+                      alt="Biên lai"
+                      style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                      onClick={() => {
+                        setReceiptUrlToView(getFullImageUrl(receiptImage));
+                        setShowFullReceipt(true);
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={14} /> Đã tải lên ảnh biên lai
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReceiptUrlToView(getFullImageUrl(receiptImage));
+                          setShowFullReceipt(true);
+                        }}
+                        style={{ background: 'none', border: 'none', padding: 0, color: '#7c3aed', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginTop: '2px' }}
+                      >
+                        Nhấn để xem ảnh phóng to
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px',
+                        border: '1.5px dashed #a855f7',
+                        borderRadius: '10px',
+                        background: '#ffffff',
+                        cursor: isUploadingReceipt ? 'wait' : 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingReceipt}
+                        onChange={handleReceiptFileChange}
+                        style={{ display: 'none' }}
+                      />
+                      {isUploadingReceipt ? (
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Clock size={16} /> Đang tải ảnh lên...
+                        </div>
+                      ) : (
+                        <>
+                          <Upload size={22} color="#9333ea" style={{ marginBottom: '6px' }} />
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>
+                            Bấm vào đây để tải ảnh biên lai
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                            Định dạng JPG, PNG (Tối đa 10MB)
+                          </div>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                )}
+
+                {/* Optional Bank Transaction Reference Code */}
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#581c87', marginBottom: '4px' }}>
+                    Mã giao dịch / Bút toán ngân hàng (Không bắt buộc):
+                  </label>
+                  <input
+                    type="text"
+                    value={bankTxCode}
+                    onChange={(e) => setBankTxCode(e.target.value)}
+                    placeholder="Ví dụ: FT24098192847291..."
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #d8b4fe',
+                      fontSize: '12px',
+                      background: '#ffffff',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -521,7 +866,7 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
         >
           <button
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingReceipt}
             style={{
               padding: '10px 18px',
               borderRadius: '10px',
@@ -536,10 +881,10 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
             Đóng
           </button>
 
-          {!isCompleted && hasBankInfo && (
+          {!isCompleted && !isWaitingCustomer && hasBankInfo && (
             <button
               onClick={handleConfirmRefund}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingReceipt}
               style={{
                 padding: '10px 20px',
                 borderRadius: '10px',
@@ -553,7 +898,7 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
                 alignItems: 'center',
                 gap: '8px',
                 boxShadow: '0 4px 12px rgba(234, 88, 12, 0.35)',
-                opacity: isSubmitting ? 0.7 : 1,
+                opacity: isSubmitting || isUploadingReceipt ? 0.7 : 1,
               }}
             >
               {isSubmitting ? (
@@ -561,13 +906,75 @@ export const RestaurantRefundModal: React.FC<RestaurantRefundModalProps> = ({
               ) : (
                 <>
                   <CheckCircle2 size={16} />
-                  Xác nhận đã chuyển tiền thành công
+                  {isDisputed ? 'Gửi lại biên lai cho khách' : 'Xác nhận đã chuyển & Gửi biên lai'}
                 </>
               )}
             </button>
           )}
         </div>
       </div>
+
+      {/* Lightbox / Full-size Receipt View Modal */}
+      {showFullReceipt && receiptUrlToView && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowFullReceipt(false)}
+        >
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: '92vw',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowFullReceipt(false)}
+              style={{
+                position: 'absolute',
+                top: '-40px',
+                right: '0',
+                background: '#ffffff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#0f172a',
+              }}
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={receiptUrlToView}
+              alt="Biên lai chuyển tiền"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '85vh',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

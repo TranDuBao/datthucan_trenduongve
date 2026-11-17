@@ -78,6 +78,10 @@ export const AdminPayments: React.FC = () => {
     switch (status) {
       case 'HOAN_TIEN_THANH_CONG':
         return <span className="badge badge-success" style={{ background: '#dcfce7', color: '#15803d' }}>Đã hoàn tiền</span>;
+      case 'CHO_KHACH_XAC_NHAN':
+        return <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }}>Chờ khách xác nhận</span>;
+      case 'TRANH_CHAP':
+        return <span className="badge badge-danger" style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' }}>Tranh chấp / Khiếu nại</span>;
       case 'CHO_XU_LY':
       case 'DANG_XU_LY':
         return <span className="badge badge-warning" style={{ background: '#fef3c7', color: '#b45309' }}>Chờ xử lý</span>;

@@ -11,5 +11,6 @@ router.get('/', refundController.getRefunds);
 router.get('/:id', refundController.getRefundById);
 router.patch('/:id/status', refundController.updateRefundStatus);
 router.patch('/:id/bank-info', refundController.updateBankInfo);
+router.patch('/:id/customer-confirm', refundController.customerConfirmRefund);
 
 export default router;

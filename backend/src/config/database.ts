@@ -36,6 +36,7 @@ import { SupportTicketMessageModel } from '../models/support_ticket_message_mode
 import { DeviceTokenModel } from '../models/device_token_model';
 import { UserNotificationModel } from '../models/user_notification_model';
 import { AppVersionModel } from '../models/app_version_model';
+import { OtpModel } from '../models/otp_model';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ export const AppDataSource = new DataSource({
     DeviceTokenModel,
     UserNotificationModel,
     AppVersionModel,
+    OtpModel,
   ],
   migrations: [__dirname + '/../migrations/*.ts'],
   // CRITICAL DB SAFETY RULE: Never drop or synchronize schema automatically!
@@ -127,6 +129,13 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
         await safeQuery(`ALTER TABLE chitietdonhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
         await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS options TEXT NULL;`);
+        await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS anhbienlai TEXT NULL;`);
+        await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS magiaodichnganhang VARCHAR(100) NULL;`);
+        await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS lydokhieunai TEXT NULL;`);
+        await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS thoigiankhieunai TIMESTAMP NULL;`);
+        await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS thoigiankhachxacnhan TIMESTAMP NULL;`);
+        await safeQuery(`CREATE TABLE IF NOT EXISTS ma_xac_thuc_otp (id SERIAL PRIMARY KEY, email VARCHAR(150) NOT NULL, otp_code VARCHAR(10) NOT NULL, loai VARCHAR(50) DEFAULT 'FORGOT_PASSWORD', da_su_dung BOOLEAN DEFAULT FALSE, het_han_luc TIMESTAMP NOT NULL, ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`);
+        await safeQuery(`CREATE INDEX IF NOT EXISTS idx_otp_email ON ma_xac_thuc_otp(email, otp_code);`);
 
         // Dọn dẹp các đánh giá mồ côi của các món ăn đã từng bị xóa trước đây (tránh tình trạng món mới trùng ID lấy nhầm đánh giá cũ)
         await safeQuery(`DELETE FROM danhgia_mon WHERE mamon NOT IN (SELECT mamonan FROM monan);`);

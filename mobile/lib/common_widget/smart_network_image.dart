@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
@@ -88,12 +86,32 @@ class SmartNetworkImage extends StatelessWidget {
 
     // Case 3: Network URL (http://... or https://...)
     final formattedUrl = _formatUrl(cleanUrl);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Widget imgWidget = Image.network(
       formattedUrl,
       width: width,
       height: height,
       fit: fit,
-      errorBuilder: (context, error, stackTrace) => fallbackWidget,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          width: width,
+          height: height,
+          color: isDark ? const Color(0xFF1E2430) : const Color(0xFFF8FAFC),
+          child: const Center(
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFC6011)),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint('[SmartNetworkImage] Lỗi tải ảnh: $formattedUrl, chi tiết: $error');
+        return fallbackWidget;
+      },
     );
 
     return borderRadius != null

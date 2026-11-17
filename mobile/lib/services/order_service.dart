@@ -79,6 +79,9 @@ class OrderServiceModel {
   String? refundBank;
   String? refundAccountNumber;
   String? refundAccountName;
+  String? refundReceiptUrl;
+  String? refundDisputeReason;
+  String? refundBankTxCode;
   final List<dynamic> items;
   final String paymentMethod;
   final String? note;
@@ -102,6 +105,9 @@ class OrderServiceModel {
     this.refundBank,
     this.refundAccountNumber,
     this.refundAccountName,
+    this.refundReceiptUrl,
+    this.refundDisputeReason,
+    this.refundBankTxCode,
     this.items = const [],
     this.paymentMethod = 'PAYOS',
     this.note,
@@ -127,6 +133,9 @@ class OrderServiceModel {
       refundBank: json['refundBank'] ?? json['refund']?['nganHangNhan'] ?? json['refund']?['nganHang'],
       refundAccountNumber: json['refundAccountNumber'] ?? json['refund']?['soTaiKhoanNhan'] ?? json['refund']?['soTaiKhoan'],
       refundAccountName: json['refundAccountName'] ?? json['refund']?['tenChuTaiKhoanNhan'] ?? json['refund']?['tenTaiKhoan'],
+      refundReceiptUrl: json['refundReceiptUrl'] ?? json['refund']?['anhBienLai'] ?? json['anhBienLai'],
+      refundDisputeReason: json['refundDisputeReason'] ?? json['refund']?['lyDoKhieuNai'] ?? json['lyDoKhieuNai'],
+      refundBankTxCode: json['refundBankTxCode'] ?? json['refund']?['maGiaoDichNganHang'] ?? json['refund']?['maGiaoDichPayOS'],
       items: json['items'] ?? json['chiTietDonHang'] ?? [],
       paymentMethod: (json['phuongThucThanhToan'] ?? json['paymentMethod'] ?? json['payment']?['phuongThucThanhToan'] ?? 'PAYOS').toString(),
       note: json['ghiChu'] ?? json['note'],
@@ -322,6 +331,46 @@ class OrderService {
     } catch (e) {
       debugPrint('[OrderService] getOrderRefund error: $e');
       return null;
+    }
+  }
+
+  /// Khách hàng bấm xác nhận đã nhận được tiền hoặc gửi khiếu nại chưa nhận được tiền
+  static Future<Map<String, dynamic>> customerConfirmRefund({
+    required int refundId,
+    required bool confirmed,
+    String? disputeReason,
+  }) async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.mainUrl}/api/v1/refunds/$refundId/customer-confirm');
+      final response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'confirmed': confirmed,
+          if (disputeReason != null && disputeReason.trim().isNotEmpty)
+            'lyDoKhieuNai': disputeReason.trim(),
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {
+          'success': true,
+          'message': data['message'] ?? (confirmed ? 'Xác nhận thành công' : 'Đã gửi khiếu nại'),
+          'data': data['data'],
+        };
+      }
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Thao tác không thành công (${response.statusCode})',
+      };
+    } catch (e) {
+      debugPrint('[OrderService] customerConfirmRefund error: $e');
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
   }
 }
