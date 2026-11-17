@@ -104,6 +104,7 @@ class SVKey {
 
   static String get svLogin => '${baseUrl}login';
   static String get svSignUp => '${baseUrl}register';
+  static String get svSignUpRequestOtp => '${baseUrl}register_request_otp';
   static String get svGoogleAuth => '${baseUrl}google';
   static String get svLogout => '${baseUrl}logout';
   static String get svRefreshToken => '${baseUrl}refresh-token';

@@ -6,6 +6,7 @@ import 'package:food_route/common/extension.dart';
 import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
 import 'package:food_route/view/login/login_view.dart';
+import 'package:food_route/view/login/otp_view.dart';
 
 import '../../common/format_utils.dart';
 import '../../common/globs.dart';
@@ -331,7 +332,7 @@ class _SignUpViewState extends State<SignUpView> {
 
     endEditing();
 
-    serviceCallSignUp({
+    serviceCallRequestSignUpOtp({
       "name": txtName.text.trim(),
       "mobile": txtMobile.text.trim(),
       "email": txtEmail.text.trim(),
@@ -339,6 +340,35 @@ class _SignUpViewState extends State<SignUpView> {
       "password": txtPassword.text,
       "push_token": "",
       "device_type": Platform.isAndroid ? "A" : "I"
+    });
+  }
+
+  void serviceCallRequestSignUpOtp(Map<String, dynamic> parameter) {
+    Globs.showHUD();
+
+    ServiceCall.post({
+      "email": parameter["email"],
+      "fullName": parameter["name"],
+      "name": parameter["name"],
+    }, SVKey.svSignUpRequestOtp, withSuccess: (responseObj) async {
+      Globs.hideHUD();
+      if (responseObj[KKey.status] == "1") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OTPView(
+              email: parameter["email"].toString(),
+              signUpData: parameter,
+            ),
+          ),
+        );
+      } else {
+        String msg = (responseObj[KKey.message] as String?)?.trim() ?? '';
+        mdShowAlert(context.l10n.commonNotification, msg.isNotEmpty ? msg : context.l10n.commonError, () {}, isError: true);
+      }
+    }, failure: (err) async {
+      Globs.hideHUD();
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
     });
   }
 

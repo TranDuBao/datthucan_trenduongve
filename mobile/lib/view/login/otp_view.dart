@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/extension.dart';
 import 'package:food_route/common/format_utils.dart';
@@ -8,10 +9,15 @@ import 'package:otp_pin_field/otp_pin_field.dart';
 
 import '../../common/globs.dart';
 import '../../common/service_call.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/map_provider.dart';
+import '../../providers/notification_provider.dart';
+import '../on_boarding/on_boarding_view.dart';
 
 class OTPView extends StatefulWidget {
   final String email;
-  const OTPView({super.key, required this.email});
+  final Map<String, dynamic>? signUpData;
+  const OTPView({super.key, required this.email, this.signUpData});
 
   @override
   State<OTPView> createState() => _OTPViewState();
@@ -145,7 +151,14 @@ class _OTPViewState extends State<OTPView> {
                   Center(
                     child: InkWell(
                       onTap: () {
-                        serviceCallForgotRequest({"email": widget.email});
+                        if (widget.signUpData != null) {
+                          serviceCallSignUpRequestOtp({
+                            "email": widget.email,
+                            "name": widget.signUpData!["name"] ?? "",
+                          });
+                        } else {
+                          serviceCallForgotRequest({"email": widget.email});
+                        }
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -192,7 +205,71 @@ class _OTPViewState extends State<OTPView> {
 
     endEditing();
 
-    serviceCallForgotVerify({"email": widget.email, "reset_code": code});
+    if (widget.signUpData != null) {
+      serviceCallSignUpVerify(code);
+    } else {
+      serviceCallForgotVerify({"email": widget.email, "reset_code": code});
+    }
+  }
+
+  void serviceCallSignUpVerify(String otpCode) {
+    Globs.showHUD();
+    final parameter = Map<String, dynamic>.from(widget.signUpData!);
+    parameter["otp"] = otpCode;
+
+    ServiceCall.post(parameter, SVKey.svSignUp, withSuccess: (responseObj) async {
+      Globs.hideHUD();
+      if (responseObj[KKey.status] == "1") {
+        var payload = responseObj[KKey.payload] as Map? ?? {};
+        ServiceCall.userPayload = payload;
+        Globs.udSet(payload, Globs.userPayload);
+        if (payload[KKey.authToken] != null || payload['accessToken'] != null) {
+          Globs.udStringSet((payload['accessToken'] ?? payload[KKey.authToken]).toString(), KKey.authToken);
+        }
+        Globs.udBoolSet(true, Globs.userLogin);
+        Globs.udBoolSet(false, Globs.isGuestMode);
+
+        if (context.mounted) {
+          context.read<MapProvider>().clearAll();
+          context.read<CartProvider>().clearCart();
+          context.read<NotificationProvider>().clearAllData();
+          context.read<NotificationProvider>().initialize();
+        }
+
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authSignUpSuccess, () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const OnBoardingView(),
+            ),
+            (route) => false,
+          );
+        }, isError: false);
+      } else {
+        String msg = (responseObj[KKey.message] as String?)?.trim() ?? '';
+        mdShowAlert(context.l10n.commonNotification, msg.isNotEmpty ? msg : context.l10n.commonError, () {}, isError: true);
+      }
+    }, failure: (err) async {
+      Globs.hideHUD();
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
+    });
+  }
+
+  void serviceCallSignUpRequestOtp(Map<String, dynamic> parameter) {
+    Globs.showHUD();
+
+    ServiceCall.post(parameter, SVKey.svSignUpRequestOtp, withSuccess: (responseObj) async {
+      Globs.hideHUD();
+      if (responseObj[KKey.status] == "1") {
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authOtpResentSuccess, () {}, isError: false);
+      } else {
+        String msg = (responseObj[KKey.message] as String?)?.trim() ?? '';
+        mdShowAlert(context.l10n.commonNotification, msg.isNotEmpty ? msg : context.l10n.commonError, () {}, isError: true);
+      }
+    }, failure: (err) async {
+      Globs.hideHUD();
+      mdShowAlert(context.l10n.commonNotification, err.toString(), () {}, isError: true);
+    });
   }
 
   void serviceCallForgotVerify(Map<String, dynamic> parameter) {

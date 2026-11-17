@@ -17,12 +17,95 @@ export class AuthController {
   private userService = new UserService();
   private auditLogService = new (require('../services/admin/audit_log_service').AuditLogService)();
 
+  registerRequestOtp = async (req: Request, res: Response) => {
+    try {
+      const email = (req.body.email || '').trim().toLowerCase();
+      const fullName = (req.body.fullName || req.body.name || '').trim();
+
+      if (!email) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Vui lòng cung cấp địa chỉ email hợp lệ!',
+        });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Định dạng email không hợp lệ!',
+        });
+      }
+
+      // Kiểm tra xem email đã được đăng ký trước đó chưa
+      const existing = await this.userService.findByTenDangNhapOrEmail(email);
+      if (existing) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác!',
+        });
+      }
+
+      // Tạo mã OTP 6 chữ số ngẫu nhiên
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Lưu mã OTP vào CSDL (hết hạn sau 5 phút)
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      await otpRepo.update({ email, daSuDung: false, loai: 'REGISTER' }, { daSuDung: true });
+
+      const hetHanLuc = new Date(Date.now() + 5 * 60 * 1000);
+      const otpEntity = otpRepo.create({
+        email,
+        otpCode,
+        loai: 'REGISTER',
+        daSuDung: false,
+        hetHanLuc,
+      });
+      await otpRepo.save(otpEntity);
+
+      // Gửi email xác thực tài khoản qua SMTP
+      const sendResult = await EmailService.getInstance().sendOtpEmail({
+        toEmail: email,
+        otpCode,
+        recipientName: fullName,
+        type: 'REGISTER',
+      });
+
+      if (!sendResult.success) {
+        return res.status(500).json({
+          statusCode: 500,
+          status: '0',
+          message: sendResult.message || 'Không thể gửi email OTP lúc này. Vui lòng thử lại sau!',
+        });
+      }
+
+      return res.status(200).json({
+        statusCode: 200,
+        status: '1',
+        message: 'Mã xác thực OTP đã được gửi đến email của bạn!',
+        payload: { email },
+        data: { email },
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        statusCode: 500,
+        status: '0',
+        message: sanitizeErrorMessage(error, 'Lỗi hệ thống khi gửi mã xác thực đăng ký'),
+      });
+    }
+  };
+
   register = async (req: Request, res: Response) => {
     try {
-      const email = req.body.email;
+      const email = (req.body.email || '').trim().toLowerCase();
       const password = req.body.password;
-      const fullName = req.body.fullName || req.body.name;
-      const phone = req.body.phone || req.body.mobile || req.body.sdt;
+      const fullName = (req.body.fullName || req.body.name || '').trim();
+      const phone = (req.body.phone || req.body.mobile || req.body.sdt || '').trim();
+      const address = (req.body.address || req.body.diaChi || '').trim();
+      const otp = (req.body.otp || req.body.reset_code || '').trim();
 
       if (!email || !password || !fullName) {
         return res.status(400).json({
@@ -32,7 +115,43 @@ export class AuthController {
         });
       }
 
-      const result = await this.authService.register({ email, password, fullName, phone });
+      // Xác thực mã OTP gửi về email bắt buộc
+      if (!otp) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: "0",
+          message: 'Vui lòng nhập mã xác thực OTP (6 chữ số) đã được gửi đến email của bạn!',
+        });
+      }
+
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      const otpRecord = await otpRepo.findOne({
+        where: { email, otpCode: otp, daSuDung: false, loai: 'REGISTER' },
+        order: { ngayTao: 'DESC' },
+      });
+
+      if (!otpRecord) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: "0",
+          message: 'Mã xác thực OTP không chính xác hoặc đã qua sử dụng!',
+        });
+      }
+
+      if (new Date() > new Date(otpRecord.hetHanLuc)) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: "0",
+          message: 'Mã OTP đã hết hiệu lực (chỉ có giá trị trong 5 phút). Vui lòng yêu cầu mã mới!',
+        });
+      }
+
+      const result = await this.authService.register({ email, password, fullName, phone, address });
+
+      // Đánh dấu OTP đã sử dụng
+      otpRecord.daSuDung = true;
+      await otpRepo.save(otpRecord);
+
       try {
         const clientIp = req.ip || req.headers['x-forwarded-for']?.toString() || req.socket.remoteAddress || '127.0.0.1';
         this.auditLogService.logAction({
@@ -41,13 +160,14 @@ export class AuthController {
           actorEmail: email,
           actorRole: 'USER',
           loaiHanhDong: 'DANG_KY_TAI_KHOAN_MOI',
-          moTa: `Tài khoản người dùng mới vừa đăng ký: ${fullName} (${email})`,
+          moTa: `Tài khoản người dùng mới vừa đăng ký và xác thực email thành công: ${fullName} (${email})`,
           doiTuong: 'TAI_KHOAN',
           maDoiTuong: result?.user?.id,
           result: 'success',
           ipAddress: clientIp,
         }).catch(() => {});
       } catch (e) {}
+
       return res.status(201).json({
         statusCode: 201,
         status: "1",

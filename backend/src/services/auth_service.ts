@@ -45,6 +45,7 @@ export class AuthService {
     password: string;
     fullName: string;
     phone?: string;
+    address?: string;
   }): Promise<AuthTokens> {
     const existing = await this.userService.findByTenDangNhapOrEmail(data.email);
     if (existing) {
@@ -60,6 +61,7 @@ export class AuthService {
       hoTen: data.fullName,
       email: data.email,
       phone: data.phone,
+      address: data.address,
     });
 
     return await this.generateTokens(taiKhoan, khachHang);

@@ -10,6 +10,7 @@ const authController = new AuthController();
 const authLimiter = createRateLimiter(15 * 60 * 1000, 50);
 
 // Authentication Endpoints
+router.post('/register_request_otp', authLimiter as any, authController.registerRequestOtp);
 router.post('/register', authLimiter as any, authController.register);
 router.post('/login', authLimiter as any, authController.login);
 router.post('/google', authLimiter as any, authController.googleAuth);

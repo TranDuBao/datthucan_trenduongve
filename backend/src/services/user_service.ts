@@ -61,6 +61,8 @@ export class UserService {
     email: string;
     phone?: string;
     avatar?: string;
+    address?: string;
+    diaChi?: string;
   }): Promise<{ taiKhoan: TaiKhoanModel; khachHang: KhachHangModel }> {
     const taiKhoanRepo = await this.getTaiKhoanRepo();
     const khachHangRepo = await this.getKhachHangRepo();
@@ -99,6 +101,7 @@ export class UserService {
       hoTen: data.hoTen,
       email: data.email,
       sdt: data.phone,
+      diaChi: data.address || data.diaChi,
       avatar: data.avatar,
     });
     const savedKhachHang = await khachHangRepo.save(newKhachHang);
