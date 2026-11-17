@@ -8,6 +8,8 @@ import '../../common/service_call.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
 import '../../widgets/custom_toast.dart';
+import '../../providers/map_provider.dart';
+import '../../services/order_route_storage.dart';
 import 'reservation_detail_view.dart';
 import 'widgets/reservation_booking_widgets.dart';
 
@@ -242,6 +244,23 @@ class _ReservationBookingViewState extends State<ReservationBookingView> {
 
     if (result['success'] == true) {
       final ReservationModel? created = result['data'];
+      try {
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        final dest = mapProvider.destinationPlace ?? mapProvider.savedUserDestination;
+        if (created != null && dest != null) {
+          await OrderRouteStorage.saveReservationRoute(
+            OrderRouteInfo(
+              orderId: created.maDatBan,
+              destLat: dest.latLng.latitude,
+              destLng: dest.latLng.longitude,
+              destName: dest.name.isNotEmpty ? dest.name : 'Điểm đến',
+              destAddress: dest.address,
+              originLat: mapProvider.currentPosition.latitude,
+              originLng: mapProvider.currentPosition.longitude,
+            ),
+          );
+        }
+      } catch (_) {}
       _showSuccessDialog(created);
     } else {
       CustomToast.showError(context, result['message'] ?? 'Không thể đặt bàn');

@@ -145,6 +145,8 @@ class _ProfileViewState extends State<ProfileView> {
   Future<void> _onPickAvatar() async {
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
       imageQuality: 85,
     );
     if (picked == null) return;

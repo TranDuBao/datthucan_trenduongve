@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../common/color_extension.dart';
+import '../../common_widget/smart_network_image.dart';
 import '../../models/review_model.dart';
 import '../../services/review_service.dart';
 import '../../widgets/skeleton/skeleton_box.dart';
@@ -303,6 +304,18 @@ class _RestaurantReviewsSheetState extends State<RestaurantReviewsSheet> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: isDark ? const Color(0xFFD0D4E0) : const Color(0xFF344054),
+                                    ),
+                                  ),
+                                ],
+                                if (review.image != null && review.image!.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: SmartNetworkImage(
+                                      imageUrl: review.image!,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ],

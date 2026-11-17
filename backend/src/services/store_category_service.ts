@@ -76,7 +76,16 @@ export class StoreCategoryService {
       throw new Error(`Loại hình "${existing.tenLoai}" đã tồn tại trong hệ thống!`);
     }
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.categoryRepo.query('SELECT COALESCE(MAX(maloai), 0) + 1 as next_id FROM loai_hinh_quan');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const item = this.categoryRepo.create({
+      ...(nextId ? { maLoai: nextId } : {}),
       tenLoai: trimmed,
       moTa: data.moTa?.trim(),
       hinhAnh: data.hinhAnh?.trim(),

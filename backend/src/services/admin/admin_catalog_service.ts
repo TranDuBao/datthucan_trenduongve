@@ -26,7 +26,16 @@ export class AdminCatalogService {
       throw new Error(`Tên danh mục "${existing.tenDanhMuc}" đã tồn tại trong hệ thống (không phân biệt chữ hoa/thường)!`);
     }
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.categoryRepo.query('SELECT COALESCE(MAX(madanhmuc), 0) + 1 as next_id FROM danhmuc');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const cat = this.categoryRepo.create({
+      ...(nextId ? { maDanhMuc: nextId } : {}),
       tenDanhMuc: trimmed,
       hinhAnh: hinhAnh?.trim() || undefined,
     });

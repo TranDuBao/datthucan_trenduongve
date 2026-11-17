@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import '../common/format_utils.dart';
 import '../providers/map_provider.dart';
 import '../view/menu/restaurant_detail_view.dart';
+import '../view/reservation/reservation_booking_view.dart';
 import '../view/main_tabview/main_tabview.dart';
 import '../common_widget/smart_network_image.dart';
 import '../common/food_image_helper.dart';
@@ -79,7 +80,9 @@ class RouteRestaurantsSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.l10n.routeRestaurantsTitle(restaurants.length),
+                        provider.foodRouteOption == FoodRouteOption.dineIn
+                            ? 'Quán nhận đặt bàn trên lộ trình (${restaurants.length})'
+                            : context.l10n.routeRestaurantsTitle(restaurants.length),
                         style: GoogleFonts.outfit(
                           color: const Color(0xFF0F172A),
                           fontSize: 16,
@@ -87,7 +90,9 @@ class RouteRestaurantsSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        context.l10n.routeRestaurantsSubtitle,
+                        provider.foodRouteOption == FoodRouteOption.dineIn
+                            ? 'Chọn quán để đặt bàn trước khi đến nơi'
+                            : context.l10n.routeRestaurantsSubtitle,
                         style: GoogleFonts.outfit(
                           color: const Color(0xFF64748B),
                           fontSize: 12,
@@ -165,7 +170,30 @@ class RouteRestaurantsSheet extends StatelessWidget {
                         }
                       }
 
-                      return Container(
+                      final bool isDineIn = provider.foodRouteOption == FoodRouteOption.dineIn;
+                      void handleRestaurantAction() {
+                        Navigator.pop(ctx);
+                        if (isDineIn) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ReservationBookingView(restaurantObj: r),
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RestaurantDetailView(restaurantObj: r),
+                            ),
+                          );
+                        }
+                      }
+
+                      return InkWell(
+                        onTap: handleRestaurantAction,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -350,15 +378,7 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                   ],
                                 ),
                                 InkWell(
-                                  onTap: () {
-                                    Navigator.pop(ctx);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => RestaurantDetailView(restaurantObj: r),
-                                      ),
-                                    );
-                                  },
+                                  onTap: handleRestaurantAction,
                                   borderRadius: BorderRadius.circular(20),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -376,8 +396,14 @@ class RouteRestaurantsSheet extends StatelessWidget {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        Icon(
+                                          isDineIn ? Icons.table_restaurant_rounded : Icons.restaurant_menu_rounded,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 4),
                                         Text(
-                                          ctx.l10n.routeViewMenu,
+                                          isDineIn ? 'Đặt bàn' : ctx.l10n.routeViewMenu,
                                           style: GoogleFonts.outfit(
                                             color: Colors.white,
                                             fontSize: 11,
@@ -394,7 +420,8 @@ class RouteRestaurantsSheet extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
+                      ),
+                    );
                     },
                   ),
           ),

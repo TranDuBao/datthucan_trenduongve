@@ -30,12 +30,6 @@ class _OnBoardingViewState extends State<OnBoardingView>
       vsync: this,
       duration: const Duration(milliseconds: 4200),
     )..repeat();
-
-    controller.addListener(() {
-      setState(() {
-        selectPage = controller.page?.round() ?? 0;
-      });
-    });
   }
 
   @override
@@ -43,6 +37,7 @@ class _OnBoardingViewState extends State<OnBoardingView>
     super.didChangeDependencies();
     precacheImage(const AssetImage("assets/img/on_boarding_1.png"), context);
     precacheImage(const AssetImage("assets/img/on_boarding_2.png"), context);
+    precacheImage(const AssetImage("assets/img/on_boarding_3.png"), context);
     precacheImage(
         const AssetImage("assets/img/hand_holding_phone.png"), context);
   }
@@ -99,12 +94,21 @@ class _OnBoardingViewState extends State<OnBoardingView>
         children: [
           PageView.builder(
             controller: controller,
+            physics: const BouncingScrollPhysics(),
             itemCount: pageArr.length,
+            onPageChanged: (index) {
+              if (selectPage != index) {
+                setState(() {
+                  selectPage = index;
+                });
+              }
+            },
             itemBuilder: ((context, index) {
               var pObj = pageArr[index];
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
+              return RepaintBoundary(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: media.width,
@@ -218,9 +222,10 @@ class _OnBoardingViewState extends State<OnBoardingView>
                     height: media.width * 0.20,
                   ),
                 ],
-              );
-            }),
-          ),
+              ),
+            );
+          }),
+        ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -264,12 +269,11 @@ class _OnBoardingViewState extends State<OnBoardingView>
                         );
                       } else {
                         // Next Screen
-                        setState(() {
-                          selectPage = selectPage + 1;
-                          controller.animateToPage(selectPage,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.bounceInOut);
-                        });
+                        controller.animateToPage(
+                          selectPage + 1,
+                          duration: const Duration(milliseconds: 380),
+                          curve: Curves.easeInOutCubic,
+                        );
                       }
                     }),
               ),

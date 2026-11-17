@@ -5,6 +5,14 @@ import '../../common/color_extension.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../providers/map_provider.dart';
+import '../../services/order_route_storage.dart';
+import '../../services/category_service.dart';
+import '../../widgets/custom_toast.dart';
+import '../main_tabview/main_tabview.dart';
 import '../../widgets/skeleton/reservation_item_skeleton.dart';
 import 'widgets/cancel_reservation_sheet.dart';
 
@@ -18,12 +26,93 @@ class ReservationDetailView extends StatefulWidget {
 }
 
 class _ReservationDetailViewState extends State<ReservationDetailView> {
+  OrderRouteInfo? _routeInfo;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReservationProvider>().fetchReservationDetail(widget.reservationId);
+      _loadRoute();
     });
+  }
+
+  Future<void> _loadRoute() async {
+    final info = await OrderRouteStorage.getReservationRoute(widget.reservationId);
+    if (mounted) {
+      setState(() {
+        _routeInfo = info;
+      });
+    }
+  }
+
+  Future<void> _startNavigation(ReservationModel resv) async {
+    final navContext = context;
+    final mapProvider = Provider.of<MapProvider>(navContext, listen: false);
+    final res = resv.cuaHang;
+    final storeName = res?.tenQuan ?? 'Quán ăn';
+    final storeAddress = res?.diaChi ?? '';
+    double? sLat = res?.lat;
+    double? sLng = res?.lng;
+
+    if (sLat == null || sLng == null) {
+      try {
+        final stores = await CategoryService.fetchRestaurantsFromDB();
+        final matched = stores.firstWhere(
+          (s) => s['maQuan'] == resv.maQuan || s['tenQuan'] == storeName,
+          orElse: () => null,
+        );
+        if (matched != null) {
+          sLat = (matched['lat'] as num?)?.toDouble();
+          sLng = (matched['lng'] as num?)?.toDouble();
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+
+    sLat ??= 10.7812;
+    sLng ??= 106.6985;
+    final storePos = LatLng(sLat, sLng);
+
+    // Chuyển sang Tab 2 (Bản đồ lộ trình)
+    MainTabView.switchTab(navContext, 2);
+
+    final route = _routeInfo ?? await OrderRouteStorage.getReservationRoute(resv.maDatBan);
+
+    await mapProvider.navigateToOrderStore(
+      orderId: resv.maDatBan,
+      storeName: storeName,
+      storeAddress: storeAddress,
+      storeLatLng: storePos,
+      destinationLatLng: route != null ? LatLng(route.destLat, route.destLng) : null,
+      destinationName: route?.destName,
+      destinationAddress: route?.destAddress,
+      pickupTime: DateFormat('HH:mm • dd/MM').format(resv.thoiGianBatDau.toLocal()),
+      status: 'Đặt bàn: ${resv.statusTitle}',
+    );
+
+    if (mounted) {
+      CustomToast.showSuccess(navContext, "Đang dẫn đường đến $storeName");
+    }
+  }
+
+  Future<void> _openGoogleMaps(ReservationModel resv) async {
+    final res = resv.cuaHang;
+    final storeAddress = res?.diaChi ?? '';
+    final double? sLat = res?.lat;
+    final double? sLng = res?.lng;
+
+    Uri uri;
+    if (sLat != null && sLng != null) {
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$sLat,$sLng');
+    } else {
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(storeAddress)}');
+    }
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -371,6 +460,9 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                           ),
                         ),
 
+                        // Route Guidance Card (Chỉ dẫn lộ trình 2 chặng)
+                        _buildRouteGuidanceCard(context, resv),
+
                         // Booking Details Card
                         Container(
                           margin: const EdgeInsets.only(bottom: 16),
@@ -493,6 +585,240 @@ class _ReservationDetailViewState extends State<ReservationDetailView> {
                     ),
                   ),
                 ),
+    );
+  }
+
+  Widget _buildRouteGuidanceCard(BuildContext context, ReservationModel resv) {
+    final res = resv.cuaHang;
+    final storeName = res?.tenQuan ?? 'Quán ăn';
+    final storeAddress = res?.diaChi ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TColor.cardOf(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: TColor.borderOf(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFC6011).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.alt_route_rounded, color: Color(0xFFFC6011), size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Chỉ dẫn lộ trình di chuyển',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: TColor.primaryTextOf(context),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0E6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '2 Chặng',
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFFFC6011),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // ── CHẶNG 1: ĐẾN QUÁN (Cam #FC6011) ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFC6011).withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFFFC6011)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0E6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Chặng 1: Đến quán ăn',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFFFC6011),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      storeName,
+                      style: GoogleFonts.outfit(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: TColor.primaryTextOf(context),
+                      ),
+                    ),
+                    if (storeAddress.isNotEmpty)
+                      Text(
+                        storeAddress,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: TColor.secondaryTextOf(context),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Đường nối 2 chặng
+          Padding(
+            padding: const EdgeInsets.only(left: 13, top: 4, bottom: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                width: 2,
+                height: 16,
+                color: const Color(0xFFCBD5E1),
+              ),
+            ),
+          ),
+
+          // ── CHẶNG 2: ĐẾN ĐÍCH (Xanh lá #10B981) ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.flag_rounded, size: 16, color: Color(0xFF10B981)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Chặng 2: Tiếp tục đến đích',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF10B981),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _routeInfo?.destName ?? 'Điểm đến theo lộ trình',
+                      style: GoogleFonts.outfit(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: TColor.primaryTextOf(context),
+                      ),
+                    ),
+                    if ((_routeInfo?.destAddress ?? '').isNotEmpty)
+                      Text(
+                        _routeInfo!.destAddress,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: TColor.secondaryTextOf(context),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          // ── HÀNG NÚT BẤM DẪN ĐƯỜNG ──
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => _openGoogleMaps(resv),
+                  icon: const Icon(Icons.map_outlined, size: 16, color: Color(0xFF475467)),
+                  label: Text(
+                    'Mở Google Maps',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF344054),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: const Color(0xFFFC6011),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 1,
+                  ),
+                  onPressed: () => _startNavigation(resv),
+                  icon: const Icon(Icons.near_me_rounded, size: 16, color: Colors.white),
+                  label: Text(
+                    'Bắt đầu dẫn đường',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

@@ -98,7 +98,16 @@ export class SupportService {
   }
 
   async createFaqGroup(data: { tenNhom: string; thuTu?: number; kichHoat?: boolean }) {
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.faqGroupRepo.query('SELECT COALESCE(MAX(ma_nhom), 0) + 1 as next_id FROM support_faq_groups');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const group = this.faqGroupRepo.create({
+      ...(nextId ? { maNhom: nextId } : {}),
       tenNhom: data.tenNhom.trim(),
       thuTu: data.thuTu || 1,
       kichHoat: data.kichHoat !== undefined ? data.kichHoat : true,
@@ -141,7 +150,16 @@ export class SupportService {
     const group = await this.faqGroupRepo.findOne({ where: { maNhom: data.maNhom } });
     if (!group) throw new Error('Nhóm câu hỏi không tồn tại');
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.faqRepo.query('SELECT COALESCE(MAX(ma_faq), 0) + 1 as next_id FROM support_faqs');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const question = this.faqRepo.create({
+      ...(nextId ? { maFaq: nextId } : {}),
       maNhom: data.maNhom,
       cauHoi: data.cauHoi.trim(),
       cauTraLoi: data.cauTraLoi.trim(),

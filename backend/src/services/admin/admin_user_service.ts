@@ -204,7 +204,16 @@ export class AdminUserService {
 
     let savedStore = null;
     if (data.loaiTaiKhoan === 'CUAN_HANG') {
+      let nextMaQuan: number | undefined;
+      try {
+        const maxQ = await this.storeRepo.query('SELECT COALESCE(MAX(maquan), 0) + 1 as next_id FROM cuahang');
+        if (maxQ && maxQ[0] && maxQ[0].next_id) {
+          nextMaQuan = Number(maxQ[0].next_id);
+        }
+      } catch (_) {}
+
       const newStore = this.storeRepo.create({
+        ...(nextMaQuan ? { maQuan: nextMaQuan } : {}),
         maTaiKhoan: savedAccount.maTaiKhoan,
         tenQuan: data.tenQuan || `Quán ${data.hoTenChuQuan || data.hoTen}`,
         diaChi: data.diaChi || 'Chưa cập nhật',

@@ -434,7 +434,16 @@ export class RestaurantMgmtService {
       return existing;
     }
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.categoryRepo.query('SELECT COALESCE(MAX(madanhmuc), 0) + 1 as next_id FROM danhmuc');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const newCat = this.categoryRepo.create({
+      ...(nextId ? { maDanhMuc: nextId } : {}),
       tenDanhMuc: trimmed,
       maQuan: maQuan,
     });
@@ -497,11 +506,21 @@ export class RestaurantMgmtService {
       status = 'HET_HANG';
     }
 
-const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
+    const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
     const traits = data.dacTinh ?? (data as any).dactinh;
     const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
+
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.foodRepo.query('SELECT COALESCE(MAX(mamonan), 0) + 1 as next_id FROM monan');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const food = this.foodRepo.create({
       ...data,
+      ...(nextId ? { maMonAn: nextId } : {}),
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       soLuongMon: qty,
@@ -556,16 +575,27 @@ const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
     }
     const foodId = food.maMonAn;
     const foodImg = food.img;
-    const result = await this.foodRepo.remove(food);
-    if (foodImg) {
-      deleteUploadFile(foodImg);
+    try {
+      await this.foodRepo.remove(food);
+      if (foodImg) {
+        deleteUploadFile(foodImg);
+      }
+    } catch (removeErr: any) {
+      // If foreign key constraint violates (e.g. order history), soft-delete instead of crashing
+      if (removeErr.message?.includes('foreign key') || removeErr.message?.includes('constraint') || removeErr.code === '23503') {
+        food.trangThaiMon = 'TAM_NGUNG';
+        food.soLuongMon = 0;
+        await this.foodRepo.save(food);
+      } else {
+        throw removeErr;
+      }
     }
     try {
       RealtimeService.getInstance().emitMenuUpdated(maQuan, 'DELETE', { maMonAn: foodId, maQuan });
     } catch (e) {
       console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
     }
-    return result;
+    return { success: true, message: 'Đã xóa món ăn khỏi thực đơn' };
   }
 
   // ── 4. Quản lý Thông tin Nhà hàng (Scope maQuan) ─────────────────────────

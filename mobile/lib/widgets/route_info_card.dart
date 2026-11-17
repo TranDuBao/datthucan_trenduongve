@@ -270,10 +270,8 @@ class _RouteCard extends StatelessWidget {
             children: [
               Text(
                 provider.foodRouteOption == FoodRouteOption.dineIn
-                    ? context.l10n.routeDineInHeader
-                    : (provider.foodRouteOption == FoodRouteOption.preOrder
-                        ? context.l10n.routePreOrderHeader
-                        : context.l10n.routeQuickStopHeader),
+                    ? 'ĐẶT BÀN'
+                    : context.l10n.routeQuickStopHeader,
                 style: GoogleFonts.outfit(
                   color: const Color(0xFF8E8E93),
                   fontSize: 9,
@@ -326,8 +324,13 @@ class _RouteCard extends StatelessWidget {
         badgeText = context.l10n.routeConvenientBadge;
       }
     } else {
-      bannerText = context.l10n.routeDefaultCommuteBanner;
-      badgeText = context.l10n.routeConvenientBadge;
+      if (provider.foodRouteOption == FoodRouteOption.dineIn) {
+        bannerText = 'Tiện đường đi • Đặt bàn trước để có chỗ ngồi ngay';
+        badgeText = 'ĐẶT BÀN';
+      } else {
+        bannerText = context.l10n.routeDefaultCommuteBanner;
+        badgeText = context.l10n.routeConvenientBadge;
+      }
     }
 
     return GestureDetector(
@@ -431,10 +434,8 @@ class _RouteCard extends StatelessWidget {
             children: [
               Text(
                 provider.foodRouteOption == FoodRouteOption.dineIn
-                    ? context.l10n.routeConfirmDineIn
-                    : (provider.foodRouteOption == FoodRouteOption.preOrder
-                        ? context.l10n.routeConfirmPreOrder
-                        : context.l10n.routeConfirmQuickStop),
+                    ? 'Xác nhận lộ trình đặt bàn'
+                    : context.l10n.routeConfirmQuickStop,
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 15,

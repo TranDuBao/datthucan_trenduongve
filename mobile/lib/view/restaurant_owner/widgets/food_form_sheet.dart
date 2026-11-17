@@ -147,13 +147,25 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
-      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 75,
+      );
       if (image == null) return;
 
       setState(() => _isUploadingImage = true);
 
       final bytes = await image.readAsBytes();
-      final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      String mimeType = 'jpeg';
+      final lower = image.name.toLowerCase();
+      if (lower.endsWith('.png')) {
+        mimeType = 'png';
+      } else if (lower.endsWith('.webp')) {
+        mimeType = 'webp';
+      }
+      final base64Image = 'data:image/$mimeType;base64,${base64Encode(bytes)}';
       final uploadedUrl = await UploadService.uploadImageBase64(base64Image);
 
       if (mounted) {

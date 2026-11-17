@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../common/color_extension.dart';
+import '../../common/globs.dart';
 import '../../models/review_model.dart';
 import '../../services/order_service.dart';
 import '../../services/review_service.dart';
@@ -103,7 +104,12 @@ class _OrderReviewViewState extends State<OrderReviewView> {
 
     try {
       final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
       if (image == null) return;
 
       setState(() {
@@ -111,19 +117,26 @@ class _OrderReviewViewState extends State<OrderReviewView> {
       });
 
       final bytes = await image.readAsBytes();
-      final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      String mimeType = 'jpeg';
+      final lowerName = image.name.toLowerCase();
+      if (lowerName.endsWith('.png')) {
+        mimeType = 'png';
+      } else if (lowerName.endsWith('.webp')) {
+        mimeType = 'webp';
+      }
+      final base64Str = 'data:image/$mimeType;base64,${base64Encode(bytes)}';
 
       final uploadedUrl = await ReviewService.uploadImageBase64(base64Str);
 
       if (mounted) {
         setState(() {
           _isUploadingImage = false;
-          if (uploadedUrl != null) {
+          if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
             _uploadedImageUrl = uploadedUrl;
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Không thể tải hình ảnh lên server'),
+                content: Text('Không thể tải hình ảnh lên server. Vui lòng thử lại!'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -475,7 +488,7 @@ class _OrderReviewViewState extends State<OrderReviewView> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.network(
-                                  _uploadedImageUrl!,
+                                  SVKey.formatImageUrl(_uploadedImageUrl!),
                                   width: double.infinity,
                                   height: 160,
                                   fit: BoxFit.cover,

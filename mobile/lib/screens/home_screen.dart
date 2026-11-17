@@ -13,6 +13,7 @@ import '../widgets/route_info_card.dart';
 import '../widgets/food_stopover_sheet.dart';
 import '../widgets/active_stopover_order_card.dart';
 import '../widgets/distant_stores_sheet.dart';
+import '../view/reservation/reservation_booking_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -853,11 +854,23 @@ class _OptimizedMapWidget extends StatelessWidget {
               height: isStopover ? 60 : 54,
               child: GestureDetector(
                 onTap: () {
-                  FoodStopoverSheet.show(
-                    context,
-                    restaurant: res as Map<String, dynamic>,
-                    selectedFood: primaryFood as Map<String, dynamic>?,
-                  );
+                  final mapP = context.read<MapProvider>();
+                  if (mapP.foodRouteOption == FoodRouteOption.dineIn) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReservationBookingView(
+                          restaurantObj: res as Map<String, dynamic>,
+                        ),
+                      ),
+                    );
+                  } else {
+                    FoodStopoverSheet.show(
+                      context,
+                      restaurant: res as Map<String, dynamic>,
+                      selectedFood: primaryFood as Map<String, dynamic>?,
+                    );
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

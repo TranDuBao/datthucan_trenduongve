@@ -11,6 +11,7 @@ import '../view/menu/item_details_view.dart';
 import '../view/more/checkout_view.dart';
 import 'custom_toast.dart';
 import 'single_restaurant_warning_modal.dart';
+import '../view/reservation/reservation_booking_view.dart';
 
 class FoodStopoverSheet extends StatefulWidget {
   final Map<String, dynamic> restaurant;
@@ -151,6 +152,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDineIn = context.watch<MapProvider>().foodRouteOption == FoodRouteOption.dineIn;
     final storeName = (widget.restaurant['tenQuan'] ?? widget.restaurant['name'] ?? 'Quán tiện đường').toString();
     final address = (widget.restaurant['diaChi'] ?? widget.restaurant['address'] ?? 'Địa chỉ trên lộ trình').toString();
     final int dist = (widget.restaurant['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
@@ -586,6 +588,17 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                       shadowColor: const Color(0xFFFC6011).withValues(alpha: 0.35),
                     ),
                     onPressed: () {
+                      if (isDineIn) {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ReservationBookingView(restaurantObj: widget.restaurant),
+                          ),
+                        );
+                        return;
+                      }
+
                       if (_selectedFoodIds.isEmpty) {
                         CustomToast.showError(context, 'Vui lòng tích chọn ít nhất 1 món để đặt ghé lấy');
                         return;
@@ -617,10 +630,14 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 16),
+                        Icon(
+                          isDineIn ? Icons.table_restaurant_rounded : Icons.shopping_bag_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                         const SizedBox(width: 6),
                         Text(
-                          'Đặt Món Ghé Lấy',
+                          isDineIn ? 'Đặt Bàn Tại Quán' : 'Đặt Món Ghé Lấy',
                           style: GoogleFonts.outfit(
                             color: Colors.white,
                             fontSize: 14,

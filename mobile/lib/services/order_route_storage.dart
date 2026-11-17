@@ -49,6 +49,7 @@ class OrderRouteInfo {
 /// Dịch vụ lưu trữ và khôi phục lộ trình của đơn hàng ghé quán
 class OrderRouteStorage {
   static const _prefix = 'order_route_';
+  static const _resvPrefix = 'reservation_route_';
 
   static Future<void> saveOrderRoute(OrderRouteInfo info) async {
     try {
@@ -61,6 +62,24 @@ class OrderRouteStorage {
     try {
       final sp = await SharedPreferences.getInstance();
       final str = sp.getString('$_prefix$orderId');
+      if (str != null) {
+        return OrderRouteInfo.fromJson(jsonDecode(str) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<void> saveReservationRoute(OrderRouteInfo info) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString('$_resvPrefix${info.orderId}', jsonEncode(info.toJson()));
+    } catch (_) {}
+  }
+
+  static Future<OrderRouteInfo?> getReservationRoute(int reservationId) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final str = sp.getString('$_resvPrefix$reservationId');
       if (str != null) {
         return OrderRouteInfo.fromJson(jsonDecode(str) as Map<String, dynamic>);
       }

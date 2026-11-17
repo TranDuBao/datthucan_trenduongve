@@ -181,7 +181,16 @@ export class VoucherService {
       throw new Error('Thời gian kết thúc phải sau thời gian bắt đầu');
     }
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.voucherRepo.query('SELECT COALESCE(MAX(mavoucher), 0) + 1 as next_id FROM voucher');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const newVoucher = this.voucherRepo.create({
+      ...(nextId ? { maVoucher: nextId } : {}),
       maCode: rawCode,
       tenVoucher,
       moTa: input.moTa ? input.moTa.trim() : undefined,

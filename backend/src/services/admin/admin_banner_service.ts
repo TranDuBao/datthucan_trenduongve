@@ -28,7 +28,16 @@ export class AdminBannerService {
       throw new Error('Hình ảnh banner không được để trống');
     }
 
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.bannerRepo.query('SELECT COALESCE(MAX(mabanner), 0) + 1 as next_id FROM banner');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const banner = this.bannerRepo.create({
+      ...(nextId ? { maBanner: nextId } : {}),
       tieuDe: data.tieuDe?.trim() || 'Banner Ưu Đãi',
       phuDe: data.phuDe?.trim() || '',
       hinhAnh: data.hinhAnh.trim(),

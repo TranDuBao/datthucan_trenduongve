@@ -44,28 +44,44 @@ export class UploadController {
 
   uploadBase64 = async (req: Request, res: Response) => {
     try {
-      const { image } = req.body;
-      if (!image) {
+      let { image } = req.body;
+      if (!image || typeof image !== 'string') {
         return res.status(400).json({ statusCode: 400, message: 'Vui lòng cung cấp dữ liệu hình ảnh' });
       }
 
-      // Match base64 header
-      const matches = image.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-      if (!matches || matches.length !== 3) {
-        return res.status(400).json({ statusCode: 400, message: 'Định dạng hình ảnh base64 không hợp lệ' });
-      }
+      image = image.trim();
 
-      const rawExt = matches[1].toLowerCase();
-      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-      if (!allowedExts.includes(rawExt)) {
-        return res.status(400).json({
-          statusCode: 400,
-          message: 'Chỉ chấp nhận các định dạng hình ảnh: JPG, JPEG, PNG, WEBP, GIF',
-        });
-      }
+      // Match base64 header with multiline / whitespace resilience
+      const matches = image.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,([\s\S]+)$/);
+      let ext = 'jpg';
+      let buffer: Buffer;
 
-      const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
-      const buffer = Buffer.from(matches[2], 'base64');
+      if (matches && matches.length === 3) {
+        const rawExt = matches[1].toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (!allowedExts.includes(rawExt)) {
+          return res.status(400).json({
+            statusCode: 400,
+            message: 'Chỉ chấp nhận các định dạng hình ảnh: JPG, JPEG, PNG, WEBP, GIF',
+          });
+        }
+        ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+        const cleanBase64 = matches[2].replace(/\s+/g, '');
+        buffer = Buffer.from(cleanBase64, 'base64');
+      } else {
+        // Fallback: If raw base64 string without data:image prefix
+        try {
+          const cleanBase64 = image.replace(/\s+/g, '');
+          buffer = Buffer.from(cleanBase64, 'base64');
+          if (buffer[0] === 0x89 && buffer[1] === 0x50) ext = 'png';
+          else if (buffer[0] === 0x47 && buffer[1] === 0x49) ext = 'gif';
+          else if (buffer[0] === 0x52 && buffer[1] === 0x49) ext = 'webp';
+          else ext = 'jpg';
+          image = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${cleanBase64}`;
+        } catch {
+          return res.status(400).json({ statusCode: 400, message: 'Định dạng hình ảnh base64 không hợp lệ' });
+        }
+      }
 
       // Security check: Validate maximum file size limit (5MB max)
       const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -86,32 +102,36 @@ export class UploadController {
 
       // 1. Cloudinary Integration: If configured, upload directly to cloud CDN
       if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-        cloudinary.config({
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-          api_key: process.env.CLOUDINARY_API_KEY,
-          api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
+        try {
+          cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+          });
 
-        const folder = isKyc ? 'foodroute/kyc' : 'foodroute/uploads';
-        const prefix = isKyc ? `kyc_u${userSub}_` : `img_u${userSub}_`;
-        const publicId = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          const folder = isKyc ? 'foodroute/kyc' : 'foodroute/uploads';
+          const prefix = isKyc ? `kyc_u${userSub}_` : `img_u${userSub}_`;
+          const publicId = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
-        const uploadResult = await cloudinary.uploader.upload(image, {
-          folder,
-          public_id: publicId,
-          resource_type: 'image',
-          overwrite: true,
-        });
+          const uploadResult = await cloudinary.uploader.upload(image, {
+            folder,
+            public_id: publicId,
+            resource_type: 'image',
+            overwrite: true,
+          });
 
-        return res.status(200).json({
-          statusCode: 200,
-          status: '1',
-          url: uploadResult.secure_url,
-          message: 'Tải lên & xử lý hình ảnh thành công qua Cloudinary',
-        });
+          return res.status(200).json({
+            statusCode: 200,
+            status: '1',
+            url: uploadResult.secure_url,
+            message: 'Tải lên & xử lý hình ảnh thành công qua Cloudinary',
+          });
+        } catch (cloudErr: any) {
+          console.warn('[UploadController] [Warn] Lỗi upload Cloudinary, tự động lưu cục bộ:', cloudErr.message);
+        }
       }
 
-      // 2. Local Filesystem Fallback
+      // 2. Local Filesystem Fallback (if Cloudinary not configured or failed)
       const targetDir = isKyc
         ? path.join(process.cwd(), 'uploads_kyc')
         : path.join(process.cwd(), 'uploads');

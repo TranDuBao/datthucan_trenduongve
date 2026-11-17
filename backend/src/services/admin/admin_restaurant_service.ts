@@ -55,7 +55,18 @@ export class AdminRestaurantService {
     if (!data.ngaySinhChuQuan || (typeof data.ngaySinhChuQuan === 'string' && !(data.ngaySinhChuQuan as string).trim())) {
       data.ngaySinhChuQuan = null;
     }
-    const newStore = this.storeRepo.create(data);
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.storeRepo.query('SELECT COALESCE(MAX(maquan), 0) + 1 as next_id FROM cuahang');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
+    const newStore = this.storeRepo.create({
+      ...(nextId ? { maQuan: nextId } : {}),
+      ...data,
+    });
     return await this.storeRepo.save(newStore);
   }
 

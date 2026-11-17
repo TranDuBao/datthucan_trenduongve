@@ -873,8 +873,17 @@ export class ReservationService {
   }
 
   async createTable(maQuan: number, data: Partial<BanModel>) {
+    let nextId: number | undefined;
+    try {
+      const maxRes = await this.banRepo.query('SELECT COALESCE(MAX(maban), 0) + 1 as next_id FROM ban');
+      if (maxRes && maxRes[0] && maxRes[0].next_id) {
+        nextId = Number(maxRes[0].next_id);
+      }
+    } catch (_) {}
+
     const ban = this.banRepo.create({
       ...data,
+      ...(nextId ? { maBan: nextId } : {}),
       maQuan,
       trangThai: data.trangThai || 'TRONG',
     });

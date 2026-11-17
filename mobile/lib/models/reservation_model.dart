@@ -99,6 +99,8 @@ class ReservationRestaurantModel {
   final bool coChoDatTruoc;
   final double danhGiaTrungBinh;
   final int soLuongDanhGia;
+  final double? lat;
+  final double? lng;
 
   const ReservationRestaurantModel({
     required this.maQuan,
@@ -110,6 +112,8 @@ class ReservationRestaurantModel {
     this.coChoDatTruoc = true,
     this.danhGiaTrungBinh = 0.0,
     this.soLuongDanhGia = 0,
+    this.lat,
+    this.lng,
   });
 
   factory ReservationRestaurantModel.fromJson(Map<String, dynamic> json) {
@@ -123,6 +127,8 @@ class ReservationRestaurantModel {
       coChoDatTruoc: json['coChoDatTruoc'] ?? json['cochodattruoc'] ?? true,
       danhGiaTrungBinh: double.tryParse((json['danhGiaTrungBinh'] ?? json['danhgiatb'] ?? 0).toString()) ?? 0.0,
       soLuongDanhGia: int.tryParse((json['soLuongDanhGia'] ?? json['soluotdanhgia'] ?? 0).toString()) ?? 0,
+      lat: (json['lat'] ?? json['viDo'] ?? json['latitude'] as num?)?.toDouble() ?? double.tryParse(json['lat']?.toString() ?? ''),
+      lng: (json['lng'] ?? json['kinhDo'] ?? json['longitude'] as num?)?.toDouble() ?? double.tryParse(json['lng']?.toString() ?? ''),
     );
   }
 
@@ -137,6 +143,8 @@ class ReservationRestaurantModel {
       'coChoDatTruoc': coChoDatTruoc,
       'danhGiaTrungBinh': danhGiaTrungBinh,
       'soLuongDanhGia': soLuongDanhGia,
+      'lat': lat,
+      'lng': lng,
     };
   }
 }

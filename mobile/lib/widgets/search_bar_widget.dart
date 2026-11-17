@@ -320,7 +320,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 Row(
                   children: [
                     Text(
-                      context.l10n.homeFoodSearchAlongRoute,
+                      provider.foodRouteOption == FoodRouteOption.dineIn
+                          ? 'TÌM QUÁN ĐẶT BÀN TRÊN LỘ TRÌNH'
+                          : context.l10n.homeFoodSearchAlongRoute,
                       style: GoogleFonts.outfit(
                         color: const Color(0xFFFC6011),
                         fontSize: 9,
@@ -346,7 +348,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                     fontWeight: FontWeight.w700,
                   ),
                   decoration: InputDecoration(
-                    hintText: context.l10n.homeFoodSearchHint,
+                    hintText: provider.foodRouteOption == FoodRouteOption.dineIn
+                        ? 'Tìm quán đặt bàn, món ăn trên lộ trình...'
+                        : context.l10n.homeFoodSearchHint,
                     hintStyle: GoogleFonts.outfit(
                       color: const Color(0xFFC7C7CC),
                       fontSize: 12,
@@ -486,16 +490,8 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
           const SizedBox(width: 8),
           _foodRouteOptionTab(
             provider: provider,
-            option: FoodRouteOption.preOrder,
-            label: context.l10n.orderModePreOrder,
-            subtext: context.l10n.homeSubtextPreOrderPrep,
-            icon: Icons.access_time_filled_rounded,
-          ),
-          const SizedBox(width: 8),
-          _foodRouteOptionTab(
-            provider: provider,
             option: FoodRouteOption.dineIn,
-            label: context.l10n.orderModeDineIn,
+            label: context.l10n.orderModeReserveTable,
             subtext: context.l10n.homeSubtextDineInRelax,
             icon: Icons.table_restaurant_rounded,
           ),

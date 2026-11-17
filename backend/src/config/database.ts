@@ -125,19 +125,51 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`);
         await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`);
 
-        // Ensure auto-increment sequence default for taikhoan & khachhang primary keys
-        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS taikhoan_mataikhoan_seq;`);
-        await safeQuery(`SELECT setval('taikhoan_mataikhoan_seq', COALESCE((SELECT MAX(mataikhoan) FROM taikhoan), 0) + 1, false);`);
-        await safeQuery(`ALTER TABLE taikhoan ALTER COLUMN mataikhoan SET DEFAULT nextval('taikhoan_mataikhoan_seq');`);
+        // Ensure auto-increment sequence default for all primary keys (prevents NOT NULL constraint violation on production deployment)
+        const ensureAutoIncrementSequence = async (tableName: string, colName: string) => {
+          const seqName = `${tableName}_${colName}_seq`;
+          await safeQuery(`CREATE SEQUENCE IF NOT EXISTS ${seqName};`);
+          await safeQuery(`SELECT setval('${seqName}', COALESCE((SELECT MAX(${colName}) FROM ${tableName}), 0) + 1, false);`);
+          await safeQuery(`ALTER TABLE ${tableName} ALTER COLUMN ${colName} SET DEFAULT nextval('${seqName}');`);
+        };
 
-        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS khachhang_makhachhang_seq;`);
-        await safeQuery(`SELECT setval('khachhang_makhachhang_seq', COALESCE((SELECT MAX(makhachhang) FROM khachhang), 0) + 1, false);`);
-        await safeQuery(`ALTER TABLE khachhang ALTER COLUMN makhachhang SET DEFAULT nextval('khachhang_makhachhang_seq');`);
+        const primaryKeyTables = [
+          ['taikhoan', 'mataikhoan'],
+          ['khachhang', 'makhachhang'],
+          ['cuahang', 'maquan'],
+          ['monan', 'mamonan'],
+          ['danhmuc', 'madanhmuc'],
+          ['ban', 'maban'],
+          ['datban', 'madatban'],
+          ['voucher', 'mavoucher'],
+          ['donhang', 'madonhang'],
+          ['chitietdonhang', 'machitietdon'],
+          ['giohang', 'magio'],
+          ['chitietgiohang', 'machitietgio'],
+          ['thanhtoan', 'mathanhtoan'],
+          ['danhgia', 'madanhgia'],
+          ['danhgiamon', 'madanhgiamon'],
+          ['hoantien', 'mahoantien'],
+          ['banner', 'mabanner'],
+          ['nhanvien', 'manhanvien'],
+          ['loai_hinh_quan', 'maloai'],
+          ['dondangkycuahang', 'madon'],
+          ['thongke', 'mathongke'],
+          ['nhatkyhoatdong', 'manhatky'],
+          ['notifications', 'id'],
+          ['user_notifications', 'id'],
+          ['device_tokens', 'id'],
+          ['app_version_configs', 'id'],
+          ['support_faq_groups', 'ma_nhom'],
+          ['support_faqs', 'ma_faq'],
+          ['support_feedbacks', 'ma_gop_y'],
+          ['support_tickets', 'ma_phieu'],
+          ['support_ticket_messages', 'ma_tin_nhan'],
+        ];
 
-        // Ensure auto-increment sequence default for cuahang primary key
-        await safeQuery(`CREATE SEQUENCE IF NOT EXISTS cuahang_maquan_seq;`);
-        await safeQuery(`SELECT setval('cuahang_maquan_seq', COALESCE((SELECT MAX(maquan) FROM cuahang), 0) + 1, false);`);
-        await safeQuery(`ALTER TABLE cuahang ALTER COLUMN maquan SET DEFAULT nextval('cuahang_maquan_seq');`);
+        for (const [tName, cName] of primaryKeyTables) {
+          await ensureAutoIncrementSequence(tName, cName);
+        }
 
         await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
     await AppDataSource.query(`

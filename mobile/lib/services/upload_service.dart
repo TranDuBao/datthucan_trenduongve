@@ -1,12 +1,20 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../common/globs.dart';
 
 class UploadService {
-  /// Upload base64 image to backend and return relative image URL (e.g. /uploads/img_....jpg)
+  /// Upload base64 image to backend and return relative image URL (e.g. /uploads/img_....jpg) or CDN URL
   static Future<String?> uploadImageBase64(String base64Image) async {
     try {
-      final token = Globs.udValueString(KKey.authToken);
+      var token = Globs.udValueString(KKey.authToken);
+      if (token.isEmpty) {
+        final payload = Globs.udValue(Globs.userPayload);
+        if (payload is Map) {
+          token = (payload['accessToken'] ?? payload[KKey.authToken] ?? '').toString();
+        }
+      }
+
       final url = Uri.parse('${SVKey.mainUrl}/api/v1/upload/base64');
       final response = await http
           .post(
@@ -17,7 +25,7 @@ class UploadService {
             },
             body: jsonEncode({'image': base64Image}),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200) {
         final resJson = jsonDecode(response.body);
@@ -35,9 +43,12 @@ class UploadService {
           }
           return cleanUrl;
         }
+      } else {
+        debugPrint('[UploadService] Upload failed (${response.statusCode}): ${response.body}');
       }
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[UploadService] Upload exception: $e');
       return null;
     }
   }
