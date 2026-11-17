@@ -286,7 +286,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 SDT: {order.sdtKhachHang || order.khachHang?.sdt || 'Chưa cập nhật'}
               </div>
               <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                Email: {order.khachHang?.email || '—'}
+                Email: {order.emailKhachHang || order.khachHang?.email || order.email || '—'}
               </div>
             </div>
 

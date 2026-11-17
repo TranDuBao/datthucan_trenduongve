@@ -8,6 +8,7 @@ import { DanhMucModel } from '../models/danh_muc_model';
 import { VoucherModel } from '../models/voucher_model';
 import { DatBanModel } from '../models/dat_ban_model';
 import { BanModel } from '../models/ban_model';
+import { TaiKhoanModel } from '../models/tai_khoan_model';
 import { DanhGiaModel } from '../models/danh_gia_model';
 import { DanhGiaMonModel } from '../models/danh_gia_mon_model';
 import { ReservationService } from './reservation_service';
@@ -35,6 +36,7 @@ export class RestaurantMgmtService {
   private foodRepo = AppDataSource.getRepository(MonAnModel);
   private storeRepo = AppDataSource.getRepository(CuaHangModel);
   private khachHangRepo = AppDataSource.getRepository(KhachHangModel);
+  private userRepo = AppDataSource.getRepository(TaiKhoanModel);
   private categoryRepo = AppDataSource.getRepository(DanhMucModel);
   private voucherRepo = AppDataSource.getRepository(VoucherModel);
   private reservationService = new ReservationService();
@@ -176,12 +178,13 @@ export class RestaurantMgmtService {
         // Numeric input → exact order ID match only
         qb.andWhere('dh.madonhang = :numVal', { numVal });
       } else {
-        // Text input → find matching customers by name or phone
+        // Text input → find matching customers by name, phone or email
         const matchingCustomers = await this.khachHangRepo
           .createQueryBuilder('kh')
           .select('kh.makhachhang', 'id')
           .where('kh.hoten ILIKE :qLike', { qLike: `%${q}%` })
           .orWhere('kh.sdt ILIKE :qLike', { qLike: `%${q}%` })
+          .orWhere('kh.email ILIKE :qLike', { qLike: `%${q}%` })
           .getRawMany();
 
         const khIds = matchingCustomers
@@ -217,11 +220,30 @@ export class RestaurantMgmtService {
       // Fetch customer
       let customerName = 'Khách hàng';
       let customerPhone = '';
+      let customerEmail = '';
       if (ord.maKhachHang) {
-        const kh = await this.khachHangRepo.findOne({ where: { maKhachHang: ord.maKhachHang } });
+        let kh = await this.khachHangRepo.findOne({ where: { maKhachHang: ord.maKhachHang } });
+        if (!kh) {
+          kh = await this.khachHangRepo.findOne({ where: { maTaiKhoan: ord.maKhachHang } });
+        }
         if (kh) {
           customerName = kh.hoTen;
           customerPhone = kh.sdt || '';
+          customerEmail = kh.email || '';
+          if (!customerEmail && kh.maTaiKhoan) {
+            const user = await this.userRepo.findOne({ where: { maTaiKhoan: kh.maTaiKhoan } });
+            if (user && user.tenDangNhap && user.tenDangNhap.includes('@')) {
+              customerEmail = user.tenDangNhap;
+            }
+          }
+        } else {
+          const user = await this.userRepo.findOne({ where: { maTaiKhoan: ord.maKhachHang } });
+          if (user) {
+            customerName = user.tenDangNhap;
+            if (user.tenDangNhap && user.tenDangNhap.includes('@')) {
+              customerEmail = user.tenDangNhap;
+            }
+          }
         }
       }
 
@@ -301,6 +323,13 @@ export class RestaurantMgmtService {
         ...ord,
         tenKhachHang: customerName,
         sdtKhachHang: customerPhone,
+        emailKhachHang: customerEmail,
+        khachHang: {
+          maKhachHang: ord.maKhachHang,
+          hoTen: customerName,
+          sdt: customerPhone,
+          email: customerEmail,
+        },
         items: orderItems,
         tamTinh: subtotal > 0 ? subtotal : Number(ord.tongTien || 0),
         voucherInfo,

@@ -543,6 +543,7 @@ export class AdminDashboardService {
 
       let customerName = '';
       let customerPhone = '';
+      let customerEmail = '';
       if (customerId) {
         let kh = await this.khachHangRepo.findOne({ where: { maKhachHang: customerId } });
         if (!kh) {
@@ -551,10 +552,20 @@ export class AdminDashboardService {
         if (kh) {
           customerName = kh.hoTen;
           customerPhone = kh.sdt || '';
+          customerEmail = kh.email || '';
+          if (!customerEmail && kh.maTaiKhoan) {
+            const user = await this.userRepo.findOne({ where: { maTaiKhoan: kh.maTaiKhoan } });
+            if (user && user.tenDangNhap && user.tenDangNhap.includes('@')) {
+              customerEmail = user.tenDangNhap;
+            }
+          }
         } else {
           const user = await this.userRepo.findOne({ where: { maTaiKhoan: customerId } });
           if (user) {
             customerName = user.tenDangNhap;
+            if (user.tenDangNhap && user.tenDangNhap.includes('@')) {
+              customerEmail = user.tenDangNhap;
+            }
           }
         }
       }
@@ -611,6 +622,13 @@ export class AdminDashboardService {
         ...ord,
         tenKhachHang: customerName || (customerId ? `Khách hàng #${customerId}` : 'Khách vãng lai'),
         sdtKhachHang: customerPhone,
+        emailKhachHang: customerEmail,
+        khachHang: {
+          maKhachHang: customerId,
+          hoTen: customerName || (customerId ? `Khách hàng #${customerId}` : 'Khách vãng lai'),
+          sdt: customerPhone,
+          email: customerEmail,
+        },
         tenQuan: storeName || (storeIdVal ? `Nhà hàng #${storeIdVal}` : 'Chưa xác định'),
         items,
       });
@@ -637,6 +655,8 @@ export class AdminDashboardService {
       finalOrders = finalOrders.filter((ord) => {
         const orderIdStr = String(ord.maDonHang || (ord as any).madonhang || '').toLowerCase();
         const custNameStr = String(ord.tenKhachHang || '').toLowerCase();
+        const custEmailStr = String(ord.emailKhachHang || '').toLowerCase();
+        const custPhoneStr = String(ord.sdtKhachHang || '').toLowerCase();
         const storeNameStr = String(ord.tenQuan || '').toLowerCase();
         const hasMatchingFood = (ord.items || []).some((i: any) =>
           String(i.tenMonAn || '').toLowerCase().includes(keyword)
@@ -645,6 +665,8 @@ export class AdminDashboardService {
         return (
           orderIdStr.includes(keyword) ||
           custNameStr.includes(keyword) ||
+          custEmailStr.includes(keyword) ||
+          custPhoneStr.includes(keyword) ||
           storeNameStr.includes(keyword) ||
           hasMatchingFood
         );
