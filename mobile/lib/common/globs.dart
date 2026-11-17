@@ -13,7 +13,7 @@ class Globs {
   static const userLogin = "user_login";
   static const isGuestMode = "is_guest_mode";
 
-  static void showHUD({String status = "loading ....."}) async {
+  static void showHUD({String status = "Đang xử lý..."}) async {
     await Future.delayed(const Duration(milliseconds: 1));
     EasyLoading.show(status: status);
   }

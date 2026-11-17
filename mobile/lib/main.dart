@@ -7,7 +7,6 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'common/color_extension.dart';
 import 'common/globs.dart';
 import 'common/locator.dart';
 import 'common/my_http_overrides.dart';
@@ -29,6 +28,7 @@ SharedPreferences? prefs;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configLoading();
   setUpLocator();
 
   // Initialize Firebase and Push notification services
@@ -69,16 +69,47 @@ void main() async {
 
 void configLoading() {
   EasyLoading.instance
-    ..indicatorType = EasyLoadingIndicatorType.ring
     ..loadingStyle = EasyLoadingStyle.custom
-    ..indicatorSize = 45.0
-    ..radius = 5.0
-    ..progressColor = TColor.primaryText
-    ..backgroundColor = TColor.primary
-    ..indicatorColor = Colors.yellow
-    ..textColor = TColor.primaryText
+    ..indicatorType = EasyLoadingIndicatorType.ring
+    ..indicatorSize = 44.0
+    ..radius = 20.0
+    ..progressColor = const Color(0xFFFF5216)
+    ..backgroundColor = Colors.white
+    ..indicatorColor = const Color(0xFFFF5216)
+    ..textColor = const Color(0xFF1F2937)
+    ..maskColor = const Color.fromRGBO(0, 0, 0, 0.35)
+    ..maskType = EasyLoadingMaskType.custom
     ..userInteractions = false
-    ..dismissOnTap = false;
+    ..dismissOnTap = false
+    ..animationStyle = EasyLoadingAnimationStyle.scale
+    ..contentPadding = const EdgeInsets.symmetric(vertical: 22, horizontal: 28)
+    ..textPadding = const EdgeInsets.only(top: 14)
+    ..textStyle = const TextStyle(
+      fontSize: 13.5,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF1F2937),
+      letterSpacing: -0.2,
+      fontFamily: 'Metropolis',
+    )
+    ..boxShadow = [
+      const BoxShadow(
+        color: Color.fromRGBO(0, 0, 0, 0.12),
+        blurRadius: 28,
+        spreadRadius: 2,
+        offset: Offset(0, 8),
+      ),
+    ]
+    ..indicatorWidget = Container(
+      width: 48,
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      child: const CircularProgressIndicator(
+        strokeWidth: 3.5,
+        strokeCap: StrokeCap.round,
+        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF5216)),
+        backgroundColor: Color(0xFFFFECE5),
+      ),
+    );
 }
 
 class MyApp extends StatefulWidget {

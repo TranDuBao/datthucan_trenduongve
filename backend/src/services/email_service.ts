@@ -27,20 +27,44 @@ export class EmailService {
     // Tự động loại bỏ mọi khoảng trắng trong mật khẩu ứng dụng Gmail (dạng "abcd efgh ijkl mnop")
     const cleanPass = rawPass.replace(/\s+/g, '');
 
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: user.trim(),
-        pass: cleanPass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    const isGmail = (process.env.SMTP_HOST || '').includes('gmail') || user.includes('@gmail.com');
 
-    console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter cho tài khoản: ${user}`);
+    if (isGmail) {
+      // Dùng trực tiếp driver 'gmail' qua SSL (port 465) tương thích 100% với cloud Render/AWS không bị chặn port 587
+      this.transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: user.trim(),
+          pass: cleanPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
+      });
+      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (service: gmail) cho tài khoản: ${user}`);
+    } else {
+      const port = Number(process.env.SMTP_PORT) || 465;
+      const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port,
+        secure,
+        auth: {
+          user: user.trim(),
+          pass: cleanPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
+      });
+      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (${process.env.SMTP_HOST}:${port}) cho tài khoản: ${user}`);
+    }
   }
 
   async sendOtpEmail(params: {
@@ -108,12 +132,18 @@ export class EmailService {
     `;
 
     try {
-      await this.transporter.sendMail({
+      const sendPromise = this.transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
         to: toEmail,
         subject: emailSubject,
         html: htmlContent,
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Hết thời gian chờ kết nối máy chủ gửi mail (Timeout 8s)')), 8000);
+      });
+
+      await Promise.race([sendPromise, timeoutPromise]);
 
       console.log(`[EmailService] [Success] Đã gửi mã OTP (${type}) thành công đến email: ${toEmail}`);
       return { success: true };
