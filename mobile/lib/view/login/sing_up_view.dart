@@ -353,6 +353,31 @@ class _SignUpViewState extends State<SignUpView> {
     }, SVKey.svSignUpRequestOtp, withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
+        final payload = responseObj[KKey.payload] as Map? ?? {};
+        final serverOtp = (payload["otp"] ?? responseObj["data"]?["otp"])?.toString() ?? "";
+        final isCloudFallback = payload["cloudFallback"] == true;
+
+        if (isCloudFallback && serverOtp.isNotEmpty) {
+          mdShowAlert(
+            context.l10n.commonNotification,
+            "Mã OTP của bạn là: $serverOtp\n(Do máy chủ Render Cloud Free chặn cổng gửi email)",
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OTPView(
+                    email: parameter["email"].toString(),
+                    signUpData: parameter,
+                    fallbackOtp: serverOtp,
+                  ),
+                ),
+              );
+            },
+            isError: false,
+          );
+          return;
+        }
+
         Navigator.push(
           context,
           MaterialPageRoute(

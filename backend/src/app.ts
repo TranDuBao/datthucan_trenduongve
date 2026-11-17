@@ -166,7 +166,7 @@ app.use('/api', supportRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
-    version: '1.0.4-gmail-ssl',
+    version: '1.0.5-http-email-fallback',
     message: 'Smart City Food Route API running'
   });
 });

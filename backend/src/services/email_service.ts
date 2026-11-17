@@ -1,4 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import https from 'https';
 
 export class EmailService {
   private static instance: EmailService;
@@ -24,13 +25,10 @@ export class EmailService {
       return;
     }
 
-    // Tự động loại bỏ mọi khoảng trắng trong mật khẩu ứng dụng Gmail (dạng "abcd efgh ijkl mnop")
     const cleanPass = rawPass.replace(/\s+/g, '');
-
     const isGmail = (process.env.SMTP_HOST || '').includes('gmail') || user.includes('@gmail.com');
 
     if (isGmail) {
-      // Dùng trực tiếp driver 'gmail' qua SSL (port 465) tương thích 100% với cloud Render/AWS không bị chặn port 587
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -40,9 +38,9 @@ export class EmailService {
         tls: {
           rejectUnauthorized: false,
         },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 10000,
+        connectionTimeout: 4000,
+        greetingTimeout: 4000,
+        socketTimeout: 5000,
       });
       console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (service: gmail) cho tài khoản: ${user}`);
     } else {
@@ -59,12 +57,126 @@ export class EmailService {
         tls: {
           rejectUnauthorized: false,
         },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 10000,
+        connectionTimeout: 4000,
+        greetingTimeout: 4000,
+        socketTimeout: 5000,
       });
       console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (${process.env.SMTP_HOST}:${port}) cho tài khoản: ${user}`);
     }
+  }
+
+  private async sendViaBrevo(params: {
+    apiKey: string;
+    fromEmail: string;
+    fromName: string;
+    toEmail: string;
+    toName?: string;
+    subject: string;
+    htmlContent: string;
+  }): Promise<{ success: boolean; message?: string }> {
+    return new Promise((resolve) => {
+      const postData = JSON.stringify({
+        sender: { name: params.fromName, email: params.fromEmail },
+        to: [{ email: params.toEmail, name: params.toName || params.toEmail }],
+        subject: params.subject,
+        htmlContent: params.htmlContent,
+      });
+
+      const options = {
+        hostname: 'api.brevo.com',
+        port: 443,
+        path: '/v3/smtp/email',
+        method: 'POST',
+        headers: {
+          'api-key': params.apiKey.trim(),
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+        },
+        timeout: 6000,
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ success: true });
+          } else {
+            console.error('[EmailService] [Brevo Error]', body);
+            resolve({ success: false, message: `Brevo API error: ${res.statusCode}` });
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        console.error('[EmailService] [Brevo Network Error]', e.message);
+        resolve({ success: false, message: e.message });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ success: false, message: 'Brevo API timeout' });
+      });
+
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  private async sendViaResend(params: {
+    apiKey: string;
+    fromEmail: string;
+    toEmail: string;
+    subject: string;
+    htmlContent: string;
+  }): Promise<{ success: boolean; message?: string }> {
+    return new Promise((resolve) => {
+      const postData = JSON.stringify({
+        from: params.fromEmail.includes('<') ? params.fromEmail : `FoodRoute <${params.fromEmail}>`,
+        to: [params.toEmail],
+        subject: params.subject,
+        html: params.htmlContent,
+      });
+
+      const options = {
+        hostname: 'api.resend.com',
+        port: 443,
+        path: '/emails',
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${params.apiKey.trim()}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+        },
+        timeout: 6000,
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ success: true });
+          } else {
+            console.error('[EmailService] [Resend Error]', body);
+            resolve({ success: false, message: `Resend API error: ${res.statusCode}` });
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        console.error('[EmailService] [Resend Network Error]', e.message);
+        resolve({ success: false, message: e.message });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ success: false, message: 'Resend API timeout' });
+      });
+
+      req.write(postData);
+      req.end();
+    });
   }
 
   async sendOtpEmail(params: {
@@ -72,18 +184,11 @@ export class EmailService {
     otpCode: string;
     recipientName?: string;
     type?: 'FORGOT_PASSWORD' | 'REGISTER';
-  }): Promise<{ success: boolean; message?: string }> {
+  }): Promise<{ success: boolean; message?: string; isCloudBlocked?: boolean }> {
     const { toEmail, otpCode, recipientName, type = 'FORGOT_PASSWORD' } = params;
 
-    if (!this.transporter) {
-      this.initTransporter();
-      if (!this.transporter) {
-        return { success: false, message: 'Dịch vụ gửi email chưa được cấu hình trên máy chủ' };
-      }
-    }
-
     const fromName = process.env.SMTP_FROM_NAME || 'FoodRoute System';
-    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'support@foodroute.vn';
     const displayName = recipientName ? ` ${recipientName}` : '';
 
     const isRegister = type === 'REGISTER';
@@ -131,6 +236,50 @@ export class EmailService {
       </div>
     `;
 
+    // 1. Kiểm tra Brevo API HTTPS (Cổng 443 - không bao giờ bị Cloud chặn)
+    const brevoApiKey = process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY;
+    if (brevoApiKey) {
+      console.log(`[EmailService] [Info] Đang gửi qua Brevo HTTPS API đến: ${toEmail}`);
+      const brevoRes = await this.sendViaBrevo({
+        apiKey: brevoApiKey,
+        fromEmail,
+        fromName,
+        toEmail,
+        toName: recipientName,
+        subject: emailSubject,
+        htmlContent,
+      });
+      if (brevoRes.success) {
+        console.log(`[EmailService] [Success] Brevo đã gửi mail OTP (${type}) thành công đến: ${toEmail}`);
+        return { success: true };
+      }
+    }
+
+    // 2. Kiểm tra Resend API HTTPS (Cổng 443)
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      console.log(`[EmailService] [Info] Đang gửi qua Resend HTTPS API đến: ${toEmail}`);
+      const resendRes = await this.sendViaResend({
+        apiKey: resendApiKey,
+        fromEmail: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        toEmail,
+        subject: emailSubject,
+        htmlContent,
+      });
+      if (resendRes.success) {
+        console.log(`[EmailService] [Success] Resend đã gửi mail OTP (${type}) thành công đến: ${toEmail}`);
+        return { success: true };
+      }
+    }
+
+    // 3. Fallback qua SMTP Nodemailer
+    if (!this.transporter) {
+      this.initTransporter();
+      if (!this.transporter) {
+        return { success: false, message: 'Dịch vụ gửi email chưa được cấu hình trên máy chủ', isCloudBlocked: true };
+      }
+    }
+
     try {
       const sendPromise = this.transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
@@ -140,16 +289,20 @@ export class EmailService {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Hết thời gian chờ kết nối máy chủ gửi mail (Timeout 8s)')), 8000);
+        setTimeout(() => reject(new Error('Hết thời gian chờ kết nối máy chủ gửi mail (Timeout 4s do Cloud chặn port SMTP)')), 4000);
       });
 
       await Promise.race([sendPromise, timeoutPromise]);
 
-      console.log(`[EmailService] [Success] Đã gửi mã OTP (${type}) thành công đến email: ${toEmail}`);
+      console.log(`[EmailService] [Success] Đã gửi mã OTP (${type}) qua SMTP thành công đến email: ${toEmail}`);
       return { success: true };
     } catch (error: any) {
-      console.error(`[EmailService] [Error] Gửi mail OTP (${type}) thất bại đến ${toEmail}:`, error);
-      return { success: false, message: error.message || 'Lỗi gửi email qua máy chủ SMTP' };
+      console.error(`[EmailService] [Error] Gửi mail OTP (${type}) thất bại đến ${toEmail}:`, error.message);
+      return {
+        success: false,
+        message: error.message || 'Lỗi gửi email qua máy chủ SMTP',
+        isCloudBlocked: true,
+      };
     }
   }
 }
