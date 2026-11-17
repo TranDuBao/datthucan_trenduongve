@@ -587,3 +587,4 @@ export const DishCustomizationManager: React.FC<DishCustomizationManagerProps> =
     </div>
   );
 };
+

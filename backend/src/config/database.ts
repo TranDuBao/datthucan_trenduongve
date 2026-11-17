@@ -128,6 +128,9 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE chitietdonhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
         await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS options TEXT NULL;`);
 
+        // Dọn dẹp các đánh giá mồ côi của các món ăn đã từng bị xóa trước đây (tránh tình trạng món mới trùng ID lấy nhầm đánh giá cũ)
+        await safeQuery(`DELETE FROM danhgia_mon WHERE mamon NOT IN (SELECT mamonan FROM monan);`);
+
         // Ensure auto-increment sequence default for all primary keys (prevents NOT NULL constraint violation on production deployment)
         const ensureAutoIncrementSequence = async (tableName: string, colName: string) => {
           const seqName = `${tableName}_${colName}_seq`;
@@ -137,7 +140,7 @@ export const connectDatabase = async () => {
             maxSql = `SELECT GREATEST(
               COALESCE((SELECT MAX(mamonan) FROM monan), 0),
               COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0),
-              COALESCE((SELECT MAX(mamon) FROM danhgiamon), 0)
+              COALESCE((SELECT MAX(mamon) FROM danhgia_mon), 0)
             )`;
           } else if (tableName === 'donhang') {
             maxSql = `SELECT GREATEST(
@@ -166,7 +169,7 @@ export const connectDatabase = async () => {
           ['chitietgiohang', 'machitietgio'],
           ['thanhtoan', 'mathanhtoan'],
           ['danhgia', 'madanhgia'],
-          ['danhgiamon', 'madanhgiamon'],
+          ['danhgia_mon', 'madanhgiamon'],
           ['hoantien', 'mahoantien'],
           ['banner', 'mabanner'],
           ['nhanvien', 'manhanvien'],

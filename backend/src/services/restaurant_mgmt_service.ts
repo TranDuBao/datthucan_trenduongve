@@ -545,7 +545,7 @@ export class RestaurantMgmtService {
         SELECT GREATEST(
           COALESCE((SELECT MAX(mamonan) FROM monan), 0),
           COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0),
-          COALESCE((SELECT MAX(mamon) FROM danhgiamon), 0)
+          COALESCE((SELECT MAX(mamon) FROM danhgia_mon), 0)
         ) + 1 AS next_id
       `).catch(async () => {
         return await this.foodRepo.query(`
@@ -560,12 +560,21 @@ export class RestaurantMgmtService {
       }
     } catch (_) {}
 
+    // Triệt để ngăn chặn kế thừa đánh giá/dữ liệu cũ: dọn dẹp mọi đánh giá mồ côi nếu trùng ID
+    if (nextId) {
+      try {
+        await this.foodRepo.query(`DELETE FROM danhgia_mon WHERE mamon = $1;`, [nextId]);
+      } catch (_) {}
+    }
+
     const food = this.foodRepo.create({
       ...data,
       ...(nextId ? { maMonAn: nextId } : {}),
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       ...(normalizedOptions !== undefined ? { options: normalizedOptions } : {}),
+      diemDanhGiaTB: 0.0,
+      soLuotDanhGia: 0,
       soLuongMon: qty,
       trangThaiMon: status,
       maQuan,
@@ -580,6 +589,9 @@ export class RestaurantMgmtService {
     }
     const resultFood = {
       ...saved,
+      diemDanhGiaTB: 0.0,
+      soLuotDanhGia: 0,
+      chuaCoDanhGia: true,
       sizes: Array.isArray(parsedSavedOptions?.sizes) ? parsedSavedOptions.sizes : [],
       toppings: Array.isArray(parsedSavedOptions?.toppings) ? parsedSavedOptions.toppings : [],
       options: parsedSavedOptions,
@@ -654,6 +666,8 @@ export class RestaurantMgmtService {
       if (foodImg) {
         deleteUploadFile(foodImg);
       }
+      // Dọn dẹp đánh giá của món đã xóa khỏi danhgia_mon
+      await this.foodRepo.query(`DELETE FROM danhgia_mon WHERE mamon = $1;`, [foodId]).catch(() => {});
     } catch (removeErr: any) {
       // If foreign key constraint violates (e.g. order history), soft-delete instead of crashing
       if (removeErr.message?.includes('foreign key') || removeErr.message?.includes('constraint') || removeErr.code === '23503') {
