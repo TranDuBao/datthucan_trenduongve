@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../common/format_utils.dart';
+import '../common/vietqr_banks.dart';
 import '../services/order_service.dart';
 
 /// Card hiển thị chi tiết tiến trình hoàn tiền và tài khoản nhận tiền của đơn hàng đã hủy
@@ -191,7 +192,7 @@ class OrderRefundStatusCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${order.refundBank ?? 'Ngân hàng'} • ${order.refundAccountNumber}',
+                      '${VietQrBanks.findByCodeOrBin(order.refundBank).shortName} • ${order.refundAccountNumber}',
                       style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: textPrimary),
                     ),
                     if (order.refundAccountName != null && order.refundAccountName!.isNotEmpty) ...[

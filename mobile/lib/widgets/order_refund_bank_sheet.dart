@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/order_service.dart';
 import 'custom_toast.dart';
+import '../common/vietqr_banks.dart';
 
 /// Modal bottom sheet cho phép khách hàng nhập/chọn thông tin tài khoản ngân hàng để nhận tiền hoàn qua VietQR
 class OrderRefundBankSheet extends StatefulWidget {
@@ -52,24 +53,6 @@ class OrderRefundBankSheet extends StatefulWidget {
 }
 
 class _OrderRefundBankSheetState extends State<OrderRefundBankSheet> {
-  static const List<Map<String, String>> popularBanks = [
-    {'code': 'MB', 'name': 'MB Bank (Quân Đội)'},
-    {'code': 'VCB', 'name': 'Vietcombank'},
-    {'code': 'TCB', 'name': 'Techcombank'},
-    {'code': 'VPB', 'name': 'VPBank'},
-    {'code': 'ACB', 'name': 'ACB'},
-    {'code': 'BIDV', 'name': 'BIDV'},
-    {'code': 'VBA', 'name': 'Agribank'},
-    {'code': 'TPB', 'name': 'TPBank'},
-    {'code': 'STB', 'name': 'Sacombank'},
-    {'code': 'CTG', 'name': 'VietinBank'},
-    {'code': 'VIB', 'name': 'VIB'},
-    {'code': 'SHB', 'name': 'SHB'},
-    {'code': 'MSB', 'name': 'MSB'},
-    {'code': 'OCB', 'name': 'OCB'},
-    {'code': 'HDB', 'name': 'HDBank'},
-  ];
-
   late String _selectedBank;
   late TextEditingController _accountNumberController;
   late TextEditingController _accountNameController;
@@ -80,10 +63,6 @@ class _OrderRefundBankSheetState extends State<OrderRefundBankSheet> {
   void initState() {
     super.initState();
     _selectedBank = widget.initialBank ?? 'MB';
-    if (!popularBanks.any((b) => b['code'] == _selectedBank)) {
-      _selectedBank = 'MB';
-    }
-
     _accountNumberController = TextEditingController(text: widget.initialAccountNumber ?? '');
     _accountNameController = TextEditingController(text: widget.initialAccountName ?? '');
 
@@ -102,7 +81,7 @@ class _OrderRefundBankSheetState extends State<OrderRefundBankSheet> {
 
       if (mounted) {
         setState(() {
-          if (savedBank != null && popularBanks.any((b) => b['code'] == savedBank)) {
+          if (savedBank != null && savedBank.isNotEmpty) {
             _selectedBank = savedBank;
           }
           if (_accountNumberController.text.isEmpty && savedNum != null) {
@@ -268,35 +247,65 @@ class _OrderRefundBankSheetState extends State<OrderRefundBankSheet> {
               style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: textPrimary),
             ),
             const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: inputBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderColor),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedBank,
-                  isExpanded: true,
-                  dropdownColor: cardBg,
-                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary),
-                  items: popularBanks.map((b) {
-                    return DropdownMenuItem<String>(
-                      value: b['code'],
+            InkWell(
+              onTap: () async {
+                final picked = await VietQrBankPickerSheet.show(context, initialCode: _selectedBank);
+                if (picked != null && mounted) {
+                  setState(() => _selectedBank = picked.code);
+                }
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(
+                  color: inputBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFC6011).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       child: Text(
-                        '${b['code']} - ${b['name']}',
+                        VietQrBanks.findByCodeOrBin(_selectedBank).code,
                         style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFFC6011),
                         ),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedBank = val);
-                  },
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            VietQrBanks.findByCodeOrBin(_selectedBank).shortName,
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: textPrimary,
+                            ),
+                          ),
+                          Text(
+                            VietQrBanks.findByCodeOrBin(_selectedBank).name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontSize: 11.5,
+                              color: textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary),
+                  ],
                 ),
               ),
             ),

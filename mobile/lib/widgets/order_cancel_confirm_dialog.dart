@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../common/format_utils.dart';
+import '../common/vietqr_banks.dart';
 import '../services/order_service.dart';
 import 'order_refund_bank_sheet.dart';
 
@@ -314,7 +315,7 @@ class _OrderCancelConfirmDialogState extends State<OrderCancelConfirmDialog> {
                               )
                             else if (hasBankInfo)
                               Text(
-                                '${_savedBank ?? 'Ngân hàng'} • $_savedAccountNumber (${_savedAccountName ?? ''})',
+                                '${VietQrBanks.findByCodeOrBin(_savedBank).shortName} • $_savedAccountNumber (${_savedAccountName ?? ''})',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
