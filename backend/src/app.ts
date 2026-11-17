@@ -164,7 +164,11 @@ app.use('/api', supportRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Smart City Food Route API running' });
+  res.status(200).json({
+    status: 'OK',
+    version: '1.0.4-gmail-ssl',
+    message: 'Smart City Food Route API running'
+  });
 });
 
 // 404 Handler cho các API không tồn tại

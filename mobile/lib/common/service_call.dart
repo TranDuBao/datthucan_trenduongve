@@ -68,8 +68,8 @@ class ServiceCall {
           Uri.parse(path),
           body: jsonEncode(parameter),
           headers: headers,
-        ).timeout(const Duration(seconds: 15), onTimeout: () {
-          throw Exception("Hết thời gian chờ phản hồi từ máy chủ (15s). Vui lòng thử lại!");
+        ).timeout(const Duration(seconds: 30), onTimeout: () {
+          throw Exception("Hết thời gian chờ phản hồi từ máy chủ (30s). Vui lòng thử lại!");
         });
 
         if (kDebugMode) {
