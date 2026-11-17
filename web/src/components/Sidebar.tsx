@@ -57,6 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { title: 'Thực Đơn Quán', path: '/restaurant/menu', icon: UtensilsCrossed },
     { title: 'Đặt Bàn', path: '/restaurant/reservations', icon: CalendarDays },
     { title: 'Voucher Khuyến Mãi', path: '/restaurant/vouchers', icon: Ticket },
+    { title: 'Đánh Giá & Phản Hồi', path: '/restaurant/reviews', icon: Star },
     { title: 'Doanh Thu & Báo Cáo', path: '/restaurant/revenue', icon: DollarSign },
     { title: 'Thông Tin Nhà Hàng', path: '/restaurant/profile', icon: Store },
   ];

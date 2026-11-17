@@ -1,6 +1,6 @@
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import '../../../common/color_extension.dart';
+import '../../../widgets/order_item_customization_tags.dart';
 import 'restaurant_format_utils.dart';
 
 class OwnerOrderDetailSheet extends StatefulWidget {
@@ -206,13 +206,91 @@ class _OwnerOrderDetailSheetState extends State<OwnerOrderDetailSheet> {
                       if (note.toString().isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Ghi chú: $note',
+                          'Ghi chú cho quán: ${note.toString().split(' | ').first.trim()}',
                           style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Color(0xFFF59E0B)),
                         ),
                       ],
                     ],
                   ),
                 ),
+                if (status.toUpperCase() == 'DA_HUY') ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E2430) : const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.cancel_outlined, size: 18, color: Color(0xFFEF4444)),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Đơn hàng đã hủy',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFDC2626)),
+                            ),
+                          ],
+                        ),
+                        if (order['lyDoHuy'] != null && order['lyDoHuy'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Lý do: ${order['lyDoHuy']}',
+                            style: TextStyle(fontSize: 12.5, color: TColor.secondaryTextOf(context)),
+                          ),
+                        ],
+                        if (order['refundInfo'] != null || order['refund'] != null) ...[
+                          const SizedBox(height: 8),
+                          const Divider(height: 1, color: Color(0xFFFECACA)),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Số tiền hoàn trả:', style: TextStyle(fontSize: 13)),
+                              Text(
+                                RestaurantFormatUtils.formatVND(
+                                  (order['refundInfo'] ?? order['refund'])['soTienHoan'] ?? order['tongTien'] ?? 0,
+                                ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFDC2626)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Trạng thái hoàn:', style: TextStyle(fontSize: 13)),
+                              Text(
+                                (order['refundInfo'] ?? order['refund'])['trangThaiHoanTien'] == 'HOAN_TIEN_THANH_CONG'
+                                    ? '✓ Đã hoàn tiền'
+                                    : ((order['refundInfo'] ?? order['refund'])['soTaiKhoanNhan'] != null
+                                        ? '⏳ Chờ chuyển khoản'
+                                        : '⏳ Chờ khách nhập STK'),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                  color: (order['refundInfo'] ?? order['refund'])['trangThaiHoanTien'] == 'HOAN_TIEN_THANH_CONG'
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFFEA580C),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if ((order['refundInfo'] ?? order['refund'])['soTaiKhoanNhan'] != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'STK: ${(order['refundInfo'] ?? order['refund'])['nganHangNhan'] ?? 'Ngân hàng'} • ${(order['refundInfo'] ?? order['refund'])['soTaiKhoanNhan']} (${(order['refundInfo'] ?? order['refund'])['tenChuTaiKhoanNhan'] ?? ''})',
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Danh sách món
@@ -226,18 +304,19 @@ class _OwnerOrderDetailSheetState extends State<OwnerOrderDetailSheet> {
                 ),
                 const SizedBox(height: 8),
                 ...items.map((item) {
-                  final name = item['tenMonAn'] ?? 'Món ăn';
+                  final custom = OrderItemCustomizationParser.parse(item is Map ? item : {});
                   final qty = item['soLuong'] ?? 1;
                   final price = item['donGia'] ?? item['gia'] ?? 0;
                   final lineTotal = price * qty;
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 7),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFC6011).withOpacity(0.1),
+                            color: const Color(0xFFFC6011).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -251,14 +330,22 @@ class _OwnerOrderDetailSheetState extends State<OwnerOrderDetailSheet> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: TColor.primaryTextOf(context),
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                custom.cleanName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: TColor.primaryTextOf(context),
+                                ),
+                              ),
+                              OrderItemCustomizationTags(customization: custom),
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           RestaurantFormatUtils.formatVND(lineTotal),
                           style: TextStyle(

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
+import '../common/user_role_helper.dart';
 import '../common_widget/smart_network_image.dart';
 import '../models/review_model.dart';
+import 'image_viewer_dialog.dart';
+import 'review_reply_sheet.dart';
 import 'skeleton/skeleton_box.dart';
 import 'skeleton/skeleton_circle.dart';
 
@@ -12,6 +15,7 @@ class DishReviewsSection extends StatelessWidget {
   final int totalReviewsCount;
   final String selectedFilter;
   final ValueChanged<String> onFilterChanged;
+  final void Function(ReviewModel review, String newReply)? onReplyUpdated;
 
   const DishReviewsSection({
     super.key,
@@ -21,6 +25,7 @@ class DishReviewsSection extends StatelessWidget {
     required this.totalReviewsCount,
     required this.selectedFilter,
     required this.onFilterChanged,
+    this.onReplyUpdated,
   });
 
   int get _imageReviewsCount =>
@@ -306,20 +311,31 @@ class DishReviewsSection extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: isDark
-                              ? const Color(0xFF2A2E3B)
-                              : const Color(0xFFE5E7EB),
-                          child: Text(
-                            _getInitials(review.customerName),
-                            style: TextStyle(
-                              color: TColor.primaryTextOf(context),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
+                        if (review.customerAvatar != null && review.customerAvatar!.trim().isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: SmartNetworkImage(
+                              imageUrl: review.customerAvatar!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        else
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: isDark
+                                ? const Color(0xFF2A2E3B)
+                                : const Color(0xFFE5E7EB),
+                            child: Text(
+                              _getInitials(review.customerName),
+                              style: TextStyle(
+                                color: TColor.primaryTextOf(context),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -394,16 +410,62 @@ class DishReviewsSection extends StatelessWidget {
                       ),
                     ],
 
-                    // Review Image Thumbnail
-                    if (review.image != null && review.image!.isNotEmpty) ...[
+                    // Review Image Thumbnail with Tap-to-Zoom
+                    if (review.image != null && review.image!.trim().isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: SmartNetworkImage(
-                          imageUrl: review.image!,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
+                      GestureDetector(
+                        onTap: () => ImageViewerDialog.show(context, review.image!),
+                        child: Stack(
+                          children: [
+                            Container(
+                              constraints: const BoxConstraints(
+                                maxWidth: 140,
+                                maxHeight: 140,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10.5),
+                                child: SmartNetworkImage(
+                                  imageUrl: review.image!,
+                                  width: 130,
+                                  height: 130,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 6,
+                              bottom: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.68),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.zoom_in_rounded, color: Colors.white, size: 13),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      "Xem ảnh",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -417,18 +479,39 @@ class DishReviewsSection extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF1B1E28) : const Color(0xFFF9FAFB),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFF4D00).withOpacity(0.3)),
+                          border: Border.all(color: const Color(0xFFFF4D00).withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Phản hồi từ quán:",
-                              style: TextStyle(
-                                color: Color(0xFFFF4D00),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Phản hồi từ quán:",
+                                  style: TextStyle(
+                                    color: Color(0xFFFF4D00),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                if (UserRoleHelper.isMerchant)
+                                  GestureDetector(
+                                    onTap: () => ReviewReplySheet.show(
+                                      context,
+                                      review: review,
+                                      onReplied: (newReply) => onReplyUpdated?.call(review, newReply),
+                                    ),
+                                    child: const Text(
+                                      "Sửa",
+                                      style: TextStyle(
+                                        color: Color(0xFFFF4D00),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -439,6 +522,28 @@ class DishReviewsSection extends StatelessWidget {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ] else if (UserRoleHelper.isMerchant) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: OutlinedButton.icon(
+                          onPressed: () => ReviewReplySheet.show(
+                            context,
+                            review: review,
+                            onReplied: (newReply) => onReplyUpdated?.call(review, newReply),
+                          ),
+                          icon: const Icon(Icons.reply_rounded, size: 14),
+                          label: const Text('Phản hồi', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: TColor.primary,
+                            side: BorderSide(color: TColor.primary.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
                         ),
                       ),
                     ],

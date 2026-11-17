@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/locator.dart';
 import '../../common/format_utils.dart';
 import '../../providers/language_provider.dart';
@@ -43,6 +44,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
   void dispose() {
     try {
       locator<SocketService>().offOrderUpdates();
+      locator<SocketService>().offRefundUpdates();
     } catch (_) {}
     super.dispose();
   }
@@ -71,6 +73,34 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
           });
           _activeSheetSetState?.call(() {});
         }
+      });
+      socketService.listenToRefundUpdates((data) {
+        if (!mounted || data == null) return;
+        final rawId = data['id'] ?? data['orderId'] ?? data['maDonHang'];
+        if (rawId == null) return;
+        final orderId = int.tryParse(rawId.toString()) ?? 0;
+        setState(() {
+          for (var order in ordersList) {
+            if (order.orderId == orderId) {
+              if (data['status'] != null || data['trangThai'] != null) {
+                order.refundStatus = (data['status'] ?? data['trangThai']).toString();
+              }
+              if (data['refundAmount'] != null || data['soTienHoan'] != null) {
+                order.refundAmount = (data['refundAmount'] ?? data['soTienHoan'] as num?)?.toDouble();
+              }
+              if (data['nganHang'] != null || data['nganHangNhan'] != null) {
+                order.refundBank = (data['nganHang'] ?? data['nganHangNhan']).toString();
+              }
+              if (data['soTaiKhoan'] != null || data['soTaiKhoanNhan'] != null) {
+                order.refundAccountNumber = (data['soTaiKhoan'] ?? data['soTaiKhoanNhan']).toString();
+              }
+              if (data['tenChuTaiKhoan'] != null || data['tenChuTaiKhoanNhan'] != null) {
+                order.refundAccountName = (data['tenChuTaiKhoan'] ?? data['tenChuTaiKhoanNhan']).toString();
+              }
+            }
+          }
+        });
+        _activeSheetSetState?.call(() {});
       });
     } catch (e) {
       debugPrint('[OrderHistory] [Warn] Socket listener error: $e');
@@ -175,7 +205,21 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
         ),
       );
 
-      final res = await OrderService.cancelOrder(order.orderId);
+      final prefs = await SharedPreferences.getInstance();
+      final savedBank = prefs.getString('saved_refund_bank');
+      final savedNum = prefs.getString('saved_refund_account_num');
+      final savedName = prefs.getString('saved_refund_account_name');
+
+      Map<String, dynamic>? bankInfo;
+      if (savedBank != null && savedNum != null) {
+        bankInfo = {
+          'bankName': savedBank,
+          'accountNumber': savedNum,
+          'accountName': savedName ?? '',
+        };
+      }
+
+      final res = await OrderService.cancelOrder(order.orderId, bankInfo: bankInfo);
       final success = res['success'] == true;
       final serverMsg = res['message'];
 

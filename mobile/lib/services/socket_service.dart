@@ -157,6 +157,13 @@ class SocketService {
     subscribe('dish:updated', onMenuUpdate);
   }
 
+  void listenToRefundUpdates(void Function(dynamic data) onRefundUpdate) {
+    subscribe('refund:created', onRefundUpdate);
+    subscribe('refund:bank_updated', onRefundUpdate);
+    subscribe('refund:status_changed', onRefundUpdate);
+    subscribe('refund:completed', onRefundUpdate);
+  }
+
   void offNotifications([void Function(dynamic data)? listener]) {
     unsubscribe('notification:new', listener);
     unsubscribe('notification:broadcast', listener);
@@ -170,6 +177,13 @@ class SocketService {
     unsubscribe('order:status_changed', listener);
     unsubscribe('payment:confirmed', listener);
     unsubscribe('order:created', listener);
+  }
+
+  void offRefundUpdates([void Function(dynamic data)? listener]) {
+    unsubscribe('refund:created', listener);
+    unsubscribe('refund:bank_updated', listener);
+    unsubscribe('refund:status_changed', listener);
+    unsubscribe('refund:completed', listener);
   }
 
   void offReservationUpdates([void Function(dynamic data)? listener]) {

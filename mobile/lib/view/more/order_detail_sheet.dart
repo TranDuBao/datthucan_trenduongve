@@ -10,6 +10,8 @@ import '../main_tabview/main_tabview.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../services/order_route_storage.dart';
 import 'order_history_widgets.dart';
+import '../../widgets/order_refund_status_card.dart';
+import '../../widgets/order_refund_bank_sheet.dart';
 
 /// Displays the full order detail as a bottom sheet.
 /// [ordersList] is the live list so real-time updates are reflected.
@@ -62,6 +64,23 @@ void showOrderDetailSheet({
             isDark: isDark,
             onCancelOrder: onCancelOrder,
             onNavigateToItem: onNavigateToItem,
+            onEditBank: () async {
+              final result = await OrderRefundBankSheet.show(
+                context,
+                orderId: currentOrder.orderId,
+                refundId: currentOrder.refundId,
+                initialBank: currentOrder.refundBank,
+                initialAccountNumber: currentOrder.refundAccountNumber,
+                initialAccountName: currentOrder.refundAccountName,
+                refundAmount: currentOrder.refundAmount ?? currentOrder.totalAmount,
+              );
+              if (result != null) {
+                currentOrder.refundBank = result['bankName'];
+                currentOrder.refundAccountNumber = result['accountNumber'];
+                currentOrder.refundAccountName = result['accountName'];
+                setSheetState(() {});
+              }
+            },
           );
         },
       );
@@ -81,6 +100,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
   final bool isDark;
   final void Function(OrderServiceModel) onCancelOrder;
   final void Function(dynamic item, OrderServiceModel order) onNavigateToItem;
+  final VoidCallback onEditBank;
 
   const _OrderDetailSheetContent({
     required this.currentOrder,
@@ -91,6 +111,7 @@ class _OrderDetailSheetContent extends StatelessWidget {
     required this.isDark,
     required this.onCancelOrder,
     required this.onNavigateToItem,
+    required this.onEditBank,
   });
 
   @override
@@ -215,128 +236,10 @@ class _OrderDetailSheetContent extends StatelessWidget {
                 children: [
                   // 1. Progress tracker / Cancellation & Refund card
                   if (isCancelled)
-                    _buildCard(
+                    OrderRefundStatusCard(
+                      order: currentOrder,
                       isDark: isDark,
-                      borderColor: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                          ? const Color(0xFF6CE9A6)
-                          : const Color(0xFFFDA29B),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                      ? (isDark ? const Color(0xFF0F291E) : const Color(0xFFECFDF3))
-                                      : (isDark ? const Color(0xFF2E1715) : const Color(0xFFFEF3F2)),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                      ? Icons.check_circle_outline_rounded
-                                      : Icons.cancel_outlined,
-                                  color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                      ? const Color(0xFF027A48)
-                                      : const Color(0xFFD92D20),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Đơn hàng đã hủy',
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white : const Color(0xFF101828),
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      currentOrder.refundStatus != null
-                                          ? 'Chính sách hoàn tiền tự động 100%'
-                                          : 'Đơn hàng không phát sinh thanh toán',
-                                      style: TextStyle(
-                                        color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (currentOrder.refundStatus != null) ...[
-                            const SizedBox(height: 14),
-                            Divider(
-                              height: 1,
-                              color: isDark ? const Color(0xFF2C3240) : const Color(0xFFF2F4F7),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Trạng thái hoàn tiền:',
-                                  style: TextStyle(
-                                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                        ? const Color(0xFFECFDF3)
-                                        : const Color(0xFFFFF6ED),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                        ? 'Hoàn tiền thành công'
-                                        : (currentOrder.refundStatus == 'DANG_XU_LY'
-                                            ? 'Đang chuyển khoản hoàn tiền'
-                                            : 'Chờ duyệt hoàn tiền'),
-                                    style: TextStyle(
-                                      color: currentOrder.refundStatus == 'HOAN_TIEN_THANH_CONG'
-                                          ? const Color(0xFF027A48)
-                                          : const Color(0xFFB54708),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Số tiền hoàn:',
-                                  style: TextStyle(
-                                    color: isDark ? const Color(0xFF98A2B3) : const Color(0xFF667085),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                Text(
-                                  formatOrderTotal(currentOrder.refundAmount ?? currentOrder.totalAmount),
-                                  style: const TextStyle(
-                                    color: Color(0xFFFC6011),
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
+                      onEditBank: onEditBank,
                     )
                   else
                     _buildCard(

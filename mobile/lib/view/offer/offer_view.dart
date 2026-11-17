@@ -105,8 +105,30 @@ class _OfferViewState extends State<OfferView> {
               res["ratingCount"] ??
               res["rating"] ??
               0;
-          final int ratingCount = int.tryParse(rawCount.toString()) ?? 0;
-          final double rateVal = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
+          double rateVal = double.tryParse((rawRate ?? 0).toString()) ?? 0.0;
+          int ratingCount = int.tryParse(rawCount.toString()) ?? 0;
+
+          // If store level has no direct ratings recorded, aggregate from its dishes
+          if (ratingCount == 0 || rateVal == 0.0) {
+            double dishRatingSum = 0;
+            int dishRatingReviews = 0;
+            for (var cat in menu) {
+              final items = cat["items"] as List? ?? [];
+              for (var item in items) {
+                final dRate = double.tryParse((item["rating"] ?? item["diemDanhGiaTB"] ?? 0).toString()) ?? 0.0;
+                final dCount = int.tryParse((item["ratingCount"] ?? item["soLuotDanhGia"] ?? 0).toString()) ?? 0;
+                if (dCount > 0 && dRate > 0) {
+                  dishRatingSum += dRate * dCount;
+                  dishRatingReviews += dCount;
+                }
+              }
+            }
+            if (dishRatingReviews > 0) {
+              rateVal = double.parse((dishRatingSum / dishRatingReviews).toStringAsFixed(1));
+              ratingCount = dishRatingReviews;
+            }
+          }
+
           final String formattedRate = (ratingCount > 0 && rateVal > 0) ? rateVal.toStringAsFixed(1) : "0.0";
 
           final resName = res["tenQuan"] ?? "Quán ăn lộ trình";

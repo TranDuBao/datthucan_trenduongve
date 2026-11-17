@@ -217,21 +217,11 @@ export const RestaurantReviews: React.FC = () => {
                 </div>
               )}
 
-              {rev.phanHoi ? (
-                <div
-                  style={{
-                    background: '#f8fafc',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #fc6011',
-                    marginTop: '12px',
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#fc6011' }}>Phản hồi của quán:</div>
-                  <div style={{ fontSize: '13px', color: '#475569', marginTop: '2px' }}>{rev.phanHoi}</div>
-                </div>
-              ) : replyingReviewId === rev.maDanhGia ? (
-                <div style={{ marginTop: '12px' }}>
+              {replyingReviewId === rev.maDanhGia ? (
+                <div style={{ marginTop: '12px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '14px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#c2410c', marginBottom: '8px' }}>
+                    {rev.phanHoi ? 'Chỉnh sửa phản hồi của quán:' : 'Phản hồi đánh giá của khách:'}
+                  </div>
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
@@ -244,23 +234,77 @@ export const RestaurantReviews: React.FC = () => {
                       border: '1px solid #cbd5e1',
                       fontSize: '13px',
                       fontFamily: 'inherit',
+                      boxSizing: 'border-box',
                     }}
                   />
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
                     <button
-                      onClick={() => setReplyingReviewId(null)}
-                      style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer' }}
+                      onClick={() => {
+                        setReplyingReviewId(null);
+                        setReplyText('');
+                      }}
+                      style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: '13px' }}
                     >
                       Hủy
                     </button>
                     <button
                       onClick={() => handleSendReply(rev.maDanhGia)}
-                      disabled={submittingReply}
-                      style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', background: '#fc6011', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                      disabled={submittingReply || !replyText.trim()}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: '#fc6011',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        opacity: submittingReply || !replyText.trim() ? 0.6 : 1,
+                      }}
                     >
                       {submittingReply ? 'Đang gửi...' : 'Gửi phản hồi'}
                     </button>
                   </div>
+                </div>
+              ) : rev.phanHoi ? (
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    borderLeft: '4px solid #fc6011',
+                    marginTop: '12px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#fc6011' }}>Phản hồi của quán:</div>
+                    <div style={{ fontSize: '13px', color: '#475569', marginTop: '2px' }}>{rev.phanHoi}</div>
+                    {rev.ngayPhanHoi && (
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                        {new Date(rev.ngayPhanHoi).toLocaleDateString('vi-VN')}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setReplyingReviewId(rev.maDanhGia);
+                      setReplyText(rev.phanHoi || '');
+                    }}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#fc6011',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: '2px 8px',
+                    }}
+                  >
+                    Sửa
+                  </button>
                 </div>
               ) : (
                 <button

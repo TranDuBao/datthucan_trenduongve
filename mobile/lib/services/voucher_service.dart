@@ -21,6 +21,9 @@ class VoucherModel {
   final bool isCollected;
   final int? maQuan;
   final String? trangThai;
+  final String? tenQuan;
+  final String? diaChiQuan;
+  final String? anhQuan;
 
   VoucherModel({
     required this.id,
@@ -41,6 +44,9 @@ class VoucherModel {
     this.isCollected = false,
     this.maQuan,
     this.trangThai,
+    this.tenQuan,
+    this.diaChiQuan,
+    this.anhQuan,
   });
 
   bool get isExpired {
@@ -82,6 +88,9 @@ class VoucherModel {
       isCollected: json['isCollected'] ?? json['daLuu'] ?? false,
       maQuan: json['maQuan'] != null ? int.tryParse(json['maQuan'].toString()) : null,
       trangThai: json['trangThai']?.toString(),
+      tenQuan: json['tenQuan']?.toString() ?? json['storeName']?.toString(),
+      diaChiQuan: json['diaChiQuan']?.toString() ?? json['storeAddress']?.toString(),
+      anhQuan: json['anhQuan']?.toString() ?? json['storeImage']?.toString(),
     );
   }
 }

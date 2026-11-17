@@ -5,6 +5,7 @@ import { getSocket, joinRestaurantRoom } from '../../api/socketClient';
 import { normalizeOrderStatus } from '../../components/OrderStatusBadge';
 import { RestaurantOrderTable, getCancellationSource } from '../../components/RestaurantOrderTable';
 import { OrderDetailModal } from '../../components/OrderDetailModal';
+import { RestaurantRefundModal } from '../../components/RestaurantRefundModal';
 import { NotificationModal } from '../../components/NotificationModal';
 import { Modal } from '../../components/Modal';
 import { UnderlineTabs } from '../../components/UnderlineTabs';
@@ -37,6 +38,7 @@ export const RestaurantOrders: React.FC = () => {
   // Orders State
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [hasPending, setHasPending] = useState<boolean>(false);
+  const [refundModalOrder, setRefundModalOrder] = useState<any | null>(null);
 
   // Finished Orders State (Tab 2: "Khách đã lấy")
   const [finishedOrders, setFinishedOrders] = useState<any[]>([]);
@@ -203,19 +205,33 @@ export const RestaurantOrders: React.FC = () => {
     const socket = getSocket();
     if (socket) {
       const handleRealtimeOrder = (payload: any) => {
-        console.log('[RestaurantOrders] [Info] Realtime order update received:', payload);
         playOrderAlertSound();
         fetchOrders();
+        const pId = payload?.maDonHang || payload?.orderId || payload?.id;
+        if (pId) {
+          setRefundModalOrder((prev: any) => (prev && Number(prev.maDonHang) === Number(pId)) ? {
+            ...prev,
+            refundInfo: { ...(prev.refundInfo || {}), ...(payload.data || payload) }
+          } : prev);
+        }
       };
 
       socket.on('order:created', handleRealtimeOrder);
       socket.on('order:status_changed', handleRealtimeOrder);
       socket.on('payment:confirmed', handleRealtimeOrder);
+      socket.on('refund:created', handleRealtimeOrder);
+      socket.on('refund:bank_updated', handleRealtimeOrder);
+      socket.on('refund:completed', handleRealtimeOrder);
+      socket.on('refund:status_changed', handleRealtimeOrder);
 
       return () => {
         socket.off('order:created', handleRealtimeOrder);
         socket.off('order:status_changed', handleRealtimeOrder);
         socket.off('payment:confirmed', handleRealtimeOrder);
+        socket.off('refund:created', handleRealtimeOrder);
+        socket.off('refund:bank_updated', handleRealtimeOrder);
+        socket.off('refund:completed', handleRealtimeOrder);
+        socket.off('refund:status_changed', handleRealtimeOrder);
       };
     }
   }, [page, limit, statusFilter, period, appliedFrom, appliedTo, appliedSearch, activeTab]);
@@ -593,10 +609,7 @@ export const RestaurantOrders: React.FC = () => {
       ) : (
         <>
           {activeTab === 'pending' ? (
-            /* ══════════════════════════════════════════════════════════════════════
-                TAB 1: "Cần xử lý" (Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Sẵn sàng)
-               ══════════════════════════════════════════════════════════════════════ */
-            <RestaurantOrderTable
+                        <RestaurantOrderTable
               orders={sortedActiveOrders}
               title="Đơn Cần Xử Lý"
               count={sortedActiveOrders.length}
@@ -612,10 +625,7 @@ export const RestaurantOrders: React.FC = () => {
               startIndex={0}
             />
           ) : activeTab === 'picked-up' ? (
-            /* ══════════════════════════════════════════════════════════════════════
-                TAB 2: "Khách đã lấy" (Đơn hoàn thành)
-               ══════════════════════════════════════════════════════════════════════ */
-            <RestaurantOrderTable
+                        <RestaurantOrderTable
               orders={finishedOrders}
               title="Đơn Khách Đã Lấy"
               count={finishedTotal}
@@ -720,10 +730,7 @@ export const RestaurantOrders: React.FC = () => {
               }
             />
           ) : (
-            /* ══════════════════════════════════════════════════════════════════════
-                TAB 3: "Đơn đã hủy" (Khách hủy & Quán hủy)
-               ══════════════════════════════════════════════════════════════════════ */
-            <RestaurantOrderTable
+                        <RestaurantOrderTable
               orders={displayCancelledOrders}
               title="Đơn Đã Hủy"
               count={cancelledTotal}
@@ -735,6 +742,7 @@ export const RestaurantOrders: React.FC = () => {
               showActions={false}
               isCancelledTab={true}
               onSelectOrder={setSelectedOrder}
+              onOpenRefund={(ord) => setRefundModalOrder(ord)}
               startIndex={(page - 1) * limit}
               footer={
                 cancelledTotal > 0 && (
@@ -947,6 +955,18 @@ export const RestaurantOrders: React.FC = () => {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateStatus}
+      />
+
+      {/* Refund Modal */}
+      <RestaurantRefundModal
+        isOpen={!!refundModalOrder}
+        order={refundModalOrder}
+        onClose={() => setRefundModalOrder(null)}
+        onSuccess={() => {
+          showNotify('success', 'Hoàn Tiền', 'Đã xác nhận hoàn tiền thành công');
+          setRefundModalOrder(null);
+          fetchOrders();
+        }}
       />
 
       {/* ── Notification Modal ───────────────────────────────────────────── */}

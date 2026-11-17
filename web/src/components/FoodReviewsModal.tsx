@@ -1,6 +1,8 @@
-import React from 'react';
-import { X, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Star, ChevronLeft, ChevronRight, MessageSquare, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getImageUrl, handleImageError } from '../utils/imageUtils';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/apiClient';
 
 interface FoodReviewsModalProps {
   isOpen: boolean;
@@ -23,7 +25,49 @@ export const FoodReviewsModal: React.FC<FoodReviewsModalProps> = ({
   onClose,
   onChangePage,
 }) => {
+  const { token } = useAuth();
+  const [replyingReviewId, setReplyingReviewId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   if (!isOpen) return null;
+
+  const handleSendReply = async (reviewId: number) => {
+    if (!replyText.trim()) return;
+    try {
+      setSubmittingReply(true);
+      const res = await fetch(`${API_BASE_URL}/reviews/${reviewId}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reply: replyText.trim() }),
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        setNotification({ type: 'success', message: 'Phản hồi đánh giá thành công!' });
+        // Update local review state so reply is shown immediately
+        if (reviewsData?.reviews) {
+          const target = reviewsData.reviews.find((r: any) => r.maDanhGia === reviewId);
+          if (target) {
+            target.phanHoi = replyText.trim();
+            target.ngayPhanHoi = new Date().toISOString();
+          }
+        }
+        setReplyingReviewId(null);
+        setReplyText('');
+        setTimeout(() => setNotification(null), 3500);
+      } else {
+        setNotification({ type: 'error', message: json.message || 'Lỗi khi gửi phản hồi' });
+      }
+    } catch (e) {
+      setNotification({ type: 'error', message: 'Lỗi mạng khi kết nối máy chủ' });
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   return (
     <div
@@ -90,6 +134,26 @@ export const FoodReviewsModal: React.FC<FoodReviewsModalProps> = ({
 
         {/* Body */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
+          {notification && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                background: notification.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                border: `1px solid ${notification.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+                color: notification.type === 'success' ? '#166534' : '#991b1b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '13px',
+              }}
+            >
+              {notification.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{notification.message}</span>
+            </div>
+          )}
+
           {reviewsLoading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
               Đang tải đánh giá...
@@ -276,29 +340,133 @@ export const FoodReviewsModal: React.FC<FoodReviewsModalProps> = ({
                           onError={handleImageError}
                         />
                       )}
-                      {rv.phanHoi && (
+                      {/* Store Reply section */}
+                      {replyingReviewId === rv.maDanhGia ? (
+                        <div style={{ marginTop: '12px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#c2410c', marginBottom: '6px' }}>
+                            {rv.phanHoi ? 'Chỉnh sửa phản hồi của quán:' : 'Phản hồi đánh giá của khách:'}
+                          </div>
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Nhập nội dung phản hồi tới khách hàng..."
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '13px',
+                              fontFamily: 'inherit',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => {
+                                setReplyingReviewId(null);
+                                setReplyText('');
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #cbd5e1',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                              }}
+                            >
+                              Hủy
+                            </button>
+                            <button
+                              onClick={() => handleSendReply(rv.maDanhGia)}
+                              disabled={submittingReply || !replyText.trim()}
+                              style={{
+                                padding: '6px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: '#fc6011',
+                                color: '#ffffff',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                opacity: submittingReply || !replyText.trim() ? 0.6 : 1,
+                              }}
+                            >
+                              {submittingReply ? 'Đang gửi...' : 'Gửi phản hồi'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : rv.phanHoi ? (
                         <div
                           style={{
                             background: '#f8fafc',
                             border: '1px solid #e2e8f0',
+                            borderLeft: '4px solid #fc6011',
                             borderRadius: '8px',
                             padding: '10px 12px',
                             marginTop: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
                           }}
                         >
-                          <div
+                          <div>
+                            <div
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: '#fc6011',
+                                marginBottom: '4px',
+                              }}
+                            >
+                              Phản hồi của quán:
+                            </div>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#475569' }}>
+                              {rv.phanHoi}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setReplyingReviewId(rv.maDanhGia);
+                              setReplyText(rv.phanHoi);
+                            }}
                             style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
+                              border: 'none',
+                              background: 'transparent',
                               color: '#fc6011',
-                              marginBottom: '4px',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              padding: '2px 6px',
                             }}
                           >
-                            Phản hồi của quán:
-                          </div>
-                          <p style={{ margin: 0, fontSize: '13px', color: '#475569' }}>
-                            {rv.phanHoi}
-                          </p>
+                            Sửa
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => {
+                              setReplyingReviewId(rv.maDanhGia);
+                              setReplyText('');
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid #fed7aa',
+                              background: '#fff7ed',
+                              color: '#ea580c',
+                              fontWeight: 700,
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <MessageSquare size={13} /> Phản hồi
+                          </button>
                         </div>
                       )}
                     </div>

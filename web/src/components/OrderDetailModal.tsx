@@ -55,6 +55,79 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
   };
 
+  const parseItemCustomization = (item: any) => {
+    let cleanName = (item.tenMonAn || item.monAn?.tenMonAn || item.name || '').trim();
+    let size: string | undefined = item.size ? String(item.size).trim() : undefined;
+    let toppings: string[] = [];
+    let dishNote: string | undefined = item.dishNote ? String(item.dishNote).trim() : undefined;
+
+    const rawGhiChu = (item.ghiChu || item.note || '').trim();
+
+    // 1. Try parsing JSON ghiChu first
+    if (rawGhiChu.startsWith('{') && rawGhiChu.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(rawGhiChu);
+        if (parsed.size && !size) size = String(parsed.size).trim();
+        if (parsed.toppings) {
+          if (Array.isArray(parsed.toppings)) {
+            toppings = parsed.toppings.map((t: any) => String(t).trim()).filter(Boolean);
+          } else if (typeof parsed.toppings === 'string') {
+            toppings = parsed.toppings.split(',').map((t: string) => t.trim()).filter(Boolean);
+          }
+        }
+        if (parsed.ghiChu && !dishNote) dishNote = String(parsed.ghiChu).trim();
+        if (parsed.dishNote && !dishNote) dishNote = String(parsed.dishNote).trim();
+      } catch (_) {}
+    } else if (rawGhiChu.length > 0) {
+      // 2. Parse text ghiChu (e.g. "Topping: Trân Châu Trắng • it da" or "it da")
+      const segments = rawGhiChu.split('•').map((s: string) => s.trim());
+      for (const seg of segments) {
+        if (/^topping\s*:/i.test(seg)) {
+          const topContent = seg.replace(/^topping\s*:/i, '').trim();
+          const splitTops = topContent.split(',').map((t: string) => t.trim()).filter(Boolean);
+          for (const st of splitTops) {
+            if (!toppings.includes(st)) toppings.push(st);
+          }
+        } else if (!dishNote) {
+          dishNote = seg;
+        } else {
+          dishNote += ` • ${seg}`;
+        }
+      }
+    }
+
+    // 3. Extract size from cleanName if present (e.g., "Trà Sữa Khoai Môn (Size L)")
+    const sizeMatch = cleanName.match(/\((Size\s*[:\s]*[^)]+|Phần\s*[:\s]*[^)]+|[SML])\)$/i);
+    if (sizeMatch) {
+      if (!size) {
+        size = sizeMatch[1].replace(/^Size\s*[:\s]*/i, '').trim();
+      }
+      cleanName = cleanName.replace(/\s*\((Size\s*[:\s]*[^)]+|Phần\s*[:\s]*[^)]+|[SML])\)$/i, '').trim();
+    }
+
+    if (size && /^Size\s+/i.test(size)) {
+      size = size.replace(/^Size\s+/i, '').trim();
+    }
+
+    return {
+      cleanName: cleanName || (item.tenMonAn || `Món #${item.maMonAn}`),
+      size,
+      toppings,
+      dishNote,
+    };
+  };
+
+  const cleanOrderNote = (raw?: string): string => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (trimmed.includes(' | ')) {
+      const parts = trimmed.split(' | ');
+      const generalNote = parts[0].trim();
+      if (generalNote) return generalNote;
+    }
+    return trimmed;
+  };
+
   return (
     <div
       className="modal-backdrop"
@@ -194,7 +267,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                   Ghi Chú Cho Quán:
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#78350f', marginTop: '4px', lineHeight: 1.5 }}>
-                  "{order.ghiChu}"
+                  "{cleanOrderNote(order.ghiChu)}"
                 </div>
               </div>
             </div>
@@ -255,41 +328,92 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                     detailItems.map((item: any, idx: number) => {
                       const price = Number(item.donGia || item.gia || 0);
                       const qty = Number(item.soLuong || item.soluong || 1);
+                      const custom = parseItemCustomization(item);
                       return (
                         <tr key={idx}>
-                          <td style={{ textAlign: 'center' }}>
+                          <td style={{ textAlign: 'center', verticalAlign: 'top', paddingTop: '12px' }}>
                             <img
                               src={getImageUrl(item.img || item.monAn?.img, DEFAULT_IMAGE_PLACEHOLDER)}
                               alt=""
                               onError={handleImageError}
-                              style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', background: '#f1f5f9' }}
+                              style={{ width: '42px', height: '42px', borderRadius: '8px', objectFit: 'cover', background: '#f1f5f9' }}
                             />
                           </td>
-                          <td style={{ fontWeight: 600, color: '#0f172a' }}>
-                            <div>{item.tenMonAn || item.monAn?.tenMonAn || `Món #${item.maMonAn}`}</div>
-                            {item.ghiChu && (
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  color: '#b45309',
-                                  marginTop: '3px',
-                                  fontWeight: 600,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  background: '#fef3c7',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #fde68a',
-                                }}
-                              >
-                                <MessageSquare size={10} color="#d97706" /> {item.ghiChu}
+                          <td style={{ color: '#0f172a', verticalAlign: 'top', paddingTop: '10px', paddingBottom: '10px' }}>
+                            <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', lineHeight: '1.4' }}>
+                              {custom.cleanName}
+                            </div>
+                            
+                            {(custom.size || custom.toppings.length > 0 || custom.dishNote) && (
+                              <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {/* Size */}
+                                {custom.size && (
+                                  <div
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      fontSize: '11.5px',
+                                      color: '#0369a1',
+                                      background: '#f0f9ff',
+                                      padding: '2px 8px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #bae6fd',
+                                      fontWeight: 600,
+                                      width: 'fit-content',
+                                    }}
+                                  >
+                                    <span style={{ fontWeight: 700, color: '#0284c7' }}>Size:</span> {custom.size}
+                                  </div>
+                                )}
+
+                                {/* Topping */}
+                                {custom.toppings.length > 0 && (
+                                  <div
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      fontSize: '11.5px',
+                                      color: '#15803d',
+                                      background: '#f0fdf4',
+                                      padding: '2px 8px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #bbf7d0',
+                                      fontWeight: 600,
+                                      width: 'fit-content',
+                                    }}
+                                  >
+                                    <span style={{ fontWeight: 700, color: '#16a34a' }}>Topping:</span> {custom.toppings.join(', ')}
+                                  </div>
+                                )}
+
+                                {/* Ghi chú */}
+                                {custom.dishNote && (
+                                  <div
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      fontSize: '11.5px',
+                                      color: '#b45309',
+                                      background: '#fffbeb',
+                                      padding: '2px 8px',
+                                      borderRadius: '5px',
+                                      border: '1px solid #fde68a',
+                                      fontWeight: 600,
+                                      width: 'fit-content',
+                                    }}
+                                  >
+                                    <span style={{ fontWeight: 700, color: '#d97706' }}>Ghi chú:</span> {custom.dishNote}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </td>
-                          <td style={{ textAlign: 'center', fontWeight: 700 }}>x{qty}</td>
-                          <td style={{ textAlign: 'right', color: '#64748b' }}>{formatVND(price)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#fc6011' }}>
+                          <td style={{ textAlign: 'center', fontWeight: 700, verticalAlign: 'top', paddingTop: '12px' }}>x{qty}</td>
+                          <td style={{ textAlign: 'right', color: '#64748b', verticalAlign: 'top', paddingTop: '12px' }}>{formatVND(price)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#fc6011', verticalAlign: 'top', paddingTop: '12px' }}>
                             {formatVND(price * qty)}
                           </td>
                         </tr>

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { RealtimeService } from '../services/realtime_service';
 import { RefundService } from '../services/refund_service';
 import { AppDataSource } from '../config/database';
 import { CuaHangModel } from '../models/cua_hang_model';
@@ -116,14 +117,33 @@ export class RefundController {
     try {
       const user = (req as any).user;
       const role = String(user.role || '').toUpperCase();
-      if (role !== 'ADMIN') {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Chỉ Quản trị viên mới có quyền cập nhật trạng thái hoàn tiền',
-        });
+      const maHoanTien = Number(req.params.id);
+      if (isNaN(maHoanTien) || maHoanTien <= 0) {
+        return res.status(400).json({ status: 'error', message: 'Mã yêu cầu hoàn tiền không hợp lệ' });
       }
 
-      const maHoanTien = Number(req.params.id);
+      if (role !== 'ADMIN') {
+        if (role === 'CUAN_HANG' || role === 'CUA_HANG' || role === 'RESTAURANT' || role === 'STORE') {
+          const store = await this.storeRepo.findOne({ where: { maTaiKhoan: Number(user.sub) } });
+          const refund = await this.hoanTienRepo.findOne({ where: { maHoanTien } });
+          if (!refund) {
+            return res.status(404).json({ status: 'error', message: 'Không tìm thấy yêu cầu hoàn tiền' });
+          }
+          const order = await this.donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+          if (!store || !order || store.maQuan !== order.maQuan) {
+            return res.status(403).json({
+              status: 'error',
+              message: 'Bạn không có quyền cập nhật yêu cầu hoàn tiền của quán khác',
+            });
+          }
+        } else {
+          return res.status(403).json({
+            status: 'error',
+            message: 'Chỉ Quản trị viên hoặc Cửa hàng của đơn mới có quyền cập nhật trạng thái hoàn tiền',
+          });
+        }
+      }
+
       const { trangThai, maGiaoDich, ghiChu } = req.body;
 
       if (!trangThai) {
@@ -214,6 +234,16 @@ export class RefundController {
       }
 
       await this.hoanTienRepo.save(refund);
+
+      // Phát realtime cho Quán và các bên liên quan
+      try {
+        const order = await this.donHangRepo.findOne({ where: { maDonHang: refund.maDonHang } });
+        if (order) {
+          RealtimeService.getInstance().emitRefundBankUpdated(order.maQuan, refund);
+        }
+      } catch (e) {
+        console.error('[RefundController] Error emitting refund:bank_updated:', e);
+      }
 
       return res.status(200).json({
         status: 'success',

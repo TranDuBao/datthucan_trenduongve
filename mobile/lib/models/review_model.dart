@@ -30,6 +30,7 @@ class ReviewModel {
   final int? storeId;
   final int? customerId;
   final String customerName;
+  final String? customerAvatar;
   final int rating;
   final String? comment;
   final String? image;
@@ -47,6 +48,7 @@ class ReviewModel {
     this.storeId,
     this.customerId,
     required this.customerName,
+    this.customerAvatar,
     required this.rating,
     this.comment,
     this.image,
@@ -71,13 +73,14 @@ class ReviewModel {
       orderId: json['maDonHang'] ?? json['orderId'],
       storeId: json['maQuan'] ?? json['storeId'],
       customerId: json['maKhachHang'] ?? json['customerId'],
-      customerName: json['tenKhachHang'] ?? 'Khách hàng',
+      customerName: json['tenKhachHang'] ?? json['customerName'] ?? json['hoTen'] ?? 'Khách hàng',
+      customerAvatar: json['customerAvatar'] ?? json['avatar'] ?? json['avatarUrl'],
       rating: json['soLuongSao'] ?? json['rating'] ?? 5,
       comment: json['nhanXet'] ?? json['comment'],
-      image: json['hinhAnh'] ?? json['image'],
-      reply: json['phanHoi'] ?? json['reply'],
-      repliedAt: json['ngayPhanHoi'] != null ? json['ngayPhanHoi'].toString() : null,
-      createdAt: json['ngayNhanXet'] != null ? json['ngayNhanXet'].toString() : '',
+      image: json['hinhAnh'] ?? json['hinhanh'] ?? json['image'],
+      reply: json['phanHoi'] ?? json['phanhoi'] ?? json['reply'],
+      repliedAt: json['ngayPhanHoi']?.toString(),
+      createdAt: json['ngayNhanXet']?.toString() ?? '',
       isEdited: json['isEdited'] ?? json['is_edited'] ?? false,
       storeName: json['tenQuan'],
       storeImg: json['imgQuan'],

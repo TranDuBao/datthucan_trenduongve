@@ -178,4 +178,41 @@ class ReviewService {
       return null;
     }
   }
+
+  static Future<Map<String, dynamic>> replyReview({
+    required int reviewId,
+    required String reply,
+  }) async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.mainUrl}/api/v1/reviews/$reviewId/reply');
+
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'reply': reply.trim()}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final resJson = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': resJson['message'] ?? 'Phản hồi đánh giá thành công',
+          'data': resJson['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': resJson['message'] ?? 'Không thể gửi phản hồi',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi kết nối mạng: $e'};
+    }
+  }
 }

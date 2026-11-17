@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag, MessageSquare } from 'lucide-react';
+import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag, MessageSquare, QrCode, CheckCircle2 } from 'lucide-react';
 import {
   OrderStatusBadge,
   normalizeOrderStatus,
@@ -72,6 +72,7 @@ interface RestaurantOrderTableProps {
   isCancelledTab?: boolean;
   onSelectOrder: (order: any) => void;
   onUpdateStatus?: (maDonHang: number, newStatus: string, actionLabel: string) => void;
+  onOpenRefund?: (order: any) => void;
   updatingOrderId?: number | null;
   footer?: React.ReactNode;
   startIndex?: number;
@@ -86,6 +87,7 @@ interface OrderRowProps {
   updatingOrderId?: number | null;
   onSelectOrder: (order: any) => void;
   onUpdateStatus?: (maDonHang: number, newStatus: string, actionLabel: string) => void;
+  onOpenRefund?: (order: any) => void;
   formatVND: (amount: number) => string;
   formatDateTime: (dateStr?: string | Date) => string;
   getPickupTimeInfo: (dateStr?: string | Date, isFinished?: boolean) => { text: string; isWarning: boolean };
@@ -99,6 +101,7 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
   updatingOrderId,
   onSelectOrder,
   onUpdateStatus,
+  onOpenRefund,
   formatVND,
   formatDateTime,
   getPickupTimeInfo,
@@ -366,6 +369,89 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
         </td>
       )}
 
+      {/* Cột Hoàn Tiền (chỉ hiện cho bảng Đơn đã hủy) */}
+      {isCancelledTab && (
+        <td style={{ padding: '13px 14px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+          {(() => {
+            const rf = ord.refundInfo || ord.refund;
+            if (rf) {
+              if (rf.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG') {
+                return (
+                  <span
+                    style={{
+                      background: '#f0fdf4',
+                      color: '#16a34a',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: '12px',
+                      padding: '3px 10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <CheckCircle2 size={12} /> Đã hoàn tiền
+                  </span>
+                );
+              }
+              if (rf.soTaiKhoanNhan) {
+                return (
+                  <button
+                    onClick={() => onOpenRefund?.(ord)}
+                    style={{
+                      background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '5px 11px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 6px rgba(234, 88, 12, 0.25)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <QrCode size={13} /> Quét mã hoàn tiền
+                  </button>
+                );
+              }
+              return (
+                <span
+                  style={{
+                    background: '#fffbeb',
+                    color: '#b45309',
+                    border: '1px solid #fde68a',
+                    borderRadius: '12px',
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Clock size={11} /> Chờ khách gửi STK
+                </span>
+              );
+            }
+            if (ord.phuongThucThanhToan === 'TIEN_MAT') {
+              return (
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                  Tiền mặt (Không hoàn)
+                </span>
+              );
+            }
+            return <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>;
+          })()}
+        </td>
+      )}
+
       {/* Thao Tác (chỉ hiện cho bảng Cần xử lý) */}
       {showActions && (
         <td style={{ padding: '13px 14px', textAlign: 'right', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
@@ -486,6 +572,7 @@ export const RestaurantOrderTable: React.FC<RestaurantOrderTableProps> = ({
   isCancelledTab = false,
   onSelectOrder,
   onUpdateStatus,
+  onOpenRefund,
   updatingOrderId,
   footer,
   startIndex = 0,
@@ -568,6 +655,7 @@ export const RestaurantOrderTable: React.FC<RestaurantOrderTableProps> = ({
                   <th style={{ padding: '12px 14px', textAlign: 'right' }}>Tổng Tiền</th>
                   <th style={{ padding: '12px 14px', textAlign: 'center' }}>Trạng Thái</th>
                   {isCancelledTab && <th style={{ padding: '12px 14px', textAlign: 'left' }}>Người Hủy & Lý Do</th>}
+                  {isCancelledTab && <th style={{ padding: '12px 14px', textAlign: 'center', width: '160px' }}>Hoàn Tiền</th>}
                   {showActions && <th style={{ padding: '12px 14px', textAlign: 'right' }}>Thao Tác</th>}
                 </tr>
               </thead>
@@ -582,6 +670,7 @@ export const RestaurantOrderTable: React.FC<RestaurantOrderTableProps> = ({
                     updatingOrderId={updatingOrderId}
                     onSelectOrder={onSelectOrder}
                     onUpdateStatus={onUpdateStatus}
+                    onOpenRefund={onOpenRefund}
                     formatVND={formatVND}
                     formatDateTime={formatDateTime}
                     getPickupTimeInfo={getPickupTimeInfo}

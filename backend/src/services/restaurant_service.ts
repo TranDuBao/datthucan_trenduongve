@@ -32,9 +32,54 @@ export class RestaurantService {
       })
       .getMany();
 
+    const storeRatingRows = await AppDataSource.query(`
+      WITH combined_store_ratings AS (
+        SELECT 
+          COALESCE(dg.maquan, dh.maquan) as store_id,
+          dg.madanhgia,
+          dg.soluongsao as stars
+        FROM danhgia dg
+        LEFT JOIN donhang dh ON dh.madonhang = dg.madonhang
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND COALESCE(dg.maquan, dh.maquan) IS NOT NULL
+
+        UNION
+
+        SELECT 
+          m.maquan as store_id,
+          dgm.madanhgia,
+          dgm.soluongsao as stars
+        FROM danhgia_mon dgm
+        JOIN monan m ON m.mamonan = dgm.mamon
+        JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND m.maquan IS NOT NULL
+      )
+      SELECT 
+        store_id,
+        COUNT(DISTINCT madanhgia) as total_reviews,
+        ROUND(AVG(stars)::numeric, 1) as avg_rating
+      FROM combined_store_ratings
+      GROUP BY store_id
+    `).catch(() => []);
+
+    const ratingMap = new Map<number, { count: number; avg: number }>();
+    for (const r of storeRatingRows) {
+      ratingMap.set(Number(r.store_id), {
+        count: Number(r.total_reviews || 0),
+        avg: Math.round(Number(r.avg_rating || 0) * 10) / 10,
+      });
+    }
+
     return stores.map((s) => {
-      const reviewCount = Number(s.soLuongDanhGia || 0);
-      const avgRate = reviewCount > 0 ? Number(s.danhGiaTrungBinh || 0) : 0.0;
+      const realRating = ratingMap.get(s.maQuan);
+      const reviewCount = realRating
+        ? realRating.count
+        : Number(s.soLuongDanhGia || 0);
+      const avgRate = realRating
+        ? realRating.avg
+        : (reviewCount > 0 ? Number(s.danhGiaTrungBinh || 0) : 0.0);
+
       return {
         ...s,
         danhGiaTrungBinh: avgRate,
@@ -56,15 +101,47 @@ export class RestaurantService {
     if (store.isDeleted || ['ĐÃ XÓA', 'DA_XOA', 'DELETED'].includes((store.trangThai || '').toUpperCase())) {
       return null;
     }
-    const reviewCount = Number(store.soLuongDanhGia || 0);
-    const avgRate = reviewCount > 0 ? Number(store.danhGiaTrungBinh || 0) : 0.0;
+
+    const storeRatingRows = await AppDataSource.query(`
+      WITH combined_store_ratings AS (
+        SELECT 
+          COALESCE(dg.maquan, dh.maquan) as store_id,
+          dg.madanhgia,
+          dg.soluongsao as stars
+        FROM danhgia dg
+        LEFT JOIN donhang dh ON dh.madonhang = dg.madonhang
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND COALESCE(dg.maquan, dh.maquan) = $1
+
+        UNION
+
+        SELECT 
+          m.maquan as store_id,
+          dgm.madanhgia,
+          dgm.soluongsao as stars
+        FROM danhgia_mon dgm
+        JOIN monan m ON m.mamonan = dgm.mamon
+        JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+        WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
+          AND m.maquan = $1
+      )
+      SELECT 
+        COUNT(DISTINCT madanhgia) as total_reviews,
+        ROUND(AVG(stars)::numeric, 1) as avg_rating
+      FROM combined_store_ratings
+    `, [maQuan]).catch(() => []);
+
+    const count = Number(storeRatingRows[0]?.total_reviews || 0);
+    const avg = count > 0 ? (Math.round(Number(storeRatingRows[0]?.avg_rating || 0) * 10) / 10) : Number(store.danhGiaTrungBinh || 0);
+    const reviewCount = count > 0 ? count : Number(store.soLuongDanhGia || 0);
+
     return {
       ...store,
-      danhGiaTrungBinh: avgRate,
+      danhGiaTrungBinh: avg,
       soLuongDanhGia: reviewCount,
-      diemDanhGiaTB: avgRate,
+      diemDanhGiaTB: avg,
       soLuotDanhGia: reviewCount,
-      rate: avgRate,
+      rate: avg,
       rating: reviewCount,
       chuaCoDanhGia: reviewCount === 0,
     };
@@ -152,12 +229,12 @@ export class RestaurantService {
       WITH dish_reviews_combined AS (
         SELECT 
           dgm.mamon as mamonan,
-          dg.madanhgia,
-          COALESCE(dgm.soluongsao, dg.soluongsao) as stars
+          COALESCE(dg.madanhgia, dgm.madanhgia) as madanhgia,
+          COALESCE(dgm.soluongsao, dg.soluongsao, 5) as stars
         FROM danhgia_mon dgm
-        JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
+        LEFT JOIN danhgia dg ON dg.madanhgia = dgm.madanhgia
         WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
-          AND dg.maquan = $1
+          AND (dgm.mamon IN (SELECT mamonan FROM monan WHERE maquan = $1) OR dg.maquan = $1)
 
         UNION
 
@@ -168,7 +245,7 @@ export class RestaurantService {
         FROM chitietdonhang ct
         JOIN danhgia dg ON dg.madonhang = ct.madonhang
         WHERE (dg.is_hidden IS NOT TRUE OR dg.is_hidden IS NULL)
-          AND dg.maquan = $1
+          AND (ct.mamonan IN (SELECT mamonan FROM monan WHERE maquan = $1) OR dg.maquan = $1)
           AND ct.mamonan IS NOT NULL
       )
       SELECT 
@@ -240,8 +317,10 @@ export class RestaurantService {
           const dbSold = soldMap.get(i.maMonAn) || 0;
           const totalSold = dbSold > 0 ? dbSold : 0;
           const ratingInfo = dishRatingMap.get(i.maMonAn);
-          const actualRatingCount = ratingInfo ? Number(ratingInfo.count || 0) : 0;
-          const actualRating = actualRatingCount > 0 ? Number(ratingInfo?.avg || 0.0) : 0.0;
+          const fallbackCount = Number(i.soLuotDanhGia || 0);
+          const fallbackAvg = Number(i.diemDanhGiaTB || 0.0);
+          const actualRatingCount = ratingInfo ? Number(ratingInfo.count || 0) : fallbackCount;
+          const actualRating = actualRatingCount > 0 ? (ratingInfo ? Number(ratingInfo.avg || 0.0) : fallbackAvg) : 0.0;
           return {
             id: i.maMonAn,
             maMonAn: i.maMonAn,

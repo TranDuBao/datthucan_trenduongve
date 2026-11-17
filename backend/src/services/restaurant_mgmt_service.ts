@@ -14,6 +14,7 @@ import { ReservationService } from './reservation_service';
 import { RealtimeService } from './realtime_service';
 import { NotificationService } from './notification_service';
 import { RestaurantRevenueService } from './restaurant_revenue_service';
+import { HoanTienModel } from '../models/hoan_tien_model';
 import { RefundService } from './refund_service';
 import { IsNull, Between, Not, In } from 'typeorm';
 import { deleteUploadFile } from '../controllers/upload_controller';
@@ -203,6 +204,14 @@ export class RestaurantMgmtService {
 
     const [items, total] = await qb.getManyAndCount();
 
+    const orderIds = items.map((o) => o.maDonHang);
+    const hoanTienRepo = AppDataSource.getRepository(HoanTienModel);
+    const refunds = orderIds.length > 0 ? await hoanTienRepo.find({ where: { maDonHang: In(orderIds) } }) : [];
+    const refundMap = new Map<number, HoanTienModel>();
+    for (const rf of refunds) {
+      refundMap.set(rf.maDonHang, rf);
+    }
+
     const enrichedOrders = [];
     for (const ord of items) {
       // Fetch customer
@@ -262,6 +271,32 @@ export class RestaurantMgmtService {
         } catch (e) {}
       }
 
+      const rf = refundMap.get(ord.maDonHang);
+      let refundInfo: any = null;
+      if (rf) {
+        const cleanBank = (rf.nganHangNhan || '').trim();
+        const cleanAcc = (rf.soTaiKhoanNhan || '').trim();
+        const cleanAmount = Math.round(Number(rf.soTienHoan || ord.tongTien || 0));
+        const transferContent = 'Hoan tien don #' + ord.maDonHang;
+        const cleanHolder = (rf.tenChuTaiKhoanNhan || customerName || '').trim();
+        let vietQrUrl = '';
+        if (cleanBank && cleanAcc && cleanAmount > 0) {
+          vietQrUrl = 'https://img.vietqr.io/image/' + cleanBank + '-' + cleanAcc + '-compact2.png?amount=' + cleanAmount + '&addInfo=' + encodeURIComponent(transferContent) + '&accountName=' + encodeURIComponent(cleanHolder);
+        }
+        refundInfo = {
+          maHoanTien: rf.maHoanTien,
+          soTienHoan: Number(rf.soTienHoan || 0),
+          trangThaiHoanTien: rf.trangThaiHoanTien,
+          nganHangNhan: rf.nganHangNhan,
+          soTaiKhoanNhan: rf.soTaiKhoanNhan,
+          tenChuTaiKhoanNhan: rf.tenChuTaiKhoanNhan,
+          thoiGianYeuCau: rf.thoiGianYeuCau,
+          thoiGianHoan: rf.thoiGianHoan,
+          lyDoHoan: rf.lyDoHoan,
+          vietQrUrl,
+        };
+      }
+
       enrichedOrders.push({
         ...ord,
         tenKhachHang: customerName,
@@ -269,6 +304,7 @@ export class RestaurantMgmtService {
         items: orderItems,
         tamTinh: subtotal > 0 ? subtotal : Number(ord.tongTien || 0),
         voucherInfo,
+        refundInfo,
       });
     }
 

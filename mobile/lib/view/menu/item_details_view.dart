@@ -120,24 +120,45 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     dynamic rawSizes = itemData["sizes"] ?? itemData["sizeOptions"];
     dynamic rawToppings = itemData["toppings"] ?? itemData["toppingOptions"];
 
-    if (rawSizes == null && rawToppings == null && itemData["options"] != null) {
+    dynamic parsedOptions;
+    if (itemData["options"] != null) {
+      if (itemData["options"] is String && (itemData["options"] as String).trim().isNotEmpty) {
+        try {
+          parsedOptions = jsonDecode(itemData["options"]);
+        } catch (_) {}
+      } else if (itemData["options"] is Map) {
+        parsedOptions = itemData["options"];
+      }
+    }
+
+    if (rawSizes == null || (rawSizes is List && rawSizes.isEmpty)) {
+      if (parsedOptions is Map && parsedOptions["sizes"] != null) {
+        rawSizes = parsedOptions["sizes"];
+      }
+    }
+    if (rawToppings == null || (rawToppings is List && rawToppings.isEmpty)) {
+      if (parsedOptions is Map && parsedOptions["toppings"] != null) {
+        rawToppings = parsedOptions["toppings"];
+      }
+    }
+
+    if (rawSizes is String && rawSizes.trim().isNotEmpty) {
       try {
-        final opt = itemData["options"] is String
-            ? jsonDecode(itemData["options"])
-            : itemData["options"];
-        if (opt is Map) {
-          rawSizes = opt["sizes"];
-          rawToppings = opt["toppings"];
-        }
+        rawSizes = jsonDecode(rawSizes);
+      } catch (_) {}
+    }
+    if (rawToppings is String && rawToppings.trim().isNotEmpty) {
+      try {
+        rawToppings = jsonDecode(rawToppings);
       } catch (_) {}
     }
 
     // 1. Initialize Size Options if provided by real database/API
-    if (rawSizes is List) {
+    if (rawSizes is List && rawSizes.isNotEmpty) {
       sizeOptions = rawSizes
           .map((s) => {
-                "name": (s["name"] ?? s["tenKhauPhan"] ?? "").toString(),
-                "extra": (s["extra"] as num? ?? s["giaThem"] as num? ?? 0).toDouble(),
+                "name": (s["name"] ?? s["tenKhauPhan"] ?? s["size"] ?? "").toString().trim(),
+                "extra": double.tryParse((s["extra"] ?? s["giaThem"] ?? s["price"] ?? 0).toString()) ?? 0.0,
               })
           .where((s) => s["name"].toString().trim().isNotEmpty)
           .toList();
@@ -166,11 +187,11 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     }
 
     // 2. Initialize Topping Options if provided by real database/API
-    if (rawToppings is List) {
+    if (rawToppings is List && rawToppings.isNotEmpty) {
       toppingOptions = rawToppings
           .map((t) => {
-                "name": (t["name"] ?? t["tenTopping"] ?? "").toString(),
-                "extra": (t["extra"] as num? ?? t["giaThem"] as num? ?? 0).toDouble(),
+                "name": (t["name"] ?? t["tenTopping"] ?? "").toString().trim(),
+                "extra": double.tryParse((t["extra"] ?? t["giaThem"] ?? 0).toString()) ?? 0.0,
                 "selected": false,
               })
           .where((t) => t["name"].toString().trim().isNotEmpty)
@@ -749,6 +770,9 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                               _selectedReviewFilter = filter;
                             });
                           },
+                          onReplyUpdated: (review, newReply) {
+                            _loadDishReviewsAndStats();
+                          },
                         ),
 
                         const SizedBox(height: 110),
@@ -873,6 +897,8 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                         restaurantName: storeName,
                                         restaurantAddress: storeAddress,
                                         size: selectedSizeName,
+                                        toppings: selectedToppingNames,
+                                        dishNote: dishNote,
                                         note: itemNotes,
                                       ),
                                     );

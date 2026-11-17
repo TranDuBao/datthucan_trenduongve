@@ -15,6 +15,8 @@ class CartItemModel {
   final String restaurantName;
   final String restaurantAddress;
   final String size;
+  final List<String> toppings;
+  final String dishNote;
   final String note;
 
   CartItemModel({
@@ -27,21 +29,33 @@ class CartItemModel {
     this.restaurantName = '',
     this.restaurantAddress = '',
     this.size = '',
+    this.toppings = const [],
+    this.dishNote = '',
     this.note = '',
   });
 
   Map<String, dynamic> toJson() {
     String finalName = foodName;
-    if (size.isNotEmpty) {
+    if (size.isNotEmpty && !finalName.contains('($size)')) {
       finalName = '$foodName ($size)';
     }
+
+    final structuredData = {
+      if (size.isNotEmpty) 'size': size,
+      if (toppings.isNotEmpty) 'toppings': toppings,
+      if (dishNote.isNotEmpty) 'ghiChu': dishNote,
+      if (note.isNotEmpty) 'rawNote': note,
+    };
+
     return {
       'maMonAn': foodId,
       'tenMonAn': finalName,
       'gia': price,
       'soLuong': quantity,
       'size': size,
-      'ghiChu': note,
+      'toppings': toppings,
+      'dishNote': dishNote,
+      'ghiChu': json.encode(structuredData),
     };
   }
 }
@@ -59,8 +73,12 @@ class OrderServiceModel {
   final double? lng;
   final String createdAt;
   final String? cancelReason;
-  final String? refundStatus;
-  final double? refundAmount;
+  String? refundStatus;
+  double? refundAmount;
+  int? refundId;
+  String? refundBank;
+  String? refundAccountNumber;
+  String? refundAccountName;
   final List<dynamic> items;
   final String paymentMethod;
   final String? note;
@@ -80,6 +98,10 @@ class OrderServiceModel {
     this.cancelReason,
     this.refundStatus,
     this.refundAmount,
+    this.refundId,
+    this.refundBank,
+    this.refundAccountNumber,
+    this.refundAccountName,
     this.items = const [],
     this.paymentMethod = 'PAYOS',
     this.note,
@@ -101,6 +123,10 @@ class OrderServiceModel {
       cancelReason: json['lyDoHuy'] ?? json['cancelReason'],
       refundStatus: json['refundStatus'] ?? json['refund']?['trangThaiHoanTien'],
       refundAmount: (json['refundAmount'] ?? json['refund']?['soTienHoan'] as num?)?.toDouble(),
+      refundId: json['refundId'] ?? json['refund']?['maHoanTien'] ?? json['refund']?['id'],
+      refundBank: json['refundBank'] ?? json['refund']?['nganHangNhan'] ?? json['refund']?['nganHang'],
+      refundAccountNumber: json['refundAccountNumber'] ?? json['refund']?['soTaiKhoanNhan'] ?? json['refund']?['soTaiKhoan'],
+      refundAccountName: json['refundAccountName'] ?? json['refund']?['tenChuTaiKhoanNhan'] ?? json['refund']?['tenTaiKhoan'],
       items: json['items'] ?? json['chiTietDonHang'] ?? [],
       paymentMethod: (json['phuongThucThanhToan'] ?? json['paymentMethod'] ?? json['payment']?['phuongThucThanhToan'] ?? 'PAYOS').toString(),
       note: json['ghiChu'] ?? json['note'],
@@ -204,7 +230,11 @@ class OrderService {
     return [];
   }
 
-  static Future<Map<String, dynamic>> cancelOrder(int orderId, {String? reason}) async {
+  static Future<Map<String, dynamic>> cancelOrder(
+    int orderId, {
+    String? reason,
+    Map<String, dynamic>? bankInfo,
+  }) async {
     try {
       final token = Globs.udValueString(KKey.authToken);
       final url = Uri.parse('${SVKey.svOrders}/$orderId/status');
@@ -217,8 +247,9 @@ class OrderService {
         body: json.encode({
           'status': 'DA_HUY',
           if (reason != null && reason.isNotEmpty) 'lyDo': reason,
+          if (bankInfo != null) 'bankInfo': bankInfo,
         }),
-      ).timeout(const Duration(seconds: 6));
+      ).timeout(const Duration(seconds: 8));
 
       final resJson = json.decode(response.body);
       final isOk = (response.statusCode == 200 || response.statusCode == 201);
@@ -233,6 +264,64 @@ class OrderService {
         'success': false,
         'message': 'Lỗi kết nối máy chủ: $e',
       };
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateRefundBankInfo({
+    required int refundId,
+    required String bankName,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.mainUrl}/api/v1/refunds/$refundId/bank-info');
+      final response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'nganHang': bankName,
+          'soTaiKhoan': accountNumber,
+          'tenChuTaiKhoan': accountName,
+        }),
+      ).timeout(const Duration(seconds: 8));
+
+      final resJson = json.decode(response.body);
+      final isOk = (response.statusCode == 200 || response.statusCode == 201);
+      return {
+        'success': isOk,
+        'message': resJson['message'] ?? (isOk ? 'Cập nhật tài khoản thành công' : 'Không thể cập nhật'),
+        'data': resJson['data'],
+      };
+    } catch (e) {
+      debugPrint('[OrderService] updateRefundBankInfo error: $e');
+      return {'success': false, 'message': 'Lỗi kết nối: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getOrderRefund(int orderId) async {
+    try {
+      final token = Globs.udValueString(KKey.authToken);
+      final url = Uri.parse('${SVKey.mainUrl}/api/v1/orders/$orderId/refund');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        final resJson = json.decode(response.body);
+        return resJson['data'];
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[OrderService] getOrderRefund error: $e');
+      return null;
     }
   }
 }

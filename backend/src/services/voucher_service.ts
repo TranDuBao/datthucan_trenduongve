@@ -1,7 +1,9 @@
+import { In } from 'typeorm';
 import { AppDataSource } from '../config/database';
 import { VoucherModel } from '../models/voucher_model';
 import { KhachHangVoucherModel } from '../models/khach_hang_voucher_model';
 import { KhachHangModel } from '../models/khach_hang_model';
+import { CuaHangModel } from '../models/cua_hang_model';
 import { RealtimeService } from './realtime_service';
 
 export interface CreateVoucherInput {
@@ -35,6 +37,7 @@ export class VoucherService {
   private voucherRepo = AppDataSource.getRepository(VoucherModel);
   private khachHangRepo = AppDataSource.getRepository(KhachHangModel);
   private khachHangVoucherRepo = AppDataSource.getRepository(KhachHangVoucherModel);
+  private cuaHangRepo = AppDataSource.getRepository(CuaHangModel);
 
   /**
    * Tính toán trạng thái động thực tế của Voucher
@@ -512,14 +515,32 @@ export class VoucherService {
 
     const vouchers = await query.orderBy('v.ngaytao', 'DESC').getMany();
 
+    const storeIds = [...new Set(vouchers.map((v) => v.maQuan).filter((id): id is number => id != null && Number(id) > 0))];
+    const storeMap = new Map<number, { tenQuan: string; diaChi: string; img?: string }>();
+    if (storeIds.length > 0) {
+      const stores = await this.cuaHangRepo.find({
+        where: { maQuan: In(storeIds) },
+        select: ['maQuan', 'tenQuan', 'diaChi', 'img'],
+      });
+      for (const s of stores) {
+        storeMap.set(s.maQuan, { tenQuan: s.tenQuan, diaChi: s.diaChi, img: s.img });
+      }
+    }
+
     const activeVouchers = vouchers
-      .map((v) => ({
-        ...v,
-        giamGia: Number(v.giamGia),
-        giaTriGiamToiDa: v.giaTriGiamToiDa ? Number(v.giaTriGiamToiDa) : null,
-        dieuKienDonToiThieu: Number(v.dieuKienDonToiThieu || 0),
-        computedStatus: this.computeVoucherStatus(v),
-      }))
+      .map((v) => {
+        const store = v.maQuan ? storeMap.get(Number(v.maQuan)) : null;
+        return {
+          ...v,
+          giamGia: Number(v.giamGia),
+          giaTriGiamToiDa: v.giaTriGiamToiDa ? Number(v.giaTriGiamToiDa) : null,
+          dieuKienDonToiThieu: Number(v.dieuKienDonToiThieu || 0),
+          computedStatus: this.computeVoucherStatus(v),
+          tenQuan: store?.tenQuan || null,
+          diaChiQuan: store?.diaChi || null,
+          anhQuan: store?.img || null,
+        };
+      })
       .filter((v) => v.computedStatus === 'DANG_HOAT_DONG');
 
     return activeVouchers;
@@ -644,14 +665,32 @@ export class VoucherService {
       .andWhere("LOWER(v.tenvoucher) NOT LIKE '%freeship%'")
       .getMany();
 
-    return vouchers.map((v) => ({
-      ...v,
-      giamGia: Number(v.giamGia),
-      giaTriGiamToiDa: v.giaTriGiamToiDa ? Number(v.giaTriGiamToiDa) : null,
-      dieuKienDonToiThieu: Number(v.dieuKienDonToiThieu || 0),
-      computedStatus: this.computeVoucherStatus(v),
-      isCollected: true,
-      daLuu: true,
-    }));
+    const storeIds = [...new Set(vouchers.map((v) => v.maQuan).filter((id): id is number => id != null && Number(id) > 0))];
+    const storeMap = new Map<number, { tenQuan: string; diaChi: string; img?: string }>();
+    if (storeIds.length > 0) {
+      const stores = await this.cuaHangRepo.find({
+        where: { maQuan: In(storeIds) },
+        select: ['maQuan', 'tenQuan', 'diaChi', 'img'],
+      });
+      for (const s of stores) {
+        storeMap.set(s.maQuan, { tenQuan: s.tenQuan, diaChi: s.diaChi, img: s.img });
+      }
+    }
+
+    return vouchers.map((v) => {
+      const store = v.maQuan ? storeMap.get(Number(v.maQuan)) : null;
+      return {
+        ...v,
+        giamGia: Number(v.giamGia),
+        giaTriGiamToiDa: v.giaTriGiamToiDa ? Number(v.giaTriGiamToiDa) : null,
+        dieuKienDonToiThieu: Number(v.dieuKienDonToiThieu || 0),
+        computedStatus: this.computeVoucherStatus(v),
+        isCollected: true,
+        daLuu: true,
+        tenQuan: store?.tenQuan || null,
+        diaChiQuan: store?.diaChi || null,
+        anhQuan: store?.img || null,
+      };
+    });
   }
 }

@@ -7,6 +7,8 @@ import { ChiTietDonHangModel } from '../models/chi_tiet_don_hang_model';
 import { CuaHangModel } from '../models/cua_hang_model';
 import { MonAnModel } from '../models/mon_an_model';
 import { KhachHangModel } from '../models/khach_hang_model';
+import { NhanVienModel } from '../models/nhan_vien_model';
+import { TaiKhoanModel } from '../models/tai_khoan_model';
 import { RealtimeService } from './realtime_service';
 
 export interface CreateReviewDTO {
@@ -427,9 +429,13 @@ export class ReviewService {
   }
 
   async replyReview(reviewId: number, userId: number, replyText: string) {
-    const store = await this.storeRepo.findOne({ where: { maTaiKhoan: userId } });
+    let store = await this.storeRepo.findOne({ where: { maTaiKhoan: userId } });
     if (!store) {
-      throw new Error('Tài khoản của bạn không gắn với cửa hàng nào');
+      const nhanVienRepo = AppDataSource.getRepository(NhanVienModel);
+      const nv = await nhanVienRepo.findOne({ where: { maTaiKhoan: userId } });
+      if (nv && nv.maQuan) {
+        store = await this.storeRepo.findOne({ where: { maQuan: nv.maQuan } });
+      }
     }
 
     const review = await this.reviewRepo.findOne({ where: { maDanhGia: reviewId } });
@@ -437,12 +443,17 @@ export class ReviewService {
       throw new Error('Không tìm thấy đánh giá');
     }
 
-    if (review.maQuan !== store.maQuan) {
-      throw new Error('Bạn không có quyền phản hồi đánh giá của cửa hàng khác');
-    }
+    const userRepo = AppDataSource.getRepository(TaiKhoanModel);
+    const userObj = await userRepo.findOne({ where: { maTaiKhoan: userId } });
+    const isAdmin = userObj?.loaiTaiKhoan?.toUpperCase() === 'ADMIN';
 
-    if (review.phanHoi) {
-      throw new Error('Đánh giá này đã được phản hồi trước đó');
+    if (!isAdmin) {
+      if (!store) {
+        throw new Error('Tài khoản của bạn không gắn với cửa hàng nào');
+      }
+      if (review.maQuan !== store.maQuan) {
+        throw new Error('Bạn không có quyền phản hồi đánh giá của cửa hàng khác');
+      }
     }
 
     const cleanReply = this.sanitizeText(replyText);
@@ -454,18 +465,32 @@ export class ReviewService {
     review.ngayPhanHoi = new Date();
     const saved = await this.reviewRepo.save(review);
 
-    // Notify Customer if customer account exists
+    const storeId = review.maQuan || store?.maQuan;
+    const storeName = store?.tenQuan || 'Cửa hàng';
+
+    // 1. Notify Customer if customer account exists
     if (review.maKhachHang) {
       const customer = await this.customerRepo.findOne({ where: { maKhachHang: review.maKhachHang } });
       if (customer && customer.maTaiKhoan) {
         this.realtimeService.emitToRoom(`account:${customer.maTaiKhoan}`, 'review:replied', {
           id: saved.maDanhGia,
-          storeId: store.maQuan,
-          storeName: store.tenQuan,
+          storeId,
+          storeName,
           reply: saved.phanHoi,
           repliedAt: saved.ngayPhanHoi,
         });
       }
+    }
+
+    // 2. Notify Restaurant Room so all web and mobile store tabs update in real time
+    if (storeId) {
+      this.realtimeService.emitToRoom(`restaurant:${storeId}`, 'review:replied', {
+        id: saved.maDanhGia,
+        storeId,
+        storeName,
+        reply: saved.phanHoi,
+        repliedAt: saved.ngayPhanHoi,
+      });
     }
 
     return saved;
@@ -639,6 +664,9 @@ export class ReviewService {
           nhanXet: dr?.nhanXet || r.nhanXet || '',
           comment: dr?.nhanXet || r.nhanXet || '',
           tenKhachHang: cust ? cust.hoTen : 'Khách hàng',
+          customerAvatar: cust?.avatar || '',
+          hinhAnh: r.hinhAnh || (r as any).hinhanh || '',
+          image: r.hinhAnh || (r as any).hinhanh || '',
         };
       }),
     );

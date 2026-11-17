@@ -515,12 +515,7 @@ class _CheckoutViewState extends State<CheckoutView> {
       final discount = isFirst ? cart.discountAmount : 0.0;
       final finalTotal = (resSubTotal - discount).clamp(0.0, double.infinity);
 
-      final itemNotes = resItems.where((i) => i.note.trim().isNotEmpty).map((i) => "${i.foodName}: ${i.note.trim()}").toList();
       final orderNote = _orderNoteController.text.trim();
-      final fullNote = [
-        if (orderNote.isNotEmpty) orderNote,
-        if (itemNotes.isNotEmpty) itemNotes.join("; "),
-      ].join(" | ");
 
       return OrderService.createPreOrder(
         restaurantId: resId,
@@ -530,7 +525,7 @@ class _CheckoutViewState extends State<CheckoutView> {
         paymentMethod: methodCode,
         voucherCode: isFirst ? cart.appliedVoucherCode : null,
         voucherId: isFirst ? cart.appliedVoucherId : null,
-        note: fullNote.isNotEmpty ? fullNote : null,
+        note: orderNote.isNotEmpty ? orderNote : null,
       );
     }).toList();
 

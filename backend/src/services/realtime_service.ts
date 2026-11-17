@@ -26,6 +26,10 @@ export const REALTIME_EVENTS = {
   REVIEW_UPDATED: 'review:updated',
   REVIEW_VISIBILITY_CHANGED: 'review:visibility_changed',
   MENU_UPDATED: 'menu:updated',
+  REFUND_CREATED: 'refund:created',
+  REFUND_BANK_UPDATED: 'refund:bank_updated',
+  REFUND_STATUS_CHANGED: 'refund:status_changed',
+  REFUND_COMPLETED: 'refund:completed',
 } as const;
 
 export interface RealtimeUserPayload {
@@ -474,6 +478,84 @@ export class RealtimeService {
       console.log(`[RealtimeService] [Info] Emitted menu:updated for store #${maQuan}, dish #${food?.maMonAn} (${action})`);
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (menu:updated):', e);
+    }
+  }
+
+  public emitRefundCreated(maQuan: number, refund: any) {
+    if (!this.io) return;
+    try {
+      const payload = {
+        maQuan,
+        maHoanTien: refund.maHoanTien,
+        maDonHang: refund.maDonHang,
+        soTienHoan: Number(refund.soTienHoan || 0),
+        nguoiYeuCau: refund.nguoiYeuCau,
+        trangThai: refund.trangThaiHoanTien,
+        refund,
+        updatedAt: new Date().toISOString(),
+      };
+      this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.REFUND_CREATED, payload);
+      this.io.to(`order:${refund.maDonHang}`).emit(REALTIME_EVENTS.REFUND_CREATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.REFUND_CREATED, payload);
+      console.log(`[RealtimeService] [Info] Emitted refund:created for store #${maQuan}, order #${refund.maDonHang}`);
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (refund:created):', e);
+    }
+  }
+
+  public emitRefundBankUpdated(maQuan: number, refund: any) {
+    if (!this.io) return;
+    try {
+      const payload = {
+        maQuan,
+        maHoanTien: refund.maHoanTien,
+        maDonHang: refund.maDonHang,
+        soTienHoan: Number(refund.soTienHoan || 0),
+        nganHangNhan: refund.nganHangNhan,
+        soTaiKhoanNhan: refund.soTaiKhoanNhan,
+        tenChuTaiKhoanNhan: refund.tenChuTaiKhoanNhan,
+        refund,
+        updatedAt: new Date().toISOString(),
+      };
+      this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.REFUND_BANK_UPDATED, payload);
+      this.io.to(`order:${refund.maDonHang}`).emit(REALTIME_EVENTS.REFUND_BANK_UPDATED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.REFUND_BANK_UPDATED, payload);
+      console.log(`[RealtimeService] [Info] Emitted refund:bank_updated for store #${maQuan}, order #${refund.maDonHang}`);
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (refund:bank_updated):', e);
+    }
+  }
+
+  public emitRefundStatusChanged(maQuan: number, refund: any, maKhachHang?: number) {
+    if (!this.io) return;
+    try {
+      const payload = {
+        maQuan,
+        maHoanTien: refund.maHoanTien,
+        maDonHang: refund.maDonHang,
+        trangThai: refund.trangThaiHoanTien,
+        soTienHoan: Number(refund.soTienHoan || 0),
+        refund,
+        updatedAt: new Date().toISOString(),
+      };
+      this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.REFUND_STATUS_CHANGED, payload);
+      this.io.to(`order:${refund.maDonHang}`).emit(REALTIME_EVENTS.REFUND_STATUS_CHANGED, payload);
+      this.io.to('admin').emit(REALTIME_EVENTS.REFUND_STATUS_CHANGED, payload);
+      if (maKhachHang) {
+        this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.REFUND_STATUS_CHANGED, payload);
+        this.io.to(`user:${maKhachHang}`).emit(REALTIME_EVENTS.REFUND_STATUS_CHANGED, payload);
+      }
+      if (refund.trangThaiHoanTien === 'HOAN_TIEN_THANH_CONG') {
+        this.io.to(`restaurant:${maQuan}`).emit(REALTIME_EVENTS.REFUND_COMPLETED, payload);
+        this.io.to(`order:${refund.maDonHang}`).emit(REALTIME_EVENTS.REFUND_COMPLETED, payload);
+        if (maKhachHang) {
+          this.io.to(`customer:${maKhachHang}`).emit(REALTIME_EVENTS.REFUND_COMPLETED, payload);
+          this.io.to(`user:${maKhachHang}`).emit(REALTIME_EVENTS.REFUND_COMPLETED, payload);
+        }
+      }
+      console.log(`[RealtimeService] [Info] Emitted refund:status_changed (${refund.trangThaiHoanTien}) for store #${maQuan}, order #${refund.maDonHang}`);
+    } catch (e) {
+      console.error('[RealtimeService] [Warn] Realtime emit error (refund:status_changed):', e);
     }
   }
 }
