@@ -198,10 +198,11 @@ export class OrderController {
         }
 
         const currentOrderStatus = normalizeOrderStatus(order.trangThai);
-        if (currentOrderStatus !== 'CHO_XAC_NHAN' && currentOrderStatus !== 'CHO_THANH_TOAN') {
+        // Khách hàng có quyền hủy đơn khi quán chưa bắt đầu chế biến: CHO_THANH_TOAN, CHO_XAC_NHAN, hoặc DA_XAC_NHAN
+        if (currentOrderStatus !== 'CHO_XAC_NHAN' && currentOrderStatus !== 'CHO_THANH_TOAN' && currentOrderStatus !== 'DA_XAC_NHAN') {
           return res.status(400).json({
             status: 'error',
-            message: 'Đơn hàng đã được xác nhận hoặc đang chế biến, không thể hủy!',
+            message: 'Đơn hàng đang được chế biến hoặc đã hoàn thành, không thể hủy!',
           });
         }
       }

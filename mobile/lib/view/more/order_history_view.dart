@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/locator.dart';
 import '../../common/format_utils.dart';
+import '../../common/extension.dart';
+import '../../common/globs.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../services/order_service.dart';
@@ -302,11 +304,11 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     final stepNum = OrderProgressStepper.getStepFromStatus(order.status);
     if (stepNum >= 3) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.orderCancelNotAllowed(stepNum)),
-          backgroundColor: Colors.redAccent,
-        ),
+      mdShowAlert(
+        context.l10n.commonNotification,
+        context.l10n.orderCancelNotAllowed(stepNum),
+        () {},
+        isError: true,
       );
       return;
     }
@@ -314,13 +316,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
     final confirm = await OrderCancelConfirmDialog.show(context, order);
 
     if (confirm == true) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.orderCancellingProgress),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      Globs.showHUD();
 
       final prefs = await SharedPreferences.getInstance();
       final savedBank = prefs.getString('saved_refund_bank');
@@ -337,6 +333,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
       }
 
       final res = await OrderService.cancelOrder(order.orderId, bankInfo: bankInfo);
+      Globs.hideHUD();
       final success = res['success'] == true;
       final serverMsg = res['message'];
 
@@ -362,38 +359,19 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
           }
         } catch (_) {}
 
-        // Hiển thị thông báo thành công đẹp mắt
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    context.l10n.orderCancelSuccessMsg(order.orderId.toString()),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ),
+        // Hiển thị thông báo thành công dạng modal chuẩn
+        mdShowAlert(
+          context.l10n.commonNotification,
+          context.l10n.orderCancelSuccessMsg(order.orderId.toString()),
+          () {},
+          isError: false,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              serverMsg ?? context.l10n.orderCancelFailedMsg(order.orderId.toString()),
-            ),
-            backgroundColor: Colors.redAccent,
-          ),
+        mdShowAlert(
+          context.l10n.commonNotification,
+          serverMsg ?? context.l10n.orderCancelFailedMsg(order.orderId.toString()),
+          () {},
+          isError: true,
         );
       }
     }

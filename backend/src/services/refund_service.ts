@@ -81,9 +81,9 @@ export class RefundService {
 
     // 3. Kiểm tra điều kiện hủy theo vai trò
     if (requesterRole === 'user') {
-      // Khách hàng chỉ được hủy khi đơn chưa làm món: CHO_THANH_TOAN hoặc CHO_XAC_NHAN
-      if (currentStatus !== 'CHO_THANH_TOAN' && currentStatus !== 'CHO_XAC_NHAN') {
-        throw new Error('Đơn hàng đã được quán xác nhận hoặc đang chế biến, khách hàng không thể hủy');
+      // Khách hàng chỉ được hủy khi đơn chưa làm món: CHO_THANH_TOAN, CHO_XAC_NHAN hoặc DA_XAC_NHAN (chưa sang DANG_CHUAN_BI)
+      if (currentStatus !== 'CHO_THANH_TOAN' && currentStatus !== 'CHO_XAC_NHAN' && currentStatus !== 'DA_XAC_NHAN') {
+        throw new Error('Đơn hàng đang được chế biến hoặc đã hoàn thành, khách hàng không thể hủy');
       }
     } else if (requesterRole === 'restaurant') {
       // Quán không thể hủy đơn đã hoàn tất
