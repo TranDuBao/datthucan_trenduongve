@@ -135,6 +135,7 @@ export class PaymentController {
                 thoiGianHenNhan: order.thoiGianHenNhan,
                 itemsCount: items.length,
                 status: 'CHO_XAC_NHAN',
+                ghiChu: order.ghiChu,
               });
 
               if (order.maQuan) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../../api/apiClient';
-import { getSocket } from '../../api/socketClient';
+import { getSocket, joinRestaurantRoom } from '../../api/socketClient';
 import { normalizeOrderStatus } from '../../components/OrderStatusBadge';
 import { RestaurantOrderTable, getCancellationSource } from '../../components/RestaurantOrderTable';
 import { OrderDetailModal } from '../../components/OrderDetailModal';
@@ -184,6 +184,18 @@ export const RestaurantOrders: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Ensure socket joins restaurant room as soon as page mounts
+    apiFetch<any>('/restaurant/profile')
+      .then((res) => {
+        const p = res.data || res;
+        if (p?.maQuan) {
+          joinRestaurantRoom(Number(p.maQuan));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchOrders();

@@ -356,6 +356,7 @@ class _SignUpViewState extends State<SignUpView> {
           Globs.udStringSet((payload['accessToken'] ?? payload[KKey.authToken]).toString(), KKey.authToken);
         }
         Globs.udBoolSet(true, Globs.userLogin);
+        Globs.udBoolSet(false, Globs.isGuestMode);
 
         if (context.mounted) {
           context.read<MapProvider>().clearAll();

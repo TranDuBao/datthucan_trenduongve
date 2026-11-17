@@ -11,6 +11,7 @@ import '../view/menu/item_details_view.dart';
 import '../view/more/checkout_view.dart';
 import 'custom_toast.dart';
 import 'single_restaurant_warning_modal.dart';
+import 'guest_login_dialog.dart';
 import '../view/reservation/reservation_booking_view.dart';
 
 class FoodStopoverSheet extends StatefulWidget {
@@ -68,17 +69,10 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
       _foodsList = [];
     }
 
-    // Mặc định tích chọn món đầu tiên còn hàng để người dùng có thể đặt ngay với 1 chạm
+    // Khởi tạo số lượng = 1 cho các món. Không tự động tích chọn món để khách hàng tự chọn
     for (final f in _foodsList) {
       final fId = (f['id'] as num? ?? f['maMonAn'] as num? ?? 0).toInt();
-      final qty = int.tryParse((f['quantity'] ?? f['soLuongMon'] ?? 0).toString()) ?? 0;
-      final status = (f['trangThaiMon'] ?? 'DANG_BAN').toString().toUpperCase();
-      final bool isAvailable = qty > 0 && status != 'HET_HANG' && status != 'TAM_NGUNG';
-
       _quantities[fId] = 1;
-      if (isAvailable && _selectedFoodIds.isEmpty) {
-        _selectedFoodIds.add(fId);
-      }
     }
   }
 
@@ -108,6 +102,13 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
     String storeName,
     CartProvider cart,
   ) {
+    if (GuestLoginDialog.checkGuestAndPrompt(
+      context,
+      featureName: "đặt hàng",
+      customMessage: "Vui lòng đăng nhập tài khoản để đặt món ghé lấy trên lộ trình của bạn.",
+    )) {
+      return;
+    }
     final address = (widget.restaurant['diaChi'] ?? widget.restaurant['address'] ?? '').toString();
     final provider = context.read<MapProvider>();
 
@@ -533,23 +534,28 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
             const SizedBox(height: 14),
 
             // ── TỔNG TIỀN VÀ 2 NÚT HÀNH ĐỘNG ──
-            if (totalCount > 0)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Đã chọn $totalCount món:',
-                      style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    totalCount > 0 ? 'Đã chọn $totalCount món:' : 'Chưa chọn món nào',
+                    style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    totalCount > 0
+                        ? "${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ"
+                        : "0đ",
+                    style: GoogleFonts.outfit(
+                      color: totalCount > 0 ? const Color(0xFFFC6011) : const Color(0xFF94A3B8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
                     ),
-                    Text(
-                      "${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
-                      style: GoogleFonts.outfit(color: const Color(0xFFFC6011), fontSize: 16, fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
             Row(
               children: [
@@ -590,6 +596,9 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                     onPressed: () {
                       if (isDineIn) {
                         Navigator.pop(context);
+                        if (GuestLoginDialog.checkGuestAndPrompt(context, featureName: "đặt bàn")) {
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(

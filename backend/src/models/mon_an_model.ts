@@ -37,4 +37,7 @@ export class MonAnModel {
 
   @Column({ name: 'dactinh', type: 'text', nullable: true })
   dacTinh?: string;
+
+  @Column({ name: 'options', type: 'text', nullable: true })
+  options?: string;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/locator.dart';
 import '../common/sound_helper.dart';
+import '../common/user_role_helper.dart';
 import '../services/fcm_push_service.dart';
 import '../services/notification_service.dart';
 import '../services/socket_service.dart';
@@ -23,6 +24,7 @@ class NotificationProvider extends ChangeNotifier {
   bool _isInitialized = false;
 
   void initialize() {
+    if (UserRoleHelper.isGuest) return;
     if (!_isInitialized) {
       _isInitialized = true;
 
@@ -50,6 +52,11 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   Future<void> fetchUnreadCount() async {
+    if (UserRoleHelper.isGuest) {
+      _unreadCount = 0;
+      notifyListeners();
+      return;
+    }
     try {
       final count = await NotificationService.fetchUnreadCount();
       _unreadCount = count;
@@ -58,6 +65,12 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   Future<void> fetchNotifications({bool refresh = false}) async {
+    if (UserRoleHelper.isGuest) {
+      _notifications = [];
+      _unreadCount = 0;
+      notifyListeners();
+      return;
+    }
     if (_isLoading) return;
     _isLoading = true;
     _errorMessage = null;

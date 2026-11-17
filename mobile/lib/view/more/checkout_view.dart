@@ -12,6 +12,7 @@ import '../../widgets/vietqr_payment_modal.dart';
 import '../../widgets/payment_success_modal.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
+import '../../widgets/guest_login_dialog.dart';
 import 'checkout_message_view.dart';
 import 'order_history_view.dart';
 import '../main_tabview/main_tabview.dart';
@@ -32,6 +33,13 @@ class _CheckoutViewState extends State<CheckoutView> {
   int selectMethod = 0;
   bool isSubmitting = false;
   bool _orderCompleted = false;
+  final TextEditingController _orderNoteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _orderNoteController.dispose();
+    super.dispose();
+  }
 
   String _fmt(int v) => v
       .toString()
@@ -205,6 +213,19 @@ class _CheckoutViewState extends State<CheckoutView> {
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
+                                      if (item.size.isNotEmpty || item.note.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          [if (item.size.isNotEmpty) item.size, if (item.note.isNotEmpty) item.note].join(" • "),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: TColor.primary,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(height: 2),
                                       Text(
                                         "x${item.quantity}  •  ${_fmt(item.price.toInt())}đ",
@@ -270,6 +291,68 @@ class _CheckoutViewState extends State<CheckoutView> {
               ),
 
               const SizedBox(height: 20),
+              Container(decoration: BoxDecoration(color: TColor.borderOf(context).withOpacity(0.3)), height: 8),
+
+              // Ghi chú cho quán
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: TColor.cardOf(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: TColor.borderOf(context)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.edit_note_rounded, color: TColor.primary, size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Ghi chú cho quán",
+                            style: TextStyle(
+                              color: TColor.primaryTextOf(context),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _orderNoteController,
+                        maxLines: 2,
+                        style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: "Ví dụ: ít đường, lấy thêm muỗng nĩa, ghé sau 10 phút...",
+                          hintStyle: TextStyle(
+                            color: TColor.secondaryTextOf(context).withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2E3B) : const Color(0xFFF9FAFB),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: TColor.borderOf(context)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: TColor.borderOf(context)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Color(0xFFFF4D00)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               Container(decoration: BoxDecoration(color: TColor.borderOf(context).withOpacity(0.3)), height: 8),
 
               // Payment Method Selection
@@ -394,8 +477,14 @@ class _CheckoutViewState extends State<CheckoutView> {
 
   /// Tách đơn theo quán → gọi API song song → hiển thị kết quả lần lượt.
   Future<void> _handlePlaceOrders() async {
+    if (GuestLoginDialog.checkGuestAndPrompt(
+      context,
+      featureName: "đặt hàng",
+      customMessage: "Vui lòng đăng nhập tài khoản để thanh toán và hoàn tất đặt hàng.",
+    )) {
+      return;
+    }
     final cart = context.read<CartProvider>();
-    final mapProvider = context.read<MapProvider>();
     final methodCode = paymentArr[selectMethod]["code"]!;
     final restaurantIds = cart.restaurantIds;
     if (restaurantIds.isEmpty) return;
@@ -426,6 +515,13 @@ class _CheckoutViewState extends State<CheckoutView> {
       final discount = isFirst ? cart.discountAmount : 0.0;
       final finalTotal = (resSubTotal - discount).clamp(0.0, double.infinity);
 
+      final itemNotes = resItems.where((i) => i.note.trim().isNotEmpty).map((i) => "${i.foodName}: ${i.note.trim()}").toList();
+      final orderNote = _orderNoteController.text.trim();
+      final fullNote = [
+        if (orderNote.isNotEmpty) orderNote,
+        if (itemNotes.isNotEmpty) itemNotes.join("; "),
+      ].join(" | ");
+
       return OrderService.createPreOrder(
         restaurantId: resId,
         pickupTime: cart.combinedPickupDateTime,
@@ -434,6 +530,7 @@ class _CheckoutViewState extends State<CheckoutView> {
         paymentMethod: methodCode,
         voucherCode: isFirst ? cart.appliedVoucherCode : null,
         voucherId: isFirst ? cart.appliedVoucherId : null,
+        note: fullNote.isNotEmpty ? fullNote : null,
       );
     }).toList();
 

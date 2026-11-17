@@ -41,12 +41,21 @@ class UserRoleHelper {
     return r == 'ADMIN' || r == 'QUẢN TRỊ';
   }
 
+  static bool get isGuest {
+    if (Globs.udValueBool(Globs.isGuestMode)) return true;
+    if (!Globs.udValueBool(Globs.userLogin)) return true;
+    final token = Globs.udValueString(KKey.authToken);
+    if (token.trim().isEmpty) return true;
+    return false;
+  }
+
   static String get userName {
+    if (isGuest) return 'Khách';
     final p = payload;
     if (p['user'] is Map) {
       final u = p['user'] as Map;
-      return u['fullName'] ?? u['username'] ?? u['email'] ?? 'Cửa Hàng';
+      return u['fullName'] ?? u['username'] ?? u['email'] ?? 'Khách Hàng';
     }
-    return p['fullName'] ?? p['username'] ?? p['email'] ?? 'Cửa Hàng';
+    return p['fullName'] ?? p['username'] ?? p['email'] ?? 'Khách Hàng';
   }
 }

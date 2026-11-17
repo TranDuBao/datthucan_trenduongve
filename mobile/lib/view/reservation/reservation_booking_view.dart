@@ -11,6 +11,7 @@ import '../../widgets/custom_toast.dart';
 import '../../providers/map_provider.dart';
 import '../../services/order_route_storage.dart';
 import 'reservation_detail_view.dart';
+import '../../widgets/guest_login_dialog.dart';
 import 'widgets/reservation_booking_widgets.dart';
 
 class ReservationBookingView extends StatefulWidget {
@@ -201,6 +202,13 @@ class _ReservationBookingViewState extends State<ReservationBookingView> {
   }
 
   Future<void> _submitReservation() async {
+    if (GuestLoginDialog.checkGuestAndPrompt(
+      context,
+      featureName: "đặt bàn",
+      customMessage: "Vui lòng đăng nhập tài khoản để đặt bàn tại nhà hàng.",
+    )) {
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     if (_startDateTime.isBefore(DateTime.now())) {

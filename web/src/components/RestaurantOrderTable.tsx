@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag } from 'lucide-react';
+import { Clock, PackageX, Phone, XCircle, Store, User, Trash2, ShoppingBag, MessageSquare } from 'lucide-react';
 import {
   OrderStatusBadge,
   normalizeOrderStatus,
@@ -240,6 +240,31 @@ const OrderRowItem: React.FC<OrderRowProps> = ({
         {ord.sdtKhachHang && (
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Phone size={11} color="#94a3b8" /> {ord.sdtKhachHang}
+          </div>
+        )}
+        {ord.ghiChu && (
+          <div
+            style={{
+              marginTop: '4px',
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+              borderRadius: '6px',
+              padding: '2px 6px',
+              fontSize: '11px',
+              color: '#b45309',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              maxWidth: '220px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={`Ghi chú của khách: ${ord.ghiChu}`}
+          >
+            <MessageSquare size={11} color="#d97706" style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Ghi chú: {ord.ghiChu}</span>
           </div>
         )}
       </td>

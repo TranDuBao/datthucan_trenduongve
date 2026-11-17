@@ -187,7 +187,9 @@ class CartProvider extends ChangeNotifier {
     } else {
       _resolveRestaurantMeta(item.restaurantId);
     }
-    final index = _items.indexWhere((i) => i.foodId == item.foodId);
+    final index = _items.indexWhere(
+      (i) => i.foodId == item.foodId && i.size == item.size && i.note == item.note,
+    );
     if (index >= 0) {
       _items[index].quantity += item.quantity;
     } else {
@@ -202,8 +204,26 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeSpecificItem(CartItemModel item) {
+    _items.remove(item);
+    _cleanOrphanMetas();
+    notifyListeners();
+  }
+
   void updateQuantity(int foodId, int delta) {
     final index = _items.indexWhere((i) => i.foodId == foodId);
+    if (index >= 0) {
+      _items[index].quantity += delta;
+      if (_items[index].quantity <= 0) {
+        _items.removeAt(index);
+      }
+      _cleanOrphanMetas();
+      notifyListeners();
+    }
+  }
+
+  void updateSpecificItemQuantity(CartItemModel item, int delta) {
+    final index = _items.indexOf(item);
     if (index >= 0) {
       _items[index].quantity += delta;
       if (_items[index].quantity <= 0) {

@@ -9,11 +9,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/color_extension.dart';
+import '../../common/user_role_helper.dart';
 import '../../common_widget/custom_modal_alert.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../widgets/notification_bell.dart';
 import '../../services/upload_service.dart';
+import '../login/login_view.dart';
 import '../more/my_order_view.dart';
 import 'avatar_crop_dialog.dart';
 import 'change_password_sheet.dart';
@@ -44,8 +46,10 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
-    _fetchUserProfileFromApi();
+    if (!UserRoleHelper.isGuest) {
+      _loadUserProfile();
+      _fetchUserProfileFromApi();
+    }
   }
 
   @override
@@ -109,6 +113,7 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void _fetchUserProfileFromApi() {
+    if (UserRoleHelper.isGuest) return;
     var rawPayload = ServiceCall.userPayload.isEmpty
         ? Globs.udValue(Globs.userPayload)
         : ServiceCall.userPayload;
@@ -515,6 +520,77 @@ class _ProfileViewState extends State<ProfileView> {
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (UserRoleHelper.isGuest) {
+      return Scaffold(
+        backgroundColor: TColor.bgOf(context),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFC6011).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_person_rounded,
+                    color: Color(0xFFFC6011),
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  lang.isEn ? "Guest Account" : "Tài Khoản Khách",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: TColor.primaryTextOf(context),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  lang.isEn
+                      ? "You are currently browsing as a Guest. Log in to manage your profile, delivery addresses, and personal vouchers."
+                      : "Bạn đang sử dụng ứng dụng với tư cách Khách. Vui lòng đăng nhập để xem thông tin cá nhân và quản lý tài khoản.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: TColor.secondaryTextOf(context),
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (_) => const LoginView()),
+                    );
+                  },
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: Text(
+                    lang.isEn ? "Login Now" : "Đăng Nhập Ngay",
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColor.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: TColor.bgOf(context),

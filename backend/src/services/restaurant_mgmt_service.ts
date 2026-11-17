@@ -242,6 +242,7 @@ export class RestaurantMgmtService {
           soLuong: itemQty,
           donGia: itemPrice,
           img: foodImg,
+          ghiChu: d.ghiChu || '',
         });
       }
 
@@ -486,6 +487,13 @@ export class RestaurantMgmtService {
         reviewCount = dishRatings.length;
       }
 
+      let parsedOptions: any = null;
+      if (f.options) {
+        try {
+          parsedOptions = typeof f.options === 'string' ? JSON.parse(f.options) : f.options;
+        } catch (_) {}
+      }
+
       return {
         ...f,
         image: f.img,
@@ -493,10 +501,30 @@ export class RestaurantMgmtService {
         soLuotDanhGia: reviewCount,
         chuaCoDanhGia: reviewCount === 0,
         tenDanhMuc: f.maDanhMuc ? catMap.get(f.maDanhMuc) || `Danh mục #${f.maDanhMuc}` : 'Chưa phân loại',
+        sizes: Array.isArray(parsedOptions?.sizes) ? parsedOptions.sizes : [],
+        toppings: Array.isArray(parsedOptions?.toppings) ? parsedOptions.toppings : [],
+        options: parsedOptions,
       };
     });
 
     return menuWithRatings;
+  }
+
+  private normalizeOptions(data: any): string | undefined {
+    const rawOptions = data.options;
+    const rawSizes = data.sizes;
+    const rawToppings = data.toppings;
+
+    if (rawOptions !== undefined && rawOptions !== null) {
+      return typeof rawOptions === 'string' ? rawOptions : JSON.stringify(rawOptions);
+    }
+    if (rawSizes !== undefined || rawToppings !== undefined) {
+      return JSON.stringify({
+        sizes: Array.isArray(rawSizes) ? rawSizes : [],
+        toppings: Array.isArray(rawToppings) ? rawToppings : [],
+      });
+    }
+    return undefined;
   }
 
   async createFoodItem(maQuan: number, data: Partial<MonAnModel>) {
@@ -509,10 +537,24 @@ export class RestaurantMgmtService {
     const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
     const traits = data.dacTinh ?? (data as any).dactinh;
     const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
+    const normalizedOptions = this.normalizeOptions(data);
 
     let nextId: number | undefined;
     try {
-      const maxRes = await this.foodRepo.query('SELECT COALESCE(MAX(mamonan), 0) + 1 as next_id FROM monan');
+      const maxRes = await this.foodRepo.query(`
+        SELECT GREATEST(
+          COALESCE((SELECT MAX(mamonan) FROM monan), 0),
+          COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0),
+          COALESCE((SELECT MAX(mamon) FROM danhgiamon), 0)
+        ) + 1 AS next_id
+      `).catch(async () => {
+        return await this.foodRepo.query(`
+          SELECT GREATEST(
+            COALESCE((SELECT MAX(mamonan) FROM monan), 0),
+            COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0)
+          ) + 1 AS next_id
+        `);
+      });
       if (maxRes && maxRes[0] && maxRes[0].next_id) {
         nextId = Number(maxRes[0].next_id);
       }
@@ -523,17 +565,32 @@ export class RestaurantMgmtService {
       ...(nextId ? { maMonAn: nextId } : {}),
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
+      ...(normalizedOptions !== undefined ? { options: normalizedOptions } : {}),
       soLuongMon: qty,
       trangThaiMon: status,
       maQuan,
     });
     const saved = await this.foodRepo.save(food);
+
+    let parsedSavedOptions: any = null;
+    if (saved.options) {
+      try {
+        parsedSavedOptions = typeof saved.options === 'string' ? JSON.parse(saved.options) : saved.options;
+      } catch (_) {}
+    }
+    const resultFood = {
+      ...saved,
+      sizes: Array.isArray(parsedSavedOptions?.sizes) ? parsedSavedOptions.sizes : [],
+      toppings: Array.isArray(parsedSavedOptions?.toppings) ? parsedSavedOptions.toppings : [],
+      options: parsedSavedOptions,
+    };
+
     try {
-      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'CREATE', saved);
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'CREATE', resultFood);
     } catch (e) {
       console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
     }
-    return saved;
+    return resultFood;
   }
 
   async updateFoodItem(maQuan: number, maMonAn: number, data: Partial<MonAnModel>) {
@@ -553,19 +610,36 @@ export class RestaurantMgmtService {
     const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
     const traits = data.dacTinh ?? (data as any).dactinh;
     const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
+    const normalizedOptions = this.normalizeOptions(data);
+
     Object.assign(food, data, {
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
+      ...(normalizedOptions !== undefined ? { options: normalizedOptions } : {}),
       soLuongMon: nextQty,
       trangThaiMon: nextStatus,
     });
     const saved = await this.foodRepo.save(food);
+
+    let parsedSavedOptions: any = null;
+    if (saved.options) {
+      try {
+        parsedSavedOptions = typeof saved.options === 'string' ? JSON.parse(saved.options) : saved.options;
+      } catch (_) {}
+    }
+    const resultFood = {
+      ...saved,
+      sizes: Array.isArray(parsedSavedOptions?.sizes) ? parsedSavedOptions.sizes : [],
+      toppings: Array.isArray(parsedSavedOptions?.toppings) ? parsedSavedOptions.toppings : [],
+      options: parsedSavedOptions,
+    };
+
     try {
-      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'UPDATE', saved);
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'UPDATE', resultFood);
     } catch (e) {
       console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
     }
-    return saved;
+    return resultFood;
   }
 
   async deleteFoodItem(maQuan: number, maMonAn: number) {

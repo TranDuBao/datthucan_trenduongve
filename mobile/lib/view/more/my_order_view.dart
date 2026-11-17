@@ -12,6 +12,7 @@ import '../../widgets/custom_time_picker_sheet.dart';
 import '../../common_widget/smart_network_image.dart';
 import 'checkout_view.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
+import '../../widgets/guest_login_dialog.dart';
 
 
 class MyOrderView extends StatefulWidget {
@@ -269,6 +270,9 @@ class _MyOrderViewState extends State<MyOrderView> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () {
+                    if (GuestLoginDialog.checkGuestAndPrompt(context, featureName: "voucher")) {
+                      return;
+                    }
                     showModalBottomSheet(
                       context: context,
                       backgroundColor: Colors.transparent,
@@ -487,6 +491,14 @@ class _MyOrderViewState extends State<MyOrderView> {
                           return;
                         }
 
+                        if (GuestLoginDialog.checkGuestAndPrompt(
+                          context,
+                          featureName: "đặt hàng",
+                          customMessage: "Vui lòng đăng nhập tài khoản để thanh toán đơn hàng.",
+                        )) {
+                          return;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -668,6 +680,19 @@ class _MyOrderViewState extends State<MyOrderView> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              if (item.size.isNotEmpty || item.note.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  [if (item.size.isNotEmpty) item.size, if (item.note.isNotEmpty) item.note].join(" • "),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: TColor.primary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 4),
                               Text(
                                 "${itemPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ",
@@ -708,7 +733,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                               InkWell(
                                 borderRadius: BorderRadius.circular(14),
                                 onTap: () {
-                                  cart.updateQuantity(item.foodId, -1);
+                                  cart.updateSpecificItemQuantity(item, -1);
                                 },
                                 child: Container(
                                   width: 28,
@@ -749,7 +774,7 @@ class _MyOrderViewState extends State<MyOrderView> {
                               InkWell(
                                 borderRadius: BorderRadius.circular(14),
                                 onTap: () {
-                                  cart.updateQuantity(item.foodId, 1);
+                                  cart.updateSpecificItemQuantity(item, 1);
                                 },
                                 child: Container(
                                   width: 28,

@@ -34,4 +34,7 @@ export class DonHangModel {
 
   @Column({ name: 'lydohuy', type: 'text', nullable: true })
   lyDoHuy?: string;
+
+  @Column({ name: 'ghichu', type: 'text', nullable: true })
+  ghiChu?: string;
 }

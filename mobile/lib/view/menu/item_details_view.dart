@@ -10,6 +10,7 @@ import '../../services/order_service.dart';
 import '../../services/review_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/dish_reviews_section.dart';
+import '../../widgets/dish_customization_section.dart';
 import '../../common_widget/smart_network_image.dart';
 import '../../common/food_image_helper.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
@@ -116,26 +117,76 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
   }
 
   void _initCustomizationOptions() {
+    dynamic rawSizes = itemData["sizes"] ?? itemData["sizeOptions"];
+    dynamic rawToppings = itemData["toppings"] ?? itemData["toppingOptions"];
+
+    if (rawSizes == null && rawToppings == null && itemData["options"] != null) {
+      try {
+        final opt = itemData["options"] is String
+            ? jsonDecode(itemData["options"])
+            : itemData["options"];
+        if (opt is Map) {
+          rawSizes = opt["sizes"];
+          rawToppings = opt["toppings"];
+        }
+      } catch (_) {}
+    }
+
     // 1. Initialize Size Options if provided by real database/API
-    if (itemData["sizes"] is List && (itemData["sizes"] as List).isNotEmpty) {
-      sizeOptions = (itemData["sizes"] as List).map((s) => Map<String, dynamic>.from(s)).toList();
-    } else if (itemData["sizeOptions"] is List && (itemData["sizeOptions"] as List).isNotEmpty) {
-      sizeOptions = (itemData["sizeOptions"] as List).map((s) => Map<String, dynamic>.from(s)).toList();
+    if (rawSizes is List) {
+      sizeOptions = rawSizes
+          .map((s) => {
+                "name": (s["name"] ?? s["tenKhauPhan"] ?? "").toString(),
+                "extra": (s["extra"] as num? ?? s["giaThem"] as num? ?? 0).toDouble(),
+              })
+          .where((s) => s["name"].toString().trim().isNotEmpty)
+          .toList();
     } else {
-      sizeOptions = [];
+      final name = (itemData["name"] ?? itemData["tenMonAn"] ?? "").toString().toLowerCase();
+      if (_isDrink(name)) {
+        sizeOptions = [
+          {"name": "Size Vừa (M)", "extra": 0.0},
+          {"name": "Size Lớn (L)", "extra": 6000.0},
+          {"name": "Size Nhỏ (S)", "extra": 0.0},
+        ];
+      } else {
+        sizeOptions = [
+          {"name": "Phần Tiêu Chuẩn", "extra": 0.0},
+          {"name": "Phần Lớn (Nhiều hơn)", "extra": 10000.0},
+        ];
+      }
+    }
+
+    if (sizeOptions.isNotEmpty) {
+      if (selectedOptionIndex < 0 || selectedOptionIndex >= sizeOptions.length) {
+        selectedOptionIndex = 0;
+      }
+    } else {
+      selectedOptionIndex = -1;
     }
 
     // 2. Initialize Topping Options if provided by real database/API
-    if (itemData["toppings"] is List && (itemData["toppings"] as List).isNotEmpty) {
-      toppingOptions = (itemData["toppings"] as List)
-          .map((t) => Map<String, dynamic>.from(t)..putIfAbsent("selected", () => false))
-          .toList();
-    } else if (itemData["toppingOptions"] is List && (itemData["toppingOptions"] as List).isNotEmpty) {
-      toppingOptions = (itemData["toppingOptions"] as List)
-          .map((t) => Map<String, dynamic>.from(t)..putIfAbsent("selected", () => false))
+    if (rawToppings is List) {
+      toppingOptions = rawToppings
+          .map((t) => {
+                "name": (t["name"] ?? t["tenTopping"] ?? "").toString(),
+                "extra": (t["extra"] as num? ?? t["giaThem"] as num? ?? 0).toDouble(),
+                "selected": false,
+              })
+          .where((t) => t["name"].toString().trim().isNotEmpty)
           .toList();
     } else {
-      toppingOptions = [];
+      final name = (itemData["name"] ?? itemData["tenMonAn"] ?? "").toString().toLowerCase();
+      if (_isDrink(name)) {
+        toppingOptions = [
+          {"name": "Trân châu đen", "extra": 5000.0, "selected": false},
+          {"name": "Trân châu trắng", "extra": 5000.0, "selected": false},
+          {"name": "Thạch nha đam", "extra": 5000.0, "selected": false},
+          {"name": "Pudding trứng", "extra": 7000.0, "selected": false},
+        ];
+      } else {
+        toppingOptions = [];
+      }
     }
   }
 
@@ -339,53 +390,6 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     return "${amount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ";
   }
 
-  String _getInitials(String name) {
-    if (name.trim().isEmpty) return "KH";
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-    return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
-  }
-
-  String _formatTimeAgo(String dateStr) {
-    if (dateStr.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(dateStr);
-      final now = DateTime.now();
-      final diff = now.difference(dt);
-      if (diff.inDays >= 30) {
-        final months = (diff.inDays / 30).floor();
-        return '$months tháng trước';
-      } else if (diff.inDays >= 7) {
-        final weeks = (diff.inDays / 7).floor();
-        return '$weeks tuần trước';
-      } else if (diff.inDays >= 1) {
-        return '${diff.inDays} ngày trước';
-      } else if (diff.inHours >= 1) {
-        return '${diff.inHours} giờ trước';
-      } else if (diff.inMinutes >= 1) {
-        return '${diff.inMinutes} phút trước';
-      } else {
-        return 'Vừa xong';
-      }
-    } catch (_) {
-      return dateStr.length > 10 ? dateStr.substring(0, 10) : dateStr;
-    }
-  }
-
-  List<ReviewModel> get _filteredReviews {
-    if (_selectedReviewFilter == "image") {
-      return _reviewsList.where((r) => r.image != null && r.image!.isNotEmpty).toList();
-    } else if (_selectedReviewFilter == "5star") {
-      return _reviewsList.where((r) => r.rating == 5).toList();
-    } else if (_selectedReviewFilter == "latest") {
-      final list = List<ReviewModel>.from(_reviewsList);
-      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return list;
-    }
-    return _reviewsList;
-  }
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.sizeOf(context);
@@ -711,248 +715,22 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                         Divider(color: TColor.borderOf(context), height: 1),
                         const SizedBox(height: 20),
 
-                        // Section 1: Lựa chọn khẩu phần (Rendered conditionally if sizeOptions is not empty)
-                        if (sizeOptions.isNotEmpty) ...[
-                          Row(
-                            children: [
-                              Text(
-                                "Lựa chọn khẩu phần",
-                                style: TextStyle(
-                                  color: TColor.primaryTextOf(context),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF2EC),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  "Bắt buộc",
-                                  style: TextStyle(
-                                    color: Color(0xFFFF4D00),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                "Chọn 1",
-                                style: TextStyle(
-                                  color: TColor.secondaryTextOf(context),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Column(
-                            children: List.generate(sizeOptions.length, (index) {
-                              final opt = sizeOptions[index];
-                              final isSelected = selectedOptionIndex == index;
-                              return GestureDetector(
-                                onTap: isSoldOut
-                                    ? null
-                                    : () {
-                                        setState(() => selectedOptionIndex = index);
-                                      },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: TColor.cardOf(context),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: isSelected && !isSoldOut ? const Color(0xFFFF4D00) : TColor.borderOf(context),
-                                      width: isSelected ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                            color: isSelected && !isSoldOut
-                                                ? const Color(0xFFFF4D00)
-                                                : TColor.secondaryTextOf(context),
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            opt["name"],
-                                            style: TextStyle(
-                                              color: TColor.primaryTextOf(context),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Text(
-                                        opt["extra"] == 0 ? "Miễn phí" : "+${_formatCurrency(opt['extra'])}",
-                                        style: TextStyle(
-                                          color: isSelected && !isSoldOut
-                                              ? const Color(0xFFFF4D00)
-                                              : TColor.secondaryTextOf(context),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // Section 2: Topping thêm (Rendered conditionally if toppingOptions is not empty)
-                        if (toppingOptions.isNotEmpty) ...[
-                          Row(
-                            children: [
-                              Text(
-                                "Topping thêm",
-                                style: TextStyle(
-                                  color: TColor.primaryTextOf(context),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2A2E3B) : const Color(0xFFF3F4F6),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  "Tùy chọn",
-                                  style: TextStyle(
-                                    color: TColor.secondaryTextOf(context),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                "Chọn nhiều",
-                                style: TextStyle(
-                                  color: TColor.secondaryTextOf(context),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Column(
-                            children: List.generate(toppingOptions.length, (index) {
-                              final top = toppingOptions[index];
-                              final isSelected = top["selected"] == true;
-                              return GestureDetector(
-                                onTap: isSoldOut
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          top["selected"] = !isSelected;
-                                        });
-                                      },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: TColor.cardOf(context),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: isSelected && !isSoldOut ? const Color(0xFFFF4D00) : TColor.borderOf(context),
-                                      width: isSelected ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                            color: isSelected && !isSoldOut
-                                                ? const Color(0xFFFF4D00)
-                                                : TColor.secondaryTextOf(context),
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            top["name"],
-                                            style: TextStyle(
-                                              color: TColor.primaryTextOf(context),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Text(
-                                        "+${_formatCurrency(top['extra'])}",
-                                        style: TextStyle(
-                                          color: isSelected && !isSoldOut
-                                              ? const Color(0xFFFF4D00)
-                                              : TColor.secondaryTextOf(context),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // Section 3: Ghi chú cho quán
-                        Text(
-                          "Ghi chú cho quán",
-                          style: TextStyle(
-                            color: TColor.primaryTextOf(context),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: noteController,
-                          enabled: !isSoldOut,
-                          style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13),
-                          decoration: InputDecoration(
-                            hintText: "Ghi chú cho quán (vd: ít mỡ hành, nước mắm ngọt, để riêng ớt...)",
-                            hintStyle: TextStyle(
-                              color: TColor.secondaryTextOf(context).withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                            filled: true,
-                            fillColor: TColor.cardOf(context),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: TColor.borderOf(context)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: TColor.borderOf(context)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Color(0xFFFF4D00)),
-                            ),
-                          ),
+                        // Customization: Khẩu phần, Topping & Ghi chú cho quán
+                        DishCustomizationSection(
+                          sizeOptions: sizeOptions,
+                          selectedOptionIndex: selectedOptionIndex,
+                          onSelectSize: (index) {
+                            setState(() => selectedOptionIndex = index);
+                          },
+                          toppingOptions: toppingOptions,
+                          onToggleTopping: (index, selected) {
+                            setState(() {
+                              toppingOptions[index]["selected"] = selected;
+                            });
+                          },
+                          noteController: noteController,
+                          isSoldOut: isSoldOut,
+                          formatCurrency: _formatCurrency,
                         ),
 
                         const SizedBox(height: 24),
@@ -1072,6 +850,18 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                     if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
                                       cart.registerRestaurant(id: resId, name: storeName, address: storeAddress);
                                     }
+
+                                    final selectedSizeName = sizeOptions.isNotEmpty && selectedOptionIndex >= 0 && selectedOptionIndex < sizeOptions.length
+                                        ? sizeOptions[selectedOptionIndex]["name"].toString()
+                                        : "";
+                                    final selectedToppingNames = toppingOptions.where((t) => t["selected"] == true).map((t) => t["name"].toString()).toList();
+                                    final dishNote = noteController.text.trim();
+
+                                    final itemNotes = [
+                                      if (selectedToppingNames.isNotEmpty) "Topping: ${selectedToppingNames.join(', ')}",
+                                      if (dishNote.isNotEmpty) dishNote,
+                                    ].join(" • ");
+
                                     cart.addToCart(
                                       CartItemModel(
                                         foodId: foodId,
@@ -1082,6 +872,8 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                         restaurantId: resId,
                                         restaurantName: storeName,
                                         restaurantAddress: storeAddress,
+                                        size: selectedSizeName,
+                                        note: itemNotes,
                                       ),
                                     );
                                     CustomToast.showSuccess(context, "Đã thêm $foodName (x$qty) vào giỏ hàng!");

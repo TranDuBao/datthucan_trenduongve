@@ -495,6 +495,7 @@ class _LoginViewState extends State<LoginView> {
         }
 
         // Áp dụng cơ chế Ghi nhớ đăng nhập
+        Globs.udBoolSet(false, Globs.isGuestMode);
         Globs.udBoolSet(_rememberMe, KKey.rememberMe);
         if (_rememberMe) {
           Globs.udBoolSet(true, Globs.userLogin);
@@ -567,6 +568,7 @@ class _LoginViewState extends State<LoginView> {
         }
 
         // Đăng nhập Google cũng đi qua cùng cơ chế ghi nhớ phiên
+        Globs.udBoolSet(false, Globs.isGuestMode);
         Globs.udBoolSet(_rememberMe, KKey.rememberMe);
         if (_rememberMe) {
           Globs.udBoolSet(true, Globs.userLogin);

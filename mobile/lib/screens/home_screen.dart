@@ -13,6 +13,7 @@ import '../widgets/route_info_card.dart';
 import '../widgets/food_stopover_sheet.dart';
 import '../widgets/active_stopover_order_card.dart';
 import '../widgets/distant_stores_sheet.dart';
+import '../widgets/guest_login_dialog.dart';
 import '../view/reservation/reservation_booking_view.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -856,6 +857,9 @@ class _OptimizedMapWidget extends StatelessWidget {
                 onTap: () {
                   final mapP = context.read<MapProvider>();
                   if (mapP.foodRouteOption == FoodRouteOption.dineIn) {
+                    if (GuestLoginDialog.checkGuestAndPrompt(context, featureName: "đặt bàn")) {
+                      return;
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(

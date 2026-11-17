@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Clock, User, Store, CreditCard, X, MapPin, CheckCircle } from 'lucide-react';
+import { ShoppingBag, Clock, User, Store, CreditCard, X, MapPin, CheckCircle, MessageSquare } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { apiFetch } from '../api/apiClient';
 import { getImageUrl, handleImageError, DEFAULT_IMAGE_PLACEHOLDER } from '../utils/imageUtils';
@@ -160,6 +160,46 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
             </div>
           </div>
 
+          {/* Customer Note Banner */}
+          {order.ghiChu && (
+            <div
+              style={{
+                background: '#fffbeb',
+                border: '1.5px solid #f59e0b',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+              }}
+            >
+              <div
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  background: '#fef3c7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '1px',
+                }}
+              >
+                <MessageSquare size={18} color="#d97706" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Ghi Chú Cho Quán:
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#78350f', marginTop: '4px', lineHeight: 1.5 }}>
+                  "{order.ghiChu}"
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Customer & Merchant Information Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div style={{ background: '#f1f5f9', padding: '14px', borderRadius: '10px' }}>
@@ -225,7 +265,28 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                               style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', background: '#f1f5f9' }}
                             />
                           </td>
-                          <td style={{ fontWeight: 600, color: '#0f172a' }}>{item.tenMonAn || item.monAn?.tenMonAn || `Món #${item.maMonAn}`}</td>
+                          <td style={{ fontWeight: 600, color: '#0f172a' }}>
+                            <div>{item.tenMonAn || item.monAn?.tenMonAn || `Món #${item.maMonAn}`}</div>
+                            {item.ghiChu && (
+                              <div
+                                style={{
+                                  fontSize: '11px',
+                                  color: '#b45309',
+                                  marginTop: '3px',
+                                  fontWeight: 600,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: '#fef3c7',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #fde68a',
+                                }}
+                              >
+                                <MessageSquare size={10} color="#d97706" /> {item.ghiChu}
+                              </div>
+                            )}
+                          </td>
                           <td style={{ textAlign: 'center', fontWeight: 700 }}>x{qty}</td>
                           <td style={{ textAlign: 'right', color: '#64748b' }}>{formatVND(price)}</td>
                           <td style={{ textAlign: 'right', fontWeight: 700, color: '#fc6011' }}>

@@ -27,6 +27,8 @@ import 'store_registration_view.dart';
 import 'support/support_center_view.dart';
 import 'widgets/store_approval_celebration_dialog.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/guest_login_dialog.dart';
+import '../login/login_view.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/support_provider.dart';
 
@@ -118,20 +120,22 @@ class _MoreViewState extends State<MoreView> {
   @override
   void initState() {
     super.initState();
-    locator<SocketService>().subscribe('store_registration_approved', _onStoreApprovedRealtime);
-    locator<SocketService>().subscribe('store_registration_rejected', _onStoreRejectedRealtime);
+    if (!UserRoleHelper.isGuest) {
+      locator<SocketService>().subscribe('store_registration_approved', _onStoreApprovedRealtime);
+      locator<SocketService>().subscribe('store_registration_rejected', _onStoreRejectedRealtime);
+      _fetchActiveOrdersCount();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<NotificationProvider>().refreshAll();
+        }
+      });
+    }
     locator<SocketService>().subscribe('about_us:updated', _onAboutUsUpdatedRealtime);
-
-    _fetchActiveOrdersCount();
     _fetchAboutUsVersion();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<NotificationProvider>().refreshAll();
-      }
-    });
   }
 
   Future<void> _fetchActiveOrdersCount() async {
+    if (UserRoleHelper.isGuest) return;
     final list = await OrderService.fetchMyOrders();
     if (mounted) {
       setState(() {
@@ -350,12 +354,16 @@ class _MoreViewState extends State<MoreView> {
       },
       {
         "index": "6",
-        "name": l10n.moreLogout,
-        "subtitle": l10n.moreLogoutSubtitle,
-        "icon": Icons.logout_rounded,
-        "iconBg": const Color(0xFF3D1B1B),
-        "iconColor": const Color(0xFFFF3D00),
-        "isDestructive": true,
+        "name": UserRoleHelper.isGuest
+            ? (lang.isEn ? "Login" : "Đăng nhập")
+            : l10n.moreLogout,
+        "subtitle": UserRoleHelper.isGuest
+            ? (lang.isEn ? "Log in to your account" : "Đăng nhập vào tài khoản của bạn")
+            : l10n.moreLogoutSubtitle,
+        "icon": UserRoleHelper.isGuest ? Icons.login_rounded : Icons.logout_rounded,
+        "iconBg": UserRoleHelper.isGuest ? const Color(0xFF1B2A3D) : const Color(0xFF3D1B1B),
+        "iconColor": UserRoleHelper.isGuest ? TColor.primary : const Color(0xFFFF3D00),
+        "isDestructive": !UserRoleHelper.isGuest,
       },
     ];
 
@@ -414,6 +422,12 @@ class _MoreViewState extends State<MoreView> {
                           child: IconButton(
                             padding: EdgeInsets.zero,
                             onPressed: () {
+                              if (GuestLoginDialog.checkGuestAndPrompt(
+                                context,
+                                featureName: lang.isEn ? "My Orders" : "Đơn hàng của tôi",
+                              )) {
+                                return;
+                              }
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const MyOrderView()),
@@ -487,12 +501,24 @@ class _MoreViewState extends State<MoreView> {
                           _showThemeBottomSheet(context);
                           break;
                         case "1":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "Payment Details" : "Thông tin thanh toán",
+                          )) {
+                            break;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const PaymentDetailsView()),
                           );
                           break;
                         case "2":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "My Orders" : "Đơn hàng của tôi",
+                          )) {
+                            break;
+                          }
                           await Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const OrderHistoryView()),
@@ -500,6 +526,12 @@ class _MoreViewState extends State<MoreView> {
                           _fetchActiveOrdersCount();
                           break;
                         case "reservation":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "Reservations" : "Đặt bàn",
+                          )) {
+                            break;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const ReservationListView()),
@@ -514,15 +546,33 @@ class _MoreViewState extends State<MoreView> {
                           context.read<NotificationProvider>().refreshAll();
                           break;
                         case "4":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "Vouchers & Offers" : "Voucher khuyến mãi",
+                          )) {
+                            break;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const InboxView()),
                           );
                           break;
                         case "become_store":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "Become a Partner Store" : "Đăng ký mở quán",
+                          )) {
+                            break;
+                          }
                           _handleBecomeStore();
                           break;
                         case "support":
+                          if (GuestLoginDialog.checkGuestAndPrompt(
+                            context,
+                            featureName: lang.isEn ? "Support Center" : "Trung tâm hỗ trợ",
+                          )) {
+                            break;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const SupportCenterView()),
@@ -535,7 +585,13 @@ class _MoreViewState extends State<MoreView> {
                           );
                           break;
                         case "6":
-                          ServiceCall.showLogoutDialog(context);
+                          if (UserRoleHelper.isGuest) {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(builder: (context) => const LoginView()),
+                            );
+                          } else {
+                            ServiceCall.showLogoutDialog(context);
+                          }
                           break;
                         default:
                       }

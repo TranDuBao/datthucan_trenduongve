@@ -20,6 +20,7 @@ import 'item_details_view.dart';
 import '../reservation/reservation_booking_view.dart';
 
 import '../../widgets/single_restaurant_warning_modal.dart';
+import '../../widgets/guest_login_dialog.dart';
 
 class RestaurantDetailView extends StatefulWidget {
   final Map restaurantObj;
@@ -585,6 +586,9 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                         margin: const EdgeInsets.only(bottom: 6),
                         child: OutlinedButton.icon(
                           onPressed: () {
+                            if (GuestLoginDialog.checkGuestAndPrompt(context, featureName: "đặt bàn")) {
+                              return;
+                            }
                             Navigator.push(
                               context,
                               MaterialPageRoute(

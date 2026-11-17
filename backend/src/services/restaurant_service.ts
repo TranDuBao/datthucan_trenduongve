@@ -9,6 +9,21 @@ export class RestaurantService {
   private danhMucRepo = AppDataSource.getRepository(DanhMucModel);
   private monAnRepo = AppDataSource.getRepository(MonAnModel);
 
+  private parseFoodOptions(raw: any) {
+    if (!raw) return { sizes: [], toppings: [], options: null };
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (parsed && typeof parsed === 'object') {
+        return {
+          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+          toppings: Array.isArray(parsed.toppings) ? parsed.toppings : [],
+          options: parsed,
+        };
+      }
+    } catch (_) {}
+    return { sizes: [], toppings: [], options: null };
+  }
+
   async getAllRestaurants() {
     const stores = await this.cuaHangRepo.createQueryBuilder('ch')
       .where('(ch.is_deleted IS NULL OR ch.is_deleted = false)')
@@ -257,6 +272,9 @@ export class RestaurantService {
             mota: i.moTa || '',
             dacTinh: i.dacTinh || '',
             dactinh: i.dacTinh || '',
+            sizes: this.parseFoodOptions(i.options).sizes,
+            toppings: this.parseFoodOptions(i.options).toppings,
+            options: this.parseFoodOptions(i.options).options,
           };
         }),
       };
@@ -428,6 +446,9 @@ function matchFoodQuery(targetText: string, query: string): boolean {
           mota: f.moTa || '',
           dacTinh: f.dacTinh || '',
           dactinh: f.dacTinh || '',
+          sizes: this.parseFoodOptions(f.options).sizes,
+          toppings: this.parseFoodOptions(f.options).toppings,
+          options: this.parseFoodOptions(f.options).options,
         });
         matchingFoodsMap.set(f.maQuan, list);
       }
@@ -463,6 +484,9 @@ function matchFoodQuery(targetText: string, query: string): boolean {
               mota: f.moTa || '',
               dacTinh: f.dacTinh || '',
               dactinh: f.dacTinh || '',
+              sizes: this.parseFoodOptions(f.options).sizes,
+              toppings: this.parseFoodOptions(f.options).toppings,
+              options: this.parseFoodOptions(f.options).options,
             });
             matchingFoodsMap.set(f.maQuan, list);
           }
@@ -507,6 +531,9 @@ function matchFoodQuery(targetText: string, query: string): boolean {
               mota: f.moTa || '',
               dacTinh: f.dacTinh || '',
               dactinh: f.dacTinh || '',
+              sizes: this.parseFoodOptions(f.options).sizes,
+              toppings: this.parseFoodOptions(f.options).toppings,
+              options: this.parseFoodOptions(f.options).options,
             });
             matchingFoodsMap.set(f.maQuan, list);
           }
@@ -691,6 +718,9 @@ function matchFoodQuery(targetText: string, query: string): boolean {
         mota: i.moTa || '',
         dacTinh: i.dacTinh || '',
         dactinh: i.dacTinh || '',
+        sizes: this.parseFoodOptions(i.options).sizes,
+        toppings: this.parseFoodOptions(i.options).toppings,
+        options: this.parseFoodOptions(i.options).options,
       };
     });
   }

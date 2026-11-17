@@ -38,13 +38,14 @@ export function normalizeOrderStatus(statusStr: string | null | undefined): stri
 }
 
 export interface CreatePreOrderDto {
-  items: { maMonAn: number; soLuong: number }[];
+  items: { maMonAn: number; soLuong: number; tenMonAn?: string; ghiChu?: string; size?: string }[];
   maQuan: number;
   thoiGianHenNhan: string;
   phuongThucThanhToan?: string;
   maVoucher?: number;
   maCodeVoucher?: string;
   maKhachHang?: number;
+  ghiChu?: string;
 }
 
 export class OrderService {
@@ -110,7 +111,7 @@ export class OrderService {
     for (const f of dbFoods) foodMap.set(f.maMonAn, f);
 
     let itemsSubTotal = 0;
-    const validatedItems: { maMonAn: number; tenMonAn: string; gia: number; soLuong: number }[] = [];
+    const validatedItems: { maMonAn: number; tenMonAn: string; gia: number; soLuong: number; ghiChu?: string }[] = [];
 
     for (const item of dto.items) {
       const dbFood = foodMap.get(item.maMonAn);
@@ -125,6 +126,8 @@ export class OrderService {
       }
 
       const realPrice = Number(dbFood.giaMonAn);
+      const clientPrice = Number((item as any).gia);
+      const effectivePrice = !isNaN(clientPrice) && clientPrice >= realPrice ? clientPrice : realPrice;
       const qty = Math.max(1, Number(item.soLuong) || 1);
 
       const currentStock = dbFood.soLuongMon !== null && dbFood.soLuongMon !== undefined ? Number(dbFood.soLuongMon) : 100;
@@ -132,13 +135,14 @@ export class OrderService {
         throw new Error(`Món ăn "${dbFood.tenMonAn}" chỉ còn ${currentStock} phần, không đủ số lượng đặt (${qty})`);
       }
 
-      itemsSubTotal += realPrice * qty;
+      itemsSubTotal += effectivePrice * qty;
 
       validatedItems.push({
         maMonAn: dbFood.maMonAn,
-        tenMonAn: dbFood.tenMonAn,
-        gia: realPrice,
+        tenMonAn: item.tenMonAn || dbFood.tenMonAn,
+        gia: effectivePrice,
         soLuong: qty,
+        ghiChu: item.ghiChu ? String(item.ghiChu).trim() : undefined,
       });
     }
 
@@ -175,6 +179,7 @@ export class OrderService {
         thoiGianHenNhan: pickupDate,
         loaiDonHang: 'PRE_ORDER',
         phuongThucThanhToan: dto.phuongThucThanhToan || 'PAYOS',
+        ghiChu: dto.ghiChu ? String(dto.ghiChu).trim() : undefined,
       });
 
       let savedOrder: DonHangModel;
@@ -208,6 +213,7 @@ export class OrderService {
           gia: item.gia,
           soLuong: item.soLuong,
           trangThaiMon: 'chưa làm',
+          ghiChu: item.ghiChu || undefined,
         })
       );
 
@@ -288,6 +294,7 @@ export class OrderService {
         thoiGianHenNhan: savedOrder.thoiGianHenNhan,
         itemsCount: validatedItems.length,
         status: savedOrder.trangThai,
+        ghiChu: savedOrder.ghiChu,
       });
 
       // Persist & Emit Notifications for New Order
@@ -551,6 +558,7 @@ export class OrderService {
           img: food?.img || '',
           image: food?.img || '',
           hinhAnh: food?.img || '',
+          ghiChu: item.ghiChu || '',
         };
       }),
     };

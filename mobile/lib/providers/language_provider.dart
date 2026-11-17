@@ -9,6 +9,7 @@ class LanguageProvider extends ChangeNotifier {
 
   Locale get locale => _locale;
   String get languageCode => _locale.languageCode;
+  bool get isEn => _locale.languageCode == 'en';
 
   LanguageProvider() {
     _loadLanguage();

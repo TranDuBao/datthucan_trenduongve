@@ -22,4 +22,7 @@ export class ChiTietDonHangModel {
 
   @Column({ name: 'trangthaimon', length: 50, default: 'chưa làm' })
   trangThaiMon: string;
+
+  @Column({ name: 'ghichu', type: 'text', nullable: true })
+  ghiChu?: string;
 }

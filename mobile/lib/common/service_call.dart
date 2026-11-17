@@ -76,6 +76,12 @@ class ServiceCall {
 
         // Tự động làm mới token nếu 401 Unauthorized
         if (response.statusCode == 401 && path != SVKey.svLogin && path != SVKey.svRefreshToken) {
+          // Nếu đang ở chế độ khách hoặc chưa đăng nhập, không logout và không hiển thị hết hạn phiên
+          if (Globs.udValueBool(Globs.isGuestMode) || !Globs.udValueBool(Globs.userLogin)) {
+            if (failure != null) failure("Unauthorized");
+            return;
+          }
+
           if (!_isRefreshing) {
             _isRefreshing = true;
             final refreshed = await refreshToken();
@@ -112,6 +118,9 @@ class ServiceCall {
   }
 
   static void logout({bool isExpired = false}) {
+    if (Globs.udValueBool(Globs.isGuestMode)) {
+      isExpired = false;
+    }
     final token = Globs.udValueString(KKey.authToken);
     final rToken = Globs.udValueString(KKey.refreshToken);
 
@@ -152,6 +161,7 @@ class ServiceCall {
     }
 
     Globs.udBoolSet(false, Globs.userLogin);
+    Globs.udBoolSet(false, Globs.isGuestMode);
     Globs.udRemove(Globs.userPayload);
     Globs.udRemove(KKey.authToken);
     Globs.udRemove(KKey.refreshToken);

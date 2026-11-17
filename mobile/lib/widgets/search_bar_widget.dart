@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../common/format_utils.dart';
+import '../common/user_role_helper.dart';
 import '../providers/map_provider.dart';
-import '../models/place_model.dart';
-import 'place_detail_sheet.dart';
 import 'notification_bell.dart';
+import 'food_search_suggestions_dropdown.dart';
+import 'place_search_suggestions_dropdown.dart';
+import 'guest_login_dialog.dart';
 
 class SearchBarWidget extends StatefulWidget {
   const SearchBarWidget({super.key});
@@ -20,10 +22,12 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
   late Animation<double> _fadeAnim;
   bool _originFocused = false;
   bool _destFocused = false;
+  bool _foodFocused = false;
   bool _isExpanded = true;
 
   final FocusNode _originFocus = FocusNode();
   final FocusNode _destFocus = FocusNode();
+  final FocusNode _foodFocus = FocusNode();
 
   @override
   void initState() {
@@ -35,13 +39,15 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _originFocus.addListener(_onFocusChange);
     _destFocus.addListener(_onFocusChange);
+    _foodFocus.addListener(_onFocusChange);
   }
 
   void _onFocusChange() {
     setState(() {
       _originFocused = _originFocus.hasFocus;
       _destFocused = _destFocus.hasFocus;
-      if (_originFocused || _destFocused) {
+      _foodFocused = _foodFocus.hasFocus;
+      if (_originFocused || _destFocused || _foodFocused) {
         _isExpanded = true;
       }
     });
@@ -52,6 +58,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     _animCtrl.dispose();
     _originFocus.dispose();
     _destFocus.dispose();
+    _foodFocus.dispose();
     super.dispose();
   }
 
@@ -62,7 +69,8 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
         final showList = _isExpanded &&
             (provider.showSuggestions ||
                 _originFocused ||
-                _destFocused);
+                _destFocused ||
+                _foodFocused);
 
         if (showList) {
           _animCtrl.forward();
@@ -82,7 +90,33 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   if (provider.showSuggestions)
                     FadeTransition(
                       opacity: _fadeAnim,
-                      child: _buildSuggestionsList(provider),
+                      child: PlaceSearchSuggestionsDropdown(
+                        provider: provider,
+                        isOriginActive: _originFocused,
+                        originFocus: _originFocus,
+                        destFocus: _destFocus,
+                      ),
+                    )
+                  else if (_foodFocused)
+                    FadeTransition(
+                      opacity: _fadeAnim,
+                      child: FoodSearchSuggestionsDropdown(
+                        query: provider.foodKeywordController.text,
+                        routeRestaurants: provider.routeRestaurants,
+                        onSelectKeyword: (kw) {
+                          provider.setFoodKeyword(kw);
+                          _foodFocus.unfocus();
+                          setState(() {
+                            _foodFocused = false;
+                          });
+                        },
+                        onDismiss: () {
+                          _foodFocus.unfocus();
+                          setState(() {
+                            _foodFocused = false;
+                          });
+                        },
+                      ),
                     )
                   else if ((_originFocused || _destFocused) &&
                       provider.suggestions.isEmpty)
@@ -342,6 +376,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 ),
                 TextField(
                   controller: provider.foodKeywordController,
+                  focusNode: _foodFocus,
                   style: GoogleFonts.outfit(
                     color: const Color(0xFF1C1C1E),
                     fontSize: 13,
@@ -360,10 +395,16 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 2),
                   ),
-                  onSubmitted: (v) => provider.setFoodKeyword(v),
+                  onSubmitted: (v) {
+                    _foodFocus.unfocus();
+                    provider.setFoodKeyword(v);
+                  },
                   onChanged: (v) {
+                    setState(() {});
                     if (v.isEmpty) {
                       provider.clearFoodKeyword();
+                    } else {
+                      provider.setFoodKeyword(v);
                     }
                   },
                 ),
@@ -372,7 +413,10 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
           ),
           if (provider.foodKeyword.isNotEmpty)
             GestureDetector(
-              onTap: provider.clearFoodKeyword,
+              onTap: () {
+                provider.clearFoodKeyword();
+                setState(() {});
+              },
               child: Container(
                 width: 22,
                 height: 22,
@@ -511,7 +555,13 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => provider.changeFoodRouteOption(option),
+        onTap: () {
+          if (option == FoodRouteOption.dineIn && UserRoleHelper.isGuest) {
+            GuestLoginDialog.checkGuestAndPrompt(context, featureName: "đặt bàn");
+            return;
+          }
+          provider.changeFoodRouteOption(option);
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -580,111 +630,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     );
   }
 
-  Widget _buildSuggestionsList(MapProvider provider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF171B26) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? const Color(0xFF232836) : const Color(0xFFE2E8F0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      constraints: const BoxConstraints(maxHeight: 300),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: provider.isSearching
-            ? _buildSearchLoadingIndicator(isDark)
-            : provider.suggestions.isEmpty
-                ? _buildNoResultsPlaceholder(isDark)
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shrinkWrap: true,
-                    itemCount: provider.suggestions.length,
-                    separatorBuilder: (_, __) => Divider(
-                      color: isDark
-                          ? const Color(0xFF232836)
-                          : const Color(0xFFF1F5F9),
-                      height: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      final place = provider.suggestions[index];
-                      return _buildSuggestionItem(place, provider, isDark);
-                    },
-                  ),
-      ),
-    );
-  }
 
-  Widget _buildSearchLoadingIndicator(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              color: Color(0xFFFC6011),
-              strokeWidth: 2,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Đang tìm kiếm...',
-            style: GoogleFonts.outfit(
-              color: isDark ? Colors.white70 : const Color(0xFF64748B),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoResultsPlaceholder(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            color: isDark ? Colors.white30 : const Color(0xFF94A3B8),
-            size: 28,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Không tìm thấy địa điểm nào',
-            style: GoogleFonts.outfit(
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Hãy gõ tiếng Việt có dấu đầy đủ (Ví dụ: Đại học Công nghiệp, Gò Vấp, Quận 1)',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              color: isDark ? Colors.white60 : const Color(0xFF64748B),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildQuickOptions(MapProvider provider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -887,71 +833,5 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
     );
   }
 
-  Widget _buildSuggestionItem(PlaceModel place, MapProvider provider, bool isDark) {
-    return InkWell(
-      onTap: () {
-        _originFocus.unfocus();
-        _destFocus.unfocus();
-        provider.dismissSuggestions();
 
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          isScrollControlled: true,
-          builder: (_) => PlaceDetailSheet(
-            place: place,
-            provider: provider,
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFC6011).withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.location_on_rounded,
-                color: Color(0xFFFC6011),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    place.name,
-                    style: GoogleFonts.outfit(
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    place.address,
-                    style: GoogleFonts.outfit(
-                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                      fontSize: 11,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

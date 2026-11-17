@@ -14,6 +14,8 @@ class CartItemModel {
   final int restaurantId;
   final String restaurantName;
   final String restaurantAddress;
+  final String size;
+  final String note;
 
   CartItemModel({
     required this.foodId,
@@ -24,14 +26,22 @@ class CartItemModel {
     required this.restaurantId,
     this.restaurantName = '',
     this.restaurantAddress = '',
+    this.size = '',
+    this.note = '',
   });
 
   Map<String, dynamic> toJson() {
+    String finalName = foodName;
+    if (size.isNotEmpty) {
+      finalName = '$foodName ($size)';
+    }
     return {
       'maMonAn': foodId,
-      'tenMonAn': foodName,
+      'tenMonAn': finalName,
       'gia': price,
       'soLuong': quantity,
+      'size': size,
+      'ghiChu': note,
     };
   }
 }
@@ -53,6 +63,7 @@ class OrderServiceModel {
   final double? refundAmount;
   final List<dynamic> items;
   final String paymentMethod;
+  final String? note;
 
   OrderServiceModel({
     required this.orderId,
@@ -71,6 +82,7 @@ class OrderServiceModel {
     this.refundAmount,
     this.items = const [],
     this.paymentMethod = 'PAYOS',
+    this.note,
   });
 
   factory OrderServiceModel.fromJson(Map<String, dynamic> json) {
@@ -91,6 +103,7 @@ class OrderServiceModel {
       refundAmount: (json['refundAmount'] ?? json['refund']?['soTienHoan'] as num?)?.toDouble(),
       items: json['items'] ?? json['chiTietDonHang'] ?? [],
       paymentMethod: (json['phuongThucThanhToan'] ?? json['paymentMethod'] ?? json['payment']?['phuongThucThanhToan'] ?? 'PAYOS').toString(),
+      note: json['ghiChu'] ?? json['note'],
     );
   }
 }
@@ -104,6 +117,7 @@ class OrderService {
     required String paymentMethod,
     String? voucherCode,
     int? voucherId,
+    String? note,
   }) async {
     try {
       final token = Globs.udValueString(KKey.authToken);
@@ -116,6 +130,7 @@ class OrderService {
         'phuongThucThanhToan': paymentMethod,
         if (voucherCode != null && voucherCode.isNotEmpty) 'maCodeVoucher': voucherCode,
         if (voucherId != null) 'maVoucher': voucherId,
+        if (note != null && note.trim().isNotEmpty) 'ghiChu': note.trim(),
       });
 
       final response = await http.post(

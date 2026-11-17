@@ -124,12 +124,30 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE cuahang ALTER COLUMN img TYPE TEXT;`);
         await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS khoadenngay TIMESTAMP NULL;`);
         await safeQuery(`ALTER TABLE taikhoan ADD COLUMN IF NOT EXISTS lydokhoa TEXT NULL;`);
+        await safeQuery(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
+        await safeQuery(`ALTER TABLE chitietdonhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
+        await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS options TEXT NULL;`);
 
         // Ensure auto-increment sequence default for all primary keys (prevents NOT NULL constraint violation on production deployment)
         const ensureAutoIncrementSequence = async (tableName: string, colName: string) => {
           const seqName = `${tableName}_${colName}_seq`;
           await safeQuery(`CREATE SEQUENCE IF NOT EXISTS ${seqName};`);
-          await safeQuery(`SELECT setval('${seqName}', COALESCE((SELECT MAX(${colName}) FROM ${tableName}), 0) + 1, false);`);
+          let maxSql = `SELECT MAX(${colName}) FROM ${tableName}`;
+          if (tableName === 'monan') {
+            maxSql = `SELECT GREATEST(
+              COALESCE((SELECT MAX(mamonan) FROM monan), 0),
+              COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0),
+              COALESCE((SELECT MAX(mamon) FROM danhgiamon), 0)
+            )`;
+          } else if (tableName === 'donhang') {
+            maxSql = `SELECT GREATEST(
+              COALESCE((SELECT MAX(madonhang) FROM donhang), 0),
+              COALESCE((SELECT MAX(madonhang) FROM chitietdonhang), 0),
+              COALESCE((SELECT MAX(madonhang) FROM danhgia), 0),
+              COALESCE((SELECT MAX(madonhang) FROM thanhtoan), 0)
+            )`;
+          }
+          await safeQuery(`SELECT setval('${seqName}', COALESCE((${maxSql}), 0) + 1, false);`);
           await safeQuery(`ALTER TABLE ${tableName} ALTER COLUMN ${colName} SET DEFAULT nextval('${seqName}');`);
         };
 

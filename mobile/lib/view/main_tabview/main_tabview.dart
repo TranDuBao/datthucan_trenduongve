@@ -13,6 +13,8 @@ import '../offer/offer_view.dart';
 import '../profile/profile_view.dart';
 import '../restaurant_owner/restaurant_owner_main_view.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/language_provider.dart';
+import '../../widgets/guest_login_dialog.dart';
 
 class MainTabView extends StatefulWidget {
   final int initialTab;
@@ -43,7 +45,7 @@ class MainTabViewState extends State<MainTabView> {
     super.initState();
     selctTab = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted && !UserRoleHelper.isGuest) {
         context.read<NotificationProvider>().initialize();
       }
     });
@@ -80,6 +82,14 @@ class MainTabViewState extends State<MainTabView> {
 
   void changeTab(int tab, {bool popToRoot = true}) {
     if (mounted) {
+      if (tab == 3 && UserRoleHelper.isGuest) {
+        final isEn = context.read<LanguageProvider>().isEn;
+        GuestLoginDialog.checkGuestAndPrompt(
+          context,
+          featureName: isEn ? "Profile" : "Hồ sơ cá nhân",
+        );
+        return;
+      }
       // Pop the tab we are leaving back to its root so it doesn't get stuck on a sub-screen
       if (selctTab >= 0 && selctTab < _navigatorKeys.length && selctTab != tab) {
         _navigatorKeys[selctTab].currentState?.popUntil((route) => route.isFirst);
@@ -94,6 +104,14 @@ class MainTabViewState extends State<MainTabView> {
   }
 
   void _onTabTapped(int tab) {
+    if (tab == 3 && UserRoleHelper.isGuest) {
+      final isEn = context.read<LanguageProvider>().isEn;
+      GuestLoginDialog.checkGuestAndPrompt(
+        context,
+        featureName: isEn ? "Profile" : "Hồ sơ cá nhân",
+      );
+      return;
+    }
     if (selctTab == tab) {
       // Tap on the current active tab: pop back to root of this tab
       _navigatorKeys[tab].currentState?.popUntil((route) => route.isFirst);

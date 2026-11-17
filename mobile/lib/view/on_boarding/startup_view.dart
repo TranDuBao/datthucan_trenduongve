@@ -162,6 +162,8 @@ class _StartupViewState extends State<StartupView>
       } else {
         targetPage = const MainTabView();
       }
+    } else if (Globs.udValueBool(Globs.isGuestMode)) {
+      targetPage = const MainTabView();
     } else {
       targetPage = const WelcomeView();
     }
