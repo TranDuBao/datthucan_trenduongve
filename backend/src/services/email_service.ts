@@ -4,6 +4,7 @@ import https from 'https';
 export class EmailService {
   private static instance: EmailService;
   private transporter: Transporter | null = null;
+  private cachedBrevoSender: string | null = null;
 
   private constructor() {
     this.initTransporter();
@@ -65,6 +66,51 @@ export class EmailService {
     }
   }
 
+  private async getBrevoVerifiedSender(apiKey: string): Promise<string | null> {
+    if (this.cachedBrevoSender) {
+      return this.cachedBrevoSender;
+    }
+    return new Promise((resolve) => {
+      const options = {
+        hostname: 'api.brevo.com',
+        port: 443,
+        path: '/v3/senders',
+        method: 'GET',
+        headers: {
+          'api-key': apiKey.trim(),
+          Accept: 'application/json',
+        },
+        timeout: 5000,
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            const activeSender = data.senders?.find((s: any) => s.active);
+            if (activeSender && activeSender.email) {
+              this.cachedBrevoSender = activeSender.email;
+              resolve(activeSender.email);
+              return;
+            }
+          } catch {
+            // bỏ qua lỗi parse json
+          }
+          resolve(null);
+        });
+      });
+
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(null);
+      });
+      req.end();
+    });
+  }
+
   private async sendViaBrevo(params: {
     apiKey: string;
     fromEmail: string;
@@ -74,9 +120,18 @@ export class EmailService {
     subject: string;
     htmlContent: string;
   }): Promise<{ success: boolean; message?: string }> {
+    let effectiveFromEmail = params.fromEmail;
+    // Nếu địa chỉ gửi là mặc định chưa xác thực trên Brevo, tự động lấy verified sender từ chính tài khoản Brevo
+    if (!effectiveFromEmail || effectiveFromEmail.includes('foodroute.vn')) {
+      const verified = await this.getBrevoVerifiedSender(params.apiKey);
+      if (verified) {
+        effectiveFromEmail = verified;
+      }
+    }
+
     return new Promise((resolve) => {
       const postData = JSON.stringify({
-        sender: { name: params.fromName, email: params.fromEmail },
+        sender: { name: params.fromName, email: effectiveFromEmail },
         to: [{ email: params.toEmail, name: params.toName || params.toEmail }],
         subject: params.subject,
         htmlContent: params.htmlContent,
