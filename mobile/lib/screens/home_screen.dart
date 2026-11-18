@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    'Đang tìm lộ trình tối ưu...',
+                    context.l10n.homeRouteFinding,
                     style: GoogleFonts.outfit(
                       color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 14,
@@ -562,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 16),
               Text(
-                'Không có quán trong 800m',
+                context.l10n.homeNoStoresWithin800m,
                 style: GoogleFonts.outfit(
                   color: const Color(0xFF1E293B),
                   fontSize: 17,
@@ -579,39 +579,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     fontSize: 13.5,
                     height: 1.45,
                   ),
-                  children: [
-                    const TextSpan(text: 'Không tìm thấy quán có món '),
-                    TextSpan(
-                      text: '"$foodKw"',
-                      style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                    ),
-                    const TextSpan(text: ' tiện đường (≤ 800m).\n\n'),
-                    if (hasMultiple) ...[
-                      const TextSpan(text: 'Tìm thấy '),
-                      TextSpan(
-                        text: '${stores.length} quán',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
-                      ),
-                      const TextSpan(text: ' ở xa hơn (gần nhất lệch tuyến '),
-                      TextSpan(
-                        text: '${dist}m',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
-                      ),
-                      const TextSpan(text: '). Bạn có muốn xem danh sách để cân nhắc lộ trình không?'),
-                    ] else ...[
-                      const TextSpan(text: 'Có quán '),
-                      TextSpan(
-                        text: storeName,
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
-                      ),
-                      const TextSpan(text: ' ở xa hơn (lệch tuyến '),
-                      TextSpan(
-                        text: '${dist}m',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
-                      ),
-                      const TextSpan(text: '). Bạn có muốn xem lộ trình rẽ vào quán không?'),
-                    ],
-                  ],
+                  children: Localizations.localeOf(context).languageCode == 'en'
+                      ? [
+                          const TextSpan(text: 'No restaurants found serving '),
+                          TextSpan(
+                            text: '"$foodKw"',
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                          ),
+                          const TextSpan(text: ' along your route (≤ 800m).\n\n'),
+                          if (hasMultiple) ...[
+                            const TextSpan(text: 'Found '),
+                            TextSpan(
+                              text: '${stores.length} stores',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: ' further away (closest detours by '),
+                            TextSpan(
+                              text: '${dist}m',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: '). Would you like to view the list to consider your route?'),
+                          ] else ...[
+                            const TextSpan(text: 'There is '),
+                            TextSpan(
+                              text: storeName,
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: ' further away (detours by '),
+                            TextSpan(
+                              text: '${dist}m',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: '). Would you like to view the detour route?'),
+                          ],
+                        ]
+                      : [
+                          const TextSpan(text: 'Không tìm thấy quán có món '),
+                          TextSpan(
+                            text: '"$foodKw"',
+                            style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
+                          ),
+                          const TextSpan(text: ' tiện đường (≤ 800m).\n\n'),
+                          if (hasMultiple) ...[
+                            const TextSpan(text: 'Tìm thấy '),
+                            TextSpan(
+                              text: '${stores.length} quán',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: ' ở xa hơn (gần nhất lệch tuyến '),
+                            TextSpan(
+                              text: '${dist}m',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: '). Bạn có muốn xem danh sách để cân nhắc lộ trình không?'),
+                          ] else ...[
+                            const TextSpan(text: 'Có quán '),
+                            TextSpan(
+                              text: storeName,
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: ' ở xa hơn (lệch tuyến '),
+                            TextSpan(
+                              text: '${dist}m',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFFC6011)),
+                            ),
+                            const TextSpan(text: '). Bạn có muốn xem lộ trình rẽ vào quán không?'),
+                          ],
+                        ],
                 ),
               ),
               const SizedBox(height: 22),
@@ -629,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       child: Text(
-                        'Để sau',
+                        context.l10n.homeDismissLater,
                         style: GoogleFonts.outfit(
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w600,
@@ -655,7 +689,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         color: Colors.white,
                       ),
                       label: Text(
-                        hasMultiple ? 'Xem danh sách' : 'Xem lộ trình rẽ',
+                        hasMultiple ? context.l10n.homeViewStoreList : context.l10n.homeViewDetourRoute,
                         style: GoogleFonts.outfit(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,

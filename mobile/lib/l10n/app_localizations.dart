@@ -4603,6 +4603,60 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đơn từ {min}'**
   String voucherOrderFrom(String min);
+
+  /// No description provided for @homeRouteFinding.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tìm lộ trình tối ưu...'**
+  String get homeRouteFinding;
+
+  /// No description provided for @homeDineInSearchAlongRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'TÌM QUÁN ĐẶT BÀN TRÊN LỘ TRÌNH'**
+  String get homeDineInSearchAlongRoute;
+
+  /// No description provided for @homeDineInSearchHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm quán đặt bàn, món ăn trên lộ trình...'**
+  String get homeDineInSearchHint;
+
+  /// No description provided for @homeUseMyLocation.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng vị trí của tôi'**
+  String get homeUseMyLocation;
+
+  /// No description provided for @homeStartPointIsGps.
+  ///
+  /// In vi, this message translates to:
+  /// **'Điểm bắt đầu là vị trí GPS hiện tại'**
+  String get homeStartPointIsGps;
+
+  /// No description provided for @homeNoStoresWithin800m.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không có quán trong 800m'**
+  String get homeNoStoresWithin800m;
+
+  /// No description provided for @homeDismissLater.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get homeDismissLater;
+
+  /// No description provided for @homeViewStoreList.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem danh sách'**
+  String get homeViewStoreList;
+
+  /// No description provided for @homeViewDetourRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem lộ trình rẽ'**
+  String get homeViewDetourRoute;
 }
 
 class _AppLocalizationsDelegate

@@ -2,6 +2,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/color_extension.dart';
+import '../../common/food_translate_helper.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/category_service.dart';
 import '../../services/order_service.dart';
@@ -48,20 +49,20 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
   String _getCategoryDisplayName(BuildContext context, dynamic cat) {
     if (cat == null) return '';
     final isEn = Localizations.localeOf(context).languageCode == 'en';
-    final name = (cat['name'] ?? '').toString();
-    final nameEn = (cat['nameEn'] ?? cat['tenDanhMucEn'])?.toString();
-    final id = cat['id'];
-    if (id == 0 || name.toLowerCase() == 'tất cả' || name.toLowerCase() == 'all') {
+    final name = (cat['name'] ?? cat['tenDanhMuc'] ?? '').toString().trim();
+    final nameEn = (cat['nameEn'] ?? cat['tenDanhMucEn'])?.toString().trim();
+    final lower = name.toLowerCase();
+
+    if (lower == 'tất cả' || lower == 'all' || (cat['id'] == 0 && (lower.isEmpty || lower == 'tất cả' || lower == 'all'))) {
       return context.l10n.storeTabAll;
     }
-    if (name.toLowerCase() == 'thực đơn' || name.toLowerCase() == 'menu') {
+    if (lower == 'thực đơn' || lower == 'menu') {
       return context.l10n.storeTabMenu;
     }
     if (isEn) {
-      if (nameEn != null && nameEn.trim().isNotEmpty) {
-        return nameEn.trim();
+      if (nameEn != null && nameEn.isNotEmpty && nameEn.toLowerCase() != 'thực đơn') {
+        return nameEn;
       }
-      final lower = name.toLowerCase().trim();
       const fallbacks = {
         'kem': 'Ice Cream',
         'bánh sinh nhật': 'Birthday Cake',
@@ -233,15 +234,64 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
     }
     _sortMenuItems(allItems);
 
+    // Filter and sanitize categories from backend data
+    final List<dynamic> realCategories = [];
+    final Set<String> seenNames = {};
+
+    for (var cat in data) {
+      final rawId = cat['id'] ?? cat['maDanhMuc'];
+      final rawName = (cat['name'] ?? cat['tenDanhMuc'] ?? '').toString().trim();
+      final lowerName = rawName.toLowerCase();
+
+      // Skip invalid / placeholder / fallback categories
+      if (rawId == 0 ||
+          lowerName.isEmpty ||
+          lowerName == 'thực đơn' ||
+          lowerName == 'menu' ||
+          lowerName == 'tất cả' ||
+          lowerName == 'all') {
+        continue;
+      }
+
+      final items = cat['items'];
+      if (items is! List || items.isEmpty) {
+        continue;
+      }
+
+      if (seenNames.contains(lowerName)) {
+        continue;
+      }
+      seenNames.add(lowerName);
+
+      realCategories.add(cat);
+    }
+
     List<dynamic> fullCategories = [];
-    if (allItems.isNotEmpty || data.isNotEmpty) {
+    if (realCategories.isEmpty) {
+      if (allItems.isNotEmpty) {
+        fullCategories.add({
+          'id': 0,
+          'name': 'Tất cả',
+          'itemsCount': allItems.length,
+          'items': allItems,
+        });
+      }
+    } else if (realCategories.length == 1) {
+      fullCategories.add({
+        'id': realCategories.first['id'] ?? realCategories.first['maDanhMuc'] ?? 0,
+        'name': realCategories.first['name'] ?? realCategories.first['tenDanhMuc'] ?? 'Tất cả',
+        'nameEn': realCategories.first['nameEn'] ?? realCategories.first['tenDanhMucEn'],
+        'itemsCount': (realCategories.first['items'] as List).length,
+        'items': realCategories.first['items'],
+      });
+    } else {
       fullCategories.add({
         'id': 0,
         'name': 'Tất cả',
         'itemsCount': allItems.length,
         'items': allItems,
       });
-      fullCategories.addAll(data);
+      fullCategories.addAll(realCategories);
     }
 
     if (mounted) {
@@ -762,8 +812,8 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                         ),
                       const SizedBox(height: 16),
 
-                      // Category Tabs Scrollable Horizontal Bar
-                      if (categoriesWithItems.isNotEmpty)
+                      // Category Tabs Scrollable Horizontal Bar (only show if multiple categories exist to filter)
+                      if (categoriesWithItems.length > 1)
                         SizedBox(
                           height: 40,
                           child: ListView.builder(
@@ -941,9 +991,14 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        (Localizations.localeOf(context).languageCode == 'en' && (item['nameEn'] ?? item['tenMonAnEn']) != null && (item['nameEn'] ?? item['tenMonAnEn']).toString().trim().isNotEmpty)
-                                                            ? (item['nameEn'] ?? item['tenMonAnEn']).toString().trim()
-                                                            : (item['name'] ?? item['tenMonAn'] ?? ''),
+                                                        (() {
+                                                          final isEn = Localizations.localeOf(context).languageCode == 'en';
+                                                          final enName = (item['nameEn'] ?? item['tenMonAnEn'])?.toString().trim();
+                                                          final rawName = (item['name'] ?? item['tenMonAn'] ?? '').toString();
+                                                          return (isEn && enName != null && enName.isNotEmpty)
+                                                              ? enName
+                                                              : (isEn ? FoodTranslateHelper.translate(rawName) : rawName);
+                                                        })(),
                                                         style: TextStyle(
                                                           color: isSoldOut
                                                               ? TColor.secondaryTextOf(context)

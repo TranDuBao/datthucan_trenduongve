@@ -2619,4 +2619,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String voucherOrderFrom(String min) {
     return 'Orders from $min';
   }
+
+  @override
+  String get homeRouteFinding => 'Finding optimal route...';
+
+  @override
+  String get homeDineInSearchAlongRoute =>
+      'FIND DINE-IN RESTAURANTS ALONG ROUTE';
+
+  @override
+  String get homeDineInSearchHint =>
+      'Search dine-in restaurants, dishes along route...';
+
+  @override
+  String get homeUseMyLocation => 'Use my current location';
+
+  @override
+  String get homeStartPointIsGps => 'Start point is current GPS location';
+
+  @override
+  String get homeNoStoresWithin800m => 'No stores within 800m';
+
+  @override
+  String get homeDismissLater => 'Later';
+
+  @override
+  String get homeViewStoreList => 'View store list';
+
+  @override
+  String get homeViewDetourRoute => 'View detour route';
 }

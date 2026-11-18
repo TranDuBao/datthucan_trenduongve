@@ -355,7 +355,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   children: [
                     Text(
                       provider.foodRouteOption == FoodRouteOption.dineIn
-                          ? 'TÌM QUÁN ĐẶT BÀN TRÊN LỘ TRÌNH'
+                          ? context.l10n.homeDineInSearchAlongRoute
                           : context.l10n.homeFoodSearchAlongRoute,
                       style: GoogleFonts.outfit(
                         color: const Color(0xFFFC6011),
@@ -384,7 +384,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   ),
                   decoration: InputDecoration(
                     hintText: provider.foodRouteOption == FoodRouteOption.dineIn
-                        ? 'Tìm quán đặt bàn, món ăn trên lộ trình...'
+                        ? context.l10n.homeDineInSearchHint
                         : context.l10n.homeFoodSearchHint,
                     hintStyle: GoogleFonts.outfit(
                       color: const Color(0xFFC7C7CC),
@@ -684,7 +684,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Dùng vị trí của tôi',
+                            context.l10n.homeUseMyLocation,
                             style: GoogleFonts.outfit(
                               color: const Color(0xFFFC6011),
                               fontSize: 13,
@@ -692,7 +692,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                             ),
                           ),
                           Text(
-                            'Điểm bắt đầu là vị trí GPS hiện tại',
+                            context.l10n.homeStartPointIsGps,
                             style: GoogleFonts.outfit(
                               color: isDark ? Colors.white60 : const Color(0xFF64748B),
                               fontSize: 11,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/format_utils.dart';
 import '../common/color_extension.dart';
+import '../common/food_translate_helper.dart';
 import 'smart_network_image.dart';
 import '../common/food_image_helper.dart';
 
@@ -20,10 +21,15 @@ class MenuItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final name = mObj["name"]?.toString() ??
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    final enName = (mObj["nameEn"] ?? mObj["tenMonAnEn"])?.toString().trim();
+    final rawName = mObj["name"]?.toString() ??
         mObj["tenMonAn"]?.toString() ??
         mObj["title"]?.toString() ??
-        "Món Ăn";
+        (isEn ? "Food Item" : "Món Ăn");
+    final name = (isEn && enName != null && enName.isNotEmpty)
+        ? enName
+        : (isEn ? FoodTranslateHelper.translate(rawName) : rawName);
 
     final rateVal = (mObj["rate"] ?? mObj["diemDanhGiaTB"] ?? mObj["diemDanhGia"] ?? mObj["rating"] ?? 0.0).toString();
     final double ratingNum = double.tryParse(rateVal) ?? 0.0;

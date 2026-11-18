@@ -133,6 +133,36 @@ class _MenuItemsViewState extends State<MenuItemsView> {
     return list;
   }
 
+  String _getHeaderTitle(BuildContext context) {
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    final en = (widget.mObj["nameEn"] ?? widget.mObj["tenDanhMucEn"])?.toString().trim();
+    if (isEn && en != null && en.isNotEmpty) return en;
+    final rawName = (widget.mObj["name"] ?? widget.mObj["tenDanhMuc"] ?? "").toString().trim();
+    if (isEn && rawName.isNotEmpty) {
+      final lower = rawName.toLowerCase();
+      const fallbacks = {
+        'phở truyền thống': 'Traditional Pho',
+        'phở': 'Pho Noodles',
+        'nước uống & tráng miệng': 'Drinks & Desserts',
+        'cơm tấm đặc biệt': 'Special Broken Rice',
+        'cơm tấm': 'Broken Rice',
+        'cơm': 'Rice Dishes',
+        'bún bò huế': 'Hue Spicy Beef Noodles',
+        'bún bò': 'Beef Noodles',
+        'món ăn kèm': 'Side Dishes',
+        'món kèm & giải khát': 'Sides & Refreshments',
+        'kem': 'Ice Cream',
+        'bánh sinh nhật': 'Birthday Cake',
+        'bánh ngọt': 'Pastries & Cakes',
+        'cà phê': 'Coffee',
+        'trà sữa': 'Milk Tea',
+        'nước uống': 'Drinks',
+      };
+      if (fallbacks.containsKey(lower)) return fallbacks[lower]!;
+    }
+    return rawName.isNotEmpty ? rawName : (isEn ? "Store Menu" : "Thực Đơn Quán");
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartProv = context.watch<CartProvider>();
@@ -187,12 +217,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                           children: [
                             Expanded(
                               child: Text(
-                                (Localizations.localeOf(context).languageCode == 'en' &&
-                                        widget.mObj["tenDanhMucEn"] != null &&
-                                        widget.mObj["tenDanhMucEn"].toString().trim().isNotEmpty)
-                                    ? widget.mObj["tenDanhMucEn"].toString().trim()
-                                    : (widget.mObj["name"]?.toString() ??
-                                        (Localizations.localeOf(context).languageCode == 'en' ? "Store Menu" : "Thực Đơn Quán")),
+                                _getHeaderTitle(context),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

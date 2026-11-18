@@ -82,6 +82,7 @@ export const RestaurantMenu: React.FC = () => {
 
   const [form, setForm] = useState<{
     tenMonAn: string;
+    tenMonAnEn: string;
     maDanhMuc: string;
     giaMonAn: string;
     soLuongMon: string;
@@ -93,6 +94,7 @@ export const RestaurantMenu: React.FC = () => {
     toppings: DishOptionItem[];
   }>({
     tenMonAn: '',
+    tenMonAnEn: '',
     maDanhMuc: '',
     giaMonAn: '',
     soLuongMon: '100',
@@ -176,6 +178,7 @@ export const RestaurantMenu: React.FC = () => {
     const defaultCat = categories.length > 0 ? String(categories[0].maDanhMuc) : '';
     setForm({
       tenMonAn: '',
+      tenMonAnEn: '',
       maDanhMuc: defaultCat,
       giaMonAn: '',
       soLuongMon: '100',
@@ -215,6 +218,7 @@ export const RestaurantMenu: React.FC = () => {
 
     setForm({
       tenMonAn: food.tenMonAn || '',
+      tenMonAnEn: food.tenMonAnEn || food.tenmonan_en || food.nameEn || '',
       maDanhMuc: food.maDanhMuc ? String(food.maDanhMuc) : '',
       giaMonAn: String(food.giaMonAn || 0),
       soLuongMon: String(food.soLuongMon ?? 100),
@@ -283,6 +287,7 @@ export const RestaurantMenu: React.FC = () => {
 
       const payload = {
         tenMonAn: form.tenMonAn,
+        tenMonAnEn: form.tenMonAnEn.trim() || undefined,
         maDanhMuc: selectedCatId,
         giaMonAn: Number(form.giaMonAn),
         soLuongMon: Number(form.soLuongMon),
@@ -491,6 +496,11 @@ export const RestaurantMenu: React.FC = () => {
                             }}>Hết món</span>
                           )}
                         </div>
+                        {f.tenMonAnEn && (
+                          <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', fontWeight: 600 }}>
+                            🌐 {f.tenMonAnEn}
+                          </div>
+                        )}
                         {(f.moTa || f.mota) && (
                           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.moTa || f.mota}>
                             {f.moTa || f.mota}
@@ -600,6 +610,20 @@ export const RestaurantMenu: React.FC = () => {
               value={form.tenMonAn}
               onChange={(e) => setForm({ ...form, tenMonAn: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>Tên Món Ăn (Tiếng Anh - English)</span>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(Tùy chọn - hiển thị khi chuyển song ngữ)</span>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ví dụ: Strawberry Butter Cream Birthday Cake, Milk Tea..."
+              value={form.tenMonAnEn}
+              onChange={(e) => setForm({ ...form, tenMonAnEn: e.target.value })}
             />
           </div>
 

@@ -1540,5 +1540,14 @@
         "type": "String"
       }
     }
-  }
+  },
+  "homeRouteFinding": "Finding optimal route...",
+  "homeDineInSearchAlongRoute": "FIND DINE-IN RESTAURANTS ALONG ROUTE",
+  "homeDineInSearchHint": "Search dine-in restaurants, dishes along route...",
+  "homeUseMyLocation": "Use my current location",
+  "homeStartPointIsGps": "Start point is current GPS location",
+  "homeNoStoresWithin800m": "No stores within 800m",
+  "homeDismissLater": "Later",
+  "homeViewStoreList": "View store list",
+  "homeViewDetourRoute": "View detour route"
 }

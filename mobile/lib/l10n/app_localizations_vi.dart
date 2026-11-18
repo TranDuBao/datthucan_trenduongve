@@ -2560,4 +2560,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String voucherOrderFrom(String min) {
     return 'Đơn từ $min';
   }
+
+  @override
+  String get homeRouteFinding => 'Đang tìm lộ trình tối ưu...';
+
+  @override
+  String get homeDineInSearchAlongRoute => 'TÌM QUÁN ĐẶT BÀN TRÊN LỘ TRÌNH';
+
+  @override
+  String get homeDineInSearchHint =>
+      'Tìm quán đặt bàn, món ăn trên lộ trình...';
+
+  @override
+  String get homeUseMyLocation => 'Dùng vị trí của tôi';
+
+  @override
+  String get homeStartPointIsGps => 'Điểm bắt đầu là vị trí GPS hiện tại';
+
+  @override
+  String get homeNoStoresWithin800m => 'Không có quán trong 800m';
+
+  @override
+  String get homeDismissLater => 'Để sau';
+
+  @override
+  String get homeViewStoreList => 'Xem danh sách';
+
+  @override
+  String get homeViewDetourRoute => 'Xem lộ trình rẽ';
 }

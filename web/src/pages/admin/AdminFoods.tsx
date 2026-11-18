@@ -36,6 +36,7 @@ export const AdminFoods: React.FC = () => {
 
   const [form, setForm] = useState({
     tenMonAn: '',
+    tenMonAnEn: '',
     maDanhMuc: '',
     giaMonAn: '',
     soLuongMon: '100',
@@ -66,6 +67,7 @@ export const AdminFoods: React.FC = () => {
     setEditingFood(food);
     setForm({
       tenMonAn: food.tenMonAn || '',
+      tenMonAnEn: food.tenMonAnEn || food.tenmonan_en || food.nameEn || '',
       maDanhMuc: food.maDanhMuc ? String(food.maDanhMuc) : '',
       giaMonAn: String(food.giaMonAn || 0),
       soLuongMon: String(food.soLuongMon ?? 100),
@@ -82,6 +84,7 @@ export const AdminFoods: React.FC = () => {
         method: 'PUT',
         body: JSON.stringify({
           tenMonAn: form.tenMonAn,
+          tenMonAnEn: form.tenMonAnEn.trim() || undefined,
           maDanhMuc: form.maDanhMuc
             ? Number(form.maDanhMuc)
             : categories.length > 0
@@ -238,7 +241,14 @@ export const AdminFoods: React.FC = () => {
                       style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover' }}
                     />
                   </td>
-                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{f.tenMonAn}</td>
+                  <td style={{ fontWeight: 700, color: '#0f172a' }}>
+                    <div>{f.tenMonAn}</div>
+                    {f.tenMonAnEn && (
+                      <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', fontWeight: 600 }}>
+                        🌐 {f.tenMonAnEn}
+                      </div>
+                    )}
+                  </td>
                   <td><span className="badge badge-info">{getCategoryName(f)}</span></td>
                   <td><span className="badge badge-warning">Quán #{f.maQuan || 'Chung'}</span></td>
                   <td style={{ fontWeight: 700, color: '#fc6011' }}>{formatVND(f.giaMonAn)}</td>
@@ -275,6 +285,20 @@ export const AdminFoods: React.FC = () => {
               value={form.tenMonAn}
               onChange={(e) => setForm({ ...form, tenMonAn: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>Tên Món Ăn (Tiếng Anh - English)</span>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(Tùy chọn - hiển thị khi chuyển song ngữ)</span>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ví dụ: Broken Rice with Grilled Pork, Traditional Pho..."
+              value={form.tenMonAnEn}
+              onChange={(e) => setForm({ ...form, tenMonAnEn: e.target.value })}
             />
           </div>
 

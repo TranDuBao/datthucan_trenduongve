@@ -1540,5 +1540,14 @@
         "type": "String"
       }
     }
-  }
+  },
+  "homeRouteFinding": "Đang tìm lộ trình tối ưu...",
+  "homeDineInSearchAlongRoute": "TÌM QUÁN ĐẶT BÀN TRÊN LỘ TRÌNH",
+  "homeDineInSearchHint": "Tìm quán đặt bàn, món ăn trên lộ trình...",
+  "homeUseMyLocation": "Dùng vị trí của tôi",
+  "homeStartPointIsGps": "Điểm bắt đầu là vị trí GPS hiện tại",
+  "homeNoStoresWithin800m": "Không có quán trong 800m",
+  "homeDismissLater": "Để sau",
+  "homeViewStoreList": "Xem danh sách",
+  "homeViewDetourRoute": "Xem lộ trình rẽ"
 }

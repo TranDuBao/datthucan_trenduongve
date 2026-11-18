@@ -30,8 +30,33 @@ class CategoryModel {
   String localizedName(BuildContext context) {
     try {
       final isEn = Localizations.localeOf(context).languageCode == 'en';
-      if (isEn && nameEn != null && nameEn!.trim().isNotEmpty) {
-        return nameEn!.trim();
+      if (isEn) {
+        if (nameEn != null && nameEn!.trim().isNotEmpty) {
+          return nameEn!.trim();
+        }
+        final lower = name.toLowerCase().trim();
+        const fallbacks = {
+          'phở truyền thống': 'Traditional Pho',
+          'phở': 'Pho Noodles',
+          'nước uống & tráng miệng': 'Drinks & Desserts',
+          'cơm tấm đặc biệt': 'Special Broken Rice',
+          'cơm tấm': 'Broken Rice',
+          'cơm': 'Rice Dishes',
+          'bún bò huế': 'Hue Beef Noodles',
+          'bún bò': 'Beef Noodles',
+          'món ăn kèm': 'Side Dishes',
+          'món kèm & giải khát': 'Sides & Refreshments',
+          'kem': 'Ice Cream',
+          'bánh sinh nhật': 'Birthday Cake',
+          'bánh ngọt': 'Pastries & Cakes',
+          'cà phê': 'Coffee',
+          'trà sữa': 'Milk Tea',
+          'nước uống': 'Drinks',
+          'khai vị': 'Appetizers',
+        };
+        if (fallbacks.containsKey(lower)) {
+          return fallbacks[lower]!;
+        }
       }
     } catch (_) {}
     return name;

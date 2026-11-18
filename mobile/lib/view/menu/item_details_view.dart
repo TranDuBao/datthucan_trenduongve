@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../common/format_utils.dart';
+import '../../common/food_translate_helper.dart';
 import '../../common/color_extension.dart';
 import '../../models/review_model.dart';
 import '../../providers/cart_provider.dart';
@@ -359,9 +360,10 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
 
     final isEn = Localizations.localeOf(context).languageCode == 'en';
     final enName = (itemData["nameEn"] ?? itemData["tenMonAnEn"])?.toString().trim();
+    final rawFoodName = (itemData["name"] ?? itemData["tenMonAn"] ?? (isEn ? "Food Item" : "Món ăn lộ trình")).toString();
     final foodName = (isEn && enName != null && enName.isNotEmpty)
         ? enName
-        : (itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn lộ trình");
+        : (isEn ? FoodTranslateHelper.translate(rawFoodName) : rawFoodName);
     final imgUrl = FoodImageHelper.getFoodImage(itemData["image"] ?? itemData["img"] ?? itemData["hinhAnh"], foodName, id: itemData["id"] ?? itemData["maMonAn"] ?? 0);
     final rawDescEn = (itemData["moTaEn"] ?? itemData["motaEn"] ?? itemData["descEn"])?.toString().trim();
     final rawDescVi = (itemData["moTa"] ?? itemData["mota"] ?? itemData["description"])?.toString().trim();
