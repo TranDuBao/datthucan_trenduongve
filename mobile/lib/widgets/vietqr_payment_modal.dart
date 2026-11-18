@@ -445,37 +445,15 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
           'order:status_changed', _onSocketOrderStatusChanged);
     } catch (_) {}
 
-    // Hiển thị dialog đang hủy đơn để ngăn thao tác trùng
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: Color(0xFFFC6011), strokeWidth: 3),
-                SizedBox(height: 14),
-                Text('Đang xử lý hủy đơn...', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
     try {
       var res = await OrderService.cancelOrder(orderId, reason: 'Khách hủy thanh toán VietQR');
       final msg = res['message']?.toString() ?? '';
       if (msg.contains('thanh toán thành công') || msg.contains('chuyển khoản thành công')) {
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context); // Đóng loading dialog
-        }
         _isCancelling = false;
-        _handlePaymentSuccess();
+        if (mounted) {
+          setState(() {});
+          _handlePaymentSuccess();
+        }
         return;
       }
       if (res['success'] != true) {
@@ -484,10 +462,6 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
       }
     } catch (_) {}
 
-    if (mounted && Navigator.canPop(context)) {
-      Navigator.pop(context); // Đóng loading dialog
-    }
-
     try {
       if (mounted) {
         context.read<MapProvider>().cancelStopoverOrder();
@@ -495,8 +469,10 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
     } catch (_) {}
 
     if (mounted) {
-      Navigator.pop(context); // Đóng VietQRPaymentModal
-      OrderCancelledModal.show(context: context, orderId: orderId);
+      final rootNav = Navigator.of(context, rootNavigator: true);
+      // Đóng VietQRPaymentModal sạch sẽ
+      rootNav.pop();
+      OrderCancelledModal.show(context: rootNav.context, orderId: orderId);
     }
   }
 
@@ -567,7 +543,6 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
       },
       child: Container(
         constraints: BoxConstraints(maxHeight: media.height * 0.88),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: TColor.cardOf(context),
           borderRadius: const BorderRadius.only(
@@ -575,8 +550,48 @@ class _VietQRPaymentModalState extends State<VietQRPaymentModal>
             topRight: Radius.circular(24),
           ),
         ),
-        child: SingleChildScrollView(
-          child: _buildQrPaymentView(context, media, formattedAmount),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: _buildQrPaymentView(context, media, formattedAmount),
+            ),
+            if (_isCancelling)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: Center(
+                    child: Card(
+                      color: TColor.cardOf(context),
+                      elevation: 6,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(color: Color(0xFFFC6011), strokeWidth: 3),
+                            const SizedBox(height: 14),
+                            Text(
+                              context.l10n.orderCancellingProgress,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

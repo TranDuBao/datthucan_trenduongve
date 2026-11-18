@@ -137,7 +137,9 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => MenuItemsView(mObj: {
-                        "name": mObj.name,
+                        "name": mObj.localizedName(context),
+                        "tenDanhMuc": mObj.name,
+                        "tenDanhMucEn": mObj.nameEn,
                         "id": mObj.id,
                         "maQuan": mObj.maQuan,
                         "items": mObj.items,
@@ -203,7 +205,7 @@ class MenuCategoriesSectionWidget extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              mObj.name,
+                              mObj.localizedName(context),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

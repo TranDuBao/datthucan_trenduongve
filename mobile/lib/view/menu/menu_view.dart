@@ -373,6 +373,7 @@ class _MenuViewState extends State<MenuView> {
           maQuan: cat.maQuan,
           key: cat.key,
           name: cat.name,
+          nameEn: cat.nameEn,
           image: foodImg,
           itemsCount: actualCount,
           isHot: actualCount > 0,

@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import '../../common/format_utils.dart';
 import '../../common/color_extension.dart';
 import '../../common/globs.dart';
 import '../../common/locator.dart';
 import '../../common/service_call.dart';
 import '../../common/user_role_helper.dart';
+import '../../providers/notification_provider.dart';
 import '../../providers/restaurant_orders_provider.dart';
 import '../../services/restaurant_owner_service.dart';
 import '../../services/socket_service.dart';
@@ -26,9 +28,10 @@ class RestaurantOwnerMainView extends StatefulWidget {
   State<RestaurantOwnerMainView> createState() => _RestaurantOwnerMainViewState();
 }
 
-class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
+class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> with SingleTickerProviderStateMixin {
   final RestaurantOwnerService _service = locator<RestaurantOwnerService>();
   late RestaurantOrdersProvider _ordersProvider;
+  late AnimationController _refreshAnimController;
 
   int _selectTab = 0;
   bool _loading = false;
@@ -41,9 +44,18 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
   @override
   void initState() {
     super.initState();
+    _refreshAnimController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
     _ordersProvider = RestaurantOrdersProvider();
     _loadRestaurantData();
     locator<SocketService>().listenToMenuUpdates(_onMenuUpdated);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<NotificationProvider>().initialize();
+      }
+    });
   }
 
   void _onMenuUpdated(dynamic data) {
@@ -53,13 +65,21 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
 
   @override
   void dispose() {
+    _refreshAnimController.dispose();
     locator<SocketService>().offMenuUpdates(_onMenuUpdated);
     _ordersProvider.dispose();
     super.dispose();
   }
 
+  Future<void> _handleRefreshAll() async {
+    final f1 = _loadRestaurantData();
+    final f2 = _ordersProvider.refresh();
+    await Future.wait([f1, f2]);
+  }
+
   Future<void> _loadRestaurantData() async {
     setState(() => _loading = true);
+    _refreshAnimController.repeat();
     final token = Globs.udValueString(KKey.authToken);
 
     final headers = {
@@ -106,47 +126,108 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
     }
 
     if (mounted) {
+      _refreshAnimController.stop();
+      _refreshAnimController.reset();
       setState(() => _loading = false);
+      context.read<NotificationProvider>().fetchUnreadCount();
     }
   }
 
   void _showSwitchRoleDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.swap_horiz_rounded, color: Color(0xFF0284C7)),
-            SizedBox(width: 8),
-            Text('Chuyển giao diện', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text(
-          'Bạn sắp chuyển sang giao diện Khách Hàng để trải nghiệm ứng dụng.\n\nBạn có thể quay lại giao diện Cửa Hàng bất kỳ lúc nào qua thanh thông báo trên đỉnh màn hình hoặc trong mục Xem Thêm.',
-          style: TextStyle(fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: TColor.cardOf(context),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0F2FE),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                child: const Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 28,
+                  color: Color(0xFF0284C7),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Chuyển giao diện',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: TColor.primaryTextOf(context),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Bạn sắp chuyển sang giao diện Khách Hàng để trải nghiệm ứng dụng.\n\nBạn có thể quay lại giao diện Cửa Hàng bất kỳ lúc nào qua thanh thông báo trên đỉnh màn hình hoặc trong mục Xem Thêm.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: TColor.secondaryTextOf(context),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(
+                        'Hủy',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: TColor.primaryTextOf(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: const Color(0xFFFC6011),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const MainTabView()),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text(
+                        'Xác nhận chuyển',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const MainTabView()),
-                (route) => false,
-              );
-            },
-            child: const Text('Xác nhận chuyển', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -259,18 +340,31 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFC6011), size: 22),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  onPressed: _loadRestaurantData,
-                  tooltip: 'Làm mới dữ liệu',
+                RotationTransition(
+                  turns: _refreshAnimController,
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFC6011), size: 22),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: _loading ? null : _handleRefreshAll,
+                    tooltip: 'Làm mới dữ liệu',
+                  ),
                 ),
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert_rounded, color: TColor.secondaryTextOf(context), size: 22),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  color: isDark ? const Color(0xFF1E2430) : Colors.white,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                      width: 1,
+                    ),
+                  ),
                   onSelected: (val) {
                     if (val == 'switch') {
                       _showSwitchRoleDialog();
@@ -279,24 +373,52 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
                     }
                   },
                   itemBuilder: (ctx) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'switch',
                       child: Row(
                         children: [
-                          Icon(Icons.swap_horiz_rounded, size: 18, color: Color(0xFF0284C7)),
-                          SizedBox(width: 10),
-                          Text('Giao diện Khách hàng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF0284C7)),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            context.l10n.storeSwitchToCustomer,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: TColor.primaryTextOf(context),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     const PopupMenuDivider(height: 1),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'logout',
                       child: Row(
                         children: [
-                          Icon(Icons.logout_rounded, size: 18, color: Colors.redAccent),
-                          SizedBox(width: 10),
-                          Text('Đăng xuất tài khoản', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.logout_rounded, size: 16, color: Color(0xFFEF4444)),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            context.l10n.storeLogoutAccount,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -305,25 +427,24 @@ class _RestaurantOwnerMainViewState extends State<RestaurantOwnerMainView> {
                 const SizedBox(width: 4),
               ],
             ),
-            body: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFC6011)))
-                : IndexedStack(
-                    index: _selectTab,
-                    children: [
-                      const OwnerOrdersTab(),
-                      OwnerMenuTab(
-                        menu: _menu,
-                        categories: _categories,
-                        onRefresh: _loadRestaurantData,
-                      ),
-                      RestaurantVouchersView(maQuan: _maQuan),
-                      const RestaurantRevenueView(),
-                      RestaurantStoreProfileTab(
-                        storeProfile: _storeProfile,
-                        onProfileUpdated: _loadRestaurantData,
-                      ),
-                    ],
-                  ),
+            body: IndexedStack(
+              index: _selectTab,
+              children: [
+                const OwnerOrdersTab(),
+                OwnerMenuTab(
+                  menu: _menu,
+                  categories: _categories,
+                  onRefresh: _loadRestaurantData,
+                  isLoading: _loading,
+                ),
+                RestaurantVouchersView(maQuan: _maQuan),
+                const RestaurantRevenueView(),
+                RestaurantStoreProfileTab(
+                  storeProfile: _storeProfile,
+                  onProfileUpdated: _loadRestaurantData,
+                ),
+              ],
+            ),
             bottomNavigationBar: _buildBottomTabBar(context, ordersProvider),
             ),
           );

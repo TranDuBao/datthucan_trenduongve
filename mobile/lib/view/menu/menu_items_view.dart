@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../common/format_utils.dart';
 import '../../common/color_extension.dart';
 import '../../providers/cart_provider.dart';
 import '../../common_widget/menu_item_row.dart';
@@ -25,7 +26,12 @@ class _MenuItemsViewState extends State<MenuItemsView> {
   String searchQuery = "";
   int selectedFilterIndex = 0;
 
-  final List<String> filterTags = ["Tất cả", "Bán chạy", "4.5+", "Chuẩn bị nhanh"];
+  List<String> _getFilterTags(BuildContext context) => [
+    context.l10n.commonAll,
+    context.l10n.filterBestSeller,
+    "4.5+",
+    context.l10n.filterFastPrep,
+  ];
 
   @override
   void initState() {
@@ -181,7 +187,12 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                           children: [
                             Expanded(
                               child: Text(
-                                widget.mObj["name"]?.toString() ?? "Thực Đơn Quán",
+                                (Localizations.localeOf(context).languageCode == 'en' &&
+                                        widget.mObj["tenDanhMucEn"] != null &&
+                                        widget.mObj["tenDanhMucEn"].toString().trim().isNotEmpty)
+                                    ? widget.mObj["tenDanhMucEn"].toString().trim()
+                                    : (widget.mObj["name"]?.toString() ??
+                                        (Localizations.localeOf(context).languageCode == 'en' ? "Store Menu" : "Thực Đơn Quán")),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -191,32 +202,32 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            InkWell(
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) => RestaurantReviewsSheet(
-                                    restaurantId: storeId,
-                                    restaurantName: storeName,
-                                    averageRating: avgRating,
-                                    totalReviews: totalReviews,
+                            if (avgRating > 0) ...[
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) => RestaurantReviewsSheet(
+                                      restaurantId: storeId,
+                                      restaurantName: storeName,
+                                      averageRating: avgRating,
+                                      totalReviews: totalReviews,
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF9E6),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFFFE5A3)),
                                   ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF9E6),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFFFE5A3)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (avgRating > 0) ...[
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
                                       const Icon(Icons.star_rounded, color: Color(0xFFFFB800), size: 14),
                                       const SizedBox(width: 2),
                                       Text(
@@ -227,25 +238,16 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                    ] else ...[
-                                      const Text(
-                                        "Mới",
-                                        style: TextStyle(
-                                          color: Color(0xFFD97706),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
                                     ],
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "${menuItemsArr.length} món sẵn sàng phục vụ",
+                          context.l10n.dishesReadyToServe(menuItemsArr.length),
                           style: TextStyle(
                             color: TColor.secondaryTextOf(context),
                             fontSize: 11,
@@ -333,7 +335,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                   style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 14),
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    hintText: "Tìm kiếm món ngon...",
+                    hintText: context.l10n.searchDishesHint,
                     hintStyle: TextStyle(color: TColor.secondaryTextOf(context), fontSize: 13),
                     prefixIcon: Icon(Icons.search_rounded, color: TColor.secondaryTextOf(context), size: 20),
                     suffixIcon: searchQuery.isNotEmpty
@@ -351,45 +353,50 @@ class _MenuItemsViewState extends State<MenuItemsView> {
             const SizedBox(height: 8),
 
             // 3. Horizontal Filter Tag Chips
-            SizedBox(
-              height: 34,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filterTags.length,
-                itemBuilder: (context, index) {
-                  final isSelected = selectedFilterIndex == index;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedFilterIndex = index;
-                      });
+            Builder(
+              builder: (context) {
+                final tags = _getFilterTags(context);
+                return SizedBox(
+                  height: 34,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: tags.length,
+                    itemBuilder: (context, index) {
+                      final isSelected = selectedFilterIndex == index;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedFilterIndex = index;
+                          });
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? TColor.primary
+                                : (isDark ? const Color(0xFF232734) : const Color(0xFFF3F4F6)),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? TColor.primary : TColor.borderOf(context),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            tags[index],
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : TColor.primaryTextOf(context),
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
                     },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? TColor.primary
-                            : (isDark ? const Color(0xFF232734) : const Color(0xFFF3F4F6)),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? TColor.primary : TColor.borderOf(context),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        filterTags[index],
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : TColor.primaryTextOf(context),
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 12),
@@ -412,7 +419,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                "Không tìm thấy món ăn phù hợp",
+                                context.l10n.noMatchingDishesTitle,
                                 style: TextStyle(
                                   color: TColor.primaryTextOf(context),
                                   fontSize: 15,
@@ -421,7 +428,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "Vui lòng thử tìm với từ khóa khác",
+                                context.l10n.noMatchingDishesSubtitle,
                                 style: TextStyle(
                                   color: TColor.secondaryTextOf(context),
                                   fontSize: 12,

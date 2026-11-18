@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../l10n/app_localizations.dart';
 import '../common/format_utils.dart';
-import '../common/globs.dart';
 import '../common/vietqr_banks.dart';
 import '../common_widget/smart_network_image.dart';
 import '../services/order_service.dart';
+import 'refund_confirmation_dialogs.dart';
 
 /// Card hiển thị chi tiết tiến trình hoàn tiền và tài khoản nhận tiền của đơn hàng đã hủy
 class OrderRefundStatusCard extends StatefulWidget {
@@ -131,34 +132,13 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Xác nhận đã nhận tiền',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 17),
-        ),
-        content: Text(
-          'Bạn đã kiểm tra tài khoản ngân hàng và xác nhận đã nhận đủ số tiền ${FormatUtils.formatCurrency(widget.order.refundAmount ?? widget.order.totalAmount)} từ quán?',
-          style: GoogleFonts.outfit(fontSize: 13.5, color: const Color(0xFF334155)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Chưa', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF16A34A),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('Đúng, đã nhận đủ', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
+    final amount = (widget.order.refundAmount ?? widget.order.totalAmount).toDouble();
+    final orderCode = '#DH${widget.order.orderId}';
+    final confirmed = await RefundConfirmReceivedDialog.show(
+      context,
+      amount: amount,
+      orderCode: orderCode,
+      isDark: widget.isDark,
     );
 
     if (confirmed != true) return;
@@ -199,66 +179,18 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
       return;
     }
 
-    final reasonCtrl = TextEditingController();
-    final shouldDispute = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Báo chưa nhận được tiền',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 17, color: const Color(0xFFDC2626)),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Nếu bạn đã kiểm tra tài khoản mà vẫn chưa thấy biến động số dư, vui lòng cho quán biết lý do để tiến hành tra soát ngân hàng:',
-              style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF475569)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Ví dụ: Đã qua 30 phút nhưng tài khoản chưa có tiền về, nhờ quán kiểm tra lại mã FT...',
-                hintStyle: GoogleFonts.outfit(fontSize: 12.5, color: const Color(0xFF94A3B8)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-              style: GoogleFonts.outfit(fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Đóng', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: const Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (reasonCtrl.text.trim().isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Vui lòng nhập lý do khiếu nại')),
-                );
-                return;
-              }
-              Navigator.pop(ctx, true);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('Gửi khiếu nại', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
+    final amount = (widget.order.refundAmount ?? widget.order.totalAmount).toDouble();
+    final orderCode = '#DH${widget.order.orderId}';
+    final disputeReason = await RefundDisputeDialog.show(
+      context,
+      amount: amount,
+      orderCode: orderCode,
+      isDark: widget.isDark,
     );
 
-    if (shouldDispute != true) return;
+    if (disputeReason == null || disputeReason.trim().isEmpty) return;
 
-    final reason = reasonCtrl.text.trim();
+    final reason = disputeReason.trim();
     setState(() => _isSubmitting = true);
     final res = await OrderService.customerConfirmRefund(
       refundId: refundId,
@@ -272,9 +204,9 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
       widget.order.refundStatus = 'TRANH_CHAP';
       widget.order.refundDisputeReason = reason;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFFD97706),
-          content: Text('Đã gửi khiếu nại thành công. Quán sẽ tra soát lại với ngân hàng!'),
+        SnackBar(
+          backgroundColor: const Color(0xFFD97706),
+          content: Text(context.l10n.complaintSentSuccess),
         ),
       );
       widget.onStatusUpdated?.call();
@@ -282,7 +214,7 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
-          content: Text(res['message'] ?? 'Lỗi khi gửi khiếu nại'),
+          content: Text(res['message'] ?? context.l10n.complaintSentError),
         ),
       );
     }
@@ -491,7 +423,7 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Bạn đã báo chưa nhận được tiền. Quán và Admin đang kiểm tra lại giao dịch với ngân hàng.',
+                      context.l10n.complaintWaitingNotice,
                       style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFFB91C1C)),
                     ),
                     if (order.refundDisputeReason != null && order.refundDisputeReason!.isNotEmpty) ...[
@@ -641,7 +573,7 @@ class _OrderRefundStatusCardState extends State<OrderRefundStatusCard> {
                           InkWell(
                             onTap: widget.onEditBank,
                             child: Text(
-                              'Đổi STK',
+                              context.l10n.changeBankAccount,
                               style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFFC6011)),
                             ),
                           ),

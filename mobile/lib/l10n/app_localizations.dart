@@ -4015,6 +4015,594 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đơn #{orderCode} • {storeName}'**
   String stopoverMarkerOrderBadge(String orderCode, String storeName);
+
+  /// No description provided for @homeLocatingTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang xác định vị trí...'**
+  String get homeLocatingTitle;
+
+  /// No description provided for @homeLocatingSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng chờ trong giây lát'**
+  String get homeLocatingSubtitle;
+
+  /// No description provided for @homeTapMapABHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm bản đồ để đặt điểm A → B'**
+  String get homeTapMapABHint;
+
+  /// No description provided for @recentDestinationsCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} điểm đến gần nhất'**
+  String recentDestinationsCount(int count);
+
+  /// No description provided for @searchTypePlacePlaceholder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gõ tên địa điểm để tìm kiếm...'**
+  String get searchTypePlacePlaceholder;
+
+  /// No description provided for @clearText.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xóa'**
+  String get clearText;
+
+  /// No description provided for @stopoverSelectAtLeastOneToast.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng tích chọn ít nhất 1 món để đặt ghé lấy'**
+  String get stopoverSelectAtLeastOneToast;
+
+  /// No description provided for @stopoverDetourMeters.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lệch tuyến {dist}m'**
+  String stopoverDetourMeters(int dist);
+
+  /// No description provided for @stopoverRightOnRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngay trên tuyến'**
+  String get stopoverRightOnRoute;
+
+  /// No description provided for @stopoverPrepTime.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuẩn bị ~{minutes} phút'**
+  String stopoverPrepTime(int minutes);
+
+  /// No description provided for @stopoverFoodAlongRoute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Món ăn tiện đường ({count})'**
+  String stopoverFoodAlongRoute(int count);
+
+  /// No description provided for @stopoverSelectCheckHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tích chọn món • Nhấn để xem chi tiết'**
+  String get stopoverSelectCheckHint;
+
+  /// No description provided for @stopoverStockLeft.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {stock}'**
+  String stopoverStockLeft(int stock);
+
+  /// No description provided for @stopoverSoldOut.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hết hàng'**
+  String get stopoverSoldOut;
+
+  /// No description provided for @stopoverMaxStockReached.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đạt giới hạn số lượng còn lại'**
+  String get stopoverMaxStockReached;
+
+  /// No description provided for @stopoverNoItemsSelected.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa chọn món nào'**
+  String get stopoverNoItemsSelected;
+
+  /// No description provided for @stopoverViewStoreMenu.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem Menu Quán'**
+  String get stopoverViewStoreMenu;
+
+  /// No description provided for @stopoverOrderPickup.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt Món Ghé Lấy'**
+  String get stopoverOrderPickup;
+
+  /// No description provided for @stopoverReserveTable.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt Bàn Tại Quán'**
+  String get stopoverReserveTable;
+
+  /// No description provided for @stopoverLoginRequiredCustom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng đăng nhập tài khoản để đặt món ghé lấy trên lộ trình của bạn.'**
+  String get stopoverLoginRequiredCustom;
+
+  /// No description provided for @itemFreshCooked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chế biến tươi nóng'**
+  String get itemFreshCooked;
+
+  /// No description provided for @itemSuspended.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạm ngưng'**
+  String get itemSuspended;
+
+  /// No description provided for @itemStockPortions.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {count} phần'**
+  String itemStockPortions(int count);
+
+  /// No description provided for @itemSoldPortions.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã bán {count} phần'**
+  String itemSoldPortions(int count);
+
+  /// No description provided for @itemOutOfStockUpper.
+  ///
+  /// In vi, this message translates to:
+  /// **'HẾT MÓN'**
+  String get itemOutOfStockUpper;
+
+  /// No description provided for @itemOutOfStock.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hết món'**
+  String get itemOutOfStock;
+
+  /// No description provided for @itemTempOutOfStock.
+  ///
+  /// In vi, this message translates to:
+  /// **'Món ăn tạm hết hàng'**
+  String get itemTempOutOfStock;
+
+  /// No description provided for @itemStockLimitWarning.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số lượng trong kho chỉ còn {count} món'**
+  String itemStockLimitWarning(int count);
+
+  /// No description provided for @refundViaVietQR.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tiền qua VietQR:'**
+  String get refundViaVietQR;
+
+  /// No description provided for @changeBankAccount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi STK'**
+  String get changeBankAccount;
+
+  /// No description provided for @reportNotReceivedTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Báo chưa nhận được tiền'**
+  String get reportNotReceivedTitle;
+
+  /// No description provided for @reportNotReceivedDesc.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nếu bạn đã kiểm tra tài khoản mà vẫn chưa thấy biến động số dư, vui lòng cho quán biết lý do để tiến hành tra soát ngân hàng:'**
+  String get reportNotReceivedDesc;
+
+  /// No description provided for @reportNotReceivedHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ví dụ: Đã qua 30 phút nhưng tài khoản chưa có tiền về, nhờ quán kiểm tra lại mã FT...'**
+  String get reportNotReceivedHint;
+
+  /// No description provided for @sendComplaintBtn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi khiếu nại'**
+  String get sendComplaintBtn;
+
+  /// No description provided for @complaintSentSuccess.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi khiếu nại thành công. Quán sẽ tra soát lại với ngân hàng!'**
+  String get complaintSentSuccess;
+
+  /// No description provided for @complaintSentError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lỗi khi gửi khiếu nại'**
+  String get complaintSentError;
+
+  /// No description provided for @complaintWaitingNotice.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đã báo chưa nhận được tiền. Quán và Admin đang kiểm tra lại giao dịch với ngân hàng.'**
+  String get complaintWaitingNotice;
+
+  /// No description provided for @cancelledOrdersBadge.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} đơn đã hủy'**
+  String cancelledOrdersBadge(int count);
+
+  /// No description provided for @noCancelledOrders.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có đơn hàng nào bị hủy'**
+  String get noCancelledOrders;
+
+  /// No description provided for @orderRefundingBanner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang hoàn tiền: {amount}'**
+  String orderRefundingBanner(String amount);
+
+  /// No description provided for @orderRefundDisputedBanner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang khiếu nại hoàn tiền: {amount}'**
+  String orderRefundDisputedBanner(String amount);
+
+  /// No description provided for @storeSwitchToCustomer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giao diện Khách hàng'**
+  String get storeSwitchToCustomer;
+
+  /// No description provided for @storeLogoutAccount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng xuất tài khoản'**
+  String get storeLogoutAccount;
+
+  /// No description provided for @storeOperatingHoursTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thời gian mở cửa quán'**
+  String get storeOperatingHoursTitle;
+
+  /// No description provided for @storeTodayHours.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay: {hours}'**
+  String storeTodayHours(String hours);
+
+  /// No description provided for @storeViewWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem tuần'**
+  String get storeViewWeek;
+
+  /// No description provided for @storeEditProfile.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa hồ sơ'**
+  String get storeEditProfile;
+
+  /// No description provided for @storeHoursModalTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lịch Hoạt Động Quán'**
+  String get storeHoursModalTitle;
+
+  /// No description provided for @dayMonday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Hai'**
+  String get dayMonday;
+
+  /// No description provided for @dayTuesday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Ba'**
+  String get dayTuesday;
+
+  /// No description provided for @dayWednesday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Tư'**
+  String get dayWednesday;
+
+  /// No description provided for @dayThursday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Năm'**
+  String get dayThursday;
+
+  /// No description provided for @dayFriday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Sáu'**
+  String get dayFriday;
+
+  /// No description provided for @daySaturday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thứ Bảy'**
+  String get daySaturday;
+
+  /// No description provided for @daySunday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chủ Nhật'**
+  String get daySunday;
+
+  /// No description provided for @itemAddBtn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm'**
+  String get itemAddBtn;
+
+  /// No description provided for @filterBestSeller.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bán chạy'**
+  String get filterBestSeller;
+
+  /// No description provided for @filterFastPrep.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuẩn bị nhanh'**
+  String get filterFastPrep;
+
+  /// No description provided for @dishesReadyToServe.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} món sẵn sàng phục vụ'**
+  String dishesReadyToServe(int count);
+
+  /// No description provided for @searchDishesHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm kiếm món ngon...'**
+  String get searchDishesHint;
+
+  /// No description provided for @noMatchingDishesTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy món ăn phù hợp'**
+  String get noMatchingDishesTitle;
+
+  /// No description provided for @noMatchingDishesSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vui lòng thử tìm với từ khóa khác'**
+  String get noMatchingDishesSubtitle;
+
+  /// No description provided for @itemRemainingCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn lại {count}'**
+  String itemRemainingCount(int count);
+
+  /// No description provided for @storePromotions.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khuyến mãi từ quán'**
+  String get storePromotions;
+
+  /// No description provided for @portionsRemaining.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {count} phần'**
+  String portionsRemaining(int count);
+
+  /// No description provided for @voucherGetCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lấy mã'**
+  String get voucherGetCode;
+
+  /// No description provided for @voucherCollected.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lấy'**
+  String get voucherCollected;
+
+  /// No description provided for @dishOrderNow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt ngay'**
+  String get dishOrderNow;
+
+  /// No description provided for @dishCustomizationPortion.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lựa chọn khẩu phần'**
+  String get dishCustomizationPortion;
+
+  /// No description provided for @dishCustomizationRequired.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt buộc'**
+  String get dishCustomizationRequired;
+
+  /// No description provided for @dishCustomizationFree.
+  ///
+  /// In vi, this message translates to:
+  /// **'Miễn phí'**
+  String get dishCustomizationFree;
+
+  /// No description provided for @dishCustomizationChooseOne.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn 1'**
+  String get dishCustomizationChooseOne;
+
+  /// No description provided for @dishCustomizationToppings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Topping thêm'**
+  String get dishCustomizationToppings;
+
+  /// No description provided for @dishCustomizationOptional.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tùy chọn'**
+  String get dishCustomizationOptional;
+
+  /// No description provided for @dishCustomizationChooseMultiple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn nhiều'**
+  String get dishCustomizationChooseMultiple;
+
+  /// No description provided for @dishNoteForStore.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ghi chú cho quán'**
+  String get dishNoteForStore;
+
+  /// No description provided for @dishNoteForStoreHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ghi chú cho quán (vd: ít ngọt, không cay...)'**
+  String get dishNoteForStoreHint;
+
+  /// No description provided for @dishSoldPortions.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã bán {count} phần'**
+  String dishSoldPortions(int count);
+
+  /// No description provided for @dishReviewsAndRatings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đánh giá & Nhận xét'**
+  String get dishReviewsAndRatings;
+
+  /// No description provided for @dishReviewCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} nhận xét'**
+  String dishReviewCount(int count);
+
+  /// No description provided for @dishReviewsBasedOn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dựa trên {count} đánh giá thực tế'**
+  String dishReviewsBasedOn(int count);
+
+  /// No description provided for @dishNoReviewsYet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có đánh giá nào'**
+  String get dishNoReviewsYet;
+
+  /// No description provided for @dishFilterAllReviews.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tất cả ({count})'**
+  String dishFilterAllReviews(int count);
+
+  /// No description provided for @dishFilterWithPhotos.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có hình ảnh ({count})'**
+  String dishFilterWithPhotos(int count);
+
+  /// No description provided for @dishFilterFiveStar.
+  ///
+  /// In vi, this message translates to:
+  /// **'5 sao ({count})'**
+  String dishFilterFiveStar(int count);
+
+  /// No description provided for @dishFilterLatest.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mới nhất'**
+  String get dishFilterLatest;
+
+  /// No description provided for @dishNoMatchingReviews.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có đánh giá nào phù hợp'**
+  String get dishNoMatchingReviews;
+
+  /// No description provided for @dishViewAllReviews.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem tất cả {count} đánh giá'**
+  String dishViewAllReviews(int count);
+
+  /// No description provided for @dishVerifiedPurchase.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã mua món'**
+  String get dishVerifiedPurchase;
+
+  /// No description provided for @dishSatisfiedPct.
+  ///
+  /// In vi, this message translates to:
+  /// **'{pct}% Hài lòng'**
+  String dishSatisfiedPct(int pct);
+
+  /// No description provided for @dishNotSatisfied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không hài lòng'**
+  String get dishNotSatisfied;
+
+  /// No description provided for @dishStoreReply.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phản hồi từ chủ quán:'**
+  String get dishStoreReply;
+
+  /// No description provided for @foodNameEnLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên món ăn (Tiếng Anh)'**
+  String get foodNameEnLabel;
+
+  /// No description provided for @foodNameEnHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập tên món ăn bằng tiếng Anh'**
+  String get foodNameEnHint;
+
+  /// No description provided for @foodDescEnLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mô tả món ăn (Tiếng Anh)'**
+  String get foodDescEnLabel;
+
+  /// No description provided for @foodDescEnHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mô tả món ăn bằng tiếng Anh'**
+  String get foodDescEnHint;
+
+  /// No description provided for @voucherDiscountMax.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giảm {pct}% (Tối đa {max})'**
+  String voucherDiscountMax(int pct, String max);
+
+  /// No description provided for @voucherOrderFrom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đơn từ {min}'**
+  String voucherOrderFrom(String min);
 }
 
 class _AppLocalizationsDelegate

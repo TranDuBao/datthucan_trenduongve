@@ -14,6 +14,9 @@ export class MonAnModel {
   @Column({ name: 'tenmonan', length: 150 })
   tenMonAn: string;
 
+  @Column({ name: 'tenmonan_en', length: 200, nullable: true })
+  tenMonAnEn?: string;
+
   @Column({ name: 'giamonan', type: 'decimal', precision: 12, scale: 2 })
   giaMonAn: number;
 
@@ -34,6 +37,9 @@ export class MonAnModel {
 
   @Column({ name: 'mota', type: 'text', nullable: true })
   moTa?: string;
+
+  @Column({ name: 'mota_en', type: 'text', nullable: true })
+  moTaEn?: string;
 
   @Column({ name: 'dactinh', type: 'text', nullable: true })
   dacTinh?: string;

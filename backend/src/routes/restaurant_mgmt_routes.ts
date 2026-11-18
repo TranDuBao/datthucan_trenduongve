@@ -35,6 +35,7 @@ router.get('/menu/:id/reviews', controller.getFoodReviews as any);
 router.post('/menu', controller.createFoodItem as any);
 router.put('/menu/:id', controller.updateFoodItem as any);
 router.delete('/menu/:id', controller.deleteFoodItem as any);
+router.post('/menu/:id/restore', controller.restoreFoodItem as any);
 
 router.get('/profile', controller.getStoreProfile as any);
 router.put('/profile', controller.updateStoreProfile as any);
@@ -45,6 +46,7 @@ router.get('/vouchers/:id', voucherController.getVoucherById as any);
 router.post('/vouchers', voucherController.createVoucher as any);
 router.put('/vouchers/:id', voucherController.updateVoucher as any);
 router.patch('/vouchers/:id/status', voucherController.toggleVoucherStatus as any);
+router.patch('/vouchers/:id/toggle', voucherController.toggleVoucherStatus as any);
 router.delete('/vouchers/:id', voucherController.deleteVoucher as any);
 
 // Store Reservation Management Endpoints

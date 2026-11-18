@@ -298,10 +298,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 {order.tenQuan || order.cuaHang?.tenQuan || `Nhà hàng #${order.maQuan}`}
               </div>
               <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                Địa chỉ: {order.cuaHang?.diaChi || 'Trụ sở cửa hàng'}
+                Địa chỉ: {order.cuaHang?.diaChi || order.diaChiQuan || 'Trụ sở cửa hàng'}
               </div>
               <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                SDT: {order.cuaHang?.sdt || '—'}
+                SDT: {order.cuaHang?.sdt || order.sdtQuan || order.cuaHang?.soDienThoai || 'Chưa cập nhật'}
               </div>
             </div>
           </div>

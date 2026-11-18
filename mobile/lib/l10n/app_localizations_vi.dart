@@ -2209,4 +2209,355 @@ class AppLocalizationsVi extends AppLocalizations {
   String stopoverMarkerOrderBadge(String orderCode, String storeName) {
     return 'Đơn #$orderCode • $storeName';
   }
+
+  @override
+  String get homeLocatingTitle => 'Đang xác định vị trí...';
+
+  @override
+  String get homeLocatingSubtitle => 'Vui lòng chờ trong giây lát';
+
+  @override
+  String get homeTapMapABHint => 'Chạm bản đồ để đặt điểm A → B';
+
+  @override
+  String recentDestinationsCount(int count) {
+    return '$count điểm đến gần nhất';
+  }
+
+  @override
+  String get searchTypePlacePlaceholder => 'Gõ tên địa điểm để tìm kiếm...';
+
+  @override
+  String get clearText => 'Xóa';
+
+  @override
+  String get stopoverSelectAtLeastOneToast =>
+      'Vui lòng tích chọn ít nhất 1 món để đặt ghé lấy';
+
+  @override
+  String stopoverDetourMeters(int dist) {
+    return 'Lệch tuyến ${dist}m';
+  }
+
+  @override
+  String get stopoverRightOnRoute => 'Ngay trên tuyến';
+
+  @override
+  String stopoverPrepTime(int minutes) {
+    return 'Chuẩn bị ~$minutes phút';
+  }
+
+  @override
+  String stopoverFoodAlongRoute(int count) {
+    return 'Món ăn tiện đường ($count)';
+  }
+
+  @override
+  String get stopoverSelectCheckHint => 'Tích chọn món • Nhấn để xem chi tiết';
+
+  @override
+  String stopoverStockLeft(int stock) {
+    return 'Còn $stock';
+  }
+
+  @override
+  String get stopoverSoldOut => 'Hết hàng';
+
+  @override
+  String get stopoverMaxStockReached => 'Đã đạt giới hạn số lượng còn lại';
+
+  @override
+  String get stopoverNoItemsSelected => 'Chưa chọn món nào';
+
+  @override
+  String get stopoverViewStoreMenu => 'Xem Menu Quán';
+
+  @override
+  String get stopoverOrderPickup => 'Đặt Món Ghé Lấy';
+
+  @override
+  String get stopoverReserveTable => 'Đặt Bàn Tại Quán';
+
+  @override
+  String get stopoverLoginRequiredCustom =>
+      'Vui lòng đăng nhập tài khoản để đặt món ghé lấy trên lộ trình của bạn.';
+
+  @override
+  String get itemFreshCooked => 'Chế biến tươi nóng';
+
+  @override
+  String get itemSuspended => 'Tạm ngưng';
+
+  @override
+  String itemStockPortions(int count) {
+    return 'Còn $count phần';
+  }
+
+  @override
+  String itemSoldPortions(int count) {
+    return 'Đã bán $count phần';
+  }
+
+  @override
+  String get itemOutOfStockUpper => 'HẾT MÓN';
+
+  @override
+  String get itemOutOfStock => 'Hết món';
+
+  @override
+  String get itemTempOutOfStock => 'Món ăn tạm hết hàng';
+
+  @override
+  String itemStockLimitWarning(int count) {
+    return 'Số lượng trong kho chỉ còn $count món';
+  }
+
+  @override
+  String get refundViaVietQR => 'Hoàn tiền qua VietQR:';
+
+  @override
+  String get changeBankAccount => 'Đổi STK';
+
+  @override
+  String get reportNotReceivedTitle => 'Báo chưa nhận được tiền';
+
+  @override
+  String get reportNotReceivedDesc =>
+      'Nếu bạn đã kiểm tra tài khoản mà vẫn chưa thấy biến động số dư, vui lòng cho quán biết lý do để tiến hành tra soát ngân hàng:';
+
+  @override
+  String get reportNotReceivedHint =>
+      'Ví dụ: Đã qua 30 phút nhưng tài khoản chưa có tiền về, nhờ quán kiểm tra lại mã FT...';
+
+  @override
+  String get sendComplaintBtn => 'Gửi khiếu nại';
+
+  @override
+  String get complaintSentSuccess =>
+      'Đã gửi khiếu nại thành công. Quán sẽ tra soát lại với ngân hàng!';
+
+  @override
+  String get complaintSentError => 'Lỗi khi gửi khiếu nại';
+
+  @override
+  String get complaintWaitingNotice =>
+      'Bạn đã báo chưa nhận được tiền. Quán và Admin đang kiểm tra lại giao dịch với ngân hàng.';
+
+  @override
+  String cancelledOrdersBadge(int count) {
+    return '$count đơn đã hủy';
+  }
+
+  @override
+  String get noCancelledOrders => 'Chưa có đơn hàng nào bị hủy';
+
+  @override
+  String orderRefundingBanner(String amount) {
+    return 'Đang hoàn tiền: $amount';
+  }
+
+  @override
+  String orderRefundDisputedBanner(String amount) {
+    return 'Đang khiếu nại hoàn tiền: $amount';
+  }
+
+  @override
+  String get storeSwitchToCustomer => 'Giao diện Khách hàng';
+
+  @override
+  String get storeLogoutAccount => 'Đăng xuất tài khoản';
+
+  @override
+  String get storeOperatingHoursTitle => 'Thời gian mở cửa quán';
+
+  @override
+  String storeTodayHours(String hours) {
+    return 'Hôm nay: $hours';
+  }
+
+  @override
+  String get storeViewWeek => 'Xem tuần';
+
+  @override
+  String get storeEditProfile => 'Sửa hồ sơ';
+
+  @override
+  String get storeHoursModalTitle => 'Lịch Hoạt Động Quán';
+
+  @override
+  String get dayMonday => 'Thứ Hai';
+
+  @override
+  String get dayTuesday => 'Thứ Ba';
+
+  @override
+  String get dayWednesday => 'Thứ Tư';
+
+  @override
+  String get dayThursday => 'Thứ Năm';
+
+  @override
+  String get dayFriday => 'Thứ Sáu';
+
+  @override
+  String get daySaturday => 'Thứ Bảy';
+
+  @override
+  String get daySunday => 'Chủ Nhật';
+
+  @override
+  String get itemAddBtn => 'Thêm';
+
+  @override
+  String get filterBestSeller => 'Bán chạy';
+
+  @override
+  String get filterFastPrep => 'Chuẩn bị nhanh';
+
+  @override
+  String dishesReadyToServe(int count) {
+    return '$count món sẵn sàng phục vụ';
+  }
+
+  @override
+  String get searchDishesHint => 'Tìm kiếm món ngon...';
+
+  @override
+  String get noMatchingDishesTitle => 'Không tìm thấy món ăn phù hợp';
+
+  @override
+  String get noMatchingDishesSubtitle => 'Vui lòng thử tìm với từ khóa khác';
+
+  @override
+  String itemRemainingCount(int count) {
+    return 'Còn lại $count';
+  }
+
+  @override
+  String get storePromotions => 'Khuyến mãi từ quán';
+
+  @override
+  String portionsRemaining(int count) {
+    return 'Còn $count phần';
+  }
+
+  @override
+  String get voucherGetCode => 'Lấy mã';
+
+  @override
+  String get voucherCollected => 'Đã lấy';
+
+  @override
+  String get dishOrderNow => 'Đặt ngay';
+
+  @override
+  String get dishCustomizationPortion => 'Lựa chọn khẩu phần';
+
+  @override
+  String get dishCustomizationRequired => 'Bắt buộc';
+
+  @override
+  String get dishCustomizationFree => 'Miễn phí';
+
+  @override
+  String get dishCustomizationChooseOne => 'Chọn 1';
+
+  @override
+  String get dishCustomizationToppings => 'Topping thêm';
+
+  @override
+  String get dishCustomizationOptional => 'Tùy chọn';
+
+  @override
+  String get dishCustomizationChooseMultiple => 'Chọn nhiều';
+
+  @override
+  String get dishNoteForStore => 'Ghi chú cho quán';
+
+  @override
+  String get dishNoteForStoreHint =>
+      'Ghi chú cho quán (vd: ít ngọt, không cay...)';
+
+  @override
+  String dishSoldPortions(int count) {
+    return 'Đã bán $count phần';
+  }
+
+  @override
+  String get dishReviewsAndRatings => 'Đánh giá & Nhận xét';
+
+  @override
+  String dishReviewCount(int count) {
+    return '$count nhận xét';
+  }
+
+  @override
+  String dishReviewsBasedOn(int count) {
+    return 'Dựa trên $count đánh giá thực tế';
+  }
+
+  @override
+  String get dishNoReviewsYet => 'Chưa có đánh giá nào';
+
+  @override
+  String dishFilterAllReviews(int count) {
+    return 'Tất cả ($count)';
+  }
+
+  @override
+  String dishFilterWithPhotos(int count) {
+    return 'Có hình ảnh ($count)';
+  }
+
+  @override
+  String dishFilterFiveStar(int count) {
+    return '5 sao ($count)';
+  }
+
+  @override
+  String get dishFilterLatest => 'Mới nhất';
+
+  @override
+  String get dishNoMatchingReviews => 'Chưa có đánh giá nào phù hợp';
+
+  @override
+  String dishViewAllReviews(int count) {
+    return 'Xem tất cả $count đánh giá';
+  }
+
+  @override
+  String get dishVerifiedPurchase => 'Đã mua món';
+
+  @override
+  String dishSatisfiedPct(int pct) {
+    return '$pct% Hài lòng';
+  }
+
+  @override
+  String get dishNotSatisfied => 'Không hài lòng';
+
+  @override
+  String get dishStoreReply => 'Phản hồi từ chủ quán:';
+
+  @override
+  String get foodNameEnLabel => 'Tên món ăn (Tiếng Anh)';
+
+  @override
+  String get foodNameEnHint => 'Nhập tên món ăn bằng tiếng Anh';
+
+  @override
+  String get foodDescEnLabel => 'Mô tả món ăn (Tiếng Anh)';
+
+  @override
+  String get foodDescEnHint => 'Nhập mô tả món ăn bằng tiếng Anh';
+
+  @override
+  String voucherDiscountMax(int pct, String max) {
+    return 'Giảm $pct% (Tối đa $max)';
+  }
+
+  @override
+  String voucherOrderFrom(String min) {
+    return 'Đơn từ $min';
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 
 class DishCustomizationSection extends StatelessWidget {
   final List<Map<String, dynamic>> sizeOptions;
@@ -37,7 +38,7 @@ class DishCustomizationSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                "Lựa chọn khẩu phần",
+                context.l10n.dishCustomizationPortion,
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
                   fontSize: 15,
@@ -51,9 +52,9 @@ class DishCustomizationSection extends StatelessWidget {
                   color: const Color(0xFFFFF2EC),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  "Bắt buộc",
-                  style: TextStyle(
+                child: Text(
+                  context.l10n.dishCustomizationRequired,
+                  style: const TextStyle(
                     color: Color(0xFFFF4D00),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -62,7 +63,7 @@ class DishCustomizationSection extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                "Chọn 1",
+                context.l10n.dishCustomizationChooseOne,
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 12,
@@ -112,7 +113,7 @@ class DishCustomizationSection extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        opt["extra"] == 0 ? "Miễn phí" : "+${formatCurrency(opt['extra'] ?? 0)}",
+                        opt["extra"] == 0 ? context.l10n.dishCustomizationFree : "+${formatCurrency(opt['extra'] ?? 0)}",
                         style: TextStyle(
                           color: isSelected && !isSoldOut
                               ? const Color(0xFFFF4D00)
@@ -135,7 +136,7 @@ class DishCustomizationSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                "Topping thêm",
+                context.l10n.dishCustomizationToppings,
                 style: TextStyle(
                   color: TColor.primaryTextOf(context),
                   fontSize: 15,
@@ -150,7 +151,7 @@ class DishCustomizationSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  "Tùy chọn",
+                  context.l10n.dishCustomizationOptional,
                   style: TextStyle(
                     color: TColor.secondaryTextOf(context),
                     fontSize: 11,
@@ -160,7 +161,7 @@ class DishCustomizationSection extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                "Chọn nhiều",
+                context.l10n.dishCustomizationChooseMultiple,
                 style: TextStyle(
                   color: TColor.secondaryTextOf(context),
                   fontSize: 12,
@@ -230,7 +231,7 @@ class DishCustomizationSection extends StatelessWidget {
 
         // Section 3: Ghi chú cho quán
         Text(
-          "Ghi chú cho quán",
+          context.l10n.dishNoteForStore,
           style: TextStyle(
             color: TColor.primaryTextOf(context),
             fontSize: 15,
@@ -243,7 +244,7 @@ class DishCustomizationSection extends StatelessWidget {
           enabled: !isSoldOut,
           style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 13),
           decoration: InputDecoration(
-            hintText: "Ghi chú cho quán (vd: ít mỡ hành, nước mắm ngọt, để riêng ớt...)",
+            hintText: context.l10n.dishNoteForStoreHint,
             hintStyle: TextStyle(
               color: TColor.secondaryTextOf(context).withOpacity(0.6),
               fontSize: 12,

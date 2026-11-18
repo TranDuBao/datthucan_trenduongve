@@ -12,9 +12,9 @@ export class AdminCatalogService {
     return await this.categoryRepo.find({ order: { maDanhMuc: 'ASC' } });
   }
 
-  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number) {
+  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number, tenDanhMucEn?: string) {
     if (maDanhMuc) {
-      return await this.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh);
+      return await this.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh, tenDanhMucEn);
     }
 
     const trimmed = tenDanhMuc.trim();
@@ -37,12 +37,13 @@ export class AdminCatalogService {
     const cat = this.categoryRepo.create({
       ...(nextId ? { maDanhMuc: nextId } : {}),
       tenDanhMuc: trimmed,
+      tenDanhMucEn: tenDanhMucEn !== undefined ? tenDanhMucEn.trim() : undefined,
       hinhAnh: hinhAnh?.trim() || undefined,
     });
     return await this.categoryRepo.save(cat);
   }
 
-  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string) {
+  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string, tenDanhMucEn?: string) {
     const trimmed = tenDanhMuc.trim();
     const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
     if (!cat) throw new Error('Không tìm thấy danh mục');
@@ -57,6 +58,9 @@ export class AdminCatalogService {
     }
 
     cat.tenDanhMuc = trimmed;
+    if (tenDanhMucEn !== undefined) {
+      cat.tenDanhMucEn = tenDanhMucEn.trim() || undefined;
+    }
     if (hinhAnh !== undefined) {
       cat.hinhAnh = hinhAnh.trim();
     }

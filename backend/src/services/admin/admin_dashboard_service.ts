@@ -571,6 +571,9 @@ export class AdminDashboardService {
       }
 
       let storeName = '';
+      let storePhone = '';
+      let storeAddress = '';
+      let storeObj: any = null;
       if (storeIdVal) {
         let store = await this.storeRepo.findOne({ where: { maQuan: storeIdVal } });
         if (!store) {
@@ -578,6 +581,22 @@ export class AdminDashboardService {
         }
         if (store) {
           storeName = store.tenQuan;
+          storePhone = store.sdt || '';
+          storeAddress = store.diaChi || '';
+          if (!storePhone && store.maTaiKhoan) {
+            const ownerProfile = await this.khachHangRepo.findOne({ where: { maTaiKhoan: store.maTaiKhoan } });
+            if (ownerProfile && ownerProfile.sdt) {
+              storePhone = ownerProfile.sdt;
+            }
+          }
+          storeObj = {
+            maQuan: store.maQuan,
+            tenQuan: store.tenQuan,
+            diaChi: storeAddress,
+            sdt: storePhone,
+            email: store.email || '',
+            trangThai: store.trangThai,
+          };
         }
       }
 
@@ -630,6 +649,14 @@ export class AdminDashboardService {
           email: customerEmail,
         },
         tenQuan: storeName || (storeIdVal ? `Nhà hàng #${storeIdVal}` : 'Chưa xác định'),
+        sdtQuan: storePhone,
+        diaChiQuan: storeAddress,
+        cuaHang: storeObj || (storeIdVal ? {
+          maQuan: storeIdVal,
+          tenQuan: storeName,
+          diaChi: storeAddress,
+          sdt: storePhone,
+        } : null),
         items,
       });
     }

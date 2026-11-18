@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../common/globs.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,7 @@ class CategoryModel {
   final int maQuan;
   final String key;
   final String name;
+  final String? nameEn;
   final String image;
   final int itemsCount;
   final bool isHot;
@@ -18,11 +20,22 @@ class CategoryModel {
     this.maQuan = 0,
     required this.key,
     required this.name,
+    this.nameEn,
     required this.image,
     required this.itemsCount,
     this.isHot = false,
     this.items = const [],
   });
+
+  String localizedName(BuildContext context) {
+    try {
+      final isEn = Localizations.localeOf(context).languageCode == 'en';
+      if (isEn && nameEn != null && nameEn!.trim().isNotEmpty) {
+        return nameEn!.trim();
+      }
+    } catch (_) {}
+    return name;
+  }
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
@@ -30,6 +43,7 @@ class CategoryModel {
       maQuan: json['maQuan'] ?? 0,
       key: json['key'] ?? json['tenDanhMuc']?.toString().toLowerCase() ?? 'category',
       name: json['tenDanhMuc'] ?? json['name'] ?? 'Danh mục',
+      nameEn: json['tenDanhMucEn'] ?? json['nameEn'] ?? json['tendanhmuc_en'] ?? json['name_en'],
       image: json['hinhAnh'] ?? json['image'] ?? 'assets/img/menu_1.png',
       itemsCount: json['soLuongMon'] ?? json['itemsCount'] ?? 0,
       isHot: json['isHot'] ?? false,

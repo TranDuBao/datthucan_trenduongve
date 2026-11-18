@@ -285,7 +285,7 @@ class _OrderCancelConfirmDialogState extends State<OrderCancelConfirmDialog> {
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    'Hoàn tiền qua VietQR:',
+                                    context.l10n.refundViaVietQR,
                                     style: GoogleFonts.outfit(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
@@ -297,7 +297,7 @@ class _OrderCancelConfirmDialogState extends State<OrderCancelConfirmDialog> {
                                   InkWell(
                                     onTap: _openBankSheet,
                                     child: Text(
-                                      'Đổi STK',
+                                      context.l10n.changeBankAccount,
                                       style: GoogleFonts.outfit(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,

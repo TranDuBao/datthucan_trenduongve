@@ -406,7 +406,7 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        "Đã bán $soldCount",
+                                        context.l10n.itemSoldCount(soldCount),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -485,7 +485,7 @@ class _FlashSaleAllViewState extends State<FlashSaleAllView> {
                                       ),
                                     ),
                                     Text(
-                                      "Còn lại ${(soldCount > 4 ? (soldCount ~/ 4) : 4)}",
+                                      context.l10n.itemRemainingCount(soldCount > 4 ? (soldCount ~/ 4) : 4),
                                       style: TextStyle(
                                         color: TColor.secondaryTextOf(context),
                                         fontSize: 9,

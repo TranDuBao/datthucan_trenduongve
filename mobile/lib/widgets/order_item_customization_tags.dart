@@ -134,15 +134,17 @@ extension _ListPush<T> on List<T> {
 
 class OrderItemCustomizationTags extends StatelessWidget {
   final ParsedItemCustomization customization;
+  final bool showDefaultIfEmpty;
 
   const OrderItemCustomizationTags({
     super.key,
     required this.customization,
+    this.showDefaultIfEmpty = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (!customization.hasCustomization) {
+    if (!customization.hasCustomization && !showDefaultIfEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -190,9 +192,32 @@ class OrderItemCustomizationTags extends StatelessWidget {
                   ],
                 ),
               ),
+            )
+          else if (showDefaultIfEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  'Khẩu phần: Tiêu chuẩn',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
             ),
 
-          // 2. Topping
+          // 2. Topping / Lựa chọn
           if (customization.toppings.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 3),
@@ -249,7 +274,7 @@ class OrderItemCustomizationTags extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Ghi chú: ',
+                    'Ghi chú món: ',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

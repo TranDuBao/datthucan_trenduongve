@@ -713,7 +713,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   const Icon(Icons.history_rounded, size: 16, color: Color(0xFFFC6011)),
                   const SizedBox(width: 6),
                   Text(
-                    '${recentList.length} điểm đến gần nhất',
+                    context.l10n.recentDestinationsCount(recentList.length),
                     style: GoogleFonts.outfit(
                       color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 12,
@@ -725,7 +725,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                   GestureDetector(
                     onTap: () => provider.clearRecentDestinations(),
                     child: Text(
-                      'Xóa',
+                      context.l10n.clearText,
                       style: GoogleFonts.outfit(
                         color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                         fontSize: 11,
@@ -818,7 +818,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Gõ tên địa điểm để tìm kiếm...',
+                  context.l10n.searchTypePlacePlaceholder,
                   style: GoogleFonts.outfit(
                     color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                     fontSize: 12,

@@ -288,7 +288,7 @@ class RoutePickupFoodCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isSoldOut ? "Hết hàng" : "Còn $stockQty",
+                          isSoldOut ? context.l10n.stopoverSoldOut : context.l10n.stopoverStockLeft(stockQty),
                           style: TextStyle(
                             color: isSoldOut ? const Color(0xFFDC2626) : const Color(0xFF2E7D32),
                             fontSize: 9,

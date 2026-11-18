@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../common/color_extension.dart';
+import '../../../widgets/custom_toast.dart';
 import 'restaurant_format_utils.dart';
 
 class VoucherCardWidget extends StatelessWidget {
@@ -30,6 +32,8 @@ class VoucherCardWidget extends StatelessWidget {
     final endDate = voucher['ngayHetHan'];
     final computedStatus = (voucher['computedStatus'] ?? voucher['trangThai'] ?? 'HOAT_DONG').toString();
     final isActive = computedStatus == 'HOAT_DONG';
+    final isPaused = computedStatus == 'TAM_TAT';
+    final isExpiredOrDone = computedStatus == 'HET_HAN' || computedStatus == 'HET_LUOT';
 
     // Discount label
     String discountLabel = '';
@@ -43,14 +47,53 @@ class VoucherCardWidget extends StatelessWidget {
       discountLabel = 'Giảm ${RestaurantFormatUtils.formatVND(discountVal)}';
     }
 
-    // Usage progress
+    // Status label & color
+    String statusText = 'Đang bật';
+    Color statusColor = const Color(0xFF059669);
+    if (isPaused) {
+      statusText = 'Tạm dừng';
+      statusColor = const Color(0xFF64748B);
+    } else if (computedStatus == 'HET_HAN') {
+      statusText = 'Hết hạn';
+      statusColor = const Color(0xFFDC2626);
+    } else if (computedStatus == 'HET_LUOT') {
+      statusText = 'Hết lượt';
+      statusColor = const Color(0xFFD97706);
+    }
+
+    // Usage progress calculation
     double progress = 0.0;
-    String usageText = 'Đã dùng: $usedCount';
+    String usageText = 'Đã dùng: $usedCount lượt';
+    String badgeText = '';
+    Color badgeBg = const Color(0xFFECFDF5);
+    Color badgeFg = const Color(0xFF059669);
+    Color progressColor = const Color(0xFFFC6011);
+
     if (totalCount > 0) {
       progress = (usedCount / totalCount).clamp(0.0, 1.0);
-      usageText += '/$totalCount lượt (Còn ${totalCount - usedCount})';
+      usageText = 'Đã dùng: $usedCount/$totalCount lượt';
+      final remaining = totalCount - usedCount;
+      if (usedCount >= totalCount) {
+        badgeText = 'Đã nhận đủ 100%';
+        badgeBg = const Color(0xFFF1F5F9);
+        badgeFg = const Color(0xFF64748B);
+        progressColor = const Color(0xFF94A3B8);
+      } else if (remaining <= 5) {
+        badgeText = 'Sắp hết (Còn $remaining)';
+        badgeBg = const Color(0xFFFFF7ED);
+        badgeFg = const Color(0xFFD97706);
+        progressColor = const Color(0xFFEA580C);
+      } else {
+        badgeText = 'Còn $remaining lượt';
+        badgeBg = const Color(0xFFECFDF5);
+        badgeFg = const Color(0xFF059669);
+        progressColor = const Color(0xFF0284C7);
+      }
     } else {
-      usageText += ' lượt (Không giới hạn)';
+      badgeText = 'Vô hạn lượt';
+      badgeBg = const Color(0xFFF0FDF4);
+      badgeFg = const Color(0xFF16A34A);
+      progress = 0.0;
     }
 
     return Container(
@@ -59,147 +102,268 @@ class VoucherCardWidget extends StatelessWidget {
         color: TColor.cardOf(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? TColor.borderOf(context) : Colors.grey.withOpacity(0.3),
+          color: isActive
+              ? (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9))
+              : Colors.grey.withOpacity(0.25),
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Code Badge, Status Toggle
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onEdit,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFC6011).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFC6011).withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.confirmation_number_outlined, size: 14, color: Color(0xFFFC6011)),
-                      const SizedBox(width: 6),
-                      Text(
-                        code,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFC6011),
-                          letterSpacing: 0.5,
+                // Top Row: Code Pill + Copy, Status Switch
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Code Pill
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        if (code.isNotEmpty) {
+                          Clipboard.setData(ClipboardData(text: code));
+                          CustomToast.showSuccess(context, 'Đã sao chép mã $code');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2A1C14) : const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF7C2D12) : const Color(0xFFFED7AA),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.confirmation_number_outlined,
+                              size: 14,
+                              color: Color(0xFFFC6011),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              code,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFC2410C),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.copy_rounded,
+                              size: 13,
+                              color: Color(0xFF9A3412),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
+
+                    // Status & Switch
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Switch(
+                          value: isActive,
+                          activeThumbColor: const Color(0xFFFC6011),
+                          activeTrackColor: const Color(0xFFFFDBCA),
+                          inactiveThumbColor: Colors.white,
+                          inactiveTrackColor: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          onChanged: onToggle,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Voucher Name
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: TColor.primaryTextOf(context),
                   ),
                 ),
-                Row(
+                const SizedBox(height: 6),
+
+                // Discount & Condition Row
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
-                      isActive ? 'Đang bật' : 'Tạm dừng',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isActive ? const Color(0xFF10B981) : Colors.grey,
+                      discountLabel,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0284C7),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Switch(
-                      value: isActive,
-                      activeColor: const Color(0xFFFC6011),
-                      onChanged: onToggle,
-                    ),
+                    if (minOrder > 0)
+                      Text(
+                        'Đơn tối thiểu: ${RestaurantFormatUtils.formatVND(minOrder)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: TColor.secondaryTextOf(context),
+                        ),
+                      ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-            // Voucher Name & Discount description
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: TColor.primaryTextOf(context),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              discountLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0284C7),
-              ),
-            ),
-            if (minOrder > 0) ...[
-              const SizedBox(height: 2),
-              Text(
-                'Đơn tối thiểu: ${RestaurantFormatUtils.formatVND(minOrder)}',
-                style: TextStyle(fontSize: 12, color: TColor.secondaryTextOf(context)),
-              ),
-            ],
-            const SizedBox(height: 12),
-
-            // Progress Bar
-            if (totalCount > 0) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: isDark ? const Color(0xFF1E2430) : const Color(0xFFE2E8F0),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    progress >= 1.0 ? const Color(0xFFEF4444) : const Color(0xFFFC6011),
-                  ),
-                  minHeight: 6,
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
-            Text(
-              usageText,
-              style: TextStyle(fontSize: 11, color: TColor.secondaryTextOf(context)),
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-
-            // Bottom Info: Dates + Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'HSD: ${RestaurantFormatUtils.formatRelativeTime(endDate)}',
-                    style: TextStyle(fontSize: 11, color: TColor.secondaryTextOf(context)),
-                  ),
-                ),
+                // Usage stats & Badge
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
-                      onPressed: onEdit,
-                      tooltip: 'Chỉnh sửa voucher',
+                    Text(
+                      usageText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: TColor.secondaryTextOf(context),
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                      onPressed: onDelete,
-                      tooltip: 'Xóa voucher',
+                    if (badgeText.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: badgeBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: badgeFg,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (totalCount > 0) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+
+                // Divider line (soft & clean)
+                Container(
+                  height: 1,
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                ),
+                const SizedBox(height: 8),
+
+                // Bottom row: Expiry date + Action icons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 14,
+                          color: TColor.secondaryTextOf(context),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'HSD: ${RestaurantFormatUtils.formatVoucherExpiry(endDate)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: TColor.secondaryTextOf(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isExpiredOrDone) ...[
+                          InkWell(
+                            onTap: onEdit,
+                            borderRadius: BorderRadius.circular(6),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.replay_rounded, size: 14, color: Color(0xFFFC6011)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Tái phát hành',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFFC6011),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(6),
+                          icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0284C7)),
+                          onPressed: onEdit,
+                          tooltip: 'Chỉnh sửa voucher',
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(6),
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                          onPressed: onDelete,
+                          tooltip: 'Xóa voucher',
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

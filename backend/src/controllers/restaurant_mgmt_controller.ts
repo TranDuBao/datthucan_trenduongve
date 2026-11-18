@@ -147,6 +147,17 @@ export class RestaurantMgmtController {
     }
   };
 
+  restoreFoodItem = async (req: StoreAuthenticatedRequest, res: Response) => {
+    try {
+      const maQuan = this.getStoreId(req);
+      const maMonAn = Number(req.params.id);
+      const result = await this.service.restoreFoodItem(maQuan, maMonAn);
+      return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Khôi phục món thành công' });
+    } catch (error: any) {
+      return res.status(400).json({ statusCode: 400, message: error.message });
+    }
+  };
+
   getStoreProfile = async (req: StoreAuthenticatedRequest, res: Response) => {
     try {
       const maQuan = this.getStoreId(req);

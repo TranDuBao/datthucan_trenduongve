@@ -1264,5 +1264,281 @@
         "type": "String"
       }
     }
+  },
+  "homeLocatingTitle": "Đang xác định vị trí...",
+  "homeLocatingSubtitle": "Vui lòng chờ trong giây lát",
+  "homeTapMapABHint": "Chạm bản đồ để đặt điểm A → B",
+  "recentDestinationsCount": "{count} điểm đến gần nhất",
+  "@recentDestinationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchTypePlacePlaceholder": "Gõ tên địa điểm để tìm kiếm...",
+  "clearText": "Xóa",
+  "stopoverSelectAtLeastOneToast": "Vui lòng tích chọn ít nhất 1 món để đặt ghé lấy",
+  "stopoverDetourMeters": "Lệch tuyến {dist}m",
+  "@stopoverDetourMeters": {
+    "placeholders": {
+      "dist": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverRightOnRoute": "Ngay trên tuyến",
+  "stopoverPrepTime": "Chuẩn bị ~{minutes} phút",
+  "@stopoverPrepTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverFoodAlongRoute": "Món ăn tiện đường ({count})",
+  "@stopoverFoodAlongRoute": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverSelectCheckHint": "Tích chọn món • Nhấn để xem chi tiết",
+  "stopoverStockLeft": "Còn {stock}",
+  "@stopoverStockLeft": {
+    "placeholders": {
+      "stock": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverSoldOut": "Hết hàng",
+  "stopoverMaxStockReached": "Đã đạt giới hạn số lượng còn lại",
+  "stopoverNoItemsSelected": "Chưa chọn món nào",
+  "stopoverViewStoreMenu": "Xem Menu Quán",
+  "stopoverOrderPickup": "Đặt Món Ghé Lấy",
+  "stopoverReserveTable": "Đặt Bàn Tại Quán",
+  "stopoverLoginRequiredCustom": "Vui lòng đăng nhập tài khoản để đặt món ghé lấy trên lộ trình của bạn.",
+  "itemFreshCooked": "Chế biến tươi nóng",
+  "itemSuspended": "Tạm ngưng",
+  "itemStockPortions": "Còn {count} phần",
+  "@itemStockPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemSoldPortions": "Đã bán {count} phần",
+  "@itemSoldPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemOutOfStockUpper": "HẾT MÓN",
+  "itemOutOfStock": "Hết món",
+  "itemTempOutOfStock": "Món ăn tạm hết hàng",
+  "itemStockLimitWarning": "Số lượng trong kho chỉ còn {count} món",
+  "@itemStockLimitWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "refundViaVietQR": "Hoàn tiền qua VietQR:",
+  "changeBankAccount": "Đổi STK",
+  "reportNotReceivedTitle": "Báo chưa nhận được tiền",
+  "reportNotReceivedDesc": "Nếu bạn đã kiểm tra tài khoản mà vẫn chưa thấy biến động số dư, vui lòng cho quán biết lý do để tiến hành tra soát ngân hàng:",
+  "reportNotReceivedHint": "Ví dụ: Đã qua 30 phút nhưng tài khoản chưa có tiền về, nhờ quán kiểm tra lại mã FT...",
+  "sendComplaintBtn": "Gửi khiếu nại",
+  "complaintSentSuccess": "Đã gửi khiếu nại thành công. Quán sẽ tra soát lại với ngân hàng!",
+  "complaintSentError": "Lỗi khi gửi khiếu nại",
+  "complaintWaitingNotice": "Bạn đã báo chưa nhận được tiền. Quán và Admin đang kiểm tra lại giao dịch với ngân hàng.",
+  "cancelledOrdersBadge": "{count} đơn đã hủy",
+  "@cancelledOrdersBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noCancelledOrders": "Chưa có đơn hàng nào bị hủy",
+  "orderRefundingBanner": "Đang hoàn tiền: {amount}",
+  "@orderRefundingBanner": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "orderRefundDisputedBanner": "Đang khiếu nại hoàn tiền: {amount}",
+  "@orderRefundDisputedBanner": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "storeSwitchToCustomer": "Giao diện Khách hàng",
+  "storeLogoutAccount": "Đăng xuất tài khoản",
+  "storeOperatingHoursTitle": "Thời gian mở cửa quán",
+  "storeTodayHours": "Hôm nay: {hours}",
+  "@storeTodayHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "storeViewWeek": "Xem tuần",
+  "storeEditProfile": "Sửa hồ sơ",
+  "storeHoursModalTitle": "Lịch Hoạt Động Quán",
+  "dayMonday": "Thứ Hai",
+  "dayTuesday": "Thứ Ba",
+  "dayWednesday": "Thứ Tư",
+  "dayThursday": "Thứ Năm",
+  "dayFriday": "Thứ Sáu",
+  "daySaturday": "Thứ Bảy",
+  "daySunday": "Chủ Nhật",
+  "itemAddBtn": "Thêm",
+  "filterBestSeller": "Bán chạy",
+  "filterFastPrep": "Chuẩn bị nhanh",
+  "dishesReadyToServe": "{count} món sẵn sàng phục vụ",
+  "@dishesReadyToServe": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchDishesHint": "Tìm kiếm món ngon...",
+  "noMatchingDishesTitle": "Không tìm thấy món ăn phù hợp",
+  "noMatchingDishesSubtitle": "Vui lòng thử tìm với từ khóa khác",
+  "itemRemainingCount": "Còn lại {count}",
+  "@itemRemainingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storePromotions": "Khuyến mãi từ quán",
+  "portionsRemaining": "Còn {count} phần",
+  "@portionsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherGetCode": "Lấy mã",
+  "voucherCollected": "Đã lấy",
+  "dishOrderNow": "Đặt ngay",
+  "dishCustomizationPortion": "Lựa chọn khẩu phần",
+  "dishCustomizationRequired": "Bắt buộc",
+  "dishCustomizationFree": "Miễn phí",
+  "dishCustomizationChooseOne": "Chọn 1",
+  "dishCustomizationToppings": "Topping thêm",
+  "dishCustomizationOptional": "Tùy chọn",
+  "dishCustomizationChooseMultiple": "Chọn nhiều",
+  "dishNoteForStore": "Ghi chú cho quán",
+  "dishNoteForStoreHint": "Ghi chú cho quán (vd: ít ngọt, không cay...)",
+  "dishSoldPortions": "Đã bán {count} phần",
+  "@dishSoldPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishReviewsAndRatings": "Đánh giá & Nhận xét",
+  "dishReviewCount": "{count} nhận xét",
+  "@dishReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishReviewsBasedOn": "Dựa trên {count} đánh giá thực tế",
+  "@dishReviewsBasedOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishNoReviewsYet": "Chưa có đánh giá nào",
+  "dishFilterAllReviews": "Tất cả ({count})",
+  "@dishFilterAllReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterWithPhotos": "Có hình ảnh ({count})",
+  "@dishFilterWithPhotos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterFiveStar": "5 sao ({count})",
+  "@dishFilterFiveStar": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterLatest": "Mới nhất",
+  "dishNoMatchingReviews": "Chưa có đánh giá nào phù hợp",
+  "dishViewAllReviews": "Xem tất cả {count} đánh giá",
+  "@dishViewAllReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishVerifiedPurchase": "Đã mua món",
+  "dishSatisfiedPct": "{pct}% Hài lòng",
+  "@dishSatisfiedPct": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "dishNotSatisfied": "Không hài lòng",
+  "dishStoreReply": "Phản hồi từ chủ quán:",
+  "foodNameEnLabel": "Tên món ăn (Tiếng Anh)",
+  "foodNameEnHint": "Nhập tên món ăn bằng tiếng Anh",
+  "foodDescEnLabel": "Mô tả món ăn (Tiếng Anh)",
+  "foodDescEnHint": "Nhập mô tả món ăn bằng tiếng Anh",
+  "voucherDiscountMax": "Giảm {pct}% (Tối đa {max})",
+  "@voucherDiscountMax": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherOrderFrom": "Đơn từ {min}",
+  "@voucherOrderFrom": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
   }
 }

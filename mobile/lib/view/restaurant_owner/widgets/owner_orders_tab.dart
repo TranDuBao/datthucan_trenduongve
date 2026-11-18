@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../common/color_extension.dart';
 import '../../../widgets/custom_toast.dart';
+import '../../../widgets/skeleton/order_item_skeleton.dart';
 import '../../../providers/restaurant_orders_provider.dart';
 import 'owner_order_card.dart';
 
@@ -15,26 +16,48 @@ class OwnerOrdersTab extends StatelessWidget {
 
     return Column(
       children: [
-        // Offline / Reconnect Banner
+        // Offline / Reconnect Status Pill
         if (!provider.isConnected)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-            color: const Color(0xFFF59E0B),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          Center(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2C2415) : const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF785415) : const Color(0xFFFDE68A),
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Đang mất kết nối socket • Đang kết nối lại...',
-                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFD97706),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Đang đồng bộ trực tiếp với máy chủ...',
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -55,7 +78,7 @@ class OwnerOrdersTab extends StatelessWidget {
                   onChanged: provider.setSearchQuery,
                   style: TextStyle(fontSize: 13, color: TColor.primaryTextOf(context)),
                   decoration: InputDecoration(
-                    hintText: 'Tìm theo mã đơn (#DH-...), tên khách, SĐT...',
+                    hintText: 'Tìm theo mã đơn (#61...), tên khách, SĐT...',
                     hintStyle: TextStyle(fontSize: 13, color: TColor.placeholder),
                     prefixIcon: Icon(Icons.search, size: 20, color: TColor.secondaryTextOf(context)),
                     border: InputBorder.none,
@@ -129,26 +152,61 @@ class OwnerOrdersTab extends StatelessWidget {
 
   Widget _buildFilterChip(BuildContext context, String label, String value, RestaurantOrdersProvider provider) {
     final isSelected = provider.selectedPeriod == value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: FilterChip(
-        label: Text(label),
-        labelStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.white : TColor.primaryTextOf(context),
-        ),
-        selected: isSelected,
-        selectedColor: const Color(0xFFFC6011),
-        backgroundColor: TColor.cardOf(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: isSelected ? const Color(0xFFFC6011) : TColor.borderOf(context),
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => provider.setSelectedPeriod(value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFFC6011)
+                : (isDark ? const Color(0xFF28303D) : Colors.white),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFFFC6011)
+                  : (isDark ? const Color(0xFF374151) : const Color(0xFFE2E8F0)),
+              width: 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFC6011).withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                const Icon(Icons.check_rounded, size: 13, color: Colors.white),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? Colors.white : TColor.primaryTextOf(context),
+                ),
+              ),
+            ],
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        onSelected: (_) => provider.setSelectedPeriod(value),
       ),
     );
   }
@@ -160,19 +218,24 @@ class OwnerOrdersTab extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? TColor.cardOf(context) : Colors.transparent,
+          color: isSelected
+              ? (isDark ? const Color(0xFF28303D) : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 4,
+                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -185,23 +248,23 @@ class OwnerOrdersTab extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 color: isSelected ? const Color(0xFFFC6011) : TColor.secondaryTextOf(context),
               ),
             ),
             if (badgeCount > 0) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFFC6011) : Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected ? const Color(0xFFFC6011) : (isDark ? const Color(0xFF374151) : const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '$badgeCount',
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: isSelected ? Colors.white : TColor.primaryTextOf(context),
                   ),
                 ),
@@ -229,12 +292,22 @@ class OwnerOrdersTab extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  provider.selectedTab == 0 ? Icons.check_circle_outline : Icons.history,
-                  size: 56,
-                  color: TColor.secondaryTextOf(context).withOpacity(0.5),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: provider.selectedTab == 0
+                        ? const Color(0xFF10B981).withOpacity(0.12)
+                        : TColor.primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    provider.selectedTab == 0 ? Icons.task_alt_rounded : Icons.history_rounded,
+                    size: 42,
+                    color: provider.selectedTab == 0 ? const Color(0xFF10B981) : TColor.primary,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
                   provider.selectedTab == 0
                       ? 'Tuyệt vời! Không có đơn nào đang chờ xử lý'
@@ -242,19 +315,23 @@ class OwnerOrdersTab extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: TColor.primaryTextOf(context),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  provider.selectedTab == 0
-                      ? 'Khi khách hàng đặt đơn trên FoodRoute, đơn sẽ xuất hiện tại đây ngay lập tức.'
-                      : 'Các đơn đã hoàn thành hoặc đã hủy sẽ được lưu trữ tại đây.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: TColor.secondaryTextOf(context),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    provider.selectedTab == 0
+                        ? 'Khi khách hàng đặt đơn trên FoodRoute, đơn sẽ xuất hiện tại đây ngay lập tức kèm chuông báo.'
+                        : 'Các đơn đã hoàn thành hoặc đã hủy sẽ được lưu trữ tại đây để bạn tiện theo dõi.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.4,
+                      color: TColor.secondaryTextOf(context),
+                    ),
                   ),
                 ),
               ],
@@ -291,18 +368,10 @@ class OwnerOrdersTab extends StatelessWidget {
   }
 
   Widget _buildSkeletonLoading(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 4,
-      itemBuilder: (ctx, i) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        height: 130,
-        decoration: BoxDecoration(
-          color: TColor.cardOf(context).withOpacity(0.6),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: TColor.borderOf(context)),
-        ),
-      ),
+    return const SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.all(16),
+      child: OrderSkeletonList(itemCount: 4),
     );
   }
 }

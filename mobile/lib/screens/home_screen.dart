@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 20),
             Text(
-              'Đang xác định vị trí...',
+              context.l10n.homeLocatingTitle,
               style: GoogleFonts.outfit(
                 color: isDark ? Colors.white : const Color(0xFF1E293B),
                 fontSize: 15,
@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 6),
             Text(
-              'Vui lòng chờ trong giây lát',
+              context.l10n.homeLocatingSubtitle,
               style: GoogleFonts.outfit(
                 color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: 12,
@@ -479,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Color(0xFFFC6011), size: 18),
               const SizedBox(width: 8),
               Text(
-                'Chạm bản đồ để đặt điểm A → B',
+                context.l10n.homeTapMapABHint,
                 style: GoogleFonts.outfit(
                   color: isDark ? Colors.white : const Color(0xFF1E293B),
                   fontSize: 12,

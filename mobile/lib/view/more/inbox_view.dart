@@ -464,20 +464,51 @@ class _InboxViewState extends State<InboxView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: TColor.primary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              item.tag,
-                              style: TextStyle(
-                                color: TColor.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: TColor.primary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  item.tag,
+                                  style: TextStyle(
+                                    color: TColor.primary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (isSavedTab || item.isCollected) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF10B981)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        context.l10n.voucherStatusSaved,
+                                        style: const TextStyle(
+                                          color: Color(0xFF10B981),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           // Large prominent Quantity Badge on Top Right
                           if (remainingQty != null)
@@ -551,95 +582,73 @@ class _InboxViewState extends State<InboxView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF11141D) : const Color(0xFFF2F3F5),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isDark ? const Color(0xFF2C3240) : const Color(0xFFE0E0E0),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF11141D) : const Color(0xFFF2F3F5),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF2C3240) : const Color(0xFFE0E0E0),
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  "${context.l10n.voucherCodeLabel} : ",
-                                  style: TextStyle(
-                                    color: TColor.secondaryTextOf(context),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                Text(
-                                  item.code,
-                                  style: TextStyle(
-                                    color: TColor.primaryTextOf(context),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Button: "Thu thập" or "Đã lưu ✓" + "Dùng ngay"
-                          if (isSavedTab || item.isCollected)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        context.l10n.voucherStatusSaved,
-                                        style: const TextStyle(
-                                          color: Color(0xFF10B981),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () => _useVoucher(item),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: TColor.primary,
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "${context.l10n.voucherCodeLabel} : ",
+                                    style: TextStyle(
+                                      color: TColor.secondaryTextOf(context),
+                                      fontSize: 11,
                                     ),
                                   ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        "Dùng ngay",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800,
-                                        ),
+                                  Flexible(
+                                    child: Text(
+                                      item.code,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: TColor.primaryTextOf(context),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
                                       ),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.arrow_forward_rounded, size: 14),
-                                    ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Button: "Dùng ngay" or "Thu thập"
+                          if (isSavedTab || item.isCollected)
+                            ElevatedButton(
+                              onPressed: () => _useVoucher(item),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: TColor.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                              ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Dùng ngay",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward_rounded, size: 14),
+                                ],
+                              ),
                             )
                           else
                             ElevatedButton(
@@ -673,11 +682,11 @@ class _InboxViewState extends State<InboxView> {
                                 backgroundColor: TColor.primary,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                               child: Row(

@@ -18,6 +18,7 @@ import '../../common/food_image_helper.dart';
 import '../../services/socket_service.dart';
 import 'item_details_view.dart';
 import '../reservation/reservation_booking_view.dart';
+import '../../providers/map_provider.dart';
 
 import '../../widgets/single_restaurant_warning_modal.dart';
 import '../../widgets/guest_login_dialog.dart';
@@ -46,13 +47,41 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
 
   String _getCategoryDisplayName(BuildContext context, dynamic cat) {
     if (cat == null) return '';
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
     final name = (cat['name'] ?? '').toString();
+    final nameEn = (cat['nameEn'] ?? cat['tenDanhMucEn'])?.toString();
     final id = cat['id'];
     if (id == 0 || name.toLowerCase() == 'tất cả' || name.toLowerCase() == 'all') {
       return context.l10n.storeTabAll;
     }
     if (name.toLowerCase() == 'thực đơn' || name.toLowerCase() == 'menu') {
       return context.l10n.storeTabMenu;
+    }
+    if (isEn) {
+      if (nameEn != null && nameEn.trim().isNotEmpty) {
+        return nameEn.trim();
+      }
+      final lower = name.toLowerCase().trim();
+      const fallbacks = {
+        'kem': 'Ice Cream',
+        'bánh sinh nhật': 'Birthday Cake',
+        'bánh ngọt': 'Pastries & Cakes',
+        'cà phê': 'Coffee',
+        'trà sữa': 'Milk Tea',
+        'bún bò': 'Beef Noodles',
+        'bún bò huế': 'Hue Beef Noodles',
+        'cơm tấm': 'Broken Rice',
+        'cơm': 'Rice Dishes',
+        'phở': 'Pho Noodles',
+        'phở truyền thống': 'Traditional Pho',
+        'nước uống': 'Drinks',
+        'nước uống & tráng miệng': 'Drinks & Desserts',
+        'món ăn kèm': 'Side Dishes',
+        'khai vị': 'Appetizers',
+      };
+      if (fallbacks.containsKey(lower)) {
+        return fallbacks[lower]!;
+      }
     }
     return name;
   }
@@ -625,7 +654,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Khuyến mãi từ quán",
+                              context.l10n.storePromotions,
                               style: TextStyle(
                                 color: TColor.primaryTextOf(context),
                                 fontSize: 13,
@@ -641,10 +670,17 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                 itemBuilder: (context, index) {
                                   final v = storeVouchers[index];
                                   final isCollected = collectedVoucherIds.contains(v.id);
+                                  final isEn = Localizations.localeOf(context).languageCode == 'en';
                                   final discountText = v.discountType == 'PERCENT'
-                                      ? 'Giảm ${v.discount.toInt()}%${v.maxDiscount > 0 ? ' (Tối đa ${_formatVND(v.maxDiscount)})' : ''}'
-                                      : 'Giảm ${_formatVND(v.discount)}';
-                                  final minOrderText = v.minOrder > 0 ? ' • Đơn từ ${_formatVND(v.minOrder)}' : '';
+                                      ? (isEn
+                                          ? '${v.discount.toInt()}% off${v.maxDiscount > 0 ? ' (Max ${_formatVND(v.maxDiscount)})' : ''}'
+                                          : 'Giảm ${v.discount.toInt()}%${v.maxDiscount > 0 ? ' (Tối đa ${_formatVND(v.maxDiscount)})' : ''}')
+                                      : (isEn
+                                          ? '${_formatVND(v.discount)} off'
+                                          : 'Giảm ${_formatVND(v.discount)}');
+                                  final minOrderText = v.minOrder > 0
+                                      ? (isEn ? ' • Orders from ${_formatVND(v.minOrder)}' : ' • Đơn từ ${_formatVND(v.minOrder)}')
+                                      : '';
 
                                   return Container(
                                     width: 270,
@@ -711,7 +747,7 @@ class _RestaurantDetailViewState extends State<RestaurantDetailView> {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                           ),
                                           child: Text(
-                                            isCollected ? "Đã lấy" : "Lấy mã",
+                                            isCollected ? context.l10n.voucherCollected : context.l10n.voucherGetCode,
                                             style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700),
                                           ),
                                         ),
@@ -884,9 +920,9 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                               color: const Color(0xFFEF4444),
                                                               borderRadius: BorderRadius.circular(4),
                                                             ),
-                                                            child: const Text(
-                                                              "HẾT MÓN",
-                                                              style: TextStyle(
+                                                            child: Text(
+                                                              context.l10n.itemOutOfStockUpper,
+                                                              style: const TextStyle(
                                                                 color: Colors.white,
                                                                 fontSize: 10,
                                                                 fontWeight: FontWeight.w800,
@@ -905,7 +941,9 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        item['name'] ?? item['tenMonAn'] ?? '',
+                                                        (Localizations.localeOf(context).languageCode == 'en' && (item['nameEn'] ?? item['tenMonAnEn']) != null && (item['nameEn'] ?? item['tenMonAnEn']).toString().trim().isNotEmpty)
+                                                            ? (item['nameEn'] ?? item['tenMonAnEn']).toString().trim()
+                                                            : (item['name'] ?? item['tenMonAn'] ?? ''),
                                                         style: TextStyle(
                                                           color: isSoldOut
                                                               ? TColor.secondaryTextOf(context)
@@ -939,7 +977,7 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                           const SizedBox(width: 5),
                                                           Expanded(
                                                             child: Text(
-                                                              isSoldOut ? "Tạm ngưng" : "Chế biến tươi nóng",
+                                                              isSoldOut ? context.l10n.itemSuspended : context.l10n.itemFreshCooked,
                                                               maxLines: 1,
                                                               overflow: TextOverflow.ellipsis,
                                                               style: TextStyle(
@@ -958,7 +996,7 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                               borderRadius: BorderRadius.circular(4),
                                                             ),
                                                             child: Text(
-                                                              isSoldOut ? "Hết món" : "Còn $stockQty phần",
+                                                              isSoldOut ? context.l10n.itemOutOfStock : context.l10n.itemStockPortions(stockQty),
                                                               style: TextStyle(
                                                                 color: isSoldOut
                                                                     ? const Color(0xFFDC2626)
@@ -995,7 +1033,7 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                                                                 borderRadius: BorderRadius.circular(12),
                                                               ),
                                                               child: Text(
-                                                                "Hết món",
+                                                                context.l10n.itemOutOfStock,
                                                                 style: TextStyle(
                                                                   color: TColor.secondaryTextOf(context),
                                                                   fontSize: 11,
@@ -1119,6 +1157,9 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
                     ),
                     ElevatedButton.icon(
                       onPressed: () {
+                        try {
+                          context.read<MapProvider>().selectStopoverRestaurant(Map<String, dynamic>.from(widget.restaurantObj));
+                        } catch (_) {}
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const MyOrderView()),

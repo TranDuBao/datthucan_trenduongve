@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../common/format_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../common/color_extension.dart';
 import '../../common/globs.dart';
@@ -10,6 +11,8 @@ import '../../services/restaurant_owner_service.dart';
 import '../../services/socket_service.dart';
 import '../../services/upload_service.dart';
 import '../../widgets/custom_toast.dart';
+import '../../widgets/skeleton/store_profile_skeleton.dart';
+import 'widgets/operating_hours_sheet.dart';
 import 'widgets/restaurant_format_utils.dart';
 import 'widgets/store_basic_info_card.dart';
 import 'widgets/store_profile_edit_sheet.dart';
@@ -138,118 +141,21 @@ class _RestaurantStoreProfileTabState extends State<RestaurantStoreProfileTab> {
   }
 
   void _showOperatingHoursDialog(BuildContext context, dynamic rawHours) {
-    final weekly = RestaurantFormatUtils.parseWeeklyOperatingHours(rawHours);
-    final todayHours = RestaurantFormatUtils.formatOperatingHours(rawHours);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-        title: const Row(
-          children: [
-            Icon(Icons.schedule_rounded, color: Color(0xFFFC6011), size: 22),
-            SizedBox(width: 8),
-            Text(
-              'Lịch Hoạt Động Quán',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF0284C7)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Hôm nay: $todayHours',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0369A1)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (weekly.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text('07:00 – 22:00 (Mỗi ngày)', style: TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              )
-            else
-              ...weekly.map((item) {
-                final isOpen = item['isOpen'] == 'true';
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        item['day'] ?? '',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: isOpen ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: isOpen ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA),
-                          ),
-                        ),
-                        child: Text(
-                          item['time'] ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isOpen ? const Color(0xFF059669) : const Color(0xFFDC2626),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            const SizedBox(height: 12),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFC6011),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showEditProfileModal(context);
-            },
-            child: const Text('Sửa hồ sơ'),
-          ),
-        ],
-      ),
+    OperatingHoursDialog.show(
+      context,
+      rawOperatingHours: rawHours,
+      onSave: (newScheduleJson) async {
+        await _saveStoreProfile({'gioHoatDong': newScheduleJson});
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.storeProfile.isEmpty) {
+      return const StoreProfileSkeleton();
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = widget.storeProfile;
     final name = p['tenQuan'] ?? UserRoleHelper.userName;
@@ -432,7 +338,7 @@ class _RestaurantStoreProfileTabState extends State<RestaurantStoreProfileTab> {
                       ),
                       onPressed: () => _showEditProfileModal(context),
                       icon: const Icon(Icons.edit_outlined, size: 14),
-                      label: const Text('Sửa hồ sơ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      label: Text(context.l10n.storeEditProfile, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -521,19 +427,19 @@ class _RestaurantStoreProfileTabState extends State<RestaurantStoreProfileTab> {
                       ),
                       child: const Icon(Icons.access_time_rounded, color: Color(0xFFEA580C), size: 18),
                     ),
-                    title: const Text(
-                      'Thời gian mở cửa quán',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    title: Text(
+                      context.l10n.storeOperatingHoursTitle,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                     subtitle: Text(
-                      'Hôm nay: $operatingHours',
+                      context.l10n.storeTodayHours(operatingHours),
                       style: const TextStyle(fontSize: 12, color: Color(0xFFFC6011), fontWeight: FontWeight.w600),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Xem tuần',
+                          context.l10n.storeViewWeek,
                           style: TextStyle(fontSize: 12, color: TColor.secondaryTextOf(context)),
                         ),
                         const SizedBox(width: 4),

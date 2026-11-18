@@ -688,20 +688,34 @@ class CancelledOrderCard extends StatelessWidget {
                   : isWait ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
                   : isDisp ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626))
                   : (isDark ? const Color(0xFFFDB022) : const Color(0xFFB54708));
-              final text = isDone ? 'Đã hoàn $amt vào TK ngân hàng'
-                  : isWait ? 'Quán đã gửi biên lai hoàn $amt - Chờ xác nhận'
-                  : isDisp ? 'Đang khiếu nại hoàn tiền: $amt' : 'Đang hoàn tiền: $amt';
+              final isEn = Localizations.localeOf(context).languageCode == 'en';
+              final text = isDone
+                  ? (isEn ? 'Refunded $amt to bank account' : 'Đã hoàn $amt vào TK ngân hàng')
+                  : isWait
+                      ? (isEn ? 'Store sent refund receipt $amt - Pending confirmation' : 'Quán đã gửi biên lai hoàn $amt - Chờ xác nhận')
+                      : isDisp
+                          ? context.l10n.orderRefundDisputedBanner(amt)
+                          : context.l10n.orderRefundingBanner(amt);
               final icon = isDone ? Icons.check_circle_rounded : isWait ? Icons.receipt_long_rounded : isDisp ? Icons.warning_amber_rounded : Icons.hourglass_top_rounded;
 
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: border, width: 0.8)),
-                child: Row(
-                  children: [
-                    Icon(icon, size: 14, color: fg),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(text, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: fg))),
-                  ],
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onShowDetail,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: border, width: 0.9)),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 14, color: fg),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(text, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: fg))),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right_rounded, size: 16, color: fg.withValues(alpha: 0.8)),
+                      ],
+                    ),
+                  ),
                 ),
               );
             }(),
@@ -726,7 +740,7 @@ class CancelledOrderCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(
-                      'Xem chi tiết',
+                      context.l10n.commonViewDetail,
                       style: TextStyle(
                         color: isDark ? const Color(0xFFD0D4E0) : const Color(0xFF344054),
                         fontSize: 11.5,
@@ -751,9 +765,9 @@ class CancelledOrderCard extends StatelessWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
-                      'Đặt lại',
-                      style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
+                    child: Text(
+                      context.l10n.orderReorderBtn,
+                      style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),

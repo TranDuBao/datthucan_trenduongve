@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../common/color_extension.dart';
+import '../common/format_utils.dart';
 import '../common/user_role_helper.dart';
 import '../common_widget/smart_network_image.dart';
 import '../models/review_model.dart';
@@ -159,7 +160,7 @@ class DishReviewsSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Đánh giá & Nhận xét",
+              context.l10n.dishReviewsAndRatings,
               style: TextStyle(
                 color: TColor.primaryTextOf(context),
                 fontSize: 16,
@@ -167,7 +168,7 @@ class DishReviewsSection extends StatelessWidget {
               ),
             ),
             Text(
-              "$totalReviewsCount nhận xét",
+              context.l10n.dishReviewCount(totalReviewsCount),
               style: const TextStyle(
                 color: Color(0xFFFF4D00),
                 fontSize: 13,
@@ -215,8 +216,8 @@ class DishReviewsSection extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       totalReviewsCount > 0
-                          ? "Dựa trên $totalReviewsCount đánh giá thực tế"
-                          : "Chưa có đánh giá nào",
+                          ? context.l10n.dishReviewsBasedOn(totalReviewsCount)
+                          : context.l10n.dishNoReviewsYet,
                       style: TextStyle(
                         color: TColor.secondaryTextOf(context),
                         fontSize: 11,
@@ -233,7 +234,9 @@ class DishReviewsSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    "${(reviewsList.where((r) => r.rating >= 4).length * 100 / (reviewsList.isNotEmpty ? reviewsList.length : 1)).round()}% Hài lòng",
+                    context.l10n.dishSatisfiedPct(
+                      (reviewsList.where((r) => r.rating >= 4).length * 100 / (reviewsList.isNotEmpty ? reviewsList.length : 1)).round(),
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF059669),
                       fontSize: 12,
@@ -251,13 +254,13 @@ class DishReviewsSection extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _filterChip(context, "all", "Tất cả ($totalReviewsCount)"),
+              _filterChip(context, "all", context.l10n.dishFilterAllReviews(totalReviewsCount)),
               const SizedBox(width: 8),
-              _filterChip(context, "image", "Có hình ảnh ($_imageReviewsCount)"),
+              _filterChip(context, "image", context.l10n.dishFilterWithPhotos(_imageReviewsCount)),
               const SizedBox(width: 8),
-              _filterChip(context, "5star", "5 sao ($_fiveStarReviewsCount)"),
+              _filterChip(context, "5star", context.l10n.dishFilterFiveStar(_fiveStarReviewsCount)),
               const SizedBox(width: 8),
-              _filterChip(context, "latest", "Mới nhất"),
+              _filterChip(context, "latest", context.l10n.dishFilterLatest),
             ],
           ),
         ),
@@ -284,7 +287,7 @@ class DishReviewsSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Chưa có đánh giá phù hợp",
+                  context.l10n.dishNoMatchingReviews,
                   style: TextStyle(
                     color: TColor.secondaryTextOf(context),
                     fontSize: 13,
@@ -358,9 +361,9 @@ class DishReviewsSection extends StatelessWidget {
                                       color: const Color(0xFFECFDF5),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text(
-                                      "Đã mua món",
-                                      style: TextStyle(
+                                    child: Text(
+                                      context.l10n.dishVerifiedPurchase,
+                                      style: const TextStyle(
                                         color: Color(0xFF059669),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w600,
@@ -487,9 +490,9 @@ class DishReviewsSection extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  "Phản hồi từ quán:",
-                                  style: TextStyle(
+                                Text(
+                                  context.l10n.dishStoreReply,
+                                  style: const TextStyle(
                                     color: Color(0xFFFF4D00),
                                     fontWeight: FontWeight.w800,
                                     fontSize: 11,
@@ -569,7 +572,7 @@ class DishReviewsSection extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Xem tất cả $totalReviewsCount đánh giá",
+                  context.l10n.dishViewAllReviews(totalReviewsCount),
                   style: TextStyle(
                     color: TColor.primaryTextOf(context),
                     fontSize: 13,

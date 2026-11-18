@@ -266,6 +266,23 @@ export class RestaurantMgmtService {
         const itemQty = Number(d.soLuong || 1);
         subtotal += itemPrice * itemQty;
 
+        let parsedSize = '';
+        let parsedToppings: string[] = [];
+        let parsedDishNote = '';
+        if (d.ghiChu) {
+          const str = String(d.ghiChu).trim();
+          if (str.startsWith('{') && str.endsWith('}')) {
+            try {
+              const p = JSON.parse(str);
+              if (p.size) parsedSize = String(p.size);
+              if (Array.isArray(p.toppings)) parsedToppings = p.toppings;
+              if (p.ghiChu || p.dishNote) parsedDishNote = String(p.ghiChu || p.dishNote);
+            } catch (_) {}
+          } else {
+            parsedDishNote = str;
+          }
+        }
+
         orderItems.push({
           maChiTiet: d.maChiTietDon,
           maMonAn: d.maMonAn,
@@ -273,6 +290,9 @@ export class RestaurantMgmtService {
           soLuong: itemQty,
           donGia: itemPrice,
           img: foodImg,
+          size: parsedSize || undefined,
+          toppings: parsedToppings.length > 0 ? parsedToppings : undefined,
+          dishNote: parsedDishNote || undefined,
           ghiChu: d.ghiChu || '',
         });
       }
@@ -327,14 +347,23 @@ export class RestaurantMgmtService {
       enrichedOrders.push({
         ...ord,
         tenKhachHang: customerName,
+        customerName: customerName,
         sdtKhachHang: customerPhone,
+        customerPhone: customerPhone,
+        sdt: customerPhone,
         emailKhachHang: customerEmail,
+        customerEmail: customerEmail,
+        email: customerEmail,
         khachHang: {
           maKhachHang: ord.maKhachHang,
           hoTen: customerName,
           sdt: customerPhone,
           email: customerEmail,
         },
+        thoiGianDat: ord.thoiGianDat,
+        thoiGianHenNhan: ord.thoiGianHenNhan,
+        loaiDonHang: ord.loaiDonHang || 'PRE_ORDER',
+        ghiChu: ord.ghiChu || '',
         items: orderItems,
         tamTinh: subtotal > 0 ? subtotal : Number(ord.tongTien || 0),
         voucherInfo,
@@ -605,6 +634,8 @@ export class RestaurantMgmtService {
     }
 
     const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
+    const foodNameEn = data.tenMonAnEn ?? (data as any).tenmonan_en ?? (data as any).nameEn;
+    const descEn = data.moTaEn ?? (data as any).mota_en ?? (data as any).descEn;
     const traits = data.dacTinh ?? (data as any).dactinh;
     const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
     const normalizedOptions = this.normalizeOptions(data);
@@ -612,22 +643,11 @@ export class RestaurantMgmtService {
     let nextId: number | undefined;
     try {
       const maxRes = await this.foodRepo.query(`
-        SELECT GREATEST(
-          COALESCE((SELECT MAX(mamonan) FROM monan), 0),
-          COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0),
-          COALESCE((SELECT MAX(mamon) FROM danhgia_mon), 0)
-        ) + 1 AS next_id
-      `).catch(async () => {
-        return await this.foodRepo.query(`
-          SELECT GREATEST(
-            COALESCE((SELECT MAX(mamonan) FROM monan), 0),
-            COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0)
-          ) + 1 AS next_id
-        `);
-      });
-      if (maxRes && maxRes[0] && maxRes[0].next_id) {
-        nextId = Number(maxRes[0].next_id);
-      }
+        SELECT GREATEST(COALESCE((SELECT MAX(mamonan) FROM monan), 0), COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0), COALESCE((SELECT MAX(mamon) FROM danhgia_mon), 0)) + 1 AS next_id
+      `).catch(async () => this.foodRepo.query(`
+        SELECT GREATEST(COALESCE((SELECT MAX(mamonan) FROM monan), 0), COALESCE((SELECT MAX(mamonan) FROM chitietdonhang), 0)) + 1 AS next_id
+      `));
+      if (maxRes?.[0]?.next_id) nextId = Number(maxRes[0].next_id);
     } catch (_) {}
 
     // Triệt để ngăn chặn kế thừa đánh giá/dữ liệu cũ: dọn dẹp mọi đánh giá mồ côi nếu trùng ID
@@ -640,6 +660,8 @@ export class RestaurantMgmtService {
     const food = this.foodRepo.create({
       ...data,
       ...(nextId ? { maMonAn: nextId } : {}),
+      ...(foodNameEn !== undefined ? { tenMonAnEn: foodNameEn } : {}),
+      ...(descEn !== undefined ? { moTaEn: descEn } : {}),
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       ...(normalizedOptions !== undefined ? { options: normalizedOptions } : {}),
@@ -690,11 +712,15 @@ export class RestaurantMgmtService {
     }
 
     const desc = data.moTa ?? (data as any).mota ?? (data as any).description;
+    const foodNameEn = data.tenMonAnEn ?? (data as any).tenmonan_en ?? (data as any).nameEn;
+    const descEn = data.moTaEn ?? (data as any).mota_en ?? (data as any).descEn;
     const traits = data.dacTinh ?? (data as any).dactinh;
     const normalizedTraits = Array.isArray(traits) ? JSON.stringify(traits) : (typeof traits === 'string' ? traits : undefined);
     const normalizedOptions = this.normalizeOptions(data);
 
     Object.assign(food, data, {
+      ...(foodNameEn !== undefined ? { tenMonAnEn: foodNameEn } : {}),
+      ...(descEn !== undefined ? { moTaEn: descEn } : {}),
       ...(desc !== undefined ? { moTa: desc } : {}),
       ...(normalizedTraits !== undefined ? { dacTinh: normalizedTraits } : {}),
       ...(normalizedOptions !== undefined ? { options: normalizedOptions } : {}),
@@ -730,30 +756,32 @@ export class RestaurantMgmtService {
       throw new Error('Món ăn không tồn tại hoặc không thuộc quyền quản lý của quán!');
     }
     const foodId = food.maMonAn;
-    const foodImg = food.img;
-    try {
-      await this.foodRepo.remove(food);
-      if (foodImg) {
-        deleteUploadFile(foodImg);
-      }
-      // Dọn dẹp đánh giá của món đã xóa khỏi danhgia_mon
-      await this.foodRepo.query(`DELETE FROM danhgia_mon WHERE mamon = $1;`, [foodId]).catch(() => {});
-    } catch (removeErr: any) {
-      // If foreign key constraint violates (e.g. order history), soft-delete instead of crashing
-      if (removeErr.message?.includes('foreign key') || removeErr.message?.includes('constraint') || removeErr.code === '23503') {
-        food.trangThaiMon = 'TAM_NGUNG';
-        food.soLuongMon = 0;
-        await this.foodRepo.save(food);
-      } else {
-        throw removeErr;
-      }
-    }
+    // Xóa mềm: Chuyển trạng thái sang DA_XOA để lưu vào Thùng rác an toàn
+    food.trangThaiMon = 'DA_XOA';
+    const saved = await this.foodRepo.save(food);
     try {
       RealtimeService.getInstance().emitMenuUpdated(maQuan, 'DELETE', { maMonAn: foodId, maQuan });
     } catch (e) {
       console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
     }
-    return { success: true, message: 'Đã xóa món ăn khỏi thực đơn' };
+    return { success: true, message: 'Đã chuyển món ăn vào thùng rác', data: saved };
+  }
+
+  async restoreFoodItem(maQuan: number, maMonAn: number) {
+    const food = await this.foodRepo.findOne({ where: { maMonAn, maQuan } });
+    if (!food) {
+      throw new Error('Món ăn không tồn tại hoặc không thuộc quyền quản lý của quán!');
+    }
+    // Khôi phục món ăn: nếu còn tồn kho > 0 thì DANG_BAN, ngược lại HET_HANG
+    const qty = Number(food.soLuongMon || 0);
+    food.trangThaiMon = qty > 0 ? 'DANG_BAN' : 'HET_HANG';
+    const saved = await this.foodRepo.save(food);
+    try {
+      RealtimeService.getInstance().emitMenuUpdated(maQuan, 'UPDATE', saved);
+    } catch (e) {
+      console.error('[RestaurantMgmt] Error emitting menu:updated:', e);
+    }
+    return { success: true, message: 'Đã khôi phục món ăn về thực đơn', data: saved };
   }
 
   // ── 4. Quản lý Thông tin Nhà hàng (Scope maQuan) ─────────────────────────

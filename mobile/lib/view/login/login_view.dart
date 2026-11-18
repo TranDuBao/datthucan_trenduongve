@@ -8,7 +8,6 @@ import 'package:food_route/common_widget/auth_header_widget.dart';
 import 'package:food_route/common_widget/auth_textfield.dart';
 import 'package:food_route/view/login/rest_password_view.dart';
 import 'package:food_route/view/login/sing_up_view.dart';
-import 'package:food_route/view/on_boarding/on_boarding_view.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +19,7 @@ import '../../providers/map_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../services/fcm_push_service.dart';
 import '../restaurant_owner/restaurant_owner_main_view.dart';
+import '../main_tabview/main_tabview.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -494,15 +494,13 @@ class _LoginViewState extends State<LoginView> {
           Globs.udStringSet(refreshToken, KKey.refreshToken);
         }
 
-        // Áp dụng cơ chế Ghi nhớ đăng nhập
+        // Đăng nhập thành công -> Xác nhận trạng thái đăng nhập
         Globs.udBoolSet(false, Globs.isGuestMode);
+        Globs.udBoolSet(true, Globs.userLogin);
         Globs.udBoolSet(_rememberMe, KKey.rememberMe);
         if (_rememberMe) {
-          Globs.udBoolSet(true, Globs.userLogin);
           Globs.udStringSet(txtEmail.text.trim(), KKey.savedEmail);
         } else {
-          // Phiên chỉ giữ trong RAM app hiện tại, tắt app mở lại phải đăng nhập
-          Globs.udBoolSet(false, Globs.userLogin);
           Globs.udRemove(KKey.savedEmail);
         }
 
@@ -530,7 +528,7 @@ class _LoginViewState extends State<LoginView> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (context) => const OnBoardingView(),
+                builder: (context) => const MainTabView(),
               ),
               (route) => false,
             );
@@ -567,17 +565,16 @@ class _LoginViewState extends State<LoginView> {
           Globs.udStringSet(refreshToken, KKey.refreshToken);
         }
 
-        // Đăng nhập Google cũng đi qua cùng cơ chế ghi nhớ phiên
+        // Đăng nhập Google thành công
         Globs.udBoolSet(false, Globs.isGuestMode);
+        Globs.udBoolSet(true, Globs.userLogin);
         Globs.udBoolSet(_rememberMe, KKey.rememberMe);
         if (_rememberMe) {
-          Globs.udBoolSet(true, Globs.userLogin);
           final email = (payload['email'] ?? '').toString();
           if (email.isNotEmpty) {
             Globs.udStringSet(email, KKey.savedEmail);
           }
         } else {
-          Globs.udBoolSet(false, Globs.userLogin);
           Globs.udRemove(KKey.savedEmail);
         }
 
@@ -590,10 +587,11 @@ class _LoginViewState extends State<LoginView> {
           FcmPushService.instance.showPermissionPromptIfNeeded(context);
         }
 
+        final isStoreOwner = UserRoleHelper.isMerchant;
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const OnBoardingView(),
+            builder: (context) => isStoreOwner ? const RestaurantOwnerMainView() : const MainTabView(),
           ),
           (route) => false,
         );

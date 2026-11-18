@@ -163,12 +163,23 @@ export const AdminOrders: React.FC = () => {
                 return (
                   <tr
                     key={ord.maDonHang}
-                    onClick={() => setSelectedOrder({
-                      ...ord,
-                      tenKhachHang: resolvedCustomerName || ord.tenKhachHang,
-                      sdtKhachHang: resolvedCustomerPhone || ord.sdtKhachHang,
-                      tenQuan: resolvedStoreName || ord.tenQuan,
-                    })}
+                    onClick={() => {
+                      const finalStore = ord.cuaHang || matchedStore;
+                      setSelectedOrder({
+                        ...ord,
+                        tenKhachHang: resolvedCustomerName || ord.tenKhachHang,
+                        sdtKhachHang: resolvedCustomerPhone || ord.sdtKhachHang,
+                        tenQuan: resolvedStoreName || ord.tenQuan,
+                        sdtQuan: ord.sdtQuan || matchedStore?.sdt,
+                        diaChiQuan: ord.diaChiQuan || matchedStore?.diaChi,
+                        cuaHang: finalStore ? {
+                          maQuan: finalStore.maQuan || ord.maQuan,
+                          tenQuan: finalStore.tenQuan || resolvedStoreName || ord.tenQuan,
+                          diaChi: finalStore.diaChi || ord.diaChiQuan,
+                          sdt: finalStore.sdt || ord.sdtQuan,
+                        } : undefined,
+                      });
+                    }}
                     style={{ cursor: 'pointer' }}
                     title="Click để xem chi tiết đơn hàng"
                   >

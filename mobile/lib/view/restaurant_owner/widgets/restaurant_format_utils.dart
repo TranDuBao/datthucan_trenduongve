@@ -21,7 +21,36 @@ class RestaurantFormatUtils {
     final year = local.year;
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
-    return '$hour:$minute - $day/$month/$year';
+    return '$hour:$minute • $day/$month/$year';
+  }
+
+  static String formatDateOnly(dynamic dateStr) {
+    if (dateStr == null) return '';
+    final date = DateTime.tryParse(dateStr.toString());
+    if (date == null) return dateStr.toString();
+    final local = date.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year;
+    return '$day/$month/$year';
+  }
+
+  static String formatVoucherExpiry(dynamic dateStr) {
+    if (dateStr == null) return 'Vô thời hạn';
+    final date = DateTime.tryParse(dateStr.toString());
+    if (date == null) return dateStr.toString();
+    final local = date.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year;
+    final now = DateTime.now();
+    final diffDays = date.difference(now).inDays;
+    if (date.isBefore(now)) {
+      return '$day/$month/$year (Đã kết thúc)';
+    } else if (diffDays <= 30) {
+      return '$day/$month/$year (Còn $diffDays ngày)';
+    }
+    return '$day/$month/$year';
   }
 
   static String formatRelativeTime(dynamic dateStr) {

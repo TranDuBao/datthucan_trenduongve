@@ -2,6 +2,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../common/format_utils.dart';
 import '../../common/color_extension.dart';
 import '../../models/review_model.dart';
 import '../../providers/cart_provider.dart';
@@ -16,6 +17,9 @@ import '../../common/food_image_helper.dart';
 import '../../widgets/single_restaurant_warning_modal.dart';
 import '../../common/locator.dart';
 import '../../services/socket_service.dart';
+import '../more/checkout_view.dart';
+import '../../providers/map_provider.dart';
+import '../../common/user_role_helper.dart';
 
 class ItemDetailsView extends StatefulWidget {
   final Map itemObj;
@@ -29,19 +33,13 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
   late Map<String, dynamic> itemData;
   late double basePrice;
   int qty = 1;
-  bool isFav = false;
-
-  bool _isLoadingReviews = true;
+  bool isFav = false, _isLoadingReviews = true;
   List<ReviewModel> _reviewsList = [];
   double _avgRating = 0.0;
   int _totalReviewsCount = 0;
   String _selectedReviewFilter = "all";
-
-  // Dynamic Customization state
   int selectedOptionIndex = 0;
-  List<Map<String, dynamic>> sizeOptions = [];
-  List<Map<String, dynamic>> toppingOptions = [];
-
+  List<Map<String, dynamic>> sizeOptions = [], toppingOptions = [];
   final TextEditingController noteController = TextEditingController();
   int? _attachedStoreId;
 
@@ -50,16 +48,13 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     super.initState();
     itemData = Map<String, dynamic>.from(widget.itemObj);
     basePrice = double.tryParse((itemData["price"] ?? itemData["giaMonAn"] ?? 65000).toString()) ?? 65000.0;
-
     final rawRate = itemData["rating"] ?? itemData["diemDanhGiaTB"] ?? itemData["danhGiaTrungBinh"] ?? itemData["rate"] ?? 0.0;
     final rawCount = itemData["soLuotDanhGia"] ?? itemData["ratingCount"] ?? itemData["soLuongDanhGia"] ?? itemData["reviewsCount"] ?? 0;
     _avgRating = double.tryParse(rawRate.toString()) ?? 0.0;
     _totalReviewsCount = int.tryParse(rawCount.toString()) ?? 0;
-
     _initCustomizationOptions();
     _loadDishReviewsAndStats();
     _loadDishLiveDetails();
-
     _setupRealtimeSync();
   }
 
@@ -97,7 +92,6 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
           return;
         }
       }
-
       if (currentResId != null && (updatedResId == null || updatedResId == currentResId)) {
         _loadDishLiveDetails();
       }
@@ -119,7 +113,6 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
   void _initCustomizationOptions() {
     dynamic rawSizes = itemData["sizes"] ?? itemData["sizeOptions"];
     dynamic rawToppings = itemData["toppings"] ?? itemData["toppingOptions"];
-
     dynamic parsedOptions;
     if (itemData["options"] != null) {
       if (itemData["options"] is String && (itemData["options"] as String).trim().isNotEmpty) {
@@ -163,19 +156,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
           .where((s) => s["name"].toString().trim().isNotEmpty)
           .toList();
     } else {
-      final name = (itemData["name"] ?? itemData["tenMonAn"] ?? "").toString().toLowerCase();
-      if (_isDrink(name)) {
-        sizeOptions = [
-          {"name": "Size Vừa (M)", "extra": 0.0},
-          {"name": "Size Lớn (L)", "extra": 6000.0},
-          {"name": "Size Nhỏ (S)", "extra": 0.0},
-        ];
-      } else {
-        sizeOptions = [
-          {"name": "Phần Tiêu Chuẩn", "extra": 0.0},
-          {"name": "Phần Lớn (Nhiều hơn)", "extra": 10000.0},
-        ];
-      }
+      sizeOptions = [];
     }
 
     if (sizeOptions.isNotEmpty) {
@@ -197,62 +178,26 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
           .where((t) => t["name"].toString().trim().isNotEmpty)
           .toList();
     } else {
-      final name = (itemData["name"] ?? itemData["tenMonAn"] ?? "").toString().toLowerCase();
-      if (_isDrink(name)) {
-        toppingOptions = [
-          {"name": "Trân châu đen", "extra": 5000.0, "selected": false},
-          {"name": "Trân châu trắng", "extra": 5000.0, "selected": false},
-          {"name": "Thạch nha đam", "extra": 5000.0, "selected": false},
-          {"name": "Pudding trứng", "extra": 7000.0, "selected": false},
-        ];
-      } else {
-        toppingOptions = [];
-      }
+      toppingOptions = [];
     }
   }
 
   bool _isDrink(String name) {
-    return name.contains("nước") ||
-        name.contains("trà") ||
-        name.contains("cà phê") ||
-        name.contains("coffee") ||
-        name.contains("sữa") ||
-        name.contains("sinh tố") ||
-        name.contains("nước ép") ||
-        name.contains("latte") ||
-        name.contains("matcha") ||
-        name.contains("chè");
+    return name.contains("nước") || name.contains("trà") || name.contains("cà phê") || name.contains("coffee") || name.contains("sữa") || name.contains("sinh tố") || name.contains("nước ép") || name.contains("latte") || name.contains("matcha") || name.contains("chè");
   }
 
   bool _isCakeOrSweet(String name) {
-    return name.contains("bánh") ||
-        name.contains("cake") ||
-        name.contains("kem") ||
-        name.contains("tart") ||
-        name.contains("donut") ||
-        name.contains("mousse");
+    return name.contains("bánh") || name.contains("cake") || name.contains("kem") || name.contains("tart") || name.contains("donut") || name.contains("mousse");
   }
 
   IconData _getIconForTag(String tag) {
     final lower = tag.toLowerCase();
-    if (lower.contains('phút') || lower.contains('min') || lower.contains('chế biến') || lower.contains('nấu')) {
-      return Icons.access_time_rounded;
-    }
-    if (lower.contains('kcal') || lower.contains('calo') || lower.contains('protein') || lower.contains('năng lượng')) {
-      return Icons.local_fire_department_rounded;
-    }
-    if (lower.contains('đá') || lower.contains('lạnh') || lower.contains('nóng') || lower.contains('ice') || lower.contains('cold')) {
-      return LucideIcons.snowflake;
-    }
-    if (lower.contains('bánh') || lower.contains('ngọt') || lower.contains('tráng miệng')) {
-      return Icons.cake_rounded;
-    }
-    if (lower.contains('tươi') || lower.contains('sạch') || lower.contains('chay') || lower.contains('clean') || lower.contains('rau')) {
-      return Icons.eco_rounded;
-    }
-    if (lower.contains('thịt') || lower.contains('bò') || lower.contains('gà') || lower.contains('hải sản') || lower.contains('xương')) {
-      return Icons.restaurant_rounded;
-    }
+    if (lower.contains('phút') || lower.contains('min') || lower.contains('chế biến') || lower.contains('nấu')) return Icons.access_time_rounded;
+    if (lower.contains('kcal') || lower.contains('calo') || lower.contains('protein') || lower.contains('năng lượng')) return Icons.local_fire_department_rounded;
+    if (lower.contains('đá') || lower.contains('lạnh') || lower.contains('nóng') || lower.contains('ice') || lower.contains('cold')) return LucideIcons.snowflake;
+    if (lower.contains('bánh') || lower.contains('ngọt') || lower.contains('tráng miệng')) return Icons.cake_rounded;
+    if (lower.contains('tươi') || lower.contains('sạch') || lower.contains('chay') || lower.contains('clean') || lower.contains('rau')) return Icons.eco_rounded;
+    if (lower.contains('thịt') || lower.contains('bò') || lower.contains('gà') || lower.contains('hải sản') || lower.contains('xương')) return Icons.restaurant_rounded;
     return Icons.check_circle_outline_rounded;
   }
 
@@ -275,35 +220,31 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     }
 
     if (parsed.isNotEmpty) {
-      return parsed.map((t) => {
-        'icon': _getIconForTag(t),
-        'text': t,
-      }).toList();
+      return parsed.map((t) => {'icon': _getIconForTag(t), 'text': t}).toList();
     }
-
     return _getCategoryBadges(foodName);
   }
 
   List<Map<String, dynamic>> _getCategoryBadges(String foodName) {
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
     if (_isDrink(foodName.toLowerCase())) {
       return [
-        {"icon": Icons.access_time_rounded, "text": "~10 phút"},
+        {"icon": Icons.access_time_rounded, "text": isEn ? "~10 mins" : "~10 phút"},
         {"icon": Icons.local_fire_department_rounded, "text": "180 kcal"},
-        {"icon": LucideIcons.snowflake, "text": "Đá riêng / Nóng"},
+        {"icon": LucideIcons.snowflake, "text": isEn ? "Separate ice / Hot" : "Đá riêng / Nóng"},
       ];
     } else if (_isCakeOrSweet(foodName.toLowerCase())) {
       return [
-        {"icon": Icons.access_time_rounded, "text": "~15 phút"},
+        {"icon": Icons.access_time_rounded, "text": isEn ? "~15 mins" : "~15 phút"},
         {"icon": Icons.local_fire_department_rounded, "text": "320 kcal"},
-        {"icon": Icons.cake_rounded, "text": "Bánh tươi mỗi ngày"},
-      ];
-    } else {
-      return [
-        {"icon": Icons.access_time_rounded, "text": "~15 phút"},
-        {"icon": Icons.local_fire_department_rounded, "text": "580 kcal"},
-        {"icon": Icons.eco_rounded, "text": "Nguyên liệu tươi sạch"},
+        {"icon": Icons.cake_rounded, "text": isEn ? "Freshly baked daily" : "Bánh tươi mỗi ngày"},
       ];
     }
+    return [
+      {"icon": Icons.access_time_rounded, "text": isEn ? "~15 mins" : "~15 phút"},
+      {"icon": Icons.local_fire_department_rounded, "text": "580 kcal"},
+      {"icon": Icons.eco_rounded, "text": isEn ? "Fresh clean ingredients" : "Nguyên liệu tươi sạch"},
+    ];
   }
 
   Future<void> _loadDishReviewsAndStats() async {
@@ -416,24 +357,25 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
     var media = MediaQuery.sizeOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final foodName = itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn lộ trình";
+    final isEn = Localizations.localeOf(context).languageCode == 'en';
+    final enName = (itemData["nameEn"] ?? itemData["tenMonAnEn"])?.toString().trim();
+    final foodName = (isEn && enName != null && enName.isNotEmpty)
+        ? enName
+        : (itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn lộ trình");
     final imgUrl = FoodImageHelper.getFoodImage(itemData["image"] ?? itemData["img"] ?? itemData["hinhAnh"], foodName, id: itemData["id"] ?? itemData["maMonAn"] ?? 0);
-    final rawDesc = itemData["moTa"] ?? itemData["mota"] ?? itemData["description"];
+    final rawDescEn = (itemData["moTaEn"] ?? itemData["motaEn"] ?? itemData["descEn"])?.toString().trim();
+    final rawDescVi = (itemData["moTa"] ?? itemData["mota"] ?? itemData["description"])?.toString().trim();
+    final rawDesc = (isEn && rawDescEn != null && rawDescEn.isNotEmpty) ? rawDescEn : rawDescVi;
     final foodDesc = (rawDesc != null && rawDesc.toString().trim().isNotEmpty)
         ? rawDesc.toString().trim()
-        : "Món ăn được chế biến tươi nóng từ nguồn nguyên liệu sạch chuẩn vệ sinh an toàn thực phẩm. Đặt trước để ghé lấy nóng hổi không chờ đợi.";
+        : (isEn
+            ? "Freshly prepared from clean ingredients meeting food safety standards. Pre-order to pick up piping hot without waiting."
+            : "Món ăn được chế biến tươi nóng từ nguồn nguyên liệu sạch chuẩn vệ sinh an toàn thực phẩm. Đặt trước để ghé lấy nóng hổi không chờ đợi.");
     final badges = _getBadges(itemData, foodName);
-
     final bool hasExplicitStock = itemData.containsKey("soLuongMon") || itemData.containsKey("quantity");
-    final int stockQty = hasExplicitStock
-        ? (int.tryParse((itemData["soLuongMon"] ?? itemData["quantity"]).toString()) ?? 0)
-        : 99;
+    final int stockQty = hasExplicitStock ? (int.tryParse((itemData["soLuongMon"] ?? itemData["quantity"]).toString()) ?? 0) : 99;
     final String status = (itemData["trangThaiMon"] ?? itemData["status"] ?? "").toString().toUpperCase();
-    final bool isSoldOut = (hasExplicitStock && stockQty <= 0) ||
-        status == 'HET_HANG' ||
-        status == 'HET_MON' ||
-        status == 'TAM_NGUNG' ||
-        status == 'SOLDOUT';
+    final bool isSoldOut = (hasExplicitStock && stockQty <= 0) || status == 'HET_HANG' || status == 'HET_MON' || status == 'TAM_NGUNG' || status == 'SOLDOUT';
     final int soldQty = int.tryParse((itemData["soLuongDaBan"] ?? itemData["soLuotBan"] ?? itemData["soldCount"] ?? 0).toString()) ?? 0;
 
     return Scaffold(
@@ -531,13 +473,13 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                 color: const Color(0xFFEF4444),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.alertTriangle, size: 12, color: Colors.white), const SizedBox(width: 3),
+                                  const Icon(LucideIcons.alertTriangle, size: 12, color: Colors.white), const SizedBox(width: 3),
                                   Text(
-                                    "Hết Hàng",
-                                    style: TextStyle(
+                                    context.l10n.itemOutOfStock,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
@@ -553,13 +495,13 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                 color: const Color(0xFFFFC107),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.flame, size: 12, color: Color(0xFF111827)), const SizedBox(width: 3),
+                                  const Icon(LucideIcons.flame, size: 12, color: Color(0xFF111827)), const SizedBox(width: 3),
                                   Text(
-                                    "Bán Chạy",
-                                    style: TextStyle(
+                                    context.l10n.filterBestSeller,
+                                    style: const TextStyle(
                                       color: Color(0xFF111827),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
@@ -595,7 +537,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                "Đã bán $soldQty phần",
+                                context.l10n.itemSoldPortions(soldQty),
                                 style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -661,7 +603,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                isSoldOut ? "Hết hàng" : "Còn $stockQty phần",
+                                isSoldOut ? context.l10n.itemOutOfStock : context.l10n.itemStockPortions(stockQty),
                                 style: TextStyle(
                                   color: isSoldOut ? const Color(0xFFDC2626) : const Color(0xFF059669),
                                   fontSize: 12,
@@ -677,7 +619,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  "Đã bán $soldQty phần",
+                                  context.l10n.itemSoldPortions(soldQty),
                                   style: TextStyle(
                                     color: TColor.secondaryTextOf(context),
                                     fontSize: 12,
@@ -696,8 +638,8 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                             const SizedBox(width: 4),
                             Text(
                               _totalReviewsCount > 0 && _avgRating > 0
-                                  ? "${_avgRating.toStringAsFixed(1)} ($_totalReviewsCount đánh giá)"
-                                  : "0.0 (0 đánh giá)",
+                                  ? "${_avgRating.toStringAsFixed(1)} (${context.l10n.dishReviewCount(_totalReviewsCount)})"
+                                  : (isEn ? "0.0 (0 reviews)" : "0.0 (0 đánh giá)"),
                               style: TextStyle(
                                 color: TColor.primaryTextOf(context),
                                 fontSize: 13,
@@ -803,146 +745,231 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
               ),
               child: SafeArea(
                 top: false,
-                child: Row(
-                  children: [
-                    // Quantity Counter (- 1 +)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2A2E3B) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.remove_rounded, color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primaryTextOf(context), size: 18),
-                            onPressed: isSoldOut
-                                ? null
-                                : () {
-                                    if (qty > 1) {
-                                      setState(() => qty--);
-                                    }
-                                  },
+                child: UserRoleHelper.isMerchant
+                    ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF28303D) : const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF7C2D12) : const Color(0xFFFED7AA),
                           ),
-                          Text(
-                            "$qty",
-                            style: TextStyle(
-                              color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primaryTextOf(context),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.storefront_rounded, color: Color(0xFFFC6011), size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Món ăn của quán bạn',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: TColor.primaryTextOf(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Chế độ xem trước món ăn (Chủ quán không thể tự đặt hàng)',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: TColor.secondaryTextOf(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          // Quantity Counter (- 1 +)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2E3B) : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.remove_rounded, color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primaryTextOf(context), size: 18),
+                                  onPressed: isSoldOut
+                                      ? null
+                                      : () {
+                                          if (qty > 1) {
+                                            setState(() => qty--);
+                                          }
+                                        },
+                                ),
+                                Text(
+                                  "$qty",
+                                  style: TextStyle(
+                                    color: isSoldOut ? TColor.secondaryTextOf(context) : TColor.primaryTextOf(context),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.add_rounded, color: isSoldOut ? TColor.secondaryTextOf(context) : const Color(0xFFFF4D00), size: 18),
+                                  onPressed: isSoldOut
+                                      ? null
+                                      : () {
+                                          if (qty < stockQty || stockQty == 0) {
+                                            setState(() => qty++);
+                                          } else {
+                                            CustomToast.showError(context, context.l10n.itemStockLimitWarning(stockQty));
+                                          }
+                                        },
+                                ),
+                              ],
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.add_rounded, color: isSoldOut ? TColor.secondaryTextOf(context) : const Color(0xFFFF4D00), size: 18),
-                            onPressed: isSoldOut
-                                ? null
-                                : () {
-                                    if (qty < stockQty || stockQty == 0) {
-                                      setState(() => qty++);
-                                    } else {
-                                      CustomToast.showError(context, "Số lượng trong kho chỉ còn $stockQty món");
-                                    }
-                                  },
+                          const SizedBox(width: 8),
+
+                          // Add to Cart Button (Icon)
+                          SizedBox(
+                            height: 48,
+                            width: 48,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                side: const BorderSide(color: Color(0xFFFF4D00), width: 1.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                backgroundColor: isDark ? const Color(0xFF1E232E) : Colors.white,
+                              ),
+                              onPressed: isSoldOut ? null : () => _handleAddToCart(goToCheckout: false, calculatedUnitPrice: calculatedUnitPrice, imgUrl: imgUrl),
+                              child: const Icon(Icons.add_shopping_cart_rounded, color: Color(0xFFFF4D00), size: 21),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Primary Order Now Button (Go to Checkout)
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isSoldOut ? (isDark ? const Color(0xFF2A2E3B) : const Color(0xFFD1D5DB)) : const Color(0xFFFF4D00),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                                onPressed: isSoldOut ? null : () => _handleAddToCart(goToCheckout: true, calculatedUnitPrice: calculatedUnitPrice, imgUrl: imgUrl),
+                                child: Text(
+                                  isSoldOut
+                                      ? context.l10n.itemTempOutOfStock
+                                      : "${context.l10n.dishOrderNow}  •  ${_formatCurrency(calculatedTotalPrice)}",
+                                  style: TextStyle(
+                                    color: isSoldOut ? TColor.secondaryTextOf(context) : Colors.white,
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Big Orange Add to Cart Button (Disabled if Sold Out)
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isSoldOut ? (isDark ? const Color(0xFF2A2E3B) : const Color(0xFFD1D5DB)) : const Color(0xFFFF4D00),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: isSoldOut
-                              ? null
-                              : () {
-                                  final rawFId = itemData["id"] ?? itemData["maMonAn"];
-                                  final foodId = rawFId is int ? rawFId : (int.tryParse(rawFId?.toString() ?? '') ?? 1);
-                                  final rawResId = itemData["maQuan"] ?? itemData["restaurantId"] ?? itemData["idQuan"];
-                                  final resId = rawResId is int ? rawResId : (int.tryParse(rawResId?.toString() ?? '') ?? 1);
-                                  final storeName = (itemData["tenQuan"] ?? itemData["restaurantName"] ?? "Quán mới").toString();
-                                  final storeAddress = (itemData["diaChi"] ?? itemData["address"] ?? "").toString();
-
-                                  final cart = context.read<CartProvider>();
-
-                                  void doAdd() {
-                                    if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
-                                      cart.registerRestaurant(id: resId, name: storeName, address: storeAddress);
-                                    }
-
-                                    final selectedSizeName = sizeOptions.isNotEmpty && selectedOptionIndex >= 0 && selectedOptionIndex < sizeOptions.length
-                                        ? sizeOptions[selectedOptionIndex]["name"].toString()
-                                        : "";
-                                    final selectedToppingNames = toppingOptions.where((t) => t["selected"] == true).map((t) => t["name"].toString()).toList();
-                                    final dishNote = noteController.text.trim();
-
-                                    final itemNotes = [
-                                      if (selectedToppingNames.isNotEmpty) "Topping: ${selectedToppingNames.join(', ')}",
-                                      if (dishNote.isNotEmpty) dishNote,
-                                    ].join(" • ");
-
-                                    cart.addToCart(
-                                      CartItemModel(
-                                        foodId: foodId,
-                                        foodName: foodName,
-                                        price: calculatedUnitPrice,
-                                        quantity: qty,
-                                        image: imgUrl,
-                                        restaurantId: resId,
-                                        restaurantName: storeName,
-                                        restaurantAddress: storeAddress,
-                                        size: selectedSizeName,
-                                        toppings: selectedToppingNames,
-                                        dishNote: dishNote,
-                                        note: itemNotes,
-                                      ),
-                                    );
-                                    CustomToast.showSuccess(context, "Đã thêm $foodName (x$qty) vào giỏ hàng!");
-                                    Navigator.pop(context);
-                                  }
-
-                                  if (cart.hasConflictWith(resId)) {
-                                    final existingResName = cart.activeRestaurantName;
-                                    SingleRestaurantWarningModal.show(
-                                      context: context,
-                                      existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
-                                      newRestaurantName: storeName,
-                                      onClearAndOrder: () {
-                                        cart.clearCart();
-                                        doAdd();
-                                      },
-                                    );
-                                    return;
-                                  }
-
-                                  doAdd();
-                                },
-                          child: Text(
-                            isSoldOut
-                                ? "Món ăn tạm hết hàng"
-                                : "Thêm vào giỏ  •  ${_formatCurrency(calculatedTotalPrice)}",
-                            style: TextStyle(
-                              color: isSoldOut ? TColor.secondaryTextOf(context) : Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _handleAddToCart({required bool goToCheckout, required double calculatedUnitPrice, required String imgUrl}) {
+    final foodName = (itemData["name"] ?? itemData["tenMonAn"] ?? "Món ăn").toString();
+    final rawFId = itemData["id"] ?? itemData["maMonAn"];
+    final foodId = rawFId is int ? rawFId : (int.tryParse(rawFId?.toString() ?? '') ?? 1);
+    final rawResId = itemData["maQuan"] ?? itemData["restaurantId"] ?? itemData["idQuan"];
+    final resId = rawResId is int ? rawResId : (int.tryParse(rawResId?.toString() ?? '') ?? 1);
+    final storeName = (itemData["tenQuan"] ?? itemData["restaurantName"] ?? "Quán mới").toString();
+    final storeAddress = (itemData["diaChi"] ?? itemData["address"] ?? "").toString();
+
+    final cart = context.read<CartProvider>();
+
+    void doAdd() {
+      if (storeName.isNotEmpty && !storeName.startsWith('Quán ')) {
+        cart.registerRestaurant(id: resId, name: storeName, address: storeAddress);
+      }
+
+      final selectedSizeName = sizeOptions.isNotEmpty && selectedOptionIndex >= 0 && selectedOptionIndex < sizeOptions.length
+          ? sizeOptions[selectedOptionIndex]["name"].toString()
+          : "";
+      final selectedToppingNames = toppingOptions.where((t) => t["selected"] == true).map((t) => t["name"].toString()).toList();
+      final dishNote = noteController.text.trim();
+
+      final itemNotes = [
+        if (selectedToppingNames.isNotEmpty) "Topping: ${selectedToppingNames.join(', ')}",
+        if (dishNote.isNotEmpty) dishNote,
+      ].join(" • ");
+
+      cart.addToCart(
+        CartItemModel(
+          foodId: foodId,
+          foodName: foodName,
+          price: calculatedUnitPrice,
+          quantity: qty,
+          image: imgUrl,
+          restaurantId: resId,
+          restaurantName: storeName,
+          restaurantAddress: storeAddress,
+          size: selectedSizeName,
+          toppings: selectedToppingNames,
+          dishNote: dishNote,
+          note: itemNotes,
+        ),
+      );
+
+      if (goToCheckout) {
+        final provider = context.read<MapProvider>();
+        if (itemData['restaurant'] is Map) {
+          provider.selectStopoverRestaurant(Map<String, dynamic>.from(itemData['restaurant'] as Map));
+        } else if (resId > 0 && storeName.isNotEmpty) {
+          provider.selectStopoverRestaurant({
+            'id': resId,
+            'maQuan': resId,
+            'name': storeName,
+            'tenQuan': storeName,
+            'address': storeAddress,
+            'diaChi': storeAddress,
+          });
+        }
+        Navigator.pop(context);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckoutView()));
+      } else {
+        CustomToast.showSuccess(
+          context,
+          Localizations.localeOf(context).languageCode == 'en'
+              ? "Added $foodName (x$qty) to cart!"
+              : "Đã thêm $foodName (x$qty) vào giỏ hàng!",
+        );
+        Navigator.pop(context);
+      }
+    }
+
+    if (cart.hasConflictWith(resId)) {
+      final existingResName = cart.activeRestaurantName;
+      SingleRestaurantWarningModal.show(
+        context: context,
+        existingRestaurantName: existingResName.isNotEmpty
+            ? existingResName
+            : (Localizations.localeOf(context).languageCode == 'en' ? 'Another store' : 'Quán khác'),
+        newRestaurantName: storeName,
+        onClearAndOrder: () {
+          cart.clearCart();
+          doAdd();
+        },
+      );
+      return;
+    }
+    doAdd();
   }
 
   Widget _infoBadge(BuildContext context, IconData icon, String text) {
@@ -958,14 +985,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
         children: [
           Icon(icon, size: 14, color: TColor.secondaryTextOf(context)),
           const SizedBox(width: 5),
-          Text(
-            text,
-            style: TextStyle(
-              color: TColor.primaryTextOf(context),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(text, style: TextStyle(color: TColor.primaryTextOf(context), fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
     );

@@ -15,12 +15,14 @@ export const AdminCategories: React.FC = () => {
   // Modal 1: Create Category
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTenDanhMuc, setNewTenDanhMuc] = useState('');
+  const [newTenDanhMucEn, setNewTenDanhMucEn] = useState('');
   const [newHinhAnh, setNewHinhAnh] = useState('');
 
   // Modal 2: Edit Category
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [editTenDanhMuc, setEditTenDanhMuc] = useState('');
+  const [editTenDanhMucEn, setEditTenDanhMucEn] = useState('');
   const [editHinhAnh, setEditHinhAnh] = useState('');
 
   // Modal 3: View & Assign Foods in Category
@@ -93,9 +95,14 @@ export const AdminCategories: React.FC = () => {
     try {
       await apiFetch('/admin/categories', {
         method: 'POST',
-        body: JSON.stringify({ tenDanhMuc: trimmed, hinhAnh: newHinhAnh.trim() || undefined }),
+        body: JSON.stringify({
+          tenDanhMuc: trimmed,
+          tenDanhMucEn: newTenDanhMucEn.trim() || undefined,
+          hinhAnh: newHinhAnh.trim() || undefined,
+        }),
       });
       setNewTenDanhMuc('');
+      setNewTenDanhMucEn('');
       setNewHinhAnh('');
       setCreateModalOpen(false);
       fetchCategories();
@@ -107,6 +114,7 @@ export const AdminCategories: React.FC = () => {
   const handleOpenEdit = (category: any) => {
     setEditingCategory(category);
     setEditTenDanhMuc(category.tenDanhMuc || '');
+    setEditTenDanhMucEn(category.tenDanhMucEn || '');
     setEditHinhAnh(category.hinhAnh || '');
     setEditModalOpen(true);
   };
@@ -130,7 +138,11 @@ export const AdminCategories: React.FC = () => {
     try {
       await apiFetch(`/admin/categories/${editingCategory.maDanhMuc}`, {
         method: 'PUT',
-        body: JSON.stringify({ tenDanhMuc: trimmed, hinhAnh: editHinhAnh.trim() }),
+        body: JSON.stringify({
+          tenDanhMuc: trimmed,
+          tenDanhMucEn: editTenDanhMucEn.trim() || undefined,
+          hinhAnh: editHinhAnh.trim(),
+        }),
       });
       setEditModalOpen(false);
       fetchCategories();
@@ -294,7 +306,14 @@ export const AdminCategories: React.FC = () => {
                     )}
                   </td>
                   <td style={{ fontWeight: 700 }}>#{c.maDanhMuc}</td>
-                  <td style={{ fontWeight: 700, color: '#0f172a', fontSize: '15px' }}>{c.tenDanhMuc}</td>
+                  <td style={{ fontWeight: 700, color: '#0f172a', fontSize: '15px' }}>
+                    <div>{c.tenDanhMuc}</div>
+                    {c.tenDanhMucEn && (
+                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500, marginTop: '3px' }}>
+                        🌐 {c.tenDanhMucEn}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                       <button
@@ -334,15 +353,28 @@ export const AdminCategories: React.FC = () => {
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Thêm Danh Mục Tuyển Chọn Mới">
         <form onSubmit={handleCreate}>
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label className="form-label">Tên Danh Mục <span style={{ color: '#ef4444' }}>*</span></label>
+            <label className="form-label">Tên Danh Mục (Tiếng Việt) <span style={{ color: '#ef4444' }}>*</span></label>
             <input
               type="text"
               className="form-control"
-              placeholder="Ví dụ: Phở Nóng, Trà Sữa / Cà Phê, Món Giảm 50%..."
+              placeholder="Ví dụ: Phở Truyền Thống, Cơm Tấm Đặc Biệt..."
               value={newTenDanhMuc}
               onChange={(e) => setNewTenDanhMuc(e.target.value)}
               required
             />
+          </div>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label">Tên Tiếng Anh (English Name / Song Ngữ)</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ví dụ: Traditional Pho, Special Broken Rice..."
+              value={newTenDanhMucEn}
+              onChange={(e) => setNewTenDanhMucEn(e.target.value)}
+            />
+            <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+              Dùng để hiển thị khi người dùng chuyển sang ngôn ngữ tiếng Anh trên app.
+            </span>
           </div>
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <ImageCropUpload
@@ -363,15 +395,28 @@ export const AdminCategories: React.FC = () => {
       <Modal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} title={`Chỉnh Sửa Danh Mục #${editingCategory?.maDanhMuc || ''}`}>
         <form onSubmit={handleSaveEdit}>
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label className="form-label">Tên Danh Mục <span style={{ color: '#ef4444' }}>*</span></label>
+            <label className="form-label">Tên Danh Mục (Tiếng Việt) <span style={{ color: '#ef4444' }}>*</span></label>
             <input
               type="text"
               className="form-control"
-              placeholder="Nhập tên danh mục..."
+              placeholder="Nhập tên tiếng Việt..."
               value={editTenDanhMuc}
               onChange={(e) => setEditTenDanhMuc(e.target.value)}
               required
             />
+          </div>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label">Tên Tiếng Anh (English Name / Song Ngữ)</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ví dụ: Traditional Pho, Beverages & Desserts..."
+              value={editTenDanhMucEn}
+              onChange={(e) => setEditTenDanhMucEn(e.target.value)}
+            />
+            <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+              Dùng để hiển thị khi người dùng chuyển sang ngôn ngữ tiếng Anh trên app.
+            </span>
           </div>
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <ImageCropUpload

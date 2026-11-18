@@ -129,6 +129,8 @@ export const connectDatabase = async () => {
         await safeQuery(`ALTER TABLE donhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
         await safeQuery(`ALTER TABLE chitietdonhang ADD COLUMN IF NOT EXISTS ghichu TEXT NULL;`);
         await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS options TEXT NULL;`);
+        await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS tenmonan_en VARCHAR(200) NULL;`);
+        await safeQuery(`ALTER TABLE monan ADD COLUMN IF NOT EXISTS mota_en TEXT NULL;`);
         await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS anhbienlai TEXT NULL;`);
         await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS magiaodichnganhang VARCHAR(100) NULL;`);
         await safeQuery(`ALTER TABLE hoantien ADD COLUMN IF NOT EXISTS lydokhieunai TEXT NULL;`);
@@ -202,6 +204,7 @@ export const connectDatabase = async () => {
         }
 
         await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
+        await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS tendanhmuc_en VARCHAR(150) NULL;`).catch(() => {});
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS banner (
         mabanner SERIAL PRIMARY KEY,

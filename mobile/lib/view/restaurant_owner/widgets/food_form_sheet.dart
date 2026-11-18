@@ -5,6 +5,7 @@ import '../../../common/color_extension.dart';
 import '../../../common/globs.dart';
 import '../../../services/upload_service.dart';
 import '../../../widgets/custom_toast.dart';
+import 'category_picker_sheet.dart';
 
 class FoodFormSheet extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -44,9 +45,11 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameController;
+  late TextEditingController _nameEnController;
   late TextEditingController _priceController;
   late TextEditingController _qtyController;
   late TextEditingController _descController;
+  late TextEditingController _descEnController;
 
   int? _selectedCategoryId;
   String _status = 'DANG_BAN'; // 'DANG_BAN', 'HET_HANG', 'TAM_NGUNG'
@@ -55,6 +58,7 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
   bool _isSubmitting = false;
 
   List<String> _selectedTags = [];
+  int _activeTagGroupIndex = 0;
   final TextEditingController _customTagController = TextEditingController();
 
   static const List<Map<String, dynamic>> _presetTagGroups = [
@@ -84,23 +88,29 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
   void initState() {
     super.initState();
     final d = widget.initialData;
-    _nameController = TextEditingController(text: d?['tenMonAn'] ?? '');
+    _nameController = TextEditingController(text: (d?['tenMonAn'] ?? '').toString());
+    _nameEnController = TextEditingController(text: (d?['tenMonAnEn'] ?? d?['tenmonan_en'] ?? d?['nameEn'] ?? '').toString());
     
-    // Parse price cleanly (e.g. 35000)
-    final num? rawPrice = d?['giaMonAn'] ?? d?['gia'];
+    // Parse price cleanly and safely without type cast exceptions
+    final rawPriceStr = (d?['giaMonAn'] ?? d?['gia'] ?? '').toString();
+    final parsedPrice = double.tryParse(rawPriceStr);
     _priceController = TextEditingController(
-      text: rawPrice != null ? rawPrice.toInt().toString() : '',
+      text: parsedPrice != null ? parsedPrice.toInt().toString() : '',
     );
 
-    final rawQty = d?['soLuongMon'] ?? d?['quantity'] ?? 50;
-    _qtyController = TextEditingController(text: rawQty.toString());
-    _descController = TextEditingController(text: d?['moTa'] ?? d?['mota'] ?? d?['description'] ?? '');
+    final rawQtyStr = (d?['soLuongMon'] ?? d?['quantity'] ?? '50').toString();
+    final parsedQty = int.tryParse(rawQtyStr) ?? 50;
+    _qtyController = TextEditingController(text: parsedQty.toString());
+    _descController = TextEditingController(text: (d?['moTa'] ?? d?['mota'] ?? d?['description'] ?? '').toString());
+    _descEnController = TextEditingController(text: (d?['moTaEn'] ?? d?['mota_en'] ?? d?['descEn'] ?? '').toString());
 
     _imageUrl = (d?['img'] ?? d?['image'] ?? '').toString();
 
     // Match category
     if (d?['maDanhMuc'] != null) {
       _selectedCategoryId = int.tryParse(d!['maDanhMuc'].toString());
+    } else if (d?['danhMuc'] is Map && d!['danhMuc']['maDanhMuc'] != null) {
+      _selectedCategoryId = int.tryParse(d['danhMuc']['maDanhMuc'].toString());
     } else if (widget.categories.isNotEmpty) {
       final firstCatId = widget.categories[0]['maDanhMuc'];
       _selectedCategoryId = firstCatId is int ? firstCatId : int.tryParse(firstCatId.toString());
@@ -137,9 +147,11 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _nameEnController.dispose();
     _priceController.dispose();
     _qtyController.dispose();
     _descController.dispose();
+    _descEnController.dispose();
     _customTagController.dispose();
     super.dispose();
   }
@@ -195,10 +207,14 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
 
     final payload = <String, dynamic>{
       'tenMonAn': _nameController.text.trim(),
+      'tenMonAnEn': _nameEnController.text.trim(),
+      'nameEn': _nameEnController.text.trim(),
       'giaMonAn': price,
       'soLuongMon': qty,
       'trangThaiMon': _status,
       'moTa': _descController.text.trim(),
+      'moTaEn': _descEnController.text.trim(),
+      'descEn': _descEnController.text.trim(),
       'dacTinh': jsonEncode(_selectedTags),
       if (_selectedCategoryId != null) 'maDanhMuc': _selectedCategoryId,
       if (_imageUrl.isNotEmpty) 'img': _imageUrl,
@@ -311,6 +327,9 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
+      ),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E232A) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -392,6 +411,27 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
                   return null;
                 },
               ),
+              const SizedBox(height: 12),
+
+              // Tên món ăn tiếng Anh
+              Text(
+                'Tên Món Ăn (Tiếng Anh / English)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: TColor.primaryTextOf(context)),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _nameEnController,
+                decoration: InputDecoration(
+                  hintText: 'Ví dụ: Broken Rice with Grilled Pork Chop...',
+                  hintStyle: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
+                  prefixIcon: const Icon(Icons.translate_rounded, size: 18),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF28303D) : const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Chi Tiết / Mô Tả Món Ăn
@@ -405,6 +445,27 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Mô tả nguyên liệu, hương vị đặc trưng, thành phần dinh dưỡng...',
+                  hintStyle: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF28303D) : const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Mô tả món ăn tiếng Anh
+              Text(
+                'Mô Tả Món Ăn (Tiếng Anh / English)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: TColor.primaryTextOf(context)),
+              ),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _descEnController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'English description for international customers...',
                   hintStyle: TextStyle(fontSize: 13, color: TColor.secondaryTextOf(context)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   filled: true,
@@ -486,82 +547,131 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
               ),
               const SizedBox(height: 10),
 
-              // Gợi ý nhanh các nhóm nhãn (Thời gian, Calo, Đặc tính)
-              ..._presetTagGroups.map((group) {
-                final groupTags = group['tags'] as List<String>;
-                final groupColor = group['color'] as Color;
-                final groupIcon = group['icon'] as IconData;
-                final groupTitle = group['title'] as String;
+              // Gợi ý nhanh các nhóm nhãn (Tabbed selector: gọn gàng, tiết kiệm không gian)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF232A34) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: TColor.borderOf(context)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Tabs gợi ý: Thời gian / Calo / Đặc tính
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(_presetTagGroups.length, (idx) {
+                          final g = _presetTagGroups[idx];
+                          final isTabActive = _activeTagGroupIndex == idx;
+                          final gColor = g['color'] as Color;
+                          final gIcon = g['icon'] as IconData;
+                          final gTitle = g['title'] as String;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(groupIcon, size: 13, color: groupColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            groupTitle,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: groupColor),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: groupTags.map((tag) {
-                          final isSelected = _selectedTags.contains(tag);
-                          return InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedTags.remove(tag);
-                                } else {
-                                  _selectedTags.add(tag);
-                                }
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? groupColor.withOpacity(0.12)
-                                    : (isDark ? const Color(0xFF1F2430) : const Color(0xFFF1F5F9)),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isSelected ? groupColor : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isSelected) ...[
-                                    Icon(Icons.check_rounded, size: 12, color: groupColor),
-                                    const SizedBox(width: 3),
-                                  ],
-                                  Text(
-                                    tag,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected ? groupColor : TColor.primaryTextOf(context),
-                                    ),
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: InkWell(
+                              onTap: () => setState(() => _activeTagGroupIndex = idx),
+                              borderRadius: BorderRadius.circular(8),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isTabActive
+                                      ? gColor.withOpacity(0.15)
+                                      : (isDark ? const Color(0xFF1B2028) : Colors.white),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isTabActive ? gColor : Colors.transparent,
+                                    width: 1,
                                   ),
-                                ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(gIcon, size: 13, color: isTabActive ? gColor : TColor.secondaryTextOf(context)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      gTitle,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: isTabActive ? FontWeight.w800 : FontWeight.w600,
+                                        color: isTabActive ? gColor : TColor.secondaryTextOf(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
-                        }).toList(),
+                        }),
                       ),
-                    ],
-                  ),
-                );
-              }),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Chips của nhóm đang chọn
+                    Builder(
+                      builder: (ctx) {
+                        final currentGroup = _presetTagGroups[_activeTagGroupIndex];
+                        final groupTags = currentGroup['tags'] as List<String>;
+                        final groupColor = currentGroup['color'] as Color;
+
+                        return Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: groupTags.map((tag) {
+                            final isSelected = _selectedTags.contains(tag);
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedTags.remove(tag);
+                                  } else {
+                                    _selectedTags.add(tag);
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? groupColor.withOpacity(0.12)
+                                      : (isDark ? const Color(0xFF1E232A) : Colors.white),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isSelected ? groupColor : (isDark ? const Color(0xFF374151) : const Color(0xFFE2E8F0)),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isSelected) ...[
+                                      Icon(Icons.check_rounded, size: 12, color: groupColor),
+                                      const SizedBox(width: 3),
+                                    ],
+                                    Text(
+                                      tag,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                        color: isSelected ? groupColor : TColor.primaryTextOf(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
 
               // Ô nhập nhãn tự do
               Row(
@@ -618,29 +728,7 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: TColor.primaryTextOf(context)),
                 ),
                 const SizedBox(height: 6),
-                DropdownButtonFormField<int>(
-                  value: widget.categories.any((c) => (c['maDanhMuc'] is int ? c['maDanhMuc'] : int.tryParse(c['maDanhMuc'].toString())) == _selectedCategoryId)
-                      ? _selectedCategoryId
-                      : null,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    filled: true,
-                    fillColor: isDark ? const Color(0xFF28303D) : const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: TColor.borderOf(context))),
-                  ),
-                  items: widget.categories.map((c) {
-                    final id = c['maDanhMuc'] is int ? c['maDanhMuc'] as int : int.tryParse(c['maDanhMuc'].toString()) ?? 0;
-                    final name = (c['tenDanhMuc'] ?? 'Danh mục').toString();
-                    return DropdownMenuItem<int>(
-                      value: id,
-                      child: Text(name, style: TextStyle(fontSize: 13, color: TColor.primaryTextOf(context))),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() => _selectedCategoryId = val);
-                  },
-                ),
+                _buildCategorySelector(context, isDark),
                 const SizedBox(height: 16),
               ],
 
@@ -661,7 +749,18 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             hintText: '50000',
-                            prefixIcon: const Icon(Icons.attach_money_rounded, size: 18),
+                            prefixIcon: Container(
+                              width: 36,
+                              alignment: Alignment.center,
+                              child: const Text(
+                                '₫',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFFC6011),
+                                ),
+                              ),
+                            ),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             filled: true,
                             fillColor: isDark ? const Color(0xFF28303D) : const Color(0xFFF8FAFC),
@@ -810,6 +909,67 @@ class _FoodFormSheetState extends State<FoodFormSheet> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySelector(BuildContext context, bool isDark) {
+    Map<String, dynamic>? currentCat;
+    for (final c in widget.categories) {
+      final id = c['maDanhMuc'] is int ? c['maDanhMuc'] : int.tryParse(c['maDanhMuc'].toString());
+      if (id == _selectedCategoryId) {
+        currentCat = c;
+        break;
+      }
+    }
+    final catName = currentCat != null ? (currentCat['tenDanhMuc'] ?? 'Danh mục').toString() : 'Chọn danh mục món...';
+    final hasSelection = currentCat != null;
+
+    return InkWell(
+      onTap: () {
+        CategoryPickerSheet.show(
+          context,
+          categories: widget.categories,
+          selectedCategoryId: _selectedCategoryId,
+          onCategorySelected: (newId) {
+            setState(() => _selectedCategoryId = newId);
+          },
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF28303D) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: hasSelection ? const Color(0xFFFC6011).withOpacity(0.5) : TColor.borderOf(context),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFC6011).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.category_rounded, size: 16, color: Color(0xFFFC6011)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                catName,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: hasSelection ? FontWeight.w700 : FontWeight.w500,
+                  color: hasSelection ? TColor.primaryTextOf(context) : TColor.secondaryTextOf(context),
+                ),
+              ),
+            ),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: TColor.secondaryTextOf(context)),
+          ],
         ),
       ),
     );

@@ -103,7 +103,9 @@ class RestaurantOrdersProvider with ChangeNotifier {
         final idStr = (o['maDonHang'] ?? o['id'] ?? '').toString().toLowerCase();
         final name = (o['customerName'] ?? o['tenKhachHang'] ?? '').toString().toLowerCase();
         final phone = (o['customerPhone'] ?? o['sdt'] ?? '').toString().toLowerCase();
-        return idStr.contains(_searchQuery) ||
+        final cleanQuery = _searchQuery.replaceAll('#', '').replaceAll('dh-', '').replaceAll('dh', '').trim();
+        final matchId = idStr.contains(_searchQuery) || (cleanQuery.isNotEmpty && idStr.contains(cleanQuery));
+        return matchId ||
             name.contains(_searchQuery) ||
             phone.contains(_searchQuery);
       }).toList();
@@ -134,6 +136,8 @@ class RestaurantOrdersProvider with ChangeNotifier {
     _socketService.subscribe('payment:confirmed', _paymentConfirmedCallback!);
     _socketService.onReconnect(_reconnectCallback!);
   }
+
+  Future<void> refresh() => fetchOrders();
 
   Future<void> fetchOrders() async {
     _isLoading = true;

@@ -114,12 +114,12 @@ export class AdminService {
     return this.catalogService.getCategories();
   }
 
-  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number) {
-    return this.catalogService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc);
+  async createCategory(tenDanhMuc: string, hinhAnh?: string, maDanhMuc?: number, tenDanhMucEn?: string) {
+    return this.catalogService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc, tenDanhMucEn);
   }
 
-  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string) {
-    return this.catalogService.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh);
+  async updateCategory(maDanhMuc: number, tenDanhMuc: string, hinhAnh?: string, tenDanhMucEn?: string) {
+    return this.catalogService.updateCategory(maDanhMuc, tenDanhMuc, hinhAnh, tenDanhMucEn);
   }
 
   async deleteCategory(maDanhMuc: number) {

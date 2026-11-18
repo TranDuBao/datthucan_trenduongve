@@ -1264,5 +1264,281 @@
         "type": "String"
       }
     }
+  },
+  "homeLocatingTitle": "Locating position...",
+  "homeLocatingSubtitle": "Please wait a moment",
+  "homeTapMapABHint": "Tap map to set route A → B",
+  "recentDestinationsCount": "{count} recent destinations",
+  "@recentDestinationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchTypePlacePlaceholder": "Type a place name to search...",
+  "clearText": "Clear",
+  "stopoverSelectAtLeastOneToast": "Please select at least 1 item to pre-order for pickup",
+  "stopoverDetourMeters": "{dist}m detour",
+  "@stopoverDetourMeters": {
+    "placeholders": {
+      "dist": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverRightOnRoute": "Right on route",
+  "stopoverPrepTime": "Prep ~{minutes} mins",
+  "@stopoverPrepTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverFoodAlongRoute": "Food along route ({count})",
+  "@stopoverFoodAlongRoute": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverSelectCheckHint": "Check items to select • Tap for details",
+  "stopoverStockLeft": "{stock} left",
+  "@stopoverStockLeft": {
+    "placeholders": {
+      "stock": {
+        "type": "int"
+      }
+    }
+  },
+  "stopoverSoldOut": "Sold out",
+  "stopoverMaxStockReached": "Reached maximum available quantity",
+  "stopoverNoItemsSelected": "No items selected",
+  "stopoverViewStoreMenu": "View Store Menu",
+  "stopoverOrderPickup": "Pre-order for Pickup",
+  "stopoverReserveTable": "Reserve a Table",
+  "stopoverLoginRequiredCustom": "Please sign in to order food for pickup along your route.",
+  "itemFreshCooked": "Freshly cooked",
+  "itemSuspended": "Suspended",
+  "itemStockPortions": "{count} portions left",
+  "@itemStockPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemSoldPortions": "{count} sold",
+  "@itemSoldPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemOutOfStockUpper": "SOLD OUT",
+  "itemOutOfStock": "Sold out",
+  "itemTempOutOfStock": "Item is temporarily out of stock",
+  "itemStockLimitWarning": "Only {count} items remaining in stock",
+  "@itemStockLimitWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "refundViaVietQR": "Refund via VietQR:",
+  "changeBankAccount": "Change Bank Acc",
+  "reportNotReceivedTitle": "Report Not Received",
+  "reportNotReceivedDesc": "If you have checked your account and still not received the money, please explain so the restaurant can investigate with the bank:",
+  "reportNotReceivedHint": "E.g., It has been over 30 mins but money has not arrived, please double check FT code...",
+  "sendComplaintBtn": "Send Complaint",
+  "complaintSentSuccess": "Complaint submitted successfully. The restaurant will review with the bank!",
+  "complaintSentError": "Error sending complaint",
+  "complaintWaitingNotice": "You reported not receiving the refund. Store and Admin are verifying with the bank.",
+  "cancelledOrdersBadge": "{count} cancelled orders",
+  "@cancelledOrdersBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noCancelledOrders": "No cancelled orders",
+  "orderRefundingBanner": "Refunding: {amount}",
+  "@orderRefundingBanner": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "orderRefundDisputedBanner": "Refund under dispute: {amount}",
+  "@orderRefundDisputedBanner": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "storeSwitchToCustomer": "Customer View",
+  "storeLogoutAccount": "Sign out",
+  "storeOperatingHoursTitle": "Store Operating Hours",
+  "storeTodayHours": "Today: {hours}",
+  "@storeTodayHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "storeViewWeek": "View Week",
+  "storeEditProfile": "Edit Profile",
+  "storeHoursModalTitle": "Store Operating Schedule",
+  "dayMonday": "Monday",
+  "dayTuesday": "Tuesday",
+  "dayWednesday": "Wednesday",
+  "dayThursday": "Thursday",
+  "dayFriday": "Friday",
+  "daySaturday": "Saturday",
+  "daySunday": "Sunday",
+  "itemAddBtn": "Add",
+  "filterBestSeller": "Popular",
+  "filterFastPrep": "Fast prep",
+  "dishesReadyToServe": "{count} dishes ready to serve",
+  "@dishesReadyToServe": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchDishesHint": "Search delicious dishes...",
+  "noMatchingDishesTitle": "No matching dishes found",
+  "noMatchingDishesSubtitle": "Please try searching with different keywords",
+  "itemRemainingCount": "{count} left",
+  "@itemRemainingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storePromotions": "Store Promotions",
+  "portionsRemaining": "{count} portions left",
+  "@portionsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "voucherGetCode": "Get Code",
+  "voucherCollected": "Saved",
+  "dishOrderNow": "Order now",
+  "dishCustomizationPortion": "Portion selection",
+  "dishCustomizationRequired": "Required",
+  "dishCustomizationFree": "Free",
+  "dishCustomizationChooseOne": "Choose 1",
+  "dishCustomizationToppings": "Extra toppings",
+  "dishCustomizationOptional": "Optional",
+  "dishCustomizationChooseMultiple": "Choose multiple",
+  "dishNoteForStore": "Note for restaurant",
+  "dishNoteForStoreHint": "Note for restaurant (e.g. less sweet, no spice...)",
+  "dishSoldPortions": "{count} sold",
+  "@dishSoldPortions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishReviewsAndRatings": "Reviews & Ratings",
+  "dishReviewCount": "{count} reviews",
+  "@dishReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishReviewsBasedOn": "Based on {count} actual reviews",
+  "@dishReviewsBasedOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishNoReviewsYet": "No reviews yet",
+  "dishFilterAllReviews": "All ({count})",
+  "@dishFilterAllReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterWithPhotos": "With photos ({count})",
+  "@dishFilterWithPhotos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterFiveStar": "5 stars ({count})",
+  "@dishFilterFiveStar": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishFilterLatest": "Latest",
+  "dishNoMatchingReviews": "No matching reviews found",
+  "dishViewAllReviews": "View all {count} reviews",
+  "@dishViewAllReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dishVerifiedPurchase": "Verified purchase",
+  "dishSatisfiedPct": "{pct}% Satisfied",
+  "@dishSatisfiedPct": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "dishNotSatisfied": "Not satisfied",
+  "dishStoreReply": "Reply from store:",
+  "foodNameEnLabel": "Dish Name (English)",
+  "foodNameEnHint": "Enter dish name in English",
+  "foodDescEnLabel": "Dish Description (English)",
+  "foodDescEnHint": "Enter dish description in English",
+  "voucherDiscountMax": "{pct}% off (Max {max})",
+  "@voucherDiscountMax": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "voucherOrderFrom": "Orders from {min}",
+  "@voucherOrderFrom": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
   }
 }

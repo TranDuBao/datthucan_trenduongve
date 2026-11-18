@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/map_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/order_service.dart';
@@ -13,6 +14,8 @@ import 'custom_toast.dart';
 import 'single_restaurant_warning_modal.dart';
 import 'guest_login_dialog.dart';
 import '../view/reservation/reservation_booking_view.dart';
+import '../view/more/my_order_view.dart';
+import '../common/format_utils.dart';
 
 class FoodStopoverSheet extends StatefulWidget {
   final Map<String, dynamic> restaurant;
@@ -87,12 +90,28 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
   }
 
   void _openItemDetail(Map<String, dynamic> food) {
+    final enrichedFood = Map<String, dynamic>.from(food);
+    final resId = _getRestaurantId();
+    final storeName = (widget.restaurant['tenQuan'] ?? widget.restaurant['name'] ?? 'Quán tiện đường').toString();
+    final address = (widget.restaurant['diaChi'] ?? widget.restaurant['address'] ?? '').toString();
+
+    enrichedFood['maQuan'] ??= resId;
+    enrichedFood['restaurantId'] ??= resId;
+    enrichedFood['idQuan'] ??= resId;
+    enrichedFood['tenQuan'] ??= storeName;
+    enrichedFood['restaurantName'] ??= storeName;
+    enrichedFood['diaChi'] ??= address;
+    enrichedFood['address'] ??= address;
+    enrichedFood['restaurant'] ??= widget.restaurant;
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ItemDetailsView(itemObj: food),
+        builder: (_) => ItemDetailsView(itemObj: enrichedFood),
       ),
-    );
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   /// Thêm các món đã chọn vào giỏ, cập nhật MapProvider và chuyển sang Checkout
@@ -105,7 +124,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
     if (GuestLoginDialog.checkGuestAndPrompt(
       context,
       featureName: "đặt hàng",
-      customMessage: "Vui lòng đăng nhập tài khoản để đặt món ghé lấy trên lộ trình của bạn.",
+      customMessage: context.l10n.stopoverLoginRequiredCustom,
     )) {
       return;
     }
@@ -159,18 +178,27 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
     final int dist = (widget.restaurant['distanceFromRouteMeters'] as num?)?.toInt() ?? 0;
     final int prepTime = (widget.restaurant['thoiGianChuanBi'] as num?)?.toInt() ?? 20;
 
-    // Tính tổng tiền các món được tích chọn
-    double totalPrice = 0.0;
-    int totalCount = 0;
+    final resId = _getRestaurantId();
+    final cart = context.watch<CartProvider>();
+    final bool hasCartItems = cart.items.isNotEmpty && cart.activeRestaurantId == resId;
+    final int cartCount = hasCartItems ? cart.itemCount : 0;
+    final double cartTotal = hasCartItems ? cart.total : 0.0;
+
+    // Tính tổng tiền các món được tích chọn trong sheet này
+    double selectedPrice = 0.0;
+    int selectedCount = 0;
     for (final f in _foodsList) {
       final fId = (f['id'] as num? ?? f['maMonAn'] as num? ?? 0).toInt();
       if (_selectedFoodIds.contains(fId)) {
         final price = (f['price'] as num?)?.toDouble() ?? (f['giaMonAn'] as num?)?.toDouble() ?? 0.0;
         final q = _quantities[fId] ?? 1;
-        totalPrice += price * q;
-        totalCount += q;
+        selectedPrice += price * q;
+        selectedCount += q;
       }
     }
+
+    final double totalPrice = selectedPrice + cartTotal;
+    final int totalCount = selectedCount + cartCount;
 
     return Container(
       decoration: const BoxDecoration(
@@ -247,7 +275,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                               border: Border.all(color: const Color(0xFFA7F3D0)),
                             ),
                             child: Text(
-                              dist > 0 ? 'Lệch tuyến ${dist}m' : 'Ngay trên tuyến',
+                              dist > 0 ? context.l10n.stopoverDetourMeters(dist) : context.l10n.stopoverRightOnRoute,
                               style: GoogleFonts.outfit(
                                 color: const Color(0xFF059669),
                                 fontSize: 10,
@@ -263,7 +291,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                               border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Text(
-                              'Chuẩn bị ~$prepTime phút',
+                              context.l10n.stopoverPrepTime(prepTime),
                               style: GoogleFonts.outfit(
                                 color: const Color(0xFF64748B),
                                 fontSize: 10,
@@ -284,7 +312,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
             Row(
               children: [
                 Text(
-                  'Món ăn tiện đường (${_foodsList.length})',
+                  context.l10n.stopoverFoodAlongRoute(_foodsList.length),
                   style: GoogleFonts.outfit(
                     color: const Color(0xFF0F172A),
                     fontSize: 13,
@@ -293,7 +321,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                 ),
                 const Spacer(),
                 Text(
-                  'Tích chọn món • Nhấn để xem chi tiết',
+                  context.l10n.stopoverSelectCheckHint,
                   style: GoogleFonts.outfit(
                     color: const Color(0xFF94A3B8),
                     fontSize: 11,
@@ -457,7 +485,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      isSoldOut ? 'Hết hàng' : 'Còn $stock',
+                                      isSoldOut ? context.l10n.stopoverSoldOut : context.l10n.stopoverStockLeft(stock),
                                       style: GoogleFonts.outfit(
                                         color: isSoldOut ? const Color(0xFFEF4444) : const Color(0xFF059669),
                                         fontSize: 10,
@@ -513,7 +541,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                                         _quantities[fId] = quantity + 1;
                                       });
                                     } else {
-                                      CustomToast.showError(context, 'Đã đạt giới hạn số lượng còn lại');
+                                      CustomToast.showError(context, context.l10n.stopoverMaxStockReached);
                                     }
                                   },
                                   child: const Padding(
@@ -533,6 +561,53 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
             ),
             const SizedBox(height: 14),
 
+            // ── THÔNG BÁO GIỎ HÀNG NẾU ĐÃ CÓ MÓN TỪ QUÁN NÀY ──
+            if (hasCartItems)
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFED7AA)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_bag_rounded, size: 16, color: Color(0xFFEA580C)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Trong giỏ: $cartCount món (${FormatUtils.formatCurrency(cartTotal, locale: Localizations.localeOf(context))})',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF9A3412),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        cart.setRestaurant(id: resId, name: storeName, address: address);
+                        context.read<MapProvider>().selectStopoverRestaurant(widget.restaurant);
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MyOrderView()),
+                        );
+                      },
+                      child: Text(
+                        'Xem giỏ >',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFFEA580C),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // ── TỔNG TIỀN VÀ 2 NÚT HÀNH ĐỘNG ──
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -540,12 +615,24 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    totalCount > 0 ? 'Đã chọn $totalCount món:' : 'Chưa chọn món nào',
+                    totalCount > 0
+                        ? (hasCartItems && selectedCount > 0
+                            ? (Localizations.localeOf(context).languageCode == 'en'
+                                ? 'Selected $selectedCount items (+$cartCount in cart):'
+                                : 'Đã chọn $selectedCount món (+ $cartCount trong giỏ):')
+                            : hasCartItems
+                                ? (Localizations.localeOf(context).languageCode == 'en'
+                                    ? '$cartCount items in cart:'
+                                    : 'Đã có $cartCount món trong giỏ hàng:')
+                                : (Localizations.localeOf(context).languageCode == 'en'
+                                    ? 'Selected $totalCount items:'
+                                    : 'Đã chọn $totalCount món:'))
+                        : context.l10n.stopoverNoItemsSelected,
                     style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   Text(
                     totalCount > 0
-                        ? "${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}đ"
+                        ? FormatUtils.formatCurrency(totalPrice, locale: Localizations.localeOf(context))
                         : "0đ",
                     style: GoogleFonts.outfit(
                       color: totalCount > 0 ? const Color(0xFFFC6011) : const Color(0xFF94A3B8),
@@ -568,16 +655,17 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => RestaurantDetailView(restaurantObj: widget.restaurant),
                         ),
-                      );
+                      ).then((_) {
+                        if (mounted) setState(() {});
+                      });
                     },
                     child: Text(
-                      'Xem Menu Quán',
+                      context.l10n.stopoverViewStoreMenu,
                       style: GoogleFonts.outfit(color: const Color(0xFF334155), fontSize: 12.5, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -608,12 +696,11 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                         return;
                       }
 
-                      if (_selectedFoodIds.isEmpty) {
-                        CustomToast.showError(context, 'Vui lòng tích chọn ít nhất 1 món để đặt ghé lấy');
+                      if (_selectedFoodIds.isEmpty && !hasCartItems) {
+                        CustomToast.showError(context, context.l10n.stopoverSelectAtLeastOneToast);
                         return;
                       }
 
-                      final resId = _getRestaurantId();
                       final cart = context.read<CartProvider>();
                       final storeName = (widget.restaurant['tenQuan'] ?? widget.restaurant['name'] ?? 'Quán tiện đường').toString();
 
@@ -626,7 +713,6 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                           existingRestaurantName: existingResName.isNotEmpty ? existingResName : 'Quán khác',
                           newRestaurantName: storeName,
                           onClearAndOrder: () {
-                            // Xóa giỏ cũ và tiến hành đặt quán mới
                             cart.clearCart();
                             _proceedToOrder(context, resId, storeName, cart);
                           },
@@ -646,7 +732,7 @@ class _FoodStopoverSheetState extends State<FoodStopoverSheet> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isDineIn ? 'Đặt Bàn Tại Quán' : 'Đặt Món Ghé Lấy',
+                          isDineIn ? context.l10n.stopoverReserveTable : context.l10n.stopoverOrderPickup,
                           style: GoogleFonts.outfit(
                             color: Colors.white,
                             fontSize: 14,

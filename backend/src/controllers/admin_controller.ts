@@ -222,9 +222,9 @@ export class AdminController {
 
   createCategory = async (req: Request, res: Response) => {
     try {
-      const { tenDanhMuc, hinhAnh, maDanhMuc } = req.body;
+      const { tenDanhMuc, tenDanhMucEn, hinhAnh, maDanhMuc } = req.body;
       if (!tenDanhMuc) return res.status(400).json({ statusCode: 400, message: 'Vui lòng nhập tên danh mục' });
-      const result = await this.adminService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc ? Number(maDanhMuc) : undefined);
+      const result = await this.adminService.createCategory(tenDanhMuc, hinhAnh, maDanhMuc ? Number(maDanhMuc) : undefined, tenDanhMucEn);
       return res.status(201).json({ statusCode: 201, status: '1', data: result, message: maDanhMuc ? 'Cập nhật danh mục thành công' : 'Tạo danh mục thành công' });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: error.message });
@@ -234,9 +234,9 @@ export class AdminController {
   updateCategory = async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const { tenDanhMuc, hinhAnh } = req.body;
+      const { tenDanhMuc, tenDanhMucEn, hinhAnh } = req.body;
       if (!tenDanhMuc) return res.status(400).json({ statusCode: 400, message: 'Vui lòng nhập tên danh mục' });
-      const result = await this.adminService.updateCategory(id, tenDanhMuc, hinhAnh);
+      const result = await this.adminService.updateCategory(id, tenDanhMuc, hinhAnh, tenDanhMucEn);
       return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Cập nhật danh mục thành công' });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: error.message });

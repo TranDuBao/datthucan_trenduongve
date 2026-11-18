@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../common/format_utils.dart';
 import '../common/color_extension.dart';
 import 'smart_network_image.dart';
 import '../common/food_image_helper.dart';
@@ -183,7 +184,7 @@ class MenuItemRow extends StatelessWidget {
                                 ),
                                 if (soldQty > 0) ...[
                                   Text(
-                                    "Đã bán $soldQty",
+                                    context.l10n.itemSoldCount(soldQty),
                                     style: TextStyle(
                                       color: TColor.secondaryTextOf(context),
                                       fontSize: 10,
@@ -199,7 +200,7 @@ class MenuItemRow extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    isSoldOut ? "Hết món" : "Còn $stockQty phần",
+                                    isSoldOut ? context.l10n.itemOutOfStock : context.l10n.itemStockPortions(stockQty),
                                     style: TextStyle(
                                       color: isSoldOut ? const Color(0xFFDC2626) : const Color(0xFF059669),
                                       fontSize: 10,
@@ -264,7 +265,7 @@ class MenuItemRow extends StatelessWidget {
                                     const SizedBox(width: 2),
                                   ],
                                   Text(
-                                    isSoldOut ? "Hết món" : "Thêm",
+                                    isSoldOut ? context.l10n.itemOutOfStock : context.l10n.itemAddBtn,
                                     style: TextStyle(
                                       color: isSoldOut ? TColor.secondaryTextOf(context) : Colors.white,
                                       fontSize: 12,

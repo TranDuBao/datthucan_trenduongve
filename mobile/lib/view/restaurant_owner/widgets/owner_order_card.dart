@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../common/color_extension.dart';
+import '../../../common/globs.dart';
 import 'restaurant_format_utils.dart';
 import 'owner_order_detail_sheet.dart';
 
@@ -19,8 +20,8 @@ class OwnerOrderCard extends StatelessWidget {
     final orderId = order['maDonHang'] ?? order['id'] ?? 0;
     final status = (order['trangThai'] ?? order['status'] ?? '').toString();
     final badge = RestaurantFormatUtils.getStatusBadge(status);
-    final customerName = order['customerName'] ?? order['tenKhachHang'] ?? 'Khách hàng';
-    final customerPhone = order['customerPhone'] ?? order['sdt'] ?? '';
+    final customerName = order['customerName'] ?? order['tenKhachHang'] ?? order['khachHang']?['hoTen'] ?? 'Khách hàng';
+    final customerPhone = (order['customerPhone'] ?? order['sdtKhachHang'] ?? order['sdt'] ?? order['khachHang']?['sdt'] ?? '').toString().trim();
     final items = (order['items'] ?? order['chiTietDonHang'] ?? []) as List;
     final total = order['tongTien'] ?? order['tongGia'] ?? 0;
     final isPaid = (order['trangThaiThanhToan'] ?? '') == 'DA_THANH_TOAN';
@@ -34,6 +35,10 @@ class OwnerOrderCard extends StatelessWidget {
       return '${qty}x $name';
     }).join(', ');
 
+    // Primary food item image
+    final firstItem = items.isNotEmpty ? (items[0] is Map ? items[0] : {}) : {};
+    final String firstItemImg = (firstItem['img'] ?? firstItem['image'] ?? firstItem['hinhAnh'] ?? '').toString();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -41,13 +46,13 @@ class OwnerOrderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPending
-              ? const Color(0xFFFC6011).withOpacity(0.5)
+              ? const Color(0xFFFC6011).withValues(alpha: 0.5)
               : TColor.borderOf(context),
           width: isPending ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -77,10 +82,10 @@ class OwnerOrderCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '#DH-$orderId',
+                          '#$orderId',
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                             color: TColor.primaryTextOf(context),
                           ),
                         ),
@@ -112,47 +117,96 @@ class OwnerOrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
-                // Customer Info
+                // Order Content Row: Food Image + Customer & Items Summary
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.person, size: 14, color: TColor.secondaryTextOf(context)),
-                    const SizedBox(width: 6),
-                    Text(
-                      customerName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: TColor.primaryTextOf(context),
+                    // Food thumbnail image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF28303D) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: TColor.borderOf(context)),
+                        ),
+                        child: firstItemImg.isNotEmpty
+                            ? Image.network(
+                                SVKey.formatImageUrl(firstItemImg),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.fastfood_rounded,
+                                  size: 26,
+                                  color: const Color(0xFFFC6011).withValues(alpha: 0.6),
+                                ),
+                              )
+                            : Icon(
+                                Icons.fastfood_rounded,
+                                size: 26,
+                                color: const Color(0xFFFC6011).withValues(alpha: 0.6),
+                              ),
                       ),
                     ),
-                    if (customerPhone.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '($customerPhone)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: TColor.secondaryTextOf(context),
-                        ),
+                    const SizedBox(width: 12),
+
+                    // Customer & Items description
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Customer info
+                          Row(
+                            children: [
+                              Icon(Icons.person, size: 14, color: TColor.secondaryTextOf(context)),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  customerPhone.isNotEmpty ? '$customerName ($customerPhone)' : customerName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: TColor.primaryTextOf(context),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Items summary
+                          if (itemSummary.isNotEmpty)
+                            Text(
+                              itemSummary,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: TColor.primaryTextOf(context).withValues(alpha: 0.85),
+                              ),
+                            ),
+                          if (items.length > 1) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '+${items.length - 1} món khác',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: TColor.secondaryTextOf(context),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 6),
-
-                // Items list summary
-                if (itemSummary.isNotEmpty)
-                  Text(
-                    itemSummary,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: TColor.primaryTextOf(context).withOpacity(0.9),
-                    ),
-                  ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // Price and payment status
                 Row(

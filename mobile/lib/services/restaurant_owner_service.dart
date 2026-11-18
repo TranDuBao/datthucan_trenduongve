@@ -153,7 +153,7 @@ class RestaurantOwnerService {
   Future<bool> toggleVoucher(int voucherId, {String? targetStatus}) async {
     try {
       final res = await http.patch(
-        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/vouchers/$voucherId/toggle'),
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/vouchers/$voucherId/status'),
         headers: _headers,
         body: targetStatus != null ? json.encode({'trangThai': targetStatus}) : null,
       ).timeout(const Duration(seconds: 10));
@@ -274,6 +274,19 @@ class RestaurantOwnerService {
       return res.statusCode == 200;
     } catch (e) {
       debugPrint('[RestaurantOwnerService] deleteFoodItem error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> restoreFoodItem(int foodId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${SVKey.mainUrl}/api/v1/restaurant/menu/$foodId/restore'),
+        headers: _headers,
+      ).timeout(const Duration(seconds: 10));
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[RestaurantOwnerService] restoreFoodItem error: $e');
       return false;
     }
   }

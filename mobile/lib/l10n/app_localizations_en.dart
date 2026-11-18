@@ -2266,4 +2266,357 @@ class AppLocalizationsEn extends AppLocalizations {
   String stopoverMarkerOrderBadge(String orderCode, String storeName) {
     return 'Order #$orderCode • $storeName';
   }
+
+  @override
+  String get homeLocatingTitle => 'Locating position...';
+
+  @override
+  String get homeLocatingSubtitle => 'Please wait a moment';
+
+  @override
+  String get homeTapMapABHint => 'Tap map to set route A → B';
+
+  @override
+  String recentDestinationsCount(int count) {
+    return '$count recent destinations';
+  }
+
+  @override
+  String get searchTypePlacePlaceholder => 'Type a place name to search...';
+
+  @override
+  String get clearText => 'Clear';
+
+  @override
+  String get stopoverSelectAtLeastOneToast =>
+      'Please select at least 1 item to pre-order for pickup';
+
+  @override
+  String stopoverDetourMeters(int dist) {
+    return '${dist}m detour';
+  }
+
+  @override
+  String get stopoverRightOnRoute => 'Right on route';
+
+  @override
+  String stopoverPrepTime(int minutes) {
+    return 'Prep ~$minutes mins';
+  }
+
+  @override
+  String stopoverFoodAlongRoute(int count) {
+    return 'Food along route ($count)';
+  }
+
+  @override
+  String get stopoverSelectCheckHint =>
+      'Check items to select • Tap for details';
+
+  @override
+  String stopoverStockLeft(int stock) {
+    return '$stock left';
+  }
+
+  @override
+  String get stopoverSoldOut => 'Sold out';
+
+  @override
+  String get stopoverMaxStockReached => 'Reached maximum available quantity';
+
+  @override
+  String get stopoverNoItemsSelected => 'No items selected';
+
+  @override
+  String get stopoverViewStoreMenu => 'View Store Menu';
+
+  @override
+  String get stopoverOrderPickup => 'Pre-order for Pickup';
+
+  @override
+  String get stopoverReserveTable => 'Reserve a Table';
+
+  @override
+  String get stopoverLoginRequiredCustom =>
+      'Please sign in to order food for pickup along your route.';
+
+  @override
+  String get itemFreshCooked => 'Freshly cooked';
+
+  @override
+  String get itemSuspended => 'Suspended';
+
+  @override
+  String itemStockPortions(int count) {
+    return '$count portions left';
+  }
+
+  @override
+  String itemSoldPortions(int count) {
+    return '$count sold';
+  }
+
+  @override
+  String get itemOutOfStockUpper => 'SOLD OUT';
+
+  @override
+  String get itemOutOfStock => 'Sold out';
+
+  @override
+  String get itemTempOutOfStock => 'Item is temporarily out of stock';
+
+  @override
+  String itemStockLimitWarning(int count) {
+    return 'Only $count items remaining in stock';
+  }
+
+  @override
+  String get refundViaVietQR => 'Refund via VietQR:';
+
+  @override
+  String get changeBankAccount => 'Change Bank Acc';
+
+  @override
+  String get reportNotReceivedTitle => 'Report Not Received';
+
+  @override
+  String get reportNotReceivedDesc =>
+      'If you have checked your account and still not received the money, please explain so the restaurant can investigate with the bank:';
+
+  @override
+  String get reportNotReceivedHint =>
+      'E.g., It has been over 30 mins but money has not arrived, please double check FT code...';
+
+  @override
+  String get sendComplaintBtn => 'Send Complaint';
+
+  @override
+  String get complaintSentSuccess =>
+      'Complaint submitted successfully. The restaurant will review with the bank!';
+
+  @override
+  String get complaintSentError => 'Error sending complaint';
+
+  @override
+  String get complaintWaitingNotice =>
+      'You reported not receiving the refund. Store and Admin are verifying with the bank.';
+
+  @override
+  String cancelledOrdersBadge(int count) {
+    return '$count cancelled orders';
+  }
+
+  @override
+  String get noCancelledOrders => 'No cancelled orders';
+
+  @override
+  String orderRefundingBanner(String amount) {
+    return 'Refunding: $amount';
+  }
+
+  @override
+  String orderRefundDisputedBanner(String amount) {
+    return 'Refund under dispute: $amount';
+  }
+
+  @override
+  String get storeSwitchToCustomer => 'Customer View';
+
+  @override
+  String get storeLogoutAccount => 'Sign out';
+
+  @override
+  String get storeOperatingHoursTitle => 'Store Operating Hours';
+
+  @override
+  String storeTodayHours(String hours) {
+    return 'Today: $hours';
+  }
+
+  @override
+  String get storeViewWeek => 'View Week';
+
+  @override
+  String get storeEditProfile => 'Edit Profile';
+
+  @override
+  String get storeHoursModalTitle => 'Store Operating Schedule';
+
+  @override
+  String get dayMonday => 'Monday';
+
+  @override
+  String get dayTuesday => 'Tuesday';
+
+  @override
+  String get dayWednesday => 'Wednesday';
+
+  @override
+  String get dayThursday => 'Thursday';
+
+  @override
+  String get dayFriday => 'Friday';
+
+  @override
+  String get daySaturday => 'Saturday';
+
+  @override
+  String get daySunday => 'Sunday';
+
+  @override
+  String get itemAddBtn => 'Add';
+
+  @override
+  String get filterBestSeller => 'Popular';
+
+  @override
+  String get filterFastPrep => 'Fast prep';
+
+  @override
+  String dishesReadyToServe(int count) {
+    return '$count dishes ready to serve';
+  }
+
+  @override
+  String get searchDishesHint => 'Search delicious dishes...';
+
+  @override
+  String get noMatchingDishesTitle => 'No matching dishes found';
+
+  @override
+  String get noMatchingDishesSubtitle =>
+      'Please try searching with different keywords';
+
+  @override
+  String itemRemainingCount(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get storePromotions => 'Store Promotions';
+
+  @override
+  String portionsRemaining(int count) {
+    return '$count portions left';
+  }
+
+  @override
+  String get voucherGetCode => 'Get Code';
+
+  @override
+  String get voucherCollected => 'Saved';
+
+  @override
+  String get dishOrderNow => 'Order now';
+
+  @override
+  String get dishCustomizationPortion => 'Portion selection';
+
+  @override
+  String get dishCustomizationRequired => 'Required';
+
+  @override
+  String get dishCustomizationFree => 'Free';
+
+  @override
+  String get dishCustomizationChooseOne => 'Choose 1';
+
+  @override
+  String get dishCustomizationToppings => 'Extra toppings';
+
+  @override
+  String get dishCustomizationOptional => 'Optional';
+
+  @override
+  String get dishCustomizationChooseMultiple => 'Choose multiple';
+
+  @override
+  String get dishNoteForStore => 'Note for restaurant';
+
+  @override
+  String get dishNoteForStoreHint =>
+      'Note for restaurant (e.g. less sweet, no spice...)';
+
+  @override
+  String dishSoldPortions(int count) {
+    return '$count sold';
+  }
+
+  @override
+  String get dishReviewsAndRatings => 'Reviews & Ratings';
+
+  @override
+  String dishReviewCount(int count) {
+    return '$count reviews';
+  }
+
+  @override
+  String dishReviewsBasedOn(int count) {
+    return 'Based on $count actual reviews';
+  }
+
+  @override
+  String get dishNoReviewsYet => 'No reviews yet';
+
+  @override
+  String dishFilterAllReviews(int count) {
+    return 'All ($count)';
+  }
+
+  @override
+  String dishFilterWithPhotos(int count) {
+    return 'With photos ($count)';
+  }
+
+  @override
+  String dishFilterFiveStar(int count) {
+    return '5 stars ($count)';
+  }
+
+  @override
+  String get dishFilterLatest => 'Latest';
+
+  @override
+  String get dishNoMatchingReviews => 'No matching reviews found';
+
+  @override
+  String dishViewAllReviews(int count) {
+    return 'View all $count reviews';
+  }
+
+  @override
+  String get dishVerifiedPurchase => 'Verified purchase';
+
+  @override
+  String dishSatisfiedPct(int pct) {
+    return '$pct% Satisfied';
+  }
+
+  @override
+  String get dishNotSatisfied => 'Not satisfied';
+
+  @override
+  String get dishStoreReply => 'Reply from store:';
+
+  @override
+  String get foodNameEnLabel => 'Dish Name (English)';
+
+  @override
+  String get foodNameEnHint => 'Enter dish name in English';
+
+  @override
+  String get foodDescEnLabel => 'Dish Description (English)';
+
+  @override
+  String get foodDescEnHint => 'Enter dish description in English';
+
+  @override
+  String voucherDiscountMax(int pct, String max) {
+    return '$pct% off (Max $max)';
+  }
+
+  @override
+  String voucherOrderFrom(String min) {
+    return 'Orders from $min';
+  }
 }

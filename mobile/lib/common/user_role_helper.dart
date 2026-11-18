@@ -33,7 +33,12 @@ class UserRoleHelper {
 
   static bool get isMerchant {
     final r = userRole;
-    return r == 'CUAN_HANG' || r == 'RESTAURANT' || r == 'MERCHANT' || r == 'CHỦ QUÁN';
+    return r == 'CUAN_HANG' ||
+        r == 'CUA_HANG' ||
+        r == 'RESTAURANT' ||
+        r == 'STORE' ||
+        r == 'MERCHANT' ||
+        r == 'CHỦ QUÁN';
   }
 
   static bool get isAdmin {
@@ -42,10 +47,16 @@ class UserRoleHelper {
   }
 
   static bool get isGuest {
+    // 1. Chế độ khách vãng lai tường minh
     if (Globs.udValueBool(Globs.isGuestMode)) return true;
+
+    // 2. Nếu có auth token hợp lệ -> Chắc chắn là người dùng đã đăng nhập, không bao giờ là khách
+    final token = Globs.udValueString(KKey.authToken).trim();
+    if (token.isNotEmpty) return false;
+
+    // 3. Nếu chưa đăng nhập
     if (!Globs.udValueBool(Globs.userLogin)) return true;
-    final token = Globs.udValueString(KKey.authToken);
-    if (token.trim().isEmpty) return true;
+
     return false;
   }
 
@@ -54,8 +65,22 @@ class UserRoleHelper {
     final p = payload;
     if (p['user'] is Map) {
       final u = p['user'] as Map;
-      return u['fullName'] ?? u['username'] ?? u['email'] ?? 'Khách Hàng';
+      return u['fullName'] ??
+          u['hoTen'] ??
+          u['tenDangNhap'] ??
+          u['username'] ??
+          u['email'] ??
+          'Khách Hàng';
     }
-    return p['fullName'] ?? p['username'] ?? p['email'] ?? 'Khách Hàng';
+    if (p['khachHang'] is Map) {
+      final kh = p['khachHang'] as Map;
+      return kh['hoTen'] ?? kh['fullName'] ?? 'Khách Hàng';
+    }
+    return p['fullName'] ??
+        p['hoTen'] ??
+        p['tenDangNhap'] ??
+        p['username'] ??
+        p['email'] ??
+        'Khách Hàng';
   }
 }

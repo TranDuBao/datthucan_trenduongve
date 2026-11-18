@@ -159,6 +159,8 @@ export class RestaurantService {
         id: cat.maDanhMuc,
         tenDanhMuc: cat.tenDanhMuc,
         name: cat.tenDanhMuc,
+        tenDanhMucEn: cat.tenDanhMucEn || cat.tenDanhMuc,
+        nameEn: cat.tenDanhMucEn || cat.tenDanhMuc,
         maQuan: cat.maQuan,
         soLuongMon: catItems.length,
         itemsCount: catItems.length,
@@ -308,6 +310,9 @@ export class RestaurantService {
       return {
         id: cat.maDanhMuc,
         name: cat.tenDanhMuc,
+        tenDanhMuc: cat.tenDanhMuc,
+        nameEn: cat.tenDanhMucEn || cat.tenDanhMuc,
+        tenDanhMucEn: cat.tenDanhMucEn || cat.tenDanhMuc,
         maQuan: cat.maQuan,
         lat: res?.lat ? Number(res.lat) : 10.762622,
         lng: res?.lng ? Number(res.lng) : 106.682029,
@@ -326,6 +331,10 @@ export class RestaurantService {
             maMonAn: i.maMonAn,
             name: i.tenMonAn,
             tenMonAn: i.tenMonAn,
+            nameEn: i.tenMonAnEn || '',
+            tenMonAnEn: i.tenMonAnEn || '',
+            moTaEn: i.moTaEn || '',
+            motaEn: i.moTaEn || '',
             price: Number(i.giaMonAn),
             giaMonAn: Number(i.giaMonAn),
             quantity: i.soLuongMon !== null && i.soLuongMon !== undefined ? Number(i.soLuongMon) : 0,
@@ -741,8 +750,8 @@ function matchFoodQuery(targetText: string, query: string): boolean {
     for (const s of stores) storeMap.set(s.maQuan, s);
 
     const categories = await this.danhMucRepo.find();
-    const catMap = new Map<number, string>();
-    for (const c of categories) catMap.set(c.maDanhMuc, c.tenDanhMuc);
+    const catMap = new Map<number, { tenDanhMuc: string; tenDanhMucEn: string }>();
+    for (const c of categories) catMap.set(c.maDanhMuc, { tenDanhMuc: c.tenDanhMuc, tenDanhMucEn: c.tenDanhMucEn || c.tenDanhMuc });
 
     const items = await this.monAnRepo.find();
 
@@ -763,15 +772,21 @@ function matchFoodQuery(targetText: string, query: string): boolean {
     return items.map((i) => {
       const store = storeMap.get(i.maQuan);
       const totalSold = soldMap.get(i.maMonAn) || 0;
-      const catName = i.maDanhMuc ? catMap.get(i.maDanhMuc) || '' : '';
+      const catInfo = i.maDanhMuc ? catMap.get(i.maDanhMuc) : undefined;
+      const catName = catInfo?.tenDanhMuc || '';
+      const catNameEn = catInfo?.tenDanhMucEn || catName;
       return {
         id: i.maMonAn,
         maMonAn: i.maMonAn,
         name: i.tenMonAn,
         tenMonAn: i.tenMonAn,
+        nameEn: i.tenMonAnEn || '',
+        tenMonAnEn: i.tenMonAnEn || '',
         maDanhMuc: i.maDanhMuc,
         tenDanhMuc: catName,
         categoryName: catName,
+        tenDanhMucEn: catNameEn,
+        categoryNameEn: catNameEn,
         price: Number(i.giaMonAn),
         giaMonAn: Number(i.giaMonAn),
         quantity: i.soLuongMon !== null && i.soLuongMon !== undefined ? Number(i.soLuongMon) : 0,
@@ -795,6 +810,8 @@ function matchFoodQuery(targetText: string, query: string): boolean {
         thoiGianChuanBi: store?.thoiGianChuanBi ? Number(store.thoiGianChuanBi) : 5,
         moTa: i.moTa || '',
         mota: i.moTa || '',
+        moTaEn: i.moTaEn || '',
+        motaEn: i.moTaEn || '',
         dacTinh: i.dacTinh || '',
         dactinh: i.dacTinh || '',
         sizes: this.parseFoodOptions(i.options).sizes,

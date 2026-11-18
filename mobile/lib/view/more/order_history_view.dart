@@ -559,7 +559,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                   if (_cancelledOrders.isNotEmpty) ...[
                                     OrderSectionHeader(
                                       title: context.l10n.orderCancelledSectionTitle,
-                                      badgeText: '${_cancelledOrders.length} đơn đã hủy',
+                                      badgeText: context.l10n.cancelledOrdersBadge(_cancelledOrders.length),
                                       iconClose: true,
                                       isDark: isDark,
                                     ),
@@ -573,7 +573,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView> {
                                         )),
                                     const SizedBox(height: 16),
                                   ] else if (selectedTabIndex == 3) ...[
-                                    const OrderEmptyFilterState(message: 'Chưa có đơn hàng nào bị hủy'),
+                                    OrderEmptyFilterState(message: context.l10n.noCancelledOrders),
                                   ],
                                 ],
                               ],
