@@ -608,6 +608,7 @@ class MapProvider extends ChangeNotifier {
       clearAll();
     }
 
+    RecentDestinationsService.invalidateCache();
     _recentDestinations = await RecentDestinationsService.getRecentDestinations();
     notifyListeners();
     if (_isInitialized) {
@@ -1117,6 +1118,8 @@ class MapProvider extends ChangeNotifier {
     _isFocusMode = false;
     _state = MapState.idle;
     _errorMessage = null;
+    RecentDestinationsService.invalidateCache();
+    _recentDestinations = [];
     originController.clear();
     destinationController.clear();
     foodKeywordController.clear();

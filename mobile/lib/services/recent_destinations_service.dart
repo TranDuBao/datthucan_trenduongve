@@ -1,18 +1,54 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:latlong2/latlong.dart';
+import '../common/globs.dart';
+import '../common/service_call.dart';
 import '../models/place_model.dart';
 
 class RecentDestinationsService {
-  static const String _storageKey = 'foodroute_recent_destinations_v1';
   static const int maxRecent = 4;
   static List<PlaceModel>? _cached;
+  static String? _cachedUserId;
+
+  static String _getCurrentUserId() {
+    final payload = ServiceCall.userPayload.isNotEmpty
+        ? ServiceCall.userPayload
+        : Globs.udValue(Globs.userPayload);
+    if (payload is Map) {
+      final userId = (payload['user_id'] ??
+              payload['id'] ??
+              payload['maTaiKhoan'] ??
+              payload['user']?['id'] ??
+              payload['user']?['maTaiKhoan'])
+          ?.toString();
+      if (userId != null && userId.isNotEmpty && userId != '0') {
+        return userId;
+      }
+    }
+    return 'guest';
+  }
+
+  static String _getStorageKey() {
+    final uid = _getCurrentUserId();
+    return 'foodroute_recent_destinations_u_$uid';
+  }
+
+  static void invalidateCache() {
+    _cached = null;
+    _cachedUserId = null;
+  }
 
   static Future<List<PlaceModel>> getRecentDestinations() async {
-    if (_cached != null) return _cached!;
+    final currentUid = _getCurrentUserId();
+    if (_cached != null && _cachedUserId == currentUid) {
+      return _cached!;
+    }
+
+    _cachedUserId = currentUid;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString(_storageKey);
+      final key = _getStorageKey();
+      final jsonStr = prefs.getString(key);
       if (jsonStr == null || jsonStr.isEmpty) {
         _cached = [];
         return _cached!;
@@ -49,6 +85,7 @@ class RecentDestinationsService {
       list.insert(0, place);
       final trimmed = list.take(maxRecent).toList();
       _cached = trimmed;
+      _cachedUserId = _getCurrentUserId();
 
       final prefs = await SharedPreferences.getInstance();
       final dataToSave = trimmed.map((p) => {
@@ -59,7 +96,7 @@ class RecentDestinationsService {
         'lng': p.latLng.longitude,
       }).toList();
 
-      await prefs.setString(_storageKey, json.encode(dataToSave));
+      await prefs.setString(_getStorageKey(), json.encode(dataToSave));
       return trimmed;
     } catch (_) {
       return _cached ?? [];
@@ -68,9 +105,10 @@ class RecentDestinationsService {
 
   static Future<void> clearRecentDestinations() async {
     _cached = [];
+    _cachedUserId = _getCurrentUserId();
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storageKey);
+      await prefs.remove(_getStorageKey());
     } catch (_) {}
   }
 }
