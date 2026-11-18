@@ -254,7 +254,7 @@ export class EmailService {
     // 1. Kiểm tra Brevo API HTTPS (Cổng 443 - không bao giờ bị Cloud chặn)
     const brevoApiKey = process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY;
     if (brevoApiKey) {
-      console.log(`[EmailService] [Info] Đang gửi qua Brevo HTTPS API đến: ${toEmail}`);
+      console.log(`[EmailService] [Info] Đang gửi mã OTP (${type}) qua Brevo HTTPS API`);
       const brevoRes = await this.sendViaBrevo({
         apiKey: brevoApiKey,
         fromEmail,
@@ -265,7 +265,7 @@ export class EmailService {
         htmlContent,
       });
       if (brevoRes.success) {
-        console.log(`[EmailService] [Success] Brevo đã gửi mail OTP (${type}) thành công đến: ${toEmail}`);
+        console.log(`[EmailService] [Success] Brevo đã gửi mail OTP (${type}) thành công`);
         return { success: true };
       }
     }
@@ -273,16 +273,16 @@ export class EmailService {
     // 2. Kiểm tra Resend API HTTPS (Cổng 443)
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-      console.log(`[EmailService] [Info] Đang gửi qua Resend HTTPS API đến: ${toEmail}`);
+      console.log(`[EmailService] [Info] Đang gửi mã OTP (${type}) qua Resend HTTPS API`);
       const resendRes = await this.sendViaResend({
         apiKey: resendApiKey,
-        fromEmail: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        fromEmail: process.env.RESEND_FROM_EMAIL || 'no-reply@foodroute.vn',
         toEmail,
         subject: emailSubject,
         htmlContent,
       });
       if (resendRes.success) {
-        console.log(`[EmailService] [Success] Resend đã gửi mail OTP (${type}) thành công đến: ${toEmail}`);
+        console.log(`[EmailService] [Success] Resend đã gửi mail OTP (${type}) thành công`);
         return { success: true };
       }
     }
@@ -309,10 +309,10 @@ export class EmailService {
 
       await Promise.race([sendPromise, timeoutPromise]);
 
-      console.log(`[EmailService] [Success] Đã gửi mã OTP (${type}) qua SMTP thành công đến email: ${toEmail}`);
+      console.log(`[EmailService] [Success] Đã gửi mã OTP (${type}) qua SMTP thành công`);
       return { success: true };
     } catch (error: any) {
-      console.error(`[EmailService] [Error] Gửi mail OTP (${type}) thất bại đến ${toEmail}:`, error.message);
+      console.error(`[EmailService] [Error] Gửi mail OTP (${type}) thất bại:`, error.message);
       return {
         success: false,
         message: error.message || 'Lỗi gửi email qua máy chủ SMTP',
