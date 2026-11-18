@@ -75,20 +75,17 @@ export class AuthController {
       });
 
       if (!sendResult.success) {
-        console.warn(`[Auth] SMTP không khả dụng trên cloud (Render chặn port SMTP). Fallback OTP cho ${email}: >>> ${otpCode} <<<`);
-        return res.status(200).json({
-          statusCode: 200,
-          status: '1',
-          message: `Do máy chủ Cloud chặn cổng gửi mail, mã OTP của bạn là: ${otpCode}`,
-          payload: { email, otp: otpCode, cloudFallback: true },
-          data: { email, otp: otpCode, cloudFallback: true },
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: sendResult.message || 'Không thể gửi mã xác thực đến địa chỉ email này. Vui lòng kiểm tra lại email của bạn!',
         });
       }
 
       return res.status(200).json({
         statusCode: 200,
         status: '1',
-        message: 'Mã xác thực OTP đã được gửi đến email của bạn!',
+        message: 'Mã xác thực OTP đã được gửi đến email của bạn! Vui lòng kiểm tra hộp thư.',
         payload: { email },
         data: { email },
       });
@@ -563,20 +560,17 @@ export class AuthController {
       });
 
       if (!sendResult.success) {
-        console.warn(`[Auth] SMTP không khả dụng trên cloud (Render chặn port SMTP). Fallback OTP quên MK cho ${email}: >>> ${otpCode} <<<`);
-        return res.status(200).json({
-          statusCode: 200,
-          status: '1',
-          message: `Do máy chủ Cloud chặn cổng gửi mail, mã OTP của bạn là: ${otpCode}`,
-          payload: { email, otp: otpCode, cloudFallback: true },
-          data: { email, otp: otpCode, cloudFallback: true },
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: sendResult.message || 'Không thể gửi email OTP đến địa chỉ này. Vui lòng thử lại sau!',
         });
       }
 
       return res.status(200).json({
         statusCode: 200,
         status: '1',
-        message: 'Mã xác thực OTP đã được gửi đến email của bạn!',
+        message: 'Mã xác thực OTP đã được gửi đến email của bạn! Vui lòng kiểm tra hộp thư.',
         payload: { email },
         data: { email },
       });
@@ -679,28 +673,6 @@ export class AuthController {
         });
       }
 
-      const otpRepo = AppDataSource.getRepository(OtpModel);
-      const otpRecord = await otpRepo.findOne({
-        where: { otpCode: resetCode, daSuDung: false, loai: 'FORGOT_PASSWORD' },
-        order: { ngayTao: 'DESC' },
-      });
-
-      if (!otpRecord) {
-        return res.status(400).json({
-          statusCode: 400,
-          status: '0',
-          message: 'Mã xác thực không hợp lệ hoặc đã qua sử dụng!',
-        });
-      }
-
-      if (new Date() > new Date(otpRecord.hetHanLuc)) {
-        return res.status(400).json({
-          statusCode: 400,
-          status: '0',
-          message: 'Phiên xác thực đã hết hạn. Vui lòng thực hiện lại từ đầu!',
-        });
-      }
-
       const taiKhoanRepo = AppDataSource.getRepository(TaiKhoanModel);
       const taiKhoan = await taiKhoanRepo.findOne({
         where: { maTaiKhoan: userId },
@@ -711,6 +683,34 @@ export class AuthController {
           statusCode: 404,
           status: '0',
           message: 'Không tìm thấy tài khoản người dùng!',
+        });
+      }
+
+      // Xác thực quyền sở hữu: Mã OTP phải thuộc về chính tài khoản này (chống IDOR & trùng mã)
+      const khachHangRepo = AppDataSource.getRepository(KhachHangModel);
+      const khachHang = await khachHangRepo.findOne({ where: { maTaiKhoan: userId } });
+      const userEmails = [taiKhoan.tenDangNhap.toLowerCase()];
+      if (khachHang?.email) userEmails.push(khachHang.email.toLowerCase());
+
+      const otpRepo = AppDataSource.getRepository(OtpModel);
+      const otpRecord = await otpRepo.findOne({
+        where: { otpCode: resetCode, daSuDung: false, loai: 'FORGOT_PASSWORD' },
+        order: { ngayTao: 'DESC' },
+      });
+
+      if (!otpRecord || !userEmails.includes(otpRecord.email.toLowerCase())) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Mã xác thực không hợp lệ, không thuộc về tài khoản này hoặc đã qua sử dụng!',
+        });
+      }
+
+      if (new Date() > new Date(otpRecord.hetHanLuc)) {
+        return res.status(400).json({
+          statusCode: 400,
+          status: '0',
+          message: 'Phiên xác thực đã hết hạn. Vui lòng thực hiện lại từ đầu!',
         });
       }
 

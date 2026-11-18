@@ -38,16 +38,16 @@ export class EmailService {
         tls: {
           rejectUnauthorized: false,
         },
-        connectionTimeout: 4000,
-        greetingTimeout: 4000,
-        socketTimeout: 5000,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
       });
-      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (service: gmail) cho tài khoản: ${user}`);
+      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (service: gmail)`);
     } else {
       const port = Number(process.env.SMTP_PORT) || 465;
       const secure = process.env.SMTP_SECURE === 'true' || port === 465;
       this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        host: process.env.SMTP_HOST || 'localhost',
         port,
         secure,
         auth: {
@@ -57,11 +57,11 @@ export class EmailService {
         tls: {
           rejectUnauthorized: false,
         },
-        connectionTimeout: 4000,
-        greetingTimeout: 4000,
-        socketTimeout: 5000,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
       });
-      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (${process.env.SMTP_HOST}:${port}) cho tài khoản: ${user}`);
+      console.log(`[EmailService] [Info] Đã khởi tạo SMTP Transporter (${process.env.SMTP_HOST || 'custom'}:${port})`);
     }
   }
 
@@ -92,7 +92,7 @@ export class EmailService {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData),
         },
-        timeout: 6000,
+        timeout: 12000,
       };
 
       const req = https.request(options, (res) => {
@@ -148,7 +148,7 @@ export class EmailService {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(postData),
         },
-        timeout: 6000,
+        timeout: 12000,
       };
 
       const req = https.request(options, (res) => {
@@ -187,8 +187,8 @@ export class EmailService {
   }): Promise<{ success: boolean; message?: string; isCloudBlocked?: boolean }> {
     const { toEmail, otpCode, recipientName, type = 'FORGOT_PASSWORD' } = params;
 
-    const fromName = process.env.SMTP_FROM_NAME || 'FoodRoute System';
-    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'support@foodroute.vn';
+    const fromName = process.env.SMTP_FROM_NAME || 'FoodRoute';
+    const fromEmail = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'no-reply@foodroute.vn';
     const displayName = recipientName ? ` ${recipientName}` : '';
 
     const isRegister = type === 'REGISTER';
@@ -207,9 +207,24 @@ export class EmailService {
 
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-        <div style="background: linear-gradient(135deg, #FF4800 0%, #FF6011 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">FoodRoute</h1>
-          <p style="margin: 6px 0 0; font-size: 13.5px; opacity: 0.95;">Hệ Thống Đặt Thức Ăn Tiện Đường Ghé Lấy</p>
+        <div style="background: linear-gradient(135deg, #FF4200 0%, #FF5714 50%, #FF6D22 100%); padding: 26px 24px; color: #ffffff;">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <tr>
+              <td align="left" valign="middle">
+                <div style="font-size: 28px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; margin: 0; color: #ffffff;">
+                  FoodRoute<span style="color: #FFD54F;">.</span>
+                </div>
+                <div style="margin-top: 6px; font-size: 13px; font-weight: 500; opacity: 0.95; line-height: 1.4; color: #ffffff;">
+                  Món ngon dọc đường đi,<br>Đặt món trước, ghé là có.
+                </div>
+              </td>
+              <td align="right" valign="middle" width="130" style="width: 130px;">
+                <div style="display: inline-block; background: rgba(255, 255, 255, 0.18); border-radius: 50%; padding: 8px;">
+                  <img src="https://res.cloudinary.com/qla1kfvo/image/upload/v1794970961/foodroute/branding/commuter_scooter_email.png" alt="FoodRoute Commuter" width="105" style="display: block; width: 105px; max-width: 105px; height: auto;" />
+                </div>
+              </td>
+            </tr>
+          </table>
         </div>
 
         <div style="padding: 32px 28px;">
@@ -289,7 +304,7 @@ export class EmailService {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Hết thời gian chờ kết nối máy chủ gửi mail (Timeout 4s do Cloud chặn port SMTP)')), 4000);
+        setTimeout(() => reject(new Error('Hết thời gian chờ kết nối máy chủ gửi mail (Timeout 10s)')), 10000);
       });
 
       await Promise.race([sendPromise, timeoutPromise]);

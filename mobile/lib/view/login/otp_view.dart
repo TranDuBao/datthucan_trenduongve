@@ -17,8 +17,7 @@ import '../on_boarding/on_boarding_view.dart';
 class OTPView extends StatefulWidget {
   final String email;
   final Map<String, dynamic>? signUpData;
-  final String? fallbackOtp;
-  const OTPView({super.key, required this.email, this.signUpData, this.fallbackOtp});
+  const OTPView({super.key, required this.email, this.signUpData});
 
   @override
   State<OTPView> createState() => _OTPViewState();
@@ -27,13 +26,6 @@ class OTPView extends StatefulWidget {
 class _OTPViewState extends State<OTPView> {
   final _otpPinFieldController = GlobalKey<OtpPinFieldState>();
   String code = "";
-  late String? _currentFallbackOtp;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentFallbackOtp = widget.fallbackOtp;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,35 +69,7 @@ class _OTPViewState extends State<OTPView> {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  if (_currentFallbackOtp != null && _currentFallbackOtp!.isNotEmpty) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF7ED),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFFD8A8)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info_outline, color: Color(0xFFEA580C), size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              "Mã OTP (Cloud Free): $_currentFallbackOtp",
-                              style: const TextStyle(
-                                color: Color(0xFFC2410C),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  const SizedBox(height: 32),
 
                   // OTP Pin Field
                   Center(
@@ -297,21 +261,7 @@ class _OTPViewState extends State<OTPView> {
     ServiceCall.post(parameter, SVKey.svSignUpRequestOtp, withSuccess: (responseObj) async {
       Globs.hideHUD();
       if (responseObj[KKey.status] == "1") {
-        final payload = responseObj[KKey.payload] as Map? ?? {};
-        final serverOtp = (payload["otp"] ?? responseObj["data"]?["otp"])?.toString() ?? "";
-        if (serverOtp.isNotEmpty) {
-          setState(() {
-            _currentFallbackOtp = serverOtp;
-          });
-          mdShowAlert(
-            context.l10n.commonNotification,
-            "Mã OTP mới của bạn là: $serverOtp\n(Do máy chủ Cloud Free chặn gửi email)",
-            () {},
-            isError: false,
-          );
-        } else {
-          mdShowAlert(context.l10n.commonNotification, context.l10n.authOtpResentSuccess, () {}, isError: false);
-        }
+        mdShowAlert(context.l10n.commonNotification, context.l10n.authOtpResentSuccess, () {}, isError: false);
       } else {
         String msg = (responseObj[KKey.message] as String?)?.trim() ?? '';
         mdShowAlert(context.l10n.commonNotification, msg.isNotEmpty ? msg : context.l10n.commonError, () {}, isError: true);
