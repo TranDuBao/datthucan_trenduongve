@@ -274,8 +274,8 @@ export class EmailService {
                 </div>
               </td>
               <td align="right" valign="middle" width="130" style="width: 130px;">
-                <div style="display: inline-block; background: rgba(255, 255, 255, 0.18); border-radius: 50%; padding: 8px;">
-                  <img src="https://res.cloudinary.com/qla1kfvo/image/upload/v1794970961/foodroute/branding/commuter_scooter_email.png" alt="FoodRoute Commuter" width="105" style="display: block; width: 105px; max-width: 105px; height: auto;" />
+                <div style="display: inline-block; background: rgba(255, 255, 255, 0.18); border-radius: 50%; padding: 6px;">
+                  <img src="https://res.cloudinary.com/qla1kfvo/image/upload/w_220,f_png,q_auto/v1794970961/foodroute/branding/commuter_scooter_email.png" alt="FoodRoute" width="105" height="110" style="display: block; width: 105px; max-width: 105px; height: auto; border: 0; outline: none; text-decoration: none;" />
                 </div>
               </td>
             </tr>
