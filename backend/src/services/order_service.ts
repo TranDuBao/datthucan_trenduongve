@@ -310,6 +310,20 @@ export class OrderService {
           });
         }
 
+        if (userSub) {
+          await NotificationService.getInstance().sendNotification({
+            recipientId: userSub,
+            recipientRole: 'user',
+            type: 'order_created',
+            title: 'Đặt món thành công',
+            body: `Đơn hàng #DH-${savedOrder.maDonHang} tại ${store.tenQuan} đã được đặt thành công. Quán sẽ sớm xác nhận đơn của bạn.`,
+            titleEn: 'Order placed successfully',
+            bodyEn: `Your order #DH-${savedOrder.maDonHang} at ${store.tenQuan} has been placed successfully. The store will confirm soon.`,
+            data: { orderId: String(savedOrder.maDonHang), maQuan: String(savedOrder.maQuan), status: savedOrder.trangThai },
+            idempotencyKey: `order_created:${savedOrder.maDonHang}:user`,
+          });
+        }
+
         await NotificationService.getInstance().sendNotification({
           recipientId: 0,
           recipientRole: 'admin',
@@ -609,7 +623,22 @@ export class OrderService {
       const store = saved.maQuan ? await this.storeRepo.findOne({ where: { maQuan: saved.maQuan } }) : null;
       const tenQuan = store?.tenQuan || 'Nhà hàng';
 
-      if (normalized === 'SAN_SANG' && saved.maKhachHang) {
+      if ((normalized === 'DA_XAC_NHAN' || normalized === 'DANG_CHUAN_BI') && saved.maKhachHang) {
+        const kh = await this.khachHangRepo.findOne({ where: { maKhachHang: saved.maKhachHang } });
+        const targetUserId = kh?.maTaiKhoan || saved.maKhachHang;
+
+        await NotificationService.getInstance().sendNotification({
+          recipientId: targetUserId,
+          recipientRole: 'user',
+          type: 'order_confirmed',
+          title: 'Quán đã xác nhận đơn hàng',
+          body: `${tenQuan} đã nhận đơn #${saved.maDonHang} và đang chuẩn bị món ăn cho bạn.`,
+          titleEn: 'Order confirmed',
+          bodyEn: `${tenQuan} has confirmed your order #${saved.maDonHang} and is preparing it.`,
+          data: { orderId: String(saved.maDonHang), maQuan: String(saved.maQuan), status: normalized },
+          idempotencyKey: `order_confirmed:${saved.maDonHang}`,
+        });
+      } else if (normalized === 'SAN_SANG' && saved.maKhachHang) {
         const kh = await this.khachHangRepo.findOne({ where: { maKhachHang: saved.maKhachHang } });
         const targetUserId = kh?.maTaiKhoan || saved.maKhachHang;
         const isDineIn = saved.loaiDonHang === 'DINE_IN' || saved.loaiDonHang === 'AN_TAI_QUAN';
@@ -650,19 +679,41 @@ export class OrderService {
         });
         const isPaid = !!payment;
 
-        if (updatedBy === 'user' && saved.maQuan) {
-          // Khách hủy đơn -> Báo nhà hàng
-          await NotificationService.getInstance().sendNotification({
-            recipientId: saved.maQuan,
-            recipientRole: 'restaurant',
-            type: 'order_cancelled',
-            title: 'Khách hàng hủy đơn',
-            body: `Khách hàng đã hủy đơn hàng #${saved.maDonHang}.${lyDo ? ` Lý do: ${lyDo}` : ''}`,
-            titleEn: 'Customer cancelled order',
-            bodyEn: `Customer has cancelled order #${saved.maDonHang}.${lyDo ? ` Reason: ${lyDo}` : ''}`,
-            data: { orderId: String(saved.maDonHang), maQuan: String(saved.maQuan), status: normalized },
-            idempotencyKey: `order_cancelled:${saved.maDonHang}:restaurant`,
-          });
+        if (updatedBy === 'user') {
+          // 1. Khách hủy đơn -> Báo nhà hàng
+          if (saved.maQuan) {
+            await NotificationService.getInstance().sendNotification({
+              recipientId: saved.maQuan,
+              recipientRole: 'restaurant',
+              type: 'order_cancelled',
+              title: 'Khách hàng hủy đơn',
+              body: `Khách hàng đã hủy đơn hàng #${saved.maDonHang}.${lyDo ? ` Lý do: ${lyDo}` : ''}`,
+              titleEn: 'Customer cancelled order',
+              bodyEn: `Customer has cancelled order #${saved.maDonHang}.${lyDo ? ` Reason: ${lyDo}` : ''}`,
+              data: { orderId: String(saved.maDonHang), maQuan: String(saved.maQuan), status: normalized },
+              idempotencyKey: `order_cancelled:${saved.maDonHang}:restaurant`,
+            });
+          }
+
+          // 2. Khách hủy đơn -> Lưu thông báo xác nhận hủy thành công cho khách hàng
+          if (saved.maKhachHang) {
+            const kh = await this.khachHangRepo.findOne({ where: { maKhachHang: saved.maKhachHang } });
+            const targetUserId = kh?.maTaiKhoan || saved.maKhachHang;
+            const refundNoticeVi = isPaid ? ' Tiền đã thanh toán sẽ được hệ thống xử lý hoàn lại cho bạn.' : '';
+            const refundNoticeEn = isPaid ? ' Paid amount will be refunded to your account automatically.' : '';
+
+            await NotificationService.getInstance().sendNotification({
+              recipientId: targetUserId,
+              recipientRole: 'user',
+              type: 'order_cancelled',
+              title: 'Đã hủy đơn hàng',
+              body: `Bạn đã hủy thành công đơn hàng #${saved.maDonHang} tại ${tenQuan}.${lyDo ? ` Lý do: ${lyDo}.` : ''}${refundNoticeVi}`,
+              titleEn: 'Order cancelled',
+              bodyEn: `You have cancelled order #${saved.maDonHang} at ${tenQuan}.${lyDo ? ` Reason: ${lyDo}.` : ''}${refundNoticeEn}`,
+              data: { orderId: String(saved.maDonHang), maQuan: String(saved.maQuan), status: normalized, isPaid: String(isPaid), lyDo },
+              idempotencyKey: `order_cancelled:${saved.maDonHang}:user`,
+            });
+          }
         } else if (saved.maKhachHang) {
           // Nhà hàng hoặc hệ thống từ chối/hủy -> Báo khách hàng
           const kh = await this.khachHangRepo.findOne({ where: { maKhachHang: saved.maKhachHang } });

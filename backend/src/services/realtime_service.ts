@@ -381,6 +381,8 @@ export class RealtimeService {
       } else {
         // Customer / User
         this.io.to(`customer:${recipientId}`).emit(REALTIME_EVENTS.NOTIFICATION_NEW, payload);
+        this.io.to(`user:${recipientId}`).emit(REALTIME_EVENTS.NOTIFICATION_NEW, payload);
+        this.io.to(`account:${recipientId}`).emit(REALTIME_EVENTS.NOTIFICATION_NEW, payload);
       }
     } catch (e) {
       console.error('[RealtimeService] [Warn] Realtime emit error (notification:new):', e);

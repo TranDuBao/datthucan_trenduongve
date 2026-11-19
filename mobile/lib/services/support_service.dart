@@ -130,7 +130,7 @@ class SupportService {
         headers: {
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final resJson = jsonDecode(response.body);
@@ -157,7 +157,7 @@ class SupportService {
         headers: {
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final resJson = jsonDecode(response.body);
@@ -188,7 +188,7 @@ class SupportService {
         headers: {
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final resJson = jsonDecode(response.body);

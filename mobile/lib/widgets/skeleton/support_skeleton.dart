@@ -155,3 +155,73 @@ class SupportTicketListSkeleton extends StatelessWidget {
     );
   }
 }
+
+class SupportChatSkeleton extends StatelessWidget {
+  const SupportChatSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonShimmer(
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        children: [
+          // Tin nhắn 1 (User - Phải)
+          const Align(
+            alignment: Alignment.centerRight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SkeletonLine(width: 80, height: 10),
+                SizedBox(height: 5),
+                SkeletonBox(width: 220, height: 48, borderRadius: 16),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Tin nhắn 2 (Admin phản hồi - Trái)
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonLine(width: 120, height: 10),
+                SizedBox(height: 5),
+                SkeletonBox(width: 270, height: 64, borderRadius: 16),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Tin nhắn 3 (User - Phải)
+          const Align(
+            alignment: Alignment.centerRight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SkeletonLine(width: 70, height: 10),
+                SizedBox(height: 5),
+                SkeletonBox(width: 160, height: 42, borderRadius: 16),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Tin nhắn 4 (Admin - Trái)
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonLine(width: 130, height: 10),
+                SizedBox(height: 5),
+                SkeletonBox(width: 290, height: 78, borderRadius: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

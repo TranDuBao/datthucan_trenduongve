@@ -12,6 +12,7 @@ import '../../services/order_route_storage.dart';
 import 'order_history_widgets.dart';
 import '../../widgets/order_refund_status_card.dart';
 import '../../widgets/order_refund_bank_sheet.dart';
+import '../../widgets/contact_restaurant_dialog.dart';
 
 /// Displays the full order detail as a bottom sheet.
 /// [ordersList] is the live list so real-time updates are reflected.
@@ -349,42 +350,11 @@ class _OrderDetailSheetContent extends StatelessWidget {
                                 height: 40,
                                 child: OutlinedButton.icon(
                                   onPressed: () {
-                                    final phone = currentOrder.restaurantPhone.isNotEmpty
-                                        ? currentOrder.restaurantPhone
-                                        : '0909998877';
-                                    showDialog(
+                                    showContactRestaurantDialog(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                        title: Row(
-                                          children: [
-                                            const Icon(Icons.call_rounded, color: Color(0xFFFC6011), size: 22),
-                                            const SizedBox(width: 8),
-                                            const Text('Liên hệ nhà hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
-                                        content: Text(
-                                          'Số điện thoại của ${currentOrder.restaurantName}:\n$phone',
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(ctx),
-                                            child: const Text('Đóng', style: TextStyle(color: Colors.grey)),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFFFC6011),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                            ),
-                                            onPressed: () {
-                                              Navigator.pop(ctx);
-                                              CustomToast.showSuccess(context, 'Đang kết nối cuộc gọi tới $phone...');
-                                            },
-                                            child: const Text('Gọi ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                          ),
-                                        ],
-                                      ),
+                                      restaurantName: currentOrder.restaurantName,
+                                      phone: currentOrder.restaurantPhone,
+                                      isDark: isDark,
                                     );
                                   },
                                   icon: const Icon(Icons.call_outlined, color: Color(0xFFFC6011), size: 16),

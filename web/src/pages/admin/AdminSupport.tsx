@@ -18,29 +18,29 @@ export const AdminSupport: React.FC = () => {
   ];
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '20px' }}>
       {/* Header Card */}
       <div
         style={{
           backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          padding: '22px 24px',
+          borderRadius: '14px',
+          padding: '12px 20px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           border: '1px solid #e2e8f0',
-          marginBottom: '20px',
+          marginBottom: '14px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '13px',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
               backgroundColor: 'rgba(252, 96, 17, 0.12)',
               display: 'flex',
               alignItems: 'center',
@@ -49,12 +49,12 @@ export const AdminSupport: React.FC = () => {
               flexShrink: 0,
             }}
           >
-            <Headphones size={24} />
+            <Headphones size={20} />
           </div>
           <div>
             <h1
               style={{
-                fontSize: '22px',
+                fontSize: '18px',
                 fontWeight: 800,
                 color: '#0f172a',
                 letterSpacing: '-0.3px',
@@ -63,8 +63,8 @@ export const AdminSupport: React.FC = () => {
             >
               Trung Tâm Hỗ Trợ
             </h1>
-            <p style={{ fontSize: '13.5px', color: '#64748b', marginTop: '4px', margin: 0 }}>
-              Hộp thư hội thoại trực tuyến, câu hỏi thường gặp (FAQ), cấu hình liên hệ & góp ý người dùng
+            <p style={{ fontSize: '12.5px', color: '#64748b', marginTop: '2px', margin: 0 }}>
+              Hộp thư hội thoại trực tuyến, câu hỏi FAQ, cấu hình liên hệ & góp ý người dùng
             </p>
           </div>
         </div>
@@ -74,9 +74,9 @@ export const AdminSupport: React.FC = () => {
           style={{
             display: 'inline-flex',
             backgroundColor: '#f1f5f9',
-            padding: '5px',
-            borderRadius: '14px',
-            gap: '6px',
+            padding: '4px',
+            borderRadius: '12px',
+            gap: '4px',
             border: '1px solid #e2e8f0',
             flexWrap: 'wrap',
           }}
@@ -90,16 +90,16 @@ export const AdminSupport: React.FC = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '9px 18px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
                   fontWeight: isActive ? 700 : 600,
                   backgroundColor: isActive ? '#fc6011' : 'transparent',
                   color: isActive ? '#ffffff' : '#64748b',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: isActive ? '0 4px 12px rgba(252,96,17,0.28)' : 'none',
+                  boxShadow: isActive ? '0 3px 10px rgba(252,96,17,0.25)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >

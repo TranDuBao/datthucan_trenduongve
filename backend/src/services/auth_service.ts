@@ -6,6 +6,7 @@ import { CuaHangModel } from '../models/cua_hang_model';
 
 import { OAuth2Client } from 'google-auth-library';
 import { TokenBlacklistService } from './token_blacklist_service';
+import { NotificationService } from './notification_service';
 
 export interface AuthTokens {
   accessToken: string;
@@ -63,6 +64,22 @@ export class AuthService {
       phone: data.phone,
       address: data.address,
     });
+
+    try {
+      await NotificationService.getInstance().sendNotification({
+        recipientId: taiKhoan.maTaiKhoan,
+        recipientRole: 'user',
+        type: 'welcome',
+        title: 'Chào mừng bạn đến với FoodRoute! 🎉',
+        body: `Chào mừng ${data.fullName || 'bạn'}! Khám phá ngay các món ngon dọc lộ trình của bạn cùng FoodRoute.`,
+        titleEn: 'Welcome to FoodRoute! 🎉',
+        bodyEn: `Welcome ${data.fullName || ''}! Discover delicious food along your route with FoodRoute now.`,
+        data: { userId: String(taiKhoan.maTaiKhoan) },
+        idempotencyKey: `welcome:${taiKhoan.maTaiKhoan}`,
+      });
+    } catch (notifErr) {
+      console.error('[AuthService] Failed to send welcome notification:', notifErr);
+    }
 
     return await this.generateTokens(taiKhoan, khachHang);
   }
@@ -185,6 +202,22 @@ export class AuthService {
         email: email,
         avatar: avatarUrl,
       });
+
+      try {
+        await NotificationService.getInstance().sendNotification({
+          recipientId: created.taiKhoan.maTaiKhoan,
+          recipientRole: 'user',
+          type: 'welcome',
+          title: 'Chào mừng bạn đến với FoodRoute! 🎉',
+          body: `Chào mừng ${fullName}! Khám phá ngay các món ngon dọc lộ trình của bạn cùng FoodRoute.`,
+          titleEn: 'Welcome to FoodRoute! 🎉',
+          bodyEn: `Welcome ${fullName}! Discover delicious food along your route with FoodRoute now.`,
+          data: { userId: String(created.taiKhoan.maTaiKhoan) },
+          idempotencyKey: `welcome:${created.taiKhoan.maTaiKhoan}`,
+        });
+      } catch (notifErr) {
+        console.error('[AuthService] Failed to send Google welcome notification:', notifErr);
+      }
 
       account = { taiKhoan: created.taiKhoan, khachHang: created.khachHang };
     }

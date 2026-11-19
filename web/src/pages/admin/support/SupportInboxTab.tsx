@@ -321,14 +321,16 @@ export const SupportInboxTab: React.FC = () => {
         border: '1px solid #e2e8f0',
         overflow: 'hidden',
         display: 'flex',
-        height: '740px',
+        height: 'calc(100vh - 195px)',
+        minHeight: '460px',
+        maxHeight: '620px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
       }}
     >
       {/* LEFT PANEL: Ticket List */}
       <div
         style={{
-          width: '390px',
+          width: '330px',
           borderRight: '1px solid #e2e8f0',
           display: 'flex',
           flexDirection: 'column',
@@ -337,11 +339,11 @@ export const SupportInboxTab: React.FC = () => {
         }}
       >
         {/* Search & Filters */}
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-          <div style={{ position: 'relative', marginBottom: '10px' }}>
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+          <div style={{ position: 'relative', marginBottom: '8px' }}>
             <Search
-              size={15}
-              style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
+              size={14}
+              style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
             />
             <input
               type="text"
@@ -350,10 +352,10 @@ export const SupportInboxTab: React.FC = () => {
               placeholder="Tìm theo người gửi, SĐT, mã #..."
               style={{
                 width: '100%',
-                padding: '8px 12px 8px 32px',
-                borderRadius: '10px',
+                padding: '6px 10px 6px 30px',
+                borderRadius: '8px',
                 border: '1px solid #cbd5e1',
-                fontSize: '13px',
+                fontSize: '12.5px',
                 outline: 'none',
                 backgroundColor: '#f8fafc',
                 boxSizing: 'border-box',
@@ -361,16 +363,16 @@ export const SupportInboxTab: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               style={{
                 flex: 1,
-                padding: '6px 8px',
-                borderRadius: '8px',
+                padding: '5px 6px',
+                borderRadius: '6px',
                 border: '1px solid #cbd5e1',
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: 600,
                 color: '#334155',
                 backgroundColor: '#ffffff',
@@ -433,7 +435,7 @@ export const SupportInboxTab: React.FC = () => {
                   key={t.maPhieu}
                   onClick={() => handleSelectTicket(t)}
                   style={{
-                    padding: '14px 16px',
+                    padding: '10px 12px',
                     cursor: 'pointer',
                     borderBottom: '1px solid #f1f5f9',
                     backgroundColor: isSelected ? '#ffffff' : 'transparent',
@@ -536,7 +538,7 @@ export const SupportInboxTab: React.FC = () => {
             {/* Chat Header */}
             <div
               style={{
-                padding: '16px 20px',
+                padding: '10px 18px',
                 borderBottom: '1px solid #e2e8f0',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -544,11 +546,11 @@ export const SupportInboxTab: React.FC = () => {
                 backgroundColor: '#ffffff',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '34px',
+                    height: '34px',
                     borderRadius: '50%',
                     backgroundColor: 'rgba(252, 96, 17, 0.1)',
                     display: 'flex',
@@ -556,23 +558,23 @@ export const SupportInboxTab: React.FC = () => {
                     justifyContent: 'center',
                     color: '#fc6011',
                     fontWeight: 800,
-                    fontSize: '15px',
+                    fontSize: '13.5px',
                   }}
                 >
                   {selectedTicket.sender?.displayName?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>
                       {selectedTicket.sender?.displayName}
                     </span>
                     {selectedTicket.sender?.phone && (
-                      <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Phone size={12} /> {selectedTicket.sender.phone}
+                      <span style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <Phone size={11} /> {selectedTicket.sender.phone}
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#64748b', marginTop: '1px' }}>
                     <span>Phiếu #{selectedTicket.maPhieu}</span>
                     <span>•</span>
                     <span style={{ color: '#fc6011', fontWeight: 600 }}>
@@ -581,7 +583,7 @@ export const SupportInboxTab: React.FC = () => {
                     {selectedTicket.maDonHang && (
                       <>
                         <span>•</span>
-                        <span style={{ color: '#2563eb', fontWeight: 600 }}>Đơn hàng #{selectedTicket.maDonHang}</span>
+                        <span style={{ color: '#2563eb', fontWeight: 600 }}>Đơn #{selectedTicket.maDonHang}</span>
                       </>
                     )}
                   </div>
@@ -590,18 +592,18 @@ export const SupportInboxTab: React.FC = () => {
 
               {/* Status Switcher */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>Trạng thái:</span>
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Trạng thái:</span>
                 <select
                   value={selectedTicket.trangThai}
                   onChange={(e) => handleUpdateStatus(e.target.value as any)}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
                     border: `1px solid ${STATUS_STYLE[selectedTicket.trangThai]?.border || '#cbd5e1'}`,
                     backgroundColor: STATUS_STYLE[selectedTicket.trangThai]?.bg || '#ffffff',
                     color: STATUS_STYLE[selectedTicket.trangThai]?.text || '#0f172a',
                     fontWeight: 700,
-                    fontSize: '12.5px',
+                    fontSize: '11.5px',
                     cursor: 'pointer',
                     outline: 'none',
                   }}
@@ -615,7 +617,7 @@ export const SupportInboxTab: React.FC = () => {
             </div>
 
             {/* Chat Messages Stream */}
-            <div style={{ flex: 1, padding: '20px', overflowY: 'auto', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {loadingMessages ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: '#94a3b8', fontSize: '13px' }}>
                   <RefreshCw size={20} className="animate-spin" style={{ color: '#fc6011', marginRight: '8px' }} />
@@ -647,9 +649,9 @@ export const SupportInboxTab: React.FC = () => {
                       <div
                         style={{
                           maxWidth: '70%',
-                          borderRadius: isAdmin ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          padding: '11px 16px',
-                          fontSize: '13.5px',
+                          borderRadius: isAdmin ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                          padding: '8px 14px',
+                          fontSize: '13px',
                           backgroundColor: isAdmin ? '#fc6011' : '#ffffff',
                           color: isAdmin ? '#ffffff' : '#0f172a',
                           border: isAdmin ? 'none' : '1px solid #e2e8f0',
@@ -702,11 +704,11 @@ export const SupportInboxTab: React.FC = () => {
             </div>
 
             {/* Chat Input Bar */}
-            <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+            <div style={{ padding: '8px 16px', borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
               {pendingImages.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   {pendingImages.map((img, idx) => (
-                    <div key={idx} style={{ position: 'relative', width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                    <div key={idx} style={{ position: 'relative', width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
                       <img src={getImageUrl(img)} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <button
                         type="button"
@@ -734,7 +736,7 @@ export const SupportInboxTab: React.FC = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSendMessage} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <form onSubmit={handleSendMessage} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -748,11 +750,11 @@ export const SupportInboxTab: React.FC = () => {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage || pendingImages.length >= 3}
                   style={{
-                    padding: '8px 10px',
+                    padding: '7px 9px',
                     color: '#64748b',
                     backgroundColor: '#f1f5f9',
                     border: '1px solid #e2e8f0',
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -760,7 +762,7 @@ export const SupportInboxTab: React.FC = () => {
                   }}
                   title="Đính kèm ảnh"
                 >
-                  <ImageIcon size={18} />
+                  <ImageIcon size={17} />
                 </button>
 
                 <input
@@ -770,11 +772,11 @@ export const SupportInboxTab: React.FC = () => {
                   placeholder="Nhập câu trả lời hỗ trợ..."
                   style={{
                     flex: 1,
-                    padding: '10px 16px',
+                    padding: '8px 14px',
                     backgroundColor: '#f8fafc',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '10px',
-                    fontSize: '13.5px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
                     outline: 'none',
                   }}
                 />
@@ -783,22 +785,22 @@ export const SupportInboxTab: React.FC = () => {
                   type="submit"
                   disabled={sending || (!inputText.trim() && pendingImages.length === 0)}
                   style={{
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     backgroundColor: '#fc6011',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     fontWeight: 700,
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    boxShadow: '0 3px 10px rgba(252,96,17,0.25)',
+                    boxShadow: '0 2px 8px rgba(252,96,17,0.22)',
                     opacity: sending || (!inputText.trim() && pendingImages.length === 0) ? 0.5 : 1,
                   }}
                 >
-                  <Send size={15} />
+                  <Send size={14} />
                   <span>Gửi</span>
                 </button>
               </form>

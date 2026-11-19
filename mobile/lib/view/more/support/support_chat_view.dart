@@ -11,6 +11,7 @@ import '../../../providers/support_provider.dart';
 import '../../../services/socket_service.dart';
 import '../../../services/support_service.dart';
 import '../../../services/upload_service.dart';
+import '../../../widgets/skeleton/support_skeleton.dart';
 
 class SupportChatView extends StatefulWidget {
   final SupportTicketModel ticket;
@@ -29,6 +30,7 @@ class _SupportChatViewState extends State<SupportChatView> {
 
   List<SupportTicketMessageModel> _messages = [];
   bool _isLoading = true;
+  String? _errorMessage;
   bool _isSending = false;
   bool _isUploadingImage = false;
   final List<String> _pendingImages = [];
@@ -138,13 +140,57 @@ class _SupportChatViewState extends State<SupportChatView> {
   }
 
   Future<void> _loadMessages() async {
-    final list = await SupportService.getTicketMessages(_ticket.maPhieu);
-    if (mounted) {
-      setState(() {
-        _messages = list;
-        _isLoading = false;
-      });
-      _scrollToBottom(smooth: false);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final list = await SupportService.getTicketMessages(_ticket.maPhieu);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (list.isNotEmpty) {
+            _messages = list;
+          } else if (_messages.isEmpty && _ticket.moTa.isNotEmpty) {
+            // Đảm bảo luôn có tin nhắn mở đầu của phiếu, tránh màn hình trắng
+            _messages = [
+              SupportTicketMessageModel(
+                maTinNhan: 0,
+                maPhieu: _ticket.maPhieu,
+                maTaiKhoanGui: _ticket.maTaiKhoan,
+                vaiTroGui: 'USER',
+                noiDung: _ticket.moTa,
+                danhSachAnh: _ticket.danhSachAnh,
+                daXem: true,
+                ngayTao: _ticket.ngayTao,
+              ),
+            ];
+          }
+        });
+        _scrollToBottom(smooth: false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Không thể tải tin nhắn. Vui lòng thử lại.';
+          if (_messages.isEmpty && _ticket.moTa.isNotEmpty) {
+            _messages = [
+              SupportTicketMessageModel(
+                maTinNhan: 0,
+                maPhieu: _ticket.maPhieu,
+                maTaiKhoanGui: _ticket.maTaiKhoan,
+                vaiTroGui: 'USER',
+                noiDung: _ticket.moTa,
+                danhSachAnh: _ticket.danhSachAnh,
+                daXem: true,
+                ngayTao: _ticket.ngayTao,
+              ),
+            ];
+          }
+        });
+      }
     }
   }
 
@@ -390,7 +436,37 @@ class _SupportChatViewState extends State<SupportChatView> {
           // Messages Stream
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SupportChatSkeleton()
+                : _messages.isEmpty && _errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.wifi_off_rounded, size: 44, color: Colors.grey.shade400),
+                              const SizedBox(height: 12),
+                              Text(
+                                _errorMessage ?? 'Không thể tải tin nhắn',
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13.5),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 14),
+                              ElevatedButton.icon(
+                                onPressed: _loadMessages,
+                                icon: const Icon(Icons.refresh_rounded, size: 16),
+                                label: const Text('Thử lại', style: TextStyle(fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: TColor.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                 : ListView.builder(
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.all(16),

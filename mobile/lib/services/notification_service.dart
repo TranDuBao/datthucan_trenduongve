@@ -57,6 +57,18 @@ class NotificationModel {
     return body;
   }
 
+  static int _safeInt(dynamic val, [int fallback = 0]) {
+    if (val == null) return fallback;
+    if (val is num) return val.toInt();
+    if (val is String) {
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+      final digits = RegExp(r'\d+').firstMatch(val)?.group(0);
+      if (digits != null) return int.tryParse(digits) ?? fallback;
+    }
+    return fallback;
+  }
+
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     // Check if wrapped in user_notification inbox format
     final Map<String, dynamic> notifData = (json['notification'] is Map<String, dynamic>)
@@ -67,17 +79,21 @@ class NotificationModel {
         ? notifData['data'] as Map<String, dynamic>
         : (json['data'] is Map<String, dynamic> ? json['data'] as Map<String, dynamic> : null);
 
-    final int ordId = extraData?['orderId'] ??
-        notifData['orderId'] ??
-        json['orderId'] ??
-        json['maDonHang'] ??
-        0;
+    final int ordId = _safeInt(extraData?['orderId']) != 0
+        ? _safeInt(extraData?['orderId'])
+        : (_safeInt(notifData['orderId']) != 0
+            ? _safeInt(notifData['orderId'])
+            : (_safeInt(json['orderId']) != 0
+                ? _safeInt(json['orderId'])
+                : _safeInt(json['maDonHang'])));
 
-    final int resId = extraData?['reservationId'] ??
-        notifData['reservationId'] ??
-        json['reservationId'] ??
-        json['maDatBan'] ??
-        0;
+    final int resId = _safeInt(extraData?['reservationId']) != 0
+        ? _safeInt(extraData?['reservationId'])
+        : (_safeInt(notifData['reservationId']) != 0
+            ? _safeInt(notifData['reservationId'])
+            : (_safeInt(json['reservationId']) != 0
+                ? _safeInt(json['reservationId'])
+                : _safeInt(json['maDatBan'])));
 
     DateTime? created;
     final rawDate = json['createdAt'] ??
@@ -114,7 +130,7 @@ class NotificationModel {
         groupStr = 'CŨ HƠN';
       }
     } else {
-      timeStr = json['timeAgo'] ?? json['thoiGian'] ?? '';
+      timeStr = (json['timeAgo'] ?? json['thoiGian'] ?? '').toString();
     }
 
     bool isReadVal = false;
@@ -127,12 +143,19 @@ class NotificationModel {
       isReadVal = rawIsRead.toLowerCase() == 'true' || rawIsRead == '1';
     }
 
-    final int finalId = notifData['id'] ?? json['id'] ?? json['notificationId'] ?? json['maThongBao'] ?? 0;
-    final String finalTitle = notifData['title'] ?? json['title'] ?? json['tieuDe'] ?? 'Thông báo';
-    final String finalBody = notifData['body'] ?? json['body'] ?? json['noiDung'] ?? json['detail'] ?? '';
-    final String? finalTitleEn = notifData['titleEn'] ?? notifData['title_en'] ?? json['titleEn'] ?? json['title_en'];
-    final String? finalBodyEn = notifData['bodyEn'] ?? notifData['body_en'] ?? json['bodyEn'] ?? json['body_en'];
-    final String finalType = notifData['type'] ?? json['type'] ?? json['loaiThongBao'] ?? 'system';
+    final int finalId = _safeInt(notifData['id']) != 0
+        ? _safeInt(notifData['id'])
+        : (_safeInt(json['id']) != 0
+            ? _safeInt(json['id'])
+            : (_safeInt(json['notificationId']) != 0
+                ? _safeInt(json['notificationId'])
+                : _safeInt(json['maThongBao'])));
+
+    final String finalTitle = (notifData['title'] ?? json['title'] ?? json['tieuDe'] ?? 'Thông báo').toString();
+    final String finalBody = (notifData['body'] ?? json['body'] ?? json['noiDung'] ?? json['detail'] ?? '').toString();
+    final String? finalTitleEn = (notifData['titleEn'] ?? notifData['title_en'] ?? json['titleEn'] ?? json['title_en'])?.toString();
+    final String? finalBodyEn = (notifData['bodyEn'] ?? notifData['body_en'] ?? json['bodyEn'] ?? json['body_en'])?.toString();
+    final String finalType = (notifData['type'] ?? json['type'] ?? json['loaiThongBao'] ?? 'system').toString();
 
     return NotificationModel(
       id: finalId,
@@ -141,9 +164,9 @@ class NotificationModel {
       titleEn: finalTitleEn,
       bodyEn: finalBodyEn,
       type: finalType,
-      statusTag: json['statusTag'] ?? extraData?['status'],
+      statusTag: json['statusTag']?.toString() ?? extraData?['status']?.toString(),
       orderCode: ordId > 0 ? '#DH-$ordId' : (resId > 0 ? '#DB-$resId' : null),
-      distanceText: json['distanceText'] ?? json['khoangCach'] ?? extraData?['distanceText'],
+      distanceText: json['distanceText']?.toString() ?? json['khoangCach']?.toString() ?? extraData?['distanceText']?.toString(),
       timeAgo: timeStr,
       groupPeriod: groupStr,
       isUnread: !isReadVal,
@@ -170,7 +193,7 @@ class NotificationService {
           'Content-Type': 'application/json',
           if (token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -186,7 +209,20 @@ class NotificationService {
         } else if (decoded is List) {
           list = decoded;
         }
-        return list.map((item) => NotificationModel.fromJson(item)).toList();
+
+        final List<NotificationModel> result = [];
+        for (final raw in list) {
+          try {
+            if (raw is Map<String, dynamic>) {
+              result.add(NotificationModel.fromJson(raw));
+            } else if (raw is Map) {
+              result.add(NotificationModel.fromJson(Map<String, dynamic>.from(raw)));
+            }
+          } catch (itemErr) {
+            debugPrint('[NotificationService] [Error] Parsing item: $itemErr');
+          }
+        }
+        return result;
       }
     } catch (e) {
       debugPrint('[NotificationService] [Warn] Error fetching inbox notifications: $e');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:food_route/common/color_extension.dart';
 import 'package:food_route/common/format_utils.dart';
 import 'package:provider/provider.dart';
@@ -107,6 +108,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
   }
 
   void _selectWallet(String code, String name) {
+    HapticFeedback.selectionClick();
     setState(() => selectedWalletCode = code);
     Globs.udStringSet(code, _prefKey);
     CustomToast.showSuccess(context, context.l10n.paymentDefaultToast(name));
@@ -120,15 +122,17 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
     return Scaffold(
       backgroundColor: TColor.bgOf(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(context, lang, isDark),
-              const SizedBox(height: 18),
+        child: ScrollConfiguration(
+          behavior: const ScrollBehavior().copyWith(overscroll: false),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 85),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context, lang, isDark),
+                const SizedBox(height: 16),
 
               // Title Section
               Text(
@@ -251,9 +255,11 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                     onTap: () => _selectWallet(code, name),
                     borderRadius: BorderRadius.circular(18),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: TColor.cardOf(context),
+                        color: isSelected
+                            ? (isDark ? const Color(0xFF231E1B) : const Color(0xFFFFF9F5))
+                            : TColor.cardOf(context),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isSelected ? TColor.primary : TColor.borderOf(context),
@@ -261,9 +267,11 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+                            color: isSelected
+                                ? TColor.primary.withValues(alpha: isDark ? 0.2 : 0.08)
+                                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                            blurRadius: isSelected ? 10 : 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -367,7 +375,7 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF171B26) : const Color(0xFFE8F5E9).withOpacity(0.5),
+                        color: isDark ? const Color(0xFF171B26) : const Color(0xFFE8F5E9).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDark ? const Color(0xFF232836) : const Color(0xFFC8E6C9),
@@ -400,12 +408,13 @@ class _PaymentDetailsViewState extends State<PaymentDetailsView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildHeader(BuildContext context, LanguageProvider lang, bool isDark) {

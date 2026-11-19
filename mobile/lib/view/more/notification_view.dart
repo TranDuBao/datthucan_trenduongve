@@ -34,13 +34,13 @@ class _NotificationsViewState extends State<NotificationsView> {
 
   Future<void> _loadNotificationsFromDatabase() async {
     setState(() => isLoading = true);
-    final list = await NotificationService.fetchNotificationsFromDB();
+    final provider = context.read<NotificationProvider>();
+    await provider.fetchNotifications(refresh: true);
     if (mounted) {
       setState(() {
-        notifications = list;
+        notifications = provider.notifications;
         isLoading = false;
       });
-      context.read<NotificationProvider>().refreshAll();
     }
   }
 
