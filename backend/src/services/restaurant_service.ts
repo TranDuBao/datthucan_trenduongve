@@ -1,3 +1,4 @@
+import { In } from 'typeorm';
 import { AppDataSource } from '../config/database';
 import { CuaHangModel } from '../models/cua_hang_model';
 import { DanhMucModel } from '../models/danh_muc_model';
@@ -205,13 +206,23 @@ export class RestaurantService {
       return [];
     }
 
+    const items = await this.monAnRepo.find({
+      where: { maQuan },
+    });
+
     let categories = await this.danhMucRepo.find({
       where: { maQuan },
     });
 
-    const items = await this.monAnRepo.find({
-      where: { maQuan },
-    });
+    // Also include any categories referenced by this store's dishes (e.g. global categories with maQuan: null or 0)
+    const usedCatIds = [...new Set(items.map((i) => i.maDanhMuc).filter((id): id is number => typeof id === 'number' && id > 0))];
+    const missingCatIds = usedCatIds.filter((id) => !categories.some((c) => c.maDanhMuc === id));
+    if (missingCatIds.length > 0) {
+      const referencedCats = await this.danhMucRepo.findBy({
+        maDanhMuc: In(missingCatIds),
+      });
+      categories = [...categories, ...referencedCats];
+    }
 
     const chiTietRepo = AppDataSource.getRepository(ChiTietDonHangModel);
     const soldCounts = await chiTietRepo

@@ -471,8 +471,7 @@ class _MenuItemsViewState extends State<MenuItemsView> {
                             return MenuItemRow(
                               mObj: mObj,
                               onTap: () {
-                                Navigator.push(
-                                  context,
+                                Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
                                     builder: (context) => ItemDetailsView(itemObj: mObj),
                                   ),

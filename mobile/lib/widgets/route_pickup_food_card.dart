@@ -90,8 +90,7 @@ class RoutePickupFoodCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
+        Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
             builder: (context) => ItemDetailsView(itemObj: item),
           ),

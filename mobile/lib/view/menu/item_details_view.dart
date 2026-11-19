@@ -859,17 +859,22 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isSoldOut ? (isDark ? const Color(0xFF2A2E3B) : const Color(0xFFD1D5DB)) : const Color(0xFFFF4D00),
                                   elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
                                 onPressed: isSoldOut ? null : () => _handleAddToCart(goToCheckout: true, calculatedUnitPrice: calculatedUnitPrice, imgUrl: imgUrl),
-                                child: Text(
-                                  isSoldOut
-                                      ? context.l10n.itemTempOutOfStock
-                                      : "${context.l10n.dishOrderNow}  •  ${_formatCurrency(calculatedTotalPrice)}",
-                                  style: TextStyle(
-                                    color: isSoldOut ? TColor.secondaryTextOf(context) : Colors.white,
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w800,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    isSoldOut
+                                        ? context.l10n.itemTempOutOfStock
+                                        : "${context.l10n.dishOrderNow}  •  ${_formatCurrency(calculatedTotalPrice)}",
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      color: isSoldOut ? TColor.secondaryTextOf(context) : Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ),
