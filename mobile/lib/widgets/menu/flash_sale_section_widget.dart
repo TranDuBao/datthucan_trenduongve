@@ -162,7 +162,8 @@ class FlashSaleSectionWidget extends StatelessWidget {
 
                     return GestureDetector(
                       onTap: () {
-                        Navigator.of(context, rootNavigator: true).push(
+                        Navigator.push(
+                          context,
                           MaterialPageRoute(
                             builder: (context) => ItemDetailsView(itemObj: item),
                           ),

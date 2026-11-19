@@ -912,7 +912,8 @@ final img = FoodImageHelper.getFoodImage(item['image'] ?? item['img'], dishName,
 
                                         return GestureDetector(
                                           onTap: () {
-                                            Navigator.of(context, rootNavigator: true).push(
+                                            Navigator.push(
+                                              context,
                                               MaterialPageRoute(
                                                 builder: (context) => ItemDetailsView(
                                                 itemObj: {

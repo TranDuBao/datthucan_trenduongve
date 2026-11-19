@@ -719,7 +719,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
                           },
                         ),
 
-                        const SizedBox(height: 110),
+                        const SizedBox(height: 140),
                       ],
                     ),
                   ),
@@ -734,7 +734,7 @@ class _ItemDetailsViewState extends State<ItemDetailsView> {
             right: 0,
             bottom: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E232E) : Colors.white,
                 boxShadow: [
