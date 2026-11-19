@@ -130,8 +130,8 @@ export class AdminService {
     return this.catalogService.assignFoodToCategory(maMonAn, maDanhMuc);
   }
 
-  async removeFoodFromCategory(maMonAn: number) {
-    return this.catalogService.removeFoodFromCategory(maMonAn);
+  async removeFoodFromCategory(maMonAn: number, maDanhMuc?: number) {
+    return this.catalogService.removeFoodFromCategory(maMonAn, maDanhMuc);
   }
 
   async getCategoryFoods(maDanhMuc: number) {

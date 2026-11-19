@@ -211,8 +211,6 @@ export const AdminCategories: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({ maMonAn: food.maMonAn, maDanhMuc: selectedCategory.maDanhMuc }),
       });
-      // Update local state
-      food.maDanhMuc = selectedCategory.maDanhMuc;
       await loadCategoryFoods(selectedCategory.maDanhMuc);
     } catch (err: any) {
       showError('Lỗi Phân Món', err.message || 'Không thể phân món vào danh mục');
@@ -222,14 +220,10 @@ export const AdminCategories: React.FC = () => {
   };
 
   const handleRemoveFood = async (foodId: number) => {
+    if (!selectedCategory) return;
     try {
-      await apiFetch(`/admin/categories/foods/${foodId}`, { method: 'DELETE' });
-      if (selectedCategory) {
-        await loadCategoryFoods(selectedCategory.maDanhMuc);
-      }
-      setAllFoods((prev) =>
-        prev.map((f) => (f.maMonAn === foodId ? { ...f, maDanhMuc: null } : f))
-      );
+      await apiFetch(`/admin/categories/foods/${foodId}?maDanhMuc=${selectedCategory.maDanhMuc}`, { method: 'DELETE' });
+      await loadCategoryFoods(selectedCategory.maDanhMuc);
     } catch (err: any) {
       showError('Lỗi Gỡ Món', err.message || 'Không thể gỡ món khỏi danh mục');
     }
@@ -565,7 +559,7 @@ export const AdminCategories: React.FC = () => {
                     </thead>
                     <tbody>
                       {filteredAllFoods.slice(0, 100).map((f: any) => {
-                        const isCurrent = Number(f.maDanhMuc) === Number(selectedCategory?.maDanhMuc);
+                        const isCurrent = categoryFoods.some((cf: any) => Number(cf.maMonAn) === Number(f.maMonAn));
                         return (
                           <tr key={f.maMonAn} style={{ background: isCurrent ? '#f0fdf4' : 'transparent' }}>
                             <td>

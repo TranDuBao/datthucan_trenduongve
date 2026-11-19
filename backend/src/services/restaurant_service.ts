@@ -214,9 +214,34 @@ export class RestaurantService {
       where: { maQuan },
     });
 
-    // Also include any categories referenced by this store's dishes (e.g. global categories with maQuan: null or 0)
-    const usedCatIds = [...new Set(items.map((i) => i.maDanhMuc).filter((id): id is number => typeof id === 'number' && id > 0))];
-    const missingCatIds = usedCatIds.filter((id) => !categories.some((c) => c.maDanhMuc === id));
+    // Query Many-to-Many assignments from monan_danhmuc
+    const itemIds = items.map((i) => i.maMonAn).filter(Boolean);
+    let foodCatRows: { mamonan: number; madanhmuc: number }[] = [];
+    if (itemIds.length > 0) {
+      foodCatRows = await AppDataSource.query(`
+        SELECT mamonan, madanhmuc FROM monan_danhmuc
+        WHERE mamonan = ANY($1)
+      `, [itemIds]).catch(() => []);
+    }
+
+    const foodCatMap = new Map<number, Set<number>>();
+    for (const r of foodCatRows) {
+      const fId = Number(r.mamonan);
+      const cId = Number(r.madanhmuc);
+      if (!foodCatMap.has(fId)) foodCatMap.set(fId, new Set());
+      foodCatMap.get(fId)!.add(cId);
+    }
+
+    // Include any categories referenced by this store's dishes in monan or monan_danhmuc
+    const allUsedCatIds = new Set<number>();
+    for (const i of items) {
+      if (typeof i.maDanhMuc === 'number' && i.maDanhMuc > 0) allUsedCatIds.add(i.maDanhMuc);
+      const assigned = foodCatMap.get(i.maMonAn);
+      if (assigned) {
+        for (const c of assigned) allUsedCatIds.add(c);
+      }
+    }
+    const missingCatIds = [...allUsedCatIds].filter((id) => !categories.some((c) => c.maDanhMuc === id));
     if (missingCatIds.length > 0) {
       const referencedCats = await this.danhMucRepo.findBy({
         maDanhMuc: In(missingCatIds),
@@ -285,10 +310,13 @@ export class RestaurantService {
 
     return categories.map((cat) => {
       const catItems = items.filter((item) => {
-        // Direct match with category
+        // Direct match with primary category
         if (item.maDanhMuc === cat.maDanhMuc) return true;
+        // Many-to-Many junction match
+        const assigned = foodCatMap.get(item.maMonAn);
+        if (assigned && assigned.has(cat.maDanhMuc)) return true;
         // If item has no category or category doesn't belong to this store's categories, assign to first category
-        if (cat.maDanhMuc === firstCatId && (!item.maDanhMuc || !categoryIds.has(item.maDanhMuc))) {
+        if (cat.maDanhMuc === firstCatId && (!item.maDanhMuc || !categoryIds.has(item.maDanhMuc)) && (!assigned || assigned.size === 0)) {
           return true;
         }
         return false;

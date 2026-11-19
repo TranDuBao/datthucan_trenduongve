@@ -7,6 +7,7 @@ import { CuaHangModel } from '../models/cua_hang_model';
 import { NhanVienModel } from '../models/nhan_vien_model';
 import { DanhMucModel } from '../models/danh_muc_model';
 import { MonAnModel } from '../models/mon_an_model';
+import { MonAnDanhMucModel } from '../models/mon_an_danh_muc_model';
 import { GioHangModel } from '../models/gio_hang_model';
 import { ChiTietGioHangModel } from '../models/chi_tiet_gio_hang_model';
 import { VoucherModel } from '../models/voucher_model';
@@ -55,6 +56,7 @@ export const AppDataSource = new DataSource({
     NhanVienModel,
     DanhMucModel,
     MonAnModel,
+    MonAnDanhMucModel,
     GioHangModel,
     ChiTietGioHangModel,
     VoucherModel,
@@ -205,6 +207,26 @@ export const connectDatabase = async () => {
 
         await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS hinhanh TEXT NULL;`).catch(() => {});
         await AppDataSource.query(`ALTER TABLE danhmuc ADD COLUMN IF NOT EXISTS tendanhmuc_en VARCHAR(150) NULL;`).catch(() => {});
+
+        // Food - Category Many-to-Many Table (monan_danhmuc)
+        await AppDataSource.query(`
+          CREATE TABLE IF NOT EXISTS monan_danhmuc (
+            mamonan INT NOT NULL,
+            madanhmuc INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (mamonan, madanhmuc)
+          );
+          CREATE INDEX IF NOT EXISTS idx_monan_danhmuc_mamon ON monan_danhmuc(mamonan);
+          CREATE INDEX IF NOT EXISTS idx_monan_danhmuc_madanhmuc ON monan_danhmuc(madanhmuc);
+        `).catch(() => {});
+
+        // Safely sync existing 1-N categories into N-N table if missing
+        await AppDataSource.query(`
+          INSERT INTO monan_danhmuc (mamonan, madanhmuc)
+          SELECT mamonan, madanhmuc FROM monan
+          WHERE madanhmuc IS NOT NULL AND madanhmuc > 0
+          ON CONFLICT (mamonan, madanhmuc) DO NOTHING;
+        `).catch(() => {});
     await AppDataSource.query(`
       CREATE TABLE IF NOT EXISTS banner (
         mabanner SERIAL PRIMARY KEY,

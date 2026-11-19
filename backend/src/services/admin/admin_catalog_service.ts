@@ -72,7 +72,7 @@ export class AdminCatalogService {
     if (!cat) throw new Error('Không tìm thấy danh mục');
 
     // Unassign foods first so we don't violate constraints
-    await this.foodRepo.update({ maDanhMuc }, { maDanhMuc: undefined });
+    await this.foodRepo.query('UPDATE monan SET madanhmuc = NULL WHERE madanhmuc = $1', [maDanhMuc]);
     await this.categoryRepo.remove(cat);
     return { success: true, message: 'Đã xóa danh mục tuyển chọn' };
   }
@@ -84,26 +84,60 @@ export class AdminCatalogService {
     const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
     if (!cat) throw new Error('Không tìm thấy danh mục tuyển chọn');
 
-    food.maDanhMuc = maDanhMuc;
-    return await this.foodRepo.save(food);
+    // Add to Many-to-Many junction table (monan_danhmuc)
+    await AppDataSource.query(`
+      INSERT INTO monan_danhmuc (mamonan, madanhmuc)
+      VALUES ($1, $2)
+      ON CONFLICT (mamonan, madanhmuc) DO NOTHING;
+    `, [maMonAn, maDanhMuc]);
+
+    // Set primary category if empty
+    if (!food.maDanhMuc) {
+      food.maDanhMuc = maDanhMuc;
+      await this.foodRepo.save(food);
+    }
+
+    return { success: true, message: 'Phân món vào danh mục thành công' };
   }
 
-  async removeFoodFromCategory(maMonAn: number) {
+  async removeFoodFromCategory(maMonAn: number, maDanhMuc?: number) {
     const food = await this.foodRepo.findOne({ where: { maMonAn } });
     if (!food) throw new Error('Không tìm thấy món ăn');
 
-    (food as any).maDanhMuc = null;
-    return await this.foodRepo.save(food);
+    if (maDanhMuc) {
+      // Remove specific assignment from junction table
+      await AppDataSource.query(
+        'DELETE FROM monan_danhmuc WHERE mamonan = $1 AND madanhmuc = $2',
+        [maMonAn, maDanhMuc]
+      );
+      // If primary category matched the removed one, point to another assigned category or NULL
+      if (food.maDanhMuc === maDanhMuc) {
+        const remaining = await AppDataSource.query(
+          'SELECT madanhmuc FROM monan_danhmuc WHERE mamonan = $1 LIMIT 1',
+          [maMonAn]
+        );
+        food.maDanhMuc = remaining && remaining[0] ? remaining[0].madanhmuc : null;
+        await this.foodRepo.save(food);
+      }
+    } else {
+      // Remove all category assignments
+      await AppDataSource.query('DELETE FROM monan_danhmuc WHERE mamonan = $1', [maMonAn]);
+      food.maDanhMuc = null;
+      await this.foodRepo.save(food);
+    }
+
+    return { success: true, message: 'Đã gỡ món khỏi danh mục' };
   }
 
   async getCategoryFoods(maDanhMuc: number) {
     const cat = await this.categoryRepo.findOne({ where: { maDanhMuc } });
     if (!cat) throw new Error('Không tìm thấy danh mục');
 
-    const foods = await this.foodRepo.find({
-      where: { maDanhMuc },
-      order: { maMonAn: 'DESC' },
-    });
+    // Query all foods assigned either in junction table or primary column
+    const foods = await this.foodRepo.createQueryBuilder('m')
+      .where('m.maMonAn IN (SELECT mamonan FROM monan_danhmuc WHERE madanhmuc = :maDanhMuc) OR m.maDanhMuc = :maDanhMuc', { maDanhMuc })
+      .orderBy('m.maMonAn', 'DESC')
+      .getMany();
 
     const enriched = [];
     for (const f of foods) {

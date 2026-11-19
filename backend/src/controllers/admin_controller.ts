@@ -269,7 +269,12 @@ export class AdminController {
   removeFoodFromCategory = async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const result = await this.adminService.removeFoodFromCategory(id);
+      const maDanhMuc = req.query.maDanhMuc
+        ? Number(req.query.maDanhMuc)
+        : req.body?.maDanhMuc
+        ? Number(req.body.maDanhMuc)
+        : undefined;
+      const result = await this.adminService.removeFoodFromCategory(id, maDanhMuc);
       return res.status(200).json({ statusCode: 200, status: '1', data: result, message: 'Đã gỡ món khỏi danh mục' });
     } catch (error: any) {
       return res.status(400).json({ statusCode: 400, message: error.message });
